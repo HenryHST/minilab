@@ -1,0 +1,17 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: it-tools
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`it-tools.stadthagen.dev`)
+      kind: Rule
+      services:
+        - name: it-tools
+          port: 80
+  tls:
+    secretName: stadthagen-tls

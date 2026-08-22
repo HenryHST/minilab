@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: omni-tools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: omni-tools
+  template:
+    metadata:
+      labels:
+        app: omni-tools
+    spec:
+      containers:
+        - name: omni-tools
+          image: iib0011/omni-tools:0.6.0
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi

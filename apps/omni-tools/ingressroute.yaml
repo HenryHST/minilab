@@ -1,0 +1,17 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: omni-tools
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`omni-tools.stadthagen.dev`)
+      kind: Rule
+      services:
+        - name: omni-tools
+          port: 80
+  tls:
+    secretName: stadthagen-tls

@@ -21,3 +21,7 @@
         href: https://pgweb.stadthagen.dev
         icon: si-postgresql-#4169E1
         description: PostgreSQL Web UI
+    - Draw.io:
+        href: https://drawio.stadthagen.dev
+        icon: si-diagramsdotnet-#F08705
+        description: diagram editor

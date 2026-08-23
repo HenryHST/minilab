@@ -23,6 +23,7 @@ Jeder Ordner ist eine eigenständige App (Deployment/Service/IngressRoute oder H
 | it-tools | `apps/it-tools/` | `it-tools` | `it-tools.stadthagen.dev` |
 | pgweb | `apps/pgweb/` | `pgweb` | `pgweb.stadthagen.dev` (Port 8081) |
 | web | `apps/web/` | `homepage` | `web.stadthagen.dev` (gethomepage) |
+| drawio | `apps/drawio/` | `drawio` | `drawio.stadthagen.dev` (Port 8080) |
 
 `apps/nxk3/` ist für die Umbrella-App `minilab` vorgesehen (optional / noch leer).
 

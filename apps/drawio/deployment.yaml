@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drawio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drawio
+  template:
+    metadata:
+      labels:
+        app: drawio
+    spec:
+      containers:
+        - name: drawio
+          image: jgraph/drawio:28.2.5
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PUBLIC_DNS
+              value: drawio.stadthagen.dev
+            - name: ORGANISATION_UNIT
+              value: unit
+            - name: ORGANISATION
+              value: org
+            - name: CITY
+              value: Griesheim
+            - name: STATE
+              value: Hessen
+            - name: COUNTRY_CODE
+              value: DE
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 512Mi

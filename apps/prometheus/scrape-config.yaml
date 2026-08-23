@@ -3,20 +3,21 @@ kind: ConfigMap
 metadata:
   name: prometheus-scrape-config
 data:
-  # Add scrape jobs here as a YAML list. Prometheus loads all *.yaml from
+  # Add scrape jobs under scrape_configs. Prometheus loads all *.yaml from
   # /etc/prometheus/scrape_configs via scrape_config_files (see config.yaml).
-  # After editing: restart the Deployment or send SIGHUP to reload.
+  # After editing: POST to /-/reload (lifecycle enabled) or restart the Deployment.
   #
-  # Example jobs (uncomment / append):
-  # - job_name: node
-  #   static_configs:
-  #     - targets:
-  #         - 192.168.0.10:9100
-  #       labels:
-  #         instance: example
-  # - job_name: unpoller
-  #   static_configs:
-  #     - targets:
-  #         - 192.168.0.50:9130
+  # Example:
+  # scrape_configs:
+  #   - job_name: node
+  #     static_configs:
+  #       - targets:
+  #           - 192.168.0.10:9100
+  #         labels:
+  #           instance: example
+  #   - job_name: unpoller
+  #     static_configs:
+  #       - targets:
+  #           - 192.168.0.50:9130
   jobs.yaml: |
-    []
+    scrape_configs: []

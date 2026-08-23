@@ -1,1 +1,42 @@
 # minilab
+
+GitOps-Manifeste für [Argo CD](https://argo-cd.readthedocs.io/) auf dem **nXk3**-Cluster.
+
+Argo CD Applications werden in Infra_LAB Ansible registriert (`argocd_applications` in `group_vars`). Dieses Repo liefert die Manifeste unter `apps/`.
+
+## Struktur
+
+```
+apps/<name>/
+  kustomization.yaml   # Kustomize-Einstieg
+  …
+```
+
+Jeder Ordner ist eine eigenständige App (Deployment/Service/IngressRoute oder Helm via Kustomize `helmCharts`).
+
+## Apps
+
+| App | Pfad | Namespace | Host / Hinweis |
+|-----|------|-----------|----------------|
+| cert-manager | `apps/cert-manager/` | `certmanager` | Helm via Kustomize (`jetstack/cert-manager` v1.19.0) |
+| omni-tools | `apps/omni-tools/` | `omnitools` | `omni-tools.stadthagen.dev` |
+| it-tools | `apps/it-tools/` | `it-tools` | `it-tools.stadthagen.dev` |
+
+`apps/nxk3/` ist für die Umbrella-App `minilab` vorgesehen (optional / noch leer).
+
+## Neue App hinzufügen
+
+1. Ordner `apps/<name>/` anlegen mit `kustomization.yaml`, typischerweise `deployment.yaml`, `service.yaml`, `ingressroute.yaml`.
+2. Nach `main` pushen.
+3. In Infra_LAB unter `argocd_applications` einen Eintrag ergänzen und `ansible-playbook site.yaml --tags argocd --limit nxk3-cp01` ausführen.
+
+## TLS
+
+IngressRoutes referenzieren das Secret `stadthagen-tls` im App-Namespace. Einmalig aus `traefik` kopieren:
+
+```bash
+kubectl get secret stadthagen-tls -n traefik -o yaml \
+  | sed 's/namespace: traefik/namespace: <APP_NAMESPACE>/' | kubectl apply -f -
+```
+
+DNS für App-Hosts → Traefik LB (`192.168.0.215`).

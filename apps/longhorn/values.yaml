@@ -14,4 +14,3 @@ defaultSettings:
   defaultDataPath: /var/lib/longhorn
   defaultReplicaCount: 3
   backupTarget: nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups
-  backupTargetCredentialSecret: ""

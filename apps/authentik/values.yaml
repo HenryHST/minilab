@@ -20,6 +20,9 @@ global:
 
 server:
   replicas: 1
+  # Proxmox workers only (label worker=true); never schedule on Raspberry Pi arm64
+  nodeSelector:
+    worker: "true"
   ingress:
     enabled: false
   initContainers:
@@ -41,6 +44,8 @@ server:
 
 worker:
   replicas: 1
+  nodeSelector:
+    worker: "true"
   initContainers:
     - name: volume-permissions
       image: busybox:1.37
@@ -67,6 +72,8 @@ postgresql:
     secretKeys:
       adminPasswordKey: password
   primary:
+    nodeSelector:
+      worker: "true"
     persistence:
       enabled: true
       storageClass: longhorn

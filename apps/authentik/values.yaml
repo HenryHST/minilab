@@ -21,6 +21,7 @@ global:
   envFrom:
     - secretRef:
         name: authentik-credentials
+  # Mount /media once via global (server + worker inherit)
   volumes:
     - name: media
       persistentVolumeClaim:
@@ -42,13 +43,6 @@ server:
       volumeMounts:
         - name: media
           mountPath: /media
-  volumes:
-    - name: media
-      persistentVolumeClaim:
-        claimName: authentik-media
-  volumeMounts:
-    - name: media
-      mountPath: /media
 
 worker:
   replicas: 1
@@ -61,13 +55,6 @@ worker:
       volumeMounts:
         - name: media
           mountPath: /media
-  volumes:
-    - name: media
-      persistentVolumeClaim:
-        claimName: authentik-media
-  volumeMounts:
-    - name: media
-      mountPath: /media
 
 postgresql:
   enabled: true

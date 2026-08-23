@@ -10,6 +10,10 @@ spec:
       name: letsencrypt-prod-account-key
     solvers:
       - dns01:
+          recursiveNameservers:
+            - helium.ns.hetzner.de:53
+            - oxygen.ns.hetzner.com:53
+          recursiveNameserversOnly: true
           webhook:
             groupName: acme.hetzner.com
             solverName: hetzner

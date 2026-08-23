@@ -14,4 +14,4 @@ spec:
         - name: grafana
           port: 80
   tls:
-    secretName: stadthagen-tls
+    secretName: grafana-tls

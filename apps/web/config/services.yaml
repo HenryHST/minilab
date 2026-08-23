@@ -26,6 +26,10 @@
         icon: si-diagramsdotnet-#F08705
         description: diagram editor
 - Monitoring:
+    - Longhorn:
+        href: https://longhorn.stadthagen.dev
+        icon: si-rancher-#0075A8
+        description: distributed storage
     - Grafana:
         href: https://grafana.stadthagen.dev
         icon: si-grafana-#F46800

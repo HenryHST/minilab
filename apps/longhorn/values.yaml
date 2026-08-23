@@ -1,0 +1,17 @@
+# Longhorn v1.12.1 — https://longhorn.io/docs/1.12.1/deploy/install/install-with-argocd/
+preUpgradeChecker:
+  jobEnabled: false
+
+ingress:
+  enabled: false
+
+persistence:
+  defaultClass: true
+  defaultClassReplicaCount: 3
+
+defaultSettings:
+  createDefaultDiskLabeledNodes: true
+  defaultDataPath: /var/lib/longhorn
+  defaultReplicaCount: 3
+  backupTarget: nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups
+  backupTargetCredentialSecret: ""

@@ -22,3 +22,6 @@ layout:
   Tools:
     header: true
     icon: mdi-auto-fix-#FFFFFF
+  Monitoring:
+    header: true
+    icon: mdi-list-status-#FFFFFF

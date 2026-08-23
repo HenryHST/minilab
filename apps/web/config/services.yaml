@@ -25,3 +25,8 @@
         href: https://drawio.stadthagen.dev
         icon: si-diagramsdotnet-#F08705
         description: diagram editor
+- Monitoring:
+    - Uptime Kuma:
+        href: https://status.stadthagen.dev
+        icon: si-statuspage-#300A27
+        description: status.stadthagen.dev

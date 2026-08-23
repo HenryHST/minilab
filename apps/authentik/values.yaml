@@ -1,14 +1,10 @@
-# Secrets (not in Git): create via Infra_LAB SecretSpec → namespace authentik
-#   secret/authentik-credentials  (AUTHENTIK_* + password for Bitnami PG)
-#
-# Pre-cutover test (DNS still on Docker host):
-#   curl --resolve idp.stadthagen.dev:443:192.168.0.215 -skI https://idp.stadthagen.dev/
+# Secrets via Infra_LAB SecretSpec → authentik-credentials
+# Pre-cutover: curl --resolve idp.stadthagen.dev:443:192.168.0.215 -skI https://idp.stadthagen.dev/
 
 authentik:
   log_level: info
   error_reporting:
     enabled: false
-  # secret_key + postgresql.password come from envFrom (AUTHENTIK_*)
   secret_key: ""
   postgresql:
     password: ""
@@ -21,14 +17,6 @@ global:
   envFrom:
     - secretRef:
         name: authentik-credentials
-  # Mount /media once via global (server + worker inherit)
-  volumes:
-    - name: media
-      persistentVolumeClaim:
-        claimName: authentik-media
-  volumeMounts:
-    - name: media
-      mountPath: /media
 
 server:
   replicas: 1
@@ -43,6 +31,13 @@ server:
       volumeMounts:
         - name: media
           mountPath: /media
+  volumes:
+    - name: media
+      persistentVolumeClaim:
+        claimName: authentik-media
+  volumeMounts:
+    - name: media
+      mountPath: /media
 
 worker:
   replicas: 1
@@ -55,6 +50,13 @@ worker:
       volumeMounts:
         - name: media
           mountPath: /media
+  volumes:
+    - name: media
+      persistentVolumeClaim:
+        claimName: authentik-media
+  volumeMounts:
+    - name: media
+      mountPath: /media
 
 postgresql:
   enabled: true

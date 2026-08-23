@@ -9,3 +9,10 @@ helmCharts:
     namespace: certmanager
     includeCRDs: true
     valuesFile: values.yaml
+  - name: cert-manager-webhook-hetzner
+    repo: https://charts.hetzner.cloud
+    version: 0.9.0
+    releaseName: cert-manager-webhook-hetzner
+    namespace: certmanager
+resources:
+  - clusterissuer.yaml

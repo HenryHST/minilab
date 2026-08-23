@@ -34,6 +34,14 @@ grafana.ini:
   log:
     mode: console
 
+# Load ConfigMaps labeled grafana_datasource (see datasources.yaml)
+sidecar:
+  datasources:
+    enabled: true
+    label: grafana_datasource
+    labelValue: "1"
+    searchNamespace: ALL
+
 resources:
   requests:
     cpu: 100m

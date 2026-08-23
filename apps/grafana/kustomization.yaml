@@ -12,3 +12,4 @@ resources:
   - pv.yaml
   - pvc.yaml
   - ingressroute.yaml
+  - datasources.yaml

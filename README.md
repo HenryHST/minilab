@@ -31,7 +31,7 @@ Jeder Ordner ist eine eigenständige App (Deployment/Service/IngressRoute oder H
 
 `apps/nxk3/` ist für die Umbrella-App `minilab` vorgesehen (optional / noch leer).
 
-Longhorn: Replika-Daten lokal `/var/lib/longhorn` auf Worker mit Label `node.longhorn.io/create-default-disk=true` (nxk3-w01–w03). Backup-Target: `nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups`.
+Longhorn: Replika-Daten lokal `/var/lib/longhorn` auf Worker mit Label `node.longhorn.io/create-default-disk=true` (nxk3-w01–w03). Backup-Target: `nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups?nfsOptions=nfsvers=3,nolock` (UniFi NAS benötigt NFSv3).
 
 Grafana-Werte basieren auf [JimsGarage GitOps/Grafana](https://github.com/JamesTurland/JimsGarage/tree/main/Kubernetes/GitOps/Grafana) (Helm via Kustomize, Traefik IngressRoute statt Chart-Ingress). Grafana Prometheus-Datasource zeigt auf `http://prometheus.prometheus.svc.cluster.local:9090`.
 

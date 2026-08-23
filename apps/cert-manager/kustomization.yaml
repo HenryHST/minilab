@@ -14,5 +14,6 @@ helmCharts:
     version: 0.9.0
     releaseName: cert-manager-webhook-hetzner
     namespace: certmanager
+    valuesFile: webhook-values.yaml
 resources:
   - clusterissuer.yaml

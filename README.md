@@ -21,6 +21,7 @@ Jeder Ordner ist eine eigenständige App (Deployment/Service/IngressRoute oder H
 | cert-manager | `apps/cert-manager/` | `certmanager` | Helm via Kustomize (`jetstack/cert-manager` v1.19.0) |
 | omni-tools | `apps/omni-tools/` | `omnitools` | `omni-tools.stadthagen.dev` |
 | it-tools | `apps/it-tools/` | `it-tools` | `it-tools.stadthagen.dev` |
+| pgweb | `apps/pgweb/` | `pgweb` | `pgweb.stadthagen.dev` (Port 8081) |
 
 `apps/nxk3/` ist für die Umbrella-App `minilab` vorgesehen (optional / noch leer).
 

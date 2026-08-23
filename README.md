@@ -22,6 +22,7 @@ Jeder Ordner ist eine eigenständige App (Deployment/Service/IngressRoute oder H
 | omni-tools | `apps/omni-tools/` | `omnitools` | `omni-tools.stadthagen.dev` |
 | it-tools | `apps/it-tools/` | `it-tools` | `it-tools.stadthagen.dev` |
 | pgweb | `apps/pgweb/` | `pgweb` | `pgweb.stadthagen.dev` (Port 8081) |
+| web | `apps/web/` | `homepage` | `web.stadthagen.dev` (gethomepage) |
 
 `apps/nxk3/` ist für die Umbrella-App `minilab` vorgesehen (optional / noch leer).
 

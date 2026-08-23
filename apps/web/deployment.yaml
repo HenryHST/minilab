@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/gethomepage/homepage:v1.13.2
+          ports:
+            - containerPort: 3000
+          env:
+            - name: HOMEPAGE_ALLOWED_HOSTS
+              value: web.stadthagen.dev
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: homepage-config

@@ -1,0 +1,23 @@
+---
+- nXk3:
+    - Argo CD:
+        href: https://argocd.stadthagen.dev
+        icon: argocd.svg
+        description: GitOps
+    - Traefik:
+        href: https://traefik.stadthagen.dev
+        icon: traefik.png
+        description: Ingress LB 192.168.0.215
+- Tools:
+    - Omni Tools:
+        href: https://omni-tools.stadthagen.dev
+        icon: si-docker-#2496ED
+        description: omni-tools
+    - IT Tools:
+        href: https://it-tools.stadthagen.dev
+        icon: si-docker-#2496ED
+        description: it-tools
+    - pgweb:
+        href: https://pgweb.stadthagen.dev
+        icon: si-postgresql-#4169E1
+        description: PostgreSQL Web UI

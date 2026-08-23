@@ -1,0 +1,23 @@
+---
+- resources:
+    cpu: true
+    memory: true
+    disk: /
+    refresh: 3000
+
+- datetime:
+    text_size: xl
+    locale: de
+    format:
+        timeStyle: long
+        dateStyle: long
+        hourCycle: h23
+
+# OpenWeatherMap requires OPENWEATHERMAP_API_KEY — see secret.env.example
+# - openweathermap:
+#     latitude: 49.86014928642
+#     longitude: 8.55687651842
+#     provider: openweathermap
+#     units: metric
+#     cache: 5
+#     label: Griesheim

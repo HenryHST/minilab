@@ -23,6 +23,17 @@ persistence:
   existingClaim: grafana-data
   storageClassName: ""
 
+# hostPath ownership already set; chown fails on existing subdirs after restart
+initChownData:
+  enabled: false
+
+# Provision Prometheus + Loki from ConfigMap datasources.yaml
+extraConfigmapMounts:
+  - name: grafana-datasources
+    configMap: grafana-datasources
+    mountPath: /etc/grafana/provisioning/datasources
+    readOnly: true
+
 grafana.ini:
   server:
     root_url: https://grafana.stadthagen.dev
@@ -33,14 +44,6 @@ grafana.ini:
     check_for_updates: true
   log:
     mode: console
-
-# Load ConfigMaps labeled grafana_datasource (see datasources.yaml)
-sidecar:
-  datasources:
-    enabled: true
-    label: grafana_datasource
-    labelValue: "1"
-    searchNamespace: ALL
 
 resources:
   requests:

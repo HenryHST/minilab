@@ -12,13 +12,12 @@ data:
         type: prometheus
         uid: prometheus
         access: proxy
-        url: https://prometheus.stadthagen.dev
+        url: http://prometheus.prometheus.svc.cluster.local:9090
         isDefault: true
         editable: false
         jsonData:
           httpMethod: POST
           timeInterval: 30s
-          tlsSkipVerify: false
 
       - name: Loki
         type: loki

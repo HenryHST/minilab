@@ -26,10 +26,13 @@ Jeder Ordner ist eine eigenständige App (Deployment/Service/IngressRoute oder H
 | drawio | `apps/drawio/` | `drawio` | `drawio.stadthagen.dev` (Port 8080) |
 | status | `apps/status/` | `uptimekuma` | `status.stadthagen.dev` (Uptime Kuma, Port 3001, hostPath `/var/lib/uptimekuma`) |
 | grafana | `apps/grafana/` | `grafana` | `grafana.stadthagen.dev` (Helm chart 10.5.15, hostPath `/var/lib/grafana`) |
+| prometheus | `apps/prometheus/` | `prometheus` | `prometheus.stadthagen.dev` (prom/prometheus:v3.7.1, scrape jobs in `scrape-config.yaml`, hostPath `/var/lib/prometheus`) |
 
 `apps/nxk3/` ist für die Umbrella-App `minilab` vorgesehen (optional / noch leer).
 
-Grafana-Werte basieren auf [JimsGarage GitOps/Grafana](https://github.com/JamesTurland/JimsGarage/tree/main/Kubernetes/GitOps/Grafana) (Helm via Kustomize, Traefik IngressRoute statt Chart-Ingress).
+Grafana-Werte basieren auf [JimsGarage GitOps/Grafana](https://github.com/JamesTurland/JimsGarage/tree/main/Kubernetes/GitOps/Grafana) (Helm via Kustomize, Traefik IngressRoute statt Chart-Ingress). Grafana Prometheus-Datasource zeigt auf `http://prometheus.prometheus.svc.cluster.local:9090`.
+
+Scrape-Jobs für Prometheus in `apps/prometheus/scrape-config.yaml` ergänzen (YAML-Liste); Reload per Deployment-Restart oder `/-/reload`.
 
 ## Neue App hinzufügen
 

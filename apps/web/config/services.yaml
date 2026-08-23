@@ -30,6 +30,10 @@
         href: https://grafana.stadthagen.dev
         icon: si-grafana-#F46800
         description: dashboards & alerting
+    - Prometheus:
+        href: https://prometheus.stadthagen.dev
+        icon: si-prometheus-#E6522C
+        description: metrics & scrape targets
     - Uptime Kuma:
         href: https://status.stadthagen.dev
         icon: si-statuspage-#300A27

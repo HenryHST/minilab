@@ -23,6 +23,10 @@ server:
   # Proxmox workers only (label worker=true); never schedule on Raspberry Pi arm64
   nodeSelector:
     worker: "true"
+  # Avoid dual ReplicaSets: RollingUpdate keeps old RS (no nodeSelector) at replicas=1
+  # while new pods are Init/volume-stuck, so workers keep landing on Pis.
+  strategy:
+    type: Recreate
   ingress:
     enabled: false
   initContainers:
@@ -46,6 +50,8 @@ worker:
   replicas: 1
   nodeSelector:
     worker: "true"
+  strategy:
+    type: Recreate
   initContainers:
     - name: volume-permissions
       image: busybox:1.37

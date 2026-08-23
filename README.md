@@ -24,7 +24,7 @@ Jeder Ordner ist eine eigenständige App (Deployment/Service/IngressRoute oder H
 | pgweb | `apps/pgweb/` | `pgweb` | `pgweb.stadthagen.dev` (Port 8081) |
 | web | `apps/web/` | `homepage` | `web.stadthagen.dev` (gethomepage) |
 | drawio | `apps/drawio/` | `drawio` | `drawio.stadthagen.dev` (Port 8080) |
-| status | `apps/status/` | `uptimekuma` | `status.stadthagen.dev` (Uptime Kuma, Port 3001) |
+| status | `apps/status/` | `uptimekuma` | `status.stadthagen.dev` (Uptime Kuma, Port 3001, hostPath `/var/lib/uptimekuma`) |
 
 `apps/nxk3/` ist für die Umbrella-App `minilab` vorgesehen (optional / noch leer).
 

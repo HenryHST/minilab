@@ -1,0 +1,87 @@
+# Secrets (not in Git): create via Infra_LAB SecretSpec → namespace authentik
+#   secret/authentik-credentials  (AUTHENTIK_* + password for Bitnami PG)
+#
+# Pre-cutover test (DNS still on Docker host):
+#   curl --resolve idp.stadthagen.dev:443:192.168.0.215 -skI https://idp.stadthagen.dev/
+
+authentik:
+  log_level: info
+  error_reporting:
+    enabled: false
+  # secret_key + postgresql.password come from envFrom (AUTHENTIK_*)
+  secret_key: ""
+  postgresql:
+    password: ""
+
+global:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  envFrom:
+    - secretRef:
+        name: authentik-credentials
+  volumes:
+    - name: media
+      persistentVolumeClaim:
+        claimName: authentik-media
+  volumeMounts:
+    - name: media
+      mountPath: /media
+
+server:
+  replicas: 1
+  ingress:
+    enabled: false
+  initContainers:
+    - name: volume-permissions
+      image: busybox:1.37
+      command: ["sh", "-c", "chown -R 1000:1000 /media"]
+      securityContext:
+        runAsUser: 0
+      volumeMounts:
+        - name: media
+          mountPath: /media
+  volumes:
+    - name: media
+      persistentVolumeClaim:
+        claimName: authentik-media
+  volumeMounts:
+    - name: media
+      mountPath: /media
+
+worker:
+  replicas: 1
+  initContainers:
+    - name: volume-permissions
+      image: busybox:1.37
+      command: ["sh", "-c", "chown -R 1000:1000 /media"]
+      securityContext:
+        runAsUser: 0
+      volumeMounts:
+        - name: media
+          mountPath: /media
+  volumes:
+    - name: media
+      persistentVolumeClaim:
+        claimName: authentik-media
+  volumeMounts:
+    - name: media
+      mountPath: /media
+
+postgresql:
+  enabled: true
+  auth:
+    username: authentik
+    database: authentik
+    existingSecret: authentik-credentials
+    secretKeys:
+      adminPasswordKey: password
+  primary:
+    persistence:
+      enabled: true
+      storageClass: longhorn
+      size: 8Gi
+
+redis:
+  enabled: false

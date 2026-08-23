@@ -39,6 +39,29 @@ grafana.ini:
     check_for_updates: true
   log:
     mode: console
+  auth:
+    disable_login_form: false
+    oauth_auto_login: false
+  auth.generic_oauth:
+    enabled: true
+    name: authentik
+    allow_sign_up: true
+    client_id: $__file{/etc/secrets/grafana-oauth/client-id}
+    client_secret: $__file{/etc/secrets/grafana-oauth/client-secret}
+    scopes: openid profile email
+    auth_url: https://idp.stadthagen.dev/application/o/authorize/
+    token_url: https://idp.stadthagen.dev/application/o/token/
+    api_url: https://idp.stadthagen.dev/application/o/userinfo/
+    signout_redirect_url: https://idp.stadthagen.dev/application/o/grafana/end-session/
+    role_attribute_path: contains(groups[*], 'Grafana Admins') && 'Admin' || contains(groups[*], 'Grafana Editors') && 'Editor' || 'Viewer'
+
+# Secret created by Infra_LAB --tags secrets (grafana/grafana-oauth)
+extraSecretMounts:
+  - name: grafana-oauth
+    secretName: grafana-oauth
+    mountPath: /etc/secrets/grafana-oauth
+    readOnly: true
+    optional: true
 
 resources:
   requests:

@@ -25,8 +25,11 @@ Jeder Ordner ist eine eigenständige App (Deployment/Service/IngressRoute oder H
 | web | `apps/web/` | `homepage` | `web.stadthagen.dev` (gethomepage) |
 | drawio | `apps/drawio/` | `drawio` | `drawio.stadthagen.dev` (Port 8080) |
 | status | `apps/status/` | `uptimekuma` | `status.stadthagen.dev` (Uptime Kuma, Port 3001, hostPath `/var/lib/uptimekuma`) |
+| grafana | `apps/grafana/` | `grafana` | `grafana.stadthagen.dev` (Helm chart 10.5.15, hostPath `/var/lib/grafana`) |
 
 `apps/nxk3/` ist für die Umbrella-App `minilab` vorgesehen (optional / noch leer).
+
+Grafana-Werte basieren auf [JimsGarage GitOps/Grafana](https://github.com/JamesTurland/JimsGarage/tree/main/Kubernetes/GitOps/Grafana) (Helm via Kustomize, Traefik IngressRoute statt Chart-Ingress).
 
 ## Neue App hinzufügen
 

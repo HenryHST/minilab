@@ -26,6 +26,10 @@
         icon: si-diagramsdotnet-#F08705
         description: diagram editor
 - Monitoring:
+    - Grafana:
+        href: https://grafana.stadthagen.dev
+        icon: si-grafana-#F46800
+        description: dashboards & alerting
     - Uptime Kuma:
         href: https://status.stadthagen.dev
         icon: si-statuspage-#300A27

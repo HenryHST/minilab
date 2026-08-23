@@ -1,0 +1,42 @@
+# Grafana Helm values — adapted from JimsGarage GitOps layout:
+# https://github.com/JamesTurland/JimsGarage/tree/main/Kubernetes/GitOps/Grafana
+
+ingress:
+  enabled: false
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+deploymentStrategy:
+  type: Recreate
+
+nodeSelector:
+  worker: "true"
+
+# No StorageClass on nXk3 — bind Helm PVC to hostPath PV (see pv.yaml / pvc.yaml)
+persistence:
+  enabled: true
+  type: pvc
+  existingClaim: grafana-data
+  storageClassName: ""
+
+grafana.ini:
+  server:
+    root_url: https://grafana.stadthagen.dev
+    domain: grafana.stadthagen.dev
+  users:
+    allow_sign_up: false
+  analytics:
+    check_for_updates: true
+  log:
+    mode: console
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 512Mi

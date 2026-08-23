@@ -4,4 +4,5 @@ namespace: pgweb
 resources:
   - deployment.yaml
   - service.yaml
+  - certificate.yaml
   - ingressroute.yaml

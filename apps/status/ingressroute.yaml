@@ -14,4 +14,4 @@ spec:
         - name: status
           port: 3001
   tls:
-    secretName: stadthagen-tls
+    secretName: status-tls

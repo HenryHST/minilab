@@ -7,4 +7,5 @@ resources:
   - scrape-config.yaml
   - deployment.yaml
   - service.yaml
+  - certificate.yaml
   - ingressroute.yaml

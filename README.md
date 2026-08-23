@@ -45,11 +45,17 @@ Scrape-Jobs für Prometheus in `apps/prometheus/scrape-config.yaml` ergänzen (Y
 
 ## TLS
 
-IngressRoutes referenzieren das Secret `stadthagen-tls` im App-Namespace. Einmalig aus `traefik` kopieren:
+IngressRoutes nutzen **cert-manager** (`Certificate` + `ClusterIssuer letsencrypt-prod`). Pro App existiert `certificate.yaml`; das TLS-Secret heißt `<app>-tls` (z. B. `grafana-tls`).
+
+Voraussetzungen:
+
+- Argo-App `cert-manager` synced (Webhook + ClusterIssuer)
+- Secret `hetzner` in `certmanager` (Ansible `--tags secrets`)
+- DNS A-Record → Traefik LB (`192.168.0.215`)
 
 ```bash
-kubectl get secret stadthagen-tls -n traefik -o yaml \
-  | sed 's/namespace: traefik/namespace: <APP_NAMESPACE>/' | kubectl apply -f -
+kubectl -n grafana get certificate,secret
+kubectl get clusterissuer letsencrypt-prod
 ```
 
-DNS für App-Hosts → Traefik LB (`192.168.0.215`).
+Altes manuelles Kopieren von `stadthagen-tls` aus `traefik` ist nicht mehr nötig.

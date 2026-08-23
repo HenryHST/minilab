@@ -14,4 +14,4 @@ spec:
         - name: prometheus
           port: 9090
   tls:
-    secretName: stadthagen-tls
+    secretName: prometheus-tls

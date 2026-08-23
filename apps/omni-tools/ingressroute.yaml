@@ -14,4 +14,4 @@ spec:
         - name: omni-tools
           port: 80
   tls:
-    secretName: stadthagen-tls
+    secretName: omni-tools-tls

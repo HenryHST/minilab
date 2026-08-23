@@ -14,4 +14,4 @@ spec:
         - name: drawio
           port: 8080
   tls:
-    secretName: stadthagen-tls
+    secretName: drawio-tls

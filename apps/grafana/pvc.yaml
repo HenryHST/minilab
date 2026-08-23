@@ -5,8 +5,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: ""
-  volumeName: grafana-data
+  storageClassName: longhorn
   resources:
     requests:
       storage: 10Gi

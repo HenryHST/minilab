@@ -9,7 +9,6 @@ helmCharts:
     namespace: grafana
     valuesFile: values.yaml
 resources:
-  - pv.yaml
   - pvc.yaml
   - ingressroute.yaml
   - datasources.yaml

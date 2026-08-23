@@ -16,16 +16,11 @@ deploymentStrategy:
 nodeSelector:
   worker: "true"
 
-# No StorageClass on nXk3 — bind Helm PVC to hostPath PV (see pv.yaml / pvc.yaml)
 persistence:
   enabled: true
   type: pvc
   existingClaim: grafana-data
-  storageClassName: ""
-
-# hostPath ownership already set; chown fails on existing subdirs after restart
-initChownData:
-  enabled: false
+  storageClassName: longhorn
 
 # Provision Prometheus + Loki from ConfigMap datasources.yaml
 extraConfigmapMounts:

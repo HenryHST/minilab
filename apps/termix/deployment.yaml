@@ -22,7 +22,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: termix
-          image: ghcr.io/lukegus/termix:release-2.7.0
+          image: ghcr.io/lukegus/termix:release-2.7.1
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

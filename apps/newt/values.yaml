@@ -5,3 +5,13 @@ newtInstances:
     acceptClients: true
     auth:
       existingSecretName: newt-main-tunnel-auth
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: kubernetes.io/arch
+                  operator: In
+                  values:
+                    - arm64

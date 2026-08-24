@@ -30,19 +30,11 @@ spec:
       labels:
         app: termix-postgres
     spec:
+      # Pin to one Proxmox worker — Longhorn currently has insufficient disk for new volumes
       nodeSelector:
-        worker: "true"
-      # Prefer Proxmox Longhorn workers over Pis
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: node.longhorn.io/create-default-disk
-                    operator: In
-                    values:
-                      - "true"
+        kubernetes.io/hostname: nxk3-w01
+      securityContext:
+        fsGroup: 999
       containers:
         - name: postgres
           image: postgres:16-alpine
@@ -81,15 +73,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-        annotations:
-          # Lab disk pressure: one replica is enough for Termix PG
-          longhorn.io/numberOfReplicas: "1"
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        storageClassName: longhorn
-        resources:
-          requests:
-            storage: 1Gi
+      volumes:
+        - name: data
+          hostPath:
+            path: /var/lib/termix-postgres
+            type: DirectoryOrCreate

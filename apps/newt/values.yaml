@@ -1,0 +1,7 @@
+# Credentials live in Secret newt-main-tunnel-auth (SecretSpec via Infra_LAB).
+newtInstances:
+  - name: main-tunnel
+    enabled: true
+    acceptClients: true
+    auth:
+      existingSecretName: newt-main-tunnel-auth

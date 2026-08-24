@@ -84,9 +84,12 @@ spec:
   volumeClaimTemplates:
     - metadata:
         name: data
+        annotations:
+          # Lab disk pressure: one replica is enough for Termix PG
+          longhorn.io/numberOfReplicas: "1"
       spec:
         accessModes: ["ReadWriteOnce"]
         storageClassName: longhorn
         resources:
           requests:
-            storage: 5Gi
+            storage: 1Gi

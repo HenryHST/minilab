@@ -34,6 +34,29 @@ spec:
               value: /app/data
             - name: NODE_ENV
               value: production
+            - name: DATABASE_DIALECT
+              value: sqlite
+            - name: ALLOW_REGISTRATION
+              value: "false"
+            - name: ALLOW_PASSWORD_RESET
+              value: "true"
+            - name: OIDC_FORCE_HTTPS
+              value: "true"
+            - name: OIDC_ALLOW_REGISTRATION
+              value: "true"
+            - name: OIDC_CLIENT_ID
+              value: termix
+            - name: OIDC_ISSUER_URL
+              value: https://idp.stadthagen.dev/application/o/termix/
+            - name: OIDC_AUTHORIZATION_URL
+              value: https://idp.stadthagen.dev/application/o/authorize/
+            - name: OIDC_TOKEN_URL
+              value: https://idp.stadthagen.dev/application/o/token/
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: termix-oauth
+                  key: client-secret
             - name: GUACD_HOST
               value: "127.0.0.1"
             - name: GUACD_TUNNEL_HOST

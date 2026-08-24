@@ -26,11 +26,10 @@ singleBinary:
   nodeSelector:
     node.longhorn.io/create-default-disk: "true"
   persistence:
-    enabled: true
-    storageClass: longhorn
-    size: 10Gi
-    annotations:
-      longhorn.io/volume-replica-count: "1"
+    enabled: false
+    dataVolumeParameters:
+      persistentVolumeClaim:
+        claimName: loki-data
 
 gateway:
   enabled: true

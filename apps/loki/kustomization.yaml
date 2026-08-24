@@ -9,5 +9,6 @@ helmCharts:
     namespace: loki
     valuesFile: values.yaml
 resources:
+  - pvc.yaml
   - certificate.yaml
   - ingressroute.yaml

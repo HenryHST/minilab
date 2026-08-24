@@ -24,7 +24,7 @@ loki:
 singleBinary:
   replicas: 1
   nodeSelector:
-    node.longhorn.io/create-default-disk: "true"
+    kubernetes.io/hostname: nxk3-w02
   persistence:
     enabled: false
     dataVolumeParameters:
@@ -34,7 +34,7 @@ singleBinary:
 gateway:
   enabled: true
   nodeSelector:
-    node.longhorn.io/create-default-disk: "true"
+    kubernetes.io/hostname: nxk3-w02
 
 lokiCanary:
   enabled: false

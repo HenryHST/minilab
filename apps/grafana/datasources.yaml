@@ -29,3 +29,13 @@ data:
         jsonData:
           maxLines: 1000
           tlsSkipVerify: false
+
+      - name: Alertmanager
+        type: alertmanager
+        uid: alertmanager
+        access: proxy
+        url: http://alertmanager.alertmanager.svc.cluster.local:9093
+        editable: false
+        jsonData:
+          implementation: prometheus
+          handleGrafanaManagedAlerts: false

@@ -60,6 +60,9 @@ spec:
             - name: scrape-config
               mountPath: /etc/prometheus/scrape_configs
               readOnly: true
+            - name: rules
+              mountPath: /etc/prometheus/rules
+              readOnly: true
             - name: data
               mountPath: /prometheus
       volumes:
@@ -69,6 +72,9 @@ spec:
         - name: scrape-config
           configMap:
             name: prometheus-scrape-config
+        - name: rules
+          configMap:
+            name: prometheus-rules
         - name: data
           persistentVolumeClaim:
             claimName: prometheus-data

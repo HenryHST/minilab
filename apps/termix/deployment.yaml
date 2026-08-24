@@ -16,6 +16,7 @@ spec:
     spec:
       nodeSelector:
         worker: "true"
+        kubernetes.io/hostname: nxk3-w01
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
@@ -90,5 +91,6 @@ spec:
               mountPath: /termix-data
       volumes:
         - name: data
-          persistentVolumeClaim:
-            claimName: termix-data
+          hostPath:
+            path: /var/lib/termix
+            type: DirectoryOrCreate

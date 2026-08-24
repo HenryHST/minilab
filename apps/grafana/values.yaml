@@ -81,7 +81,7 @@ grafana.ini:
   auth.generic_oauth:
     enabled: true
     name: authentik
-    allow_sign_up: false
+    allow_sign_up: true
     client_id: $__file{/etc/secrets/auth_generic_oauth/client-id}
     client_secret: $__file{/etc/secrets/auth_generic_oauth/client-secret}
     scopes: openid profile email

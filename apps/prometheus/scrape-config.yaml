@@ -51,3 +51,9 @@ data:
         static_configs:
           - targets:
               - unpoller.unpoller.svc.cluster.local:9130
+      - job_name: authentik
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - authentik-server-metrics.authentik.svc.cluster.local:9300
+              - authentik-worker-metrics.authentik.svc.cluster.local:9300

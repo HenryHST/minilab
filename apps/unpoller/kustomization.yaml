@@ -4,7 +4,7 @@ namespace: unpoller
 helmCharts:
   - name: unpoller
     repo: https://unpoller.github.io/helm-chart
-    version: 2.11.2-Chart6
+    version: 2.4.0
     releaseName: unpoller
     namespace: unpoller
     valuesFile: values.yaml

@@ -6,3 +6,4 @@ resources:
   - service.yaml
   - certificate.yaml
   - ingressroute.yaml
+  - backup-cronjob.yaml

@@ -1,0 +1,112 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backup-runner
+  namespace: uptimekuma
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: backup-runner-role
+  namespace: uptimekuma
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: backup-runner-rolebinding
+  namespace: uptimekuma
+subjects:
+  - kind: ServiceAccount
+    name: backup-runner
+    namespace: uptimekuma
+roleRef:
+  kind: Role
+  name: backup-runner-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# PV carries mountOptions (core Pod nfs volumes cannot); UniFi NAS needs NFSv3 + nolock.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: uptimekuma-backups-nfs
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=3
+    - nolock
+  nfs:
+    server: 192.168.0.25
+    path: /var/nfs/shared/infra01/uptimekuma-backups
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: uptimekuma-backups
+  namespace: uptimekuma
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: uptimekuma-backups-nfs
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kuma-backup-cron
+  namespace: uptimekuma
+spec:
+  schedule: "0 1 * * *" # 01:00 UTC ≈ 03:00 CEST
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          serviceAccountName: backup-runner
+          restartPolicy: Never
+          containers:
+            - name: trigger-backup
+              image: alpine/k8s:1.32.0
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  POD="$(kubectl -n uptimekuma get pod -l app=status -o jsonpath='{.items[0].metadata.name}')"
+                  if [[ -z "${POD}" ]]; then
+                    echo "No status pod found in namespace uptimekuma" >&2
+                    exit 1
+                  fi
+                  OUT="/backup/uptimekuma-$(date -u +%Y%m%d-%H%M%S).tar.gz"
+                  echo "Backing up pod/${POD} /app/data -> ${OUT}"
+                  kubectl -n uptimekuma exec "${POD}" -c status -- tar czf - -C /app/data . > "${OUT}"
+                  ls -lh "${OUT}"
+                  # Retention: keep last 7 archives
+                  ls -1t /backup/uptimekuma-*.tar.gz 2>/dev/null | tail -n +8 | xargs -r rm -f
+                  echo "Done. Archives:"
+                  ls -1t /backup/uptimekuma-*.tar.gz 2>/dev/null || true
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+          volumes:
+            - name: backup
+              persistentVolumeClaim:
+                claimName: uptimekuma-backups

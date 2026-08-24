@@ -23,6 +23,8 @@ loki:
 
 singleBinary:
   replicas: 1
+  nodeSelector:
+    node.longhorn.io/create-default-disk: "true"
   persistence:
     enabled: true
     storageClass: longhorn
@@ -32,6 +34,11 @@ singleBinary:
 
 gateway:
   enabled: true
+  nodeSelector:
+    node.longhorn.io/create-default-disk: "true"
+
+lokiCanary:
+  enabled: false
 
 backend:
   replicas: 0

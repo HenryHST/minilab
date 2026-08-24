@@ -46,3 +46,8 @@ data:
         static_configs:
           - targets:
               - ha02.stadthagen.dev:9100
+      - job_name: unpoller
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - unpoller.unpoller.svc.cluster.local:9130

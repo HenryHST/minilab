@@ -29,6 +29,47 @@ extraConfigmapMounts:
     mountPath: /etc/grafana/provisioning/datasources
     readOnly: true
 
+# Official UniFi Poller Prometheus dashboards (grafana.com / unpoller/dashboards)
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: unpoller
+        orgId: 1
+        folder: UniFi Poller
+        type: file
+        disableDeletion: false
+        editable: false
+        options:
+          path: /var/lib/grafana/dashboards/unpoller
+
+dashboards:
+  unpoller:
+    client-dpi:
+      gnetId: 11310
+      revision: 10
+      datasource: Prometheus
+    network-sites:
+      gnetId: 11311
+      revision: 10
+      datasource: Prometheus
+    usw-insights:
+      gnetId: 11312
+      revision: 10
+      datasource: Prometheus
+    usg-insights:
+      gnetId: 11313
+      revision: 10
+      datasource: Prometheus
+    uap-insights:
+      gnetId: 11314
+      revision: 10
+      datasource: Prometheus
+    client-insights:
+      gnetId: 11315
+      revision: 10
+      datasource: Prometheus
+
 grafana.ini:
   server:
     root_url: https://grafana.stadthagen.dev

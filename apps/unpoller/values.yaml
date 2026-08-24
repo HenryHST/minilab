@@ -1,0 +1,71 @@
+# UniFi credentials: Secret unpoller-unifi (SecretSpec via Infra_LAB).
+# No Prometheus/Grafana Operator CRDs — scrape + dashboards wired externally.
+
+replicaCount: 1
+
+nodeSelector:
+  worker: "true"
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 9130
+
+podMonitor:
+  enabled: false
+
+dashboards:
+  create: false
+  grafana:
+    create: false
+
+# Prometheus-only base config; controller comes from UP_UNIFI_* env.
+upConfig: |
+  [poller]
+  debug = false
+  quiet = false
+  plugins = []
+  [prometheus]
+  disable = false
+  http_listen = "0.0.0.0:9130"
+  report_errors = false
+  [influxdb]
+  disable = true
+  [unifi]
+  dynamic = false
+  [loki]
+  disable = true
+
+extraEnv:
+  - name: UP_UNIFI_DEFAULT_URL
+    valueFrom:
+      secretKeyRef:
+        name: unpoller-unifi
+        key: url
+  - name: UP_UNIFI_DEFAULT_USER
+    valueFrom:
+      secretKeyRef:
+        name: unpoller-unifi
+        key: user
+  - name: UP_UNIFI_DEFAULT_PASS
+    valueFrom:
+      secretKeyRef:
+        name: unpoller-unifi
+        key: pass
+  - name: UP_UNIFI_CONTROLLER_TYPE
+    value: unifi_os
+  - name: UP_UNIFI_DEFAULT_VERIFY_SSL
+    value: "false"
+  - name: UP_UNIFI_DEFAULT_SITE_0
+    value: default
+  - name: UP_PROMETHEUS_DISABLE
+    value: "false"
+  - name: UP_PROMETHEUS_NAMESPACE
+    value: unpoller
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 256Mi

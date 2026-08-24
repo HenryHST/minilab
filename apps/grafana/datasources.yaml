@@ -23,7 +23,7 @@ data:
         type: loki
         uid: loki
         access: proxy
-        url: https://loki.stadthagen.dev
+        url: http://loki-gateway.loki.svc.cluster.local
         isDefault: false
         editable: false
         jsonData:

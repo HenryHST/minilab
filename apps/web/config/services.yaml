@@ -50,6 +50,10 @@
         href: https://alert-manager.stadthagen.dev
         icon: si-prometheus-#E6522C
         description: alert routing & silences
+    - Loki:
+        href: https://loki.stadthagen.dev
+        icon: si-grafana-#F46800
+        description: log aggregation
     - Uptime Kuma:
         href: https://status.stadthagen.dev
         icon: si-statuspage-#300A27

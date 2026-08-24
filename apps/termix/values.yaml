@@ -1,0 +1,128 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/lukegus/termix
+  pullPolicy: IfNotPresent
+  tag: release-2.7.1
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 0
+    maxSurge: 1
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+nodeSelector:
+  worker: "true"
+
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: termix
+            app.kubernetes.io/instance: termix
+        topologyKey: kubernetes.io/hostname
+
+persistence:
+  enabled: false
+
+database:
+  dialect: postgres
+  existingSecret:
+    name: termix-ha
+    urlKey: DATABASE_URL
+
+secrets:
+  create: false
+
+env:
+  PORT: "8080"
+  DATA_DIR: /app/data
+  NODE_ENV: production
+  ALLOW_REGISTRATION: "false"
+  ALLOW_PASSWORD_RESET: "true"
+  OIDC_FORCE_HTTPS: "true"
+  OIDC_ALLOW_REGISTRATION: "true"
+  OIDC_CLIENT_ID: termix
+  OIDC_ISSUER_URL: https://idp.stadthagen.dev/application/o/termix/
+  OIDC_AUTHORIZATION_URL: https://idp.stadthagen.dev/application/o/authorize/
+  OIDC_TOKEN_URL: https://idp.stadthagen.dev/application/o/token/
+  OIDC_SCOPES: openid email profile
+  OIDC_ADMIN_GROUP: Termix Admins
+  OIDC_GROUP_CLAIM: groups
+  DATABASE_POOL_MAX: "10"
+  GUACD_RECORDING_PATH: /termix-data/session_recordings/guacamole
+  GUACD_RECORDING_BACKEND_PATH: /app/data/session_recordings/guacamole
+
+extraEnv:
+  - name: GUACD_TUNNEL_HOST
+    value: "127.0.0.1"
+  - name: OIDC_CLIENT_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: termix-oauth
+        key: client-secret
+  - name: JWT_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: termix-ha
+        key: JWT_SECRET
+  - name: ENCRYPTION_KEY
+    valueFrom:
+      secretKeyRef:
+        name: termix-ha
+        key: ENCRYPTION_KEY
+  - name: OIDC_SYSTEM_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: termix-ha
+        key: OIDC_SYSTEM_SECRET
+  - name: WEBAUTHN_SYSTEM_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: termix-ha
+        key: WEBAUTHN_SYSTEM_SECRET
+  - name: GUACAMOLE_ENCRYPTION_KEY
+    valueFrom:
+      secretKeyRef:
+        name: termix-ha
+        key: GUACAMOLE_ENCRYPTION_KEY
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 1Gi
+
+guacd:
+  enabled: true
+  image:
+    repository: guacamole/guacd
+    tag: "1.6.0"
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
+
+ingress:
+  enabled: false
+
+traefik:
+  ingressRoute:
+    enabled: true
+    entryPoints:
+      - websecure
+    host: termix.stadthagen.dev
+    pathPrefix: /
+    tls:
+      enabled: true
+      secretName: termix-tls
+    annotations:
+      kubernetes.io/ingress.class: traefik-external

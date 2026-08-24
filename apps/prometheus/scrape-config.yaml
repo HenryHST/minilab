@@ -30,7 +30,7 @@ data:
         scrape_interval: 15s
         static_configs:
           - targets:
-              - pexpve02.stadthagen.dev:9100
+              - pexpve02.stadthagen.dev:9221
       - job_name: pexpve03
         scrape_interval: 15s
         static_configs:
@@ -41,3 +41,8 @@ data:
         static_configs:
           - targets:
               - pangolin.stadthagen.dev:9100
+      - job_name: homeassistant
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - ha02.stadthagen.dev:9100

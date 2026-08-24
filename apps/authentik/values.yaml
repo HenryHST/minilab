@@ -1,0 +1,99 @@
+# Secrets via Infra_LAB SecretSpec → authentik-credentials (envFrom overlay)
+# Pre-cutover: curl --resolve idp.stadthagen.dev:443:192.168.0.215 -skI https://idp.stadthagen.dev/
+
+authentik:
+  log_level: info
+  error_reporting:
+    enabled: false
+  postgresql:
+    name: authentik
+    user: authentik
+  email:
+    host: mail.henrstadthagen.de
+    port: 465
+    use_tls: false
+    use_ssl: true
+    from: authentik@henrystadthagen.de
+
+global:
+  nodeSelector:
+    worker: "true"
+  deploymentStrategy:
+    type: Recreate
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    fsGroupChangePolicy: OnRootMismatch
+  envFrom:
+    - secretRef:
+        name: authentik-credentials
+  volumes:
+    - name: media
+      persistentVolumeClaim:
+        claimName: authentik-media
+  volumeMounts:
+    - name: media
+      mountPath: /media
+
+server:
+  replicas: 1
+  ingress:
+    enabled: false
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: false
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+  initContainers:
+    - name: volume-permissions
+      image: busybox:1.37
+      command: ["sh", "-c", "chown -R 1000:1000 /media"]
+      securityContext:
+        runAsUser: 0
+      volumeMounts:
+        - name: media
+          mountPath: /media
+
+worker:
+  replicas: 1
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: false
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+  initContainers:
+    - name: volume-permissions
+      image: busybox:1.37
+      command: ["sh", "-c", "chown -R 1000:1000 /media"]
+      securityContext:
+        runAsUser: 0
+      volumeMounts:
+        - name: media
+          mountPath: /media
+
+postgresql:
+  enabled: true
+  auth:
+    username: authentik
+    database: authentik
+    existingSecret: authentik-credentials
+    secretKeys:
+      adminPasswordKey: password
+  primary:
+    nodeSelector:
+      worker: "true"
+    persistence:
+      enabled: true
+      storageClass: longhorn
+      size: 8Gi
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi

@@ -1,0 +1,27 @@
+# Copy media from Docker IdP host after PVC is Bound:
+#
+#   ssh auth-host 'sudo tar -C /opt/homelab/data/authentik/media -czf - .' > /tmp/authentik-media.tgz
+#   kubectl -n authentik run media-import --rm -it --restart=Never \
+#     --image=busybox:1.37 --overrides='...' -- sh
+#
+# Or use the Job below (edit hostPath / nodeName if using a one-shot node copy).
+#
+# Prefer: kubectl cp into a temporary pod that mounts authentik-media.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: authentik-media-import
+  namespace: authentik
+spec:
+  restartPolicy: Never
+  containers:
+    - name: import
+      image: busybox:1.37
+      command: ["sleep", "3600"]
+      volumeMounts:
+        - name: media
+          mountPath: /media
+  volumes:
+    - name: media
+      persistentVolumeClaim:
+        claimName: authentik-media

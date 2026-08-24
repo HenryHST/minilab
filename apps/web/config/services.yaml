@@ -8,6 +8,10 @@
         href: https://traefik.stadthagen.dev
         icon: traefik.png
         description: Ingress LB 192.168.0.215
+    - Authentik:
+        href: https://idp.stadthagen.dev
+        icon: authentik.svg
+        description: Identity Provider (OIDC)
 - Tools:
     - Omni Tools:
         href: https://omni-tools.stadthagen.dev
@@ -25,6 +29,10 @@
         href: https://drawio.stadthagen.dev
         icon: si-diagramsdotnet-#F08705
         description: diagram editor
+    - Termix:
+        href: https://termix.stadthagen.dev
+        icon: si-gnubash-#4EAA25
+        description: SSH terminal (OIDC)
 - Monitoring:
     - Longhorn:
         href: https://longhorn.stadthagen.dev
@@ -38,6 +46,10 @@
         href: https://prometheus.stadthagen.dev
         icon: si-prometheus-#E6522C
         description: metrics & scrape targets
+    - Alertmanager:
+        href: https://alert-manager.stadthagen.dev
+        icon: si-prometheus-#E6522C
+        description: alert routing & silences
     - Uptime Kuma:
         href: https://status.stadthagen.dev
         icon: si-statuspage-#300A27

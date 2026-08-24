@@ -16,7 +16,7 @@ spec:
     spec:
       nodeSelector:
         worker: "true"
-        kubernetes.io/hostname: nxk3-w01
+        kubernetes.io/hostname: pi1cl
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
@@ -52,6 +52,12 @@ spec:
               value: https://idp.stadthagen.dev/application/o/authorize/
             - name: OIDC_TOKEN_URL
               value: https://idp.stadthagen.dev/application/o/token/
+            - name: OIDC_SCOPES
+              value: openid email profile
+            - name: OIDC_ADMIN_GROUP
+              value: Termix Admins
+            - name: OIDC_GROUP_CLAIM
+              value: groups
             - name: OIDC_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:

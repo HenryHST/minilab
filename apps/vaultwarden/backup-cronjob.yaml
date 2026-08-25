@@ -1,0 +1,112 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backup-runner
+  namespace: vaultwarden
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: backup-runner-role
+  namespace: vaultwarden
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: backup-runner-rolebinding
+  namespace: vaultwarden
+subjects:
+  - kind: ServiceAccount
+    name: backup-runner
+    namespace: vaultwarden
+roleRef:
+  kind: Role
+  name: backup-runner-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# PV carries mountOptions (core Pod nfs volumes cannot); UniFi NAS needs NFSv3 + nolock.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vaultwarden-backups-nfs
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=3
+    - nolock
+  nfs:
+    server: 192.168.0.25
+    path: /var/nfs/shared/infra01/vaultwarden-backups
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vaultwarden-backups
+  namespace: vaultwarden
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: vaultwarden-backups-nfs
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vaultwarden-backup-cron
+  namespace: vaultwarden
+spec:
+  schedule: "0 2 * * *" # 02:00 UTC ≈ 04:00 CEST (1h after kuma)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          serviceAccountName: backup-runner
+          restartPolicy: Never
+          containers:
+            - name: trigger-backup
+              image: alpine/k8s:1.32.0
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  POD="$(kubectl -n vaultwarden get pod -l app=vaultwarden -o jsonpath='{.items[0].metadata.name}')"
+                  if [[ -z "${POD}" ]]; then
+                    echo "No vaultwarden pod found in namespace vaultwarden" >&2
+                    exit 1
+                  fi
+                  OUT="/backup/vaultwarden-$(date -u +%Y%m%d-%H%M%S).tar.gz"
+                  echo "Backing up pod/${POD} /data -> ${OUT}"
+                  kubectl -n vaultwarden exec "${POD}" -c vaultwarden -- tar czf - -C /data . > "${OUT}"
+                  ls -lh "${OUT}"
+                  # Retention: keep last 7 archives
+                  ls -1t /backup/vaultwarden-*.tar.gz 2>/dev/null | tail -n +8 | xargs -r rm -f
+                  echo "Done. Archives:"
+                  ls -1t /backup/vaultwarden-*.tar.gz 2>/dev/null || true
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+          volumes:
+            - name: backup
+              persistentVolumeClaim:
+                claimName: vaultwarden-backups

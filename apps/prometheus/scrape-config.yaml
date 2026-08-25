@@ -5,7 +5,9 @@ metadata:
 data:
   # Add scrape jobs under scrape_configs. Prometheus loads all *.yaml from
   # /etc/prometheus/scrape_configs via scrape_config_files (see config.yaml).
-  # After editing: POST to /-/reload (lifecycle enabled) or restart the Deployment.
+  # After editing scrape jobs, the config-reloader sidecar POSTs to /-/reload
+  # automatically when this ConfigMap changes. Manual reload still works:
+  # curl -X POST https://prometheus.stadthagen.dev/-/reload
   #
   # Example:
   # scrape_configs:
@@ -57,3 +59,18 @@ data:
           - targets:
               - authentik-server-metrics.authentik.svc.cluster.local:9300
               - authentik-worker-metrics.authentik.svc.cluster.local:9300
+      - job_name: argocd-server
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - argo-cd-argocd-server-metrics.argocd.svc.cluster.local:8083
+      - job_name: argocd-repo-server
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - argo-cd-argocd-repo-server-metrics.argocd.svc.cluster.local:8084
+      - job_name: argocd-application-controller
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - argo-cd-argocd-application-controller-metrics.argocd.svc.cluster.local:8082

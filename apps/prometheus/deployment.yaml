@@ -65,6 +65,25 @@ spec:
               readOnly: true
             - name: data
               mountPath: /prometheus
+        - name: config-reloader
+          image: ghcr.io/jimmidyson/configmap-reload:v0.15.0
+          args:
+            - --volume-dir=/etc/prometheus/scrape_configs
+            - --volume-dir=/etc/prometheus/rules
+            - --webhook-url=http://localhost:9090/-/reload
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 32Mi
+          volumeMounts:
+            - name: scrape-config
+              mountPath: /etc/prometheus/scrape_configs
+              readOnly: true
+            - name: rules
+              mountPath: /etc/prometheus/rules
+              readOnly: true
       volumes:
         - name: config
           configMap:

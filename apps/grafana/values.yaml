@@ -30,6 +30,7 @@ extraConfigmapMounts:
     readOnly: true
 
 # Official UniFi Poller Prometheus dashboards (grafana.com / unpoller/dashboards)
+# plus Argo CD / Authentik / Home Assistant
 dashboardProviders:
   dashboardproviders.yaml:
     apiVersion: 1
@@ -42,6 +43,30 @@ dashboardProviders:
         editable: false
         options:
           path: /var/lib/grafana/dashboards/unpoller
+      - name: argocd
+        orgId: 1
+        folder: Argo CD
+        type: file
+        disableDeletion: false
+        editable: false
+        options:
+          path: /var/lib/grafana/dashboards/argocd
+      - name: authentik
+        orgId: 1
+        folder: Authentik
+        type: file
+        disableDeletion: false
+        editable: false
+        options:
+          path: /var/lib/grafana/dashboards/authentik
+      - name: homeassistant
+        orgId: 1
+        folder: Home Assistant
+        type: file
+        disableDeletion: false
+        editable: false
+        options:
+          path: /var/lib/grafana/dashboards/homeassistant
 
 dashboards:
   unpoller:
@@ -69,6 +94,18 @@ dashboards:
       gnetId: 11315
       revision: 10
       datasource: Prometheus
+  argocd:
+    operational-overview:
+      gnetId: 19993
+      datasource: Prometheus
+  authentik:
+    authentik:
+      gnetId: 14837
+      datasource: Prometheus
+  homeassistant:
+    overview:
+      gnetId: 16888
+      datasource: Prometheus
 
 grafana.ini:
   server:
@@ -77,7 +114,7 @@ grafana.ini:
   users:
     allow_sign_up: false
   auth:
-    oauth_auto_login: true
+    oauth_auto_login: false
   auth.generic_oauth:
     enabled: true
     name: authentik
@@ -90,6 +127,7 @@ grafana.ini:
     api_url: https://idp.stadthagen.dev/application/o/userinfo/
     signout_redirect_url: https://idp.stadthagen.dev/application/o/grafana/end-session/
     role_attribute_path: "contains(groups[*], 'Grafana Admins') && 'Admin' || contains(groups[*], 'Grafana Editors') && 'Editor' || 'Viewer'"
+    role_attribute_strict: false
   analytics:
     check_for_updates: true
   log:

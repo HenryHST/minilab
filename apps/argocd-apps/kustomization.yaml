@@ -11,6 +11,7 @@ resources:
   - unifipoller.yaml
   - authentik.yaml
   - termix.yaml
+  - headlamp.yaml
   - omni-tools.yaml
   - it-tools.yaml
   - pgweb.yaml

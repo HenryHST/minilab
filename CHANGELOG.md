@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2026-08-25
+
+### Added
+
+- App-of-Apps under `apps/argocd-apps/` with sync waves; AppProject `infrastruktur` (parent Application `homelab` from Infra_LAB)
+- `longhorn` — Longhorn v1.12.1, NFS backup target
+- `grafana` — Helm chart; Authentik generic OAuth (local login + SSO); provisioned dashboards (UniFi Poller, Argo CD, Authentik, Home Assistant)
+- `prometheus` — scrape jobs for Proxmox exporters, Pangolin, Home Assistant, Unpoller, Authentik, Argo CD metrics; configmap-reload sidecar
+- `grafana-loki` — Loki + Grafana datasource wiring
+- `alertmanager` — alert routing wired with Prometheus/Grafana
+- `newt` — Pangolin tunnel agent
+- `unifipoller` — Unpoller Helm + Grafana dashboards
+- `termix` — Termix Helm + Postgres HA, Authentik OIDC
+- `vaultwarden` — Vaultwarden 1.37.2 with Authentik SSO; daily NFS backup CronJob
+- `headlamp` — Headlamp 0.45.0 in `kube-system` with cert-manager/Gatekeeper plugins; login SA + long-lived token Secret
+- cert-manager — Hetzner DNS-01 webhook, ClusterIssuer, Certificates for IngressRoute apps
+- `web` (Homepage) — image v2.1.2; Argo CD service widget (`HOMEPAGE_VAR_ARGOCD_KEY`)
+- Uptime Kuma (`status`) — daily NFS backup CronJob
+
+### Changed
+
+- Grafana: `oauth_auto_login: false` so password and Authentik SSO both work; role mapping via `Grafana Admins` / `Grafana Editors`
+- Loki storage: Longhorn PVC / node pinning and related disk-pressure fixes
+- Termix: HA chart, OIDC admin group, hostPath/PVC sizing fixes
+- AppProject destinations include `kube-system` for cert-manager RBAC
+
+### Notes
+
+- Traefik IngressRoutes use cert-manager Certificates (`*-tls`); Longhorn is the default StorageClass where applicable
+
 ## [0.5.0] - 2026-08-23
 
 ### Added

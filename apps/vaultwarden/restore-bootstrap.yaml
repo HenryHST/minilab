@@ -1,0 +1,229 @@
+# Bootstrap restore from NFS (cluster rebuild). Default is off — set ConfigMap enabled=true
+# (and force=true if data PVC already has db.sqlite3) then Argo Sync; set enabled=false after.
+#
+# PostSync Job mounts only RWX NFS so it can start while Vaultwarden holds the RWO data PVC.
+# After scale-to-0 it creates a short-lived worker Pod that mounts data + backup + this script.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vaultwarden-restore
+  namespace: vaultwarden
+data:
+  enabled: "false"
+  archive: "latest"
+  force: "false"
+  replicas: "1"
+  worker.sh: |
+    #!/bin/sh
+    set -euo pipefail
+    HAS_DB=0
+    if [ -f /data/db.sqlite3 ]; then
+      HAS_DB=1
+    fi
+    echo "db.sqlite3 present=${HAS_DB}"
+    if [ "${HAS_DB}" = "1" ] && [ "${RESTORE_FORCE}" != "true" ]; then
+      echo "data not empty and force!=true — abort" >&2
+      exit 1
+    fi
+    if [ "${RESTORE_ARCHIVE}" = "latest" ]; then
+      ARCHIVE="$(ls -1t /backup/vaultwarden-*.tar.gz 2>/dev/null | head -n1 || true)"
+    else
+      ARCHIVE="/backup/${RESTORE_ARCHIVE}"
+    fi
+    if [ -z "${ARCHIVE}" ] || [ ! -f "${ARCHIVE}" ]; then
+      echo "No backup archive found (archive=${RESTORE_ARCHIVE})" >&2
+      exit 1
+    fi
+    echo "Restoring from ${ARCHIVE}"
+    if [ "${HAS_DB}" = "1" ] || [ "${RESTORE_FORCE}" = "true" ]; then
+      echo "Clearing /data..."
+      find /data -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+    fi
+    tar xzf "${ARCHIVE}" -C /data
+    ls -la /data
+    echo "Restore OK"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vaultwarden-restore
+  namespace: vaultwarden
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vaultwarden-restore
+  namespace: vaultwarden
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale"]
+    verbs: ["get", "list", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "create", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vaultwarden-restore
+  namespace: vaultwarden
+subjects:
+  - kind: ServiceAccount
+    name: vaultwarden-restore
+    namespace: vaultwarden
+roleRef:
+  kind: Role
+  name: vaultwarden-restore
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vaultwarden-bootstrap-restore
+  namespace: vaultwarden
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      serviceAccountName: vaultwarden-restore
+      restartPolicy: Never
+      containers:
+        - name: restore
+          image: alpine/k8s:1.32.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: RESTORE_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: vaultwarden-restore
+                  key: enabled
+            - name: RESTORE_ARCHIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: vaultwarden-restore
+                  key: archive
+            - name: RESTORE_FORCE
+              valueFrom:
+                configMapKeyRef:
+                  name: vaultwarden-restore
+                  key: force
+            - name: VW_REPLICAS
+              valueFrom:
+                configMapKeyRef:
+                  name: vaultwarden-restore
+                  key: replicas
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+
+              if [[ "${RESTORE_ENABLED}" != "true" ]]; then
+                echo "vaultwarden-restore.enabled!=true — skip"
+                exit 0
+              fi
+
+              DEPLOY="vaultwarden"
+              NS="vaultwarden"
+              WORKER="vaultwarden-restore-worker"
+
+              echo "Scaling ${DEPLOY} to 0..."
+              if kubectl -n "${NS}" get deploy "${DEPLOY}" >/dev/null 2>&1; then
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas=0
+                kubectl -n "${NS}" rollout status deploy/"${DEPLOY}" --timeout=120s || true
+                for i in $(seq 1 60); do
+                  N="$(kubectl -n "${NS}" get pods -l app=vaultwarden --field-selector=status.phase!=Succeeded,status.phase!=Failed -o name 2>/dev/null | wc -l | tr -d ' ')"
+                  [[ "${N}" == "0" ]] && break
+                  sleep 2
+                done
+              fi
+
+              kubectl -n "${NS}" delete pod "${WORKER}" --ignore-not-found --wait=true
+
+              cat <<EOF | kubectl apply -f -
+              apiVersion: v1
+              kind: Pod
+              metadata:
+                name: ${WORKER}
+                namespace: ${NS}
+                labels:
+                  app: vaultwarden-restore-worker
+              spec:
+                restartPolicy: Never
+                containers:
+                  - name: restore
+                    image: alpine:3.20
+                    imagePullPolicy: IfNotPresent
+                    env:
+                      - name: RESTORE_ARCHIVE
+                        value: "${RESTORE_ARCHIVE}"
+                      - name: RESTORE_FORCE
+                        value: "${RESTORE_FORCE}"
+                    command: ["/bin/sh", "/scripts/worker.sh"]
+                    volumeMounts:
+                      - name: data
+                        mountPath: /data
+                      - name: backup
+                        mountPath: /backup
+                      - name: scripts
+                        mountPath: /scripts
+                volumes:
+                  - name: data
+                    persistentVolumeClaim:
+                      claimName: vaultwarden-data
+                  - name: backup
+                    persistentVolumeClaim:
+                      claimName: vaultwarden-backups
+                  - name: scripts
+                    configMap:
+                      name: vaultwarden-restore
+                      defaultMode: 0755
+              EOF
+
+              echo "Waiting for worker ${WORKER}..."
+              for i in $(seq 1 120); do
+                PHASE="$(kubectl -n "${NS}" get pod "${WORKER}" -o jsonpath='{.status.phase}' 2>/dev/null || true)"
+                case "${PHASE}" in
+                  Succeeded)
+                    kubectl -n "${NS}" logs "${WORKER}" || true
+                    break
+                    ;;
+                  Failed)
+                    kubectl -n "${NS}" logs "${WORKER}" || true
+                    kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${VW_REPLICAS}" || true
+                    kubectl -n "${NS}" delete pod "${WORKER}" --ignore-not-found
+                    exit 1
+                    ;;
+                esac
+                sleep 2
+              done
+              PHASE="$(kubectl -n "${NS}" get pod "${WORKER}" -o jsonpath='{.status.phase}' 2>/dev/null || true)"
+              if [[ "${PHASE}" != "Succeeded" ]]; then
+                echo "Worker did not succeed (phase=${PHASE})" >&2
+                kubectl -n "${NS}" logs "${WORKER}" || true
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${VW_REPLICAS}" || true
+                kubectl -n "${NS}" delete pod "${WORKER}" --ignore-not-found
+                exit 1
+              fi
+              kubectl -n "${NS}" delete pod "${WORKER}" --ignore-not-found --wait=true
+
+              echo "Scaling ${DEPLOY} to ${VW_REPLICAS}..."
+              if kubectl -n "${NS}" get deploy "${DEPLOY}" >/dev/null 2>&1; then
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${VW_REPLICAS}"
+                kubectl -n "${NS}" rollout status deploy/"${DEPLOY}" --timeout=180s
+              fi
+              echo "Done. Set vaultwarden-restore.enabled=false in Git immediately."
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+      volumes:
+        - name: backup
+          persistentVolumeClaim:
+            claimName: vaultwarden-backups

@@ -6,7 +6,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
-  project: default
+  project: Infrastruktur
   source:
     repoURL: https://github.com/HenryHST/minilab
     path: apps/cert-manager

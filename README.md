@@ -2,12 +2,12 @@
 
 GitOps-Manifeste für [Argo CD](https://argo-cd.readthedocs.io/) auf dem **nXk3**-Cluster.
 
-Ansible legt nur die Parent-Application `root` an (`argocd_applications` in Infra_LAB). Child-Applications und Sync Waves liegen hier unter [`apps/argocd-apps/`](apps/argocd-apps/).
+Ansible legt nur die Parent-Application `homelab` an (`argocd_applications` in Infra_LAB). Child-Applications, Sync Waves und AppProject `Infrastruktur` liegen hier unter [`apps/argocd-apps/`](apps/argocd-apps/).
 
 ## Struktur
 
 ```
-apps/argocd-apps/          # App-of-Apps: Application CRs + sync-wave
+apps/argocd-apps/          # App-of-Apps: Application CRs, AppProject, sync-wave
 apps/<name>/
   kustomization.yaml       # Kustomize-Einstieg der Workload-App
   …
@@ -19,9 +19,14 @@ Jeder Ordner unter `apps/<name>/` ist eine eigenständige Workload-App. Registri
 
 | Wave | Apps |
 |------|------|
+| 0 | AppProject `Infrastruktur` |
 | 1 | cert-manager, longhorn, newt |
 | 2 | grafana, prometheus, unifipoller, authentik, termix |
 | 3 | omni-tools, it-tools, pgweb, web, drawio, status, grafana-loki, alertmanager, vaultwarden |
+
+### AppProject `Infrastruktur`
+
+`cert-manager`, `longhorn`, `newt`, `grafana`, `grafana-loki`, `alertmanager`, `authentik` — alle anderen Apps nutzen `default`.
 
 ## Apps
 
@@ -54,7 +59,7 @@ Scrape-Jobs für Prometheus in `apps/prometheus/scrape-config.yaml` ergänzen (Y
 
 1. Ordner `apps/<name>/` anlegen mit `kustomization.yaml`, typischerweise `deployment.yaml`, `service.yaml`, `ingressroute.yaml`.
 2. Application-Manifest in `apps/argocd-apps/<name>.yaml` mit passender `sync-wave` (1/2/3) ergänzen und in `kustomization.yaml` listen.
-3. Nach `main` pushen; Parent `root` synct die Child-App automatisch.
+3. Nach `main` pushen; Parent `homelab` synct die Child-App automatisch.
 
 ## TLS
 

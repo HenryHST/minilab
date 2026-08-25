@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: Infrastruktur
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  description: Homelab platform / infrastructure
+  sourceRepos:
+    - https://github.com/HenryHST/minilab
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: certmanager
+    - server: https://kubernetes.default.svc
+      namespace: longhorn-system
+    - server: https://kubernetes.default.svc
+      namespace: newt
+    - server: https://kubernetes.default.svc
+      namespace: grafana
+    - server: https://kubernetes.default.svc
+      namespace: loki
+    - server: https://kubernetes.default.svc
+      namespace: alertmanager
+    - server: https://kubernetes.default.svc
+      namespace: authentik
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

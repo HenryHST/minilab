@@ -37,6 +37,10 @@ spec:
               value: "1000"
             - name: PGID
               value: "1000"
+          envFrom:
+            - secretRef:
+                name: homepage-argocd
+                optional: true
           volumeMounts:
             - name: config
               mountPath: /app/config

@@ -4,6 +4,11 @@
         href: https://argocd.stadthagen.dev
         icon: argocd.svg
         description: GitOps
+        widget:
+          type: argocd
+          url: http://argo-cd-argocd-server.argocd.svc.cluster.local
+          key: "{{HOMEPAGE_VAR_ARGOCD_KEY}}"
+          fields: ["apps", "synced", "outOfSync", "healthy"]
     - Traefik:
         href: https://traefik.stadthagen.dev
         icon: traefik.png

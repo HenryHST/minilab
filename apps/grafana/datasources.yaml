@@ -39,3 +39,12 @@ data:
         jsonData:
           implementation: prometheus
           handleGrafanaManagedAlerts: false
+
+      - name: Hetzner Cloud
+        type: apricote-hcloud-datasource
+        uid: hetzner-cloud
+        access: proxy
+        editable: false
+        jsonData: {}
+        secureJsonData:
+          apiToken: ${HCLOUD_API_TOKEN}

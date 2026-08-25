@@ -22,7 +22,7 @@ persistence:
   existingClaim: grafana-data
   storageClassName: longhorn
 
-# Provision Prometheus + Loki from ConfigMap datasources.yaml
+# Provision Prometheus + Loki + Hetzner Cloud from ConfigMap datasources.yaml
 extraConfigmapMounts:
   - name: grafana-datasources
     configMap: grafana-datasources
@@ -30,7 +30,10 @@ extraConfigmapMounts:
     readOnly: true
 
 # Official UniFi Poller Prometheus dashboards (grafana.com / unpoller/dashboards)
-# plus Argo CD / Authentik / Home Assistant
+# plus Argo CD / Authentik / Home Assistant / Hetzner Cloud
+plugins:
+  - apricote-hcloud-datasource
+
 dashboardProviders:
   dashboardproviders.yaml:
     apiVersion: 1
@@ -67,6 +70,14 @@ dashboardProviders:
         editable: false
         options:
           path: /var/lib/grafana/dashboards/homeassistant
+      - name: hetzner
+        orgId: 1
+        folder: Hetzner Cloud
+        type: file
+        disableDeletion: false
+        editable: false
+        options:
+          path: /var/lib/grafana/dashboards/hetzner
 
 dashboards:
   unpoller:
@@ -106,6 +117,10 @@ dashboards:
     overview:
       gnetId: 16888
       datasource: Prometheus
+  hetzner:
+    servers-load-balancers:
+      gnetId: 20257
+      datasource: Hetzner Cloud
 
 grafana.ini:
   server:
@@ -133,12 +148,25 @@ grafana.ini:
   log:
     mode: console
 
+envValueFrom:
+  HCLOUD_API_TOKEN:
+    secretKeyRef:
+      name: grafana-hcloud
+      key: token
+      optional: true
+
 extraSecretMounts:
   - name: auth-generic-oauth-secret-mount
     secretName: grafana-oauth
     mountPath: /etc/secrets/auth_generic_oauth
     readOnly: true
     defaultMode: 0440
+  - name: hcloud-api-token
+    secretName: grafana-hcloud
+    mountPath: /etc/secrets/hcloud
+    readOnly: true
+    defaultMode: 0440
+    optional: true
 
 resources:
   requests:

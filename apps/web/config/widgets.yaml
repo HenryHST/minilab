@@ -13,6 +13,30 @@
         dateStyle: long
         hourCycle: h23
 
+- kubernetes:
+    cluster:
+      show: true
+      cpu: true
+      memory: true
+      showLabel: true
+      label: nXk3
+    nodes:
+      show: true
+      cpu: true
+      memory: true
+      showLabel: true
+
+- longhorn:
+    expanded: true
+    total: true
+    labels: true
+    nodes: true
+
+- unifi_console:
+    url: "{{HOMEPAGE_VAR_UNIFI_URL}}"
+    username: "{{HOMEPAGE_VAR_UNIFI_USER}}"
+    password: "{{HOMEPAGE_VAR_UNIFI_PASS}}"
+
 # OpenWeatherMap requires OPENWEATHERMAP_API_KEY — see secret.env.example
 # - openweathermap:
 #     latitude: 49.86014928642

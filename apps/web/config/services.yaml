@@ -9,6 +9,16 @@
           url: http://argo-cd-argocd-server.argocd.svc.cluster.local
           key: "{{HOMEPAGE_VAR_ARGOCD_KEY}}"
           fields: ["apps", "synced", "outOfSync", "healthy"]
+    - Proxmox:
+        href: https://pve01.stadthagen.dev:8006
+        icon: proxmox.png
+        description: pve01–pve03 cluster
+        widget:
+          type: proxmox
+          url: https://pve01.stadthagen.dev:8006
+          username: "{{HOMEPAGE_VAR_PROXMOX_USER}}"
+          password: "{{HOMEPAGE_VAR_PROXMOX_TOKEN}}"
+          fields: ["vms", "lxc", "resources.cpu", "resources.mem"]
     - Traefik:
         href: https://traefik.stadthagen.dev
         icon: traefik.png
@@ -67,3 +77,7 @@
         href: https://status.stadthagen.dev
         icon: si-statuspage-#300A27
         description: status.stadthagen.dev
+        widget:
+          type: uptimekuma
+          url: http://status.uptimekuma.svc.cluster.local:3001
+          slug: homelab

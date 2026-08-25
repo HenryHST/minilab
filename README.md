@@ -36,7 +36,7 @@ Jeder Ordner unter `apps/<name>/` ist eine eigenständige Workload-App. Registri
 | omni-tools | `apps/omni-tools/` | `omnitools` | `omni-tools.stadthagen.dev` |
 | it-tools | `apps/it-tools/` | `it-tools` | `it-tools.stadthagen.dev` |
 | pgweb | `apps/pgweb/` | `pgweb` | `pgweb.stadthagen.dev` (Port 8081) |
-| web | `apps/web/` | `homepage` | `web.stadthagen.dev` (gethomepage) |
+| web | `apps/web/` | `homepage` | `web.stadthagen.dev` (gethomepage v2.1.2; widgets: Argo CD, Proxmox, Uptime Kuma, Longhorn, Kubernetes, UniFi — Secret `homepage`) |
 | drawio | `apps/drawio/` | `drawio` | `drawio.stadthagen.dev` (Port 8080) |
 | termix | `apps/termix/` | `termix` | `termix.stadthagen.dev` ([Termix](https://github.com/Termix-SSH/Termix) Helm chart + Postgres, 2 replicas, Port 8080; OIDC via Authentik — Secrets `termix-oauth` / `termix-ha` / `termix-db`, Admin-Gruppe `Termix Admins`) |
 | headlamp | `apps/headlamp/` | `kube-system` | `headlamp.stadthagen.dev` ([Headlamp](https://kubernetes-sigs.github.io/headlamp/) Helm 0.45.0; Plugin Manager: [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) 0.1.1, [gatekeeper](https://github.com/open-policy-agent/gatekeeper-headlamp-plugin) 0.2.0) |

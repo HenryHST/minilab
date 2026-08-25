@@ -12,6 +12,8 @@ spec:
       labels:
         app: web
     spec:
+      serviceAccountName: homepage
+      automountServiceAccountToken: true
       initContainers:
         - name: copy-config
           image: busybox:1.36
@@ -39,7 +41,7 @@ spec:
               value: "1000"
           envFrom:
             - secretRef:
-                name: homepage-argocd
+                name: homepage
                 optional: true
           volumeMounts:
             - name: config

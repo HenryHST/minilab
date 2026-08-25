@@ -6,6 +6,10 @@ language: de
 hideVersion: true
 hideErrors: true
 
+providers:
+  longhorn:
+    url: http://longhorn-frontend.longhorn-system.svc.cluster.local
+
 background:
   image: https://images.unsplash.com/photo-1637825891028-564f672aa42c
   blur: md

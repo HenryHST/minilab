@@ -39,7 +39,7 @@ Jeder Ordner unter `apps/<name>/` ist eine eigenständige Workload-App. Registri
 | web | `apps/web/` | `homepage` | `web.stadthagen.dev` (gethomepage) |
 | drawio | `apps/drawio/` | `drawio` | `drawio.stadthagen.dev` (Port 8080) |
 | termix | `apps/termix/` | `termix` | `termix.stadthagen.dev` ([Termix](https://github.com/Termix-SSH/Termix) Helm chart + Postgres, 2 replicas, Port 8080; OIDC via Authentik — Secrets `termix-oauth` / `termix-ha` / `termix-db`, Admin-Gruppe `Termix Admins`) |
-| headlamp | `apps/headlamp/` | `kube-system` | `headlamp.stadthagen.dev` ([Headlamp](https://kubernetes-sigs.github.io/headlamp/) Helm 0.45.0; Plugin Manager: [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) 0.1.1, [gatekeeper](https://github.com/open-policy-agent/gatekeeper-headlamp-plugin) 0.2.0; Login: SA `headlamp-admin` + Secret `headlamp-admin-token` — `kubectl -n kube-system get secret headlamp-admin-token -o jsonpath='{.data.token}' \| base64 -d`) |
+| headlamp | `apps/headlamp/` | `kube-system` | `headlamp.stadthagen.dev` ([Headlamp](https://kubernetes-sigs.github.io/headlamp/) Helm 0.45.0; Plugin Manager: [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) 0.1.1, [gatekeeper](https://github.com/open-policy-agent/gatekeeper-headlamp-plugin) 0.2.0) |
 | status | `apps/status/` | `uptimekuma` | `status.stadthagen.dev` (Uptime Kuma, Port 3001, hostPath `/var/lib/uptimekuma`; daily NFS backup CronJob → `192.168.0.25:/var/nfs/shared/infra01/uptimekuma-backups`) |
 | vaultwarden | `apps/vaultwarden/` | `vaultwarden` | `vaultwarden.stadthagen.dev` (Vaultwarden 1.37.2, Longhorn PVC 2Gi, Authentik SSO; daily NFS backup CronJob → `192.168.0.25:/var/nfs/shared/infra01/vaultwarden-backups`) |
 | grafana | `apps/grafana/` | `grafana` | `grafana.stadthagen.dev` (Helm chart 10.5.15, Longhorn PVC 5Gi, 1 replica) |
@@ -55,6 +55,16 @@ Vaultwarden: CronJob `vaultwarden-backup-cron` (02:00 UTC) tar’t `/data` per `
 Grafana-Werte basieren auf [JimsGarage GitOps/Grafana](https://github.com/JamesTurland/JimsGarage/tree/main/Kubernetes/GitOps/Grafana) (Helm via Kustomize, Traefik IngressRoute statt Chart-Ingress). Grafana Prometheus-Datasource zeigt auf `http://prometheus.prometheus.svc.cluster.local:9090`.
 
 Scrape-Jobs für Prometheus in `apps/prometheus/scrape-config.yaml` ergänzen (YAML-Liste); Reload per Deployment-Restart oder `/-/reload`.
+
+Headlamp-Login ([Service Account token](https://headlamp.dev/docs/latest/installation/#create-a-service-account-token)): SA `headlamp-admin` mit ClusterRoleBinding `headlamp-admin-ui` → `cluster-admin` (Chart-CRB `headlamp-admin` gilt dem Pod-SA `headlamp`). Long-lived Token in Secret `headlamp-admin-token` (Hülle in Git, Wert nur im Cluster) — Ausgabe in die Login-Maske einfügen:
+
+```bash
+# Long-lived Token (Secret headlamp-admin-token)
+kubectl -n kube-system get secret headlamp-admin-token -o jsonpath='{.data.token}' | base64 -d
+
+# Alternativ kurzlebig
+kubectl create token headlamp-admin -n kube-system
+```
 
 ## Neue App hinzufügen
 

@@ -1,0 +1,90 @@
+# PV carries mountOptions (core Pod nfs volumes cannot); UniFi NAS needs NFSv3 + nolock.
+# Shared PVC also used by restore-bootstrap.yaml.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: termix-backups-nfs
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=3
+    - nolock
+  nfs:
+    server: 192.168.0.25
+    path: /var/nfs/shared/infra01/termix-backups
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: termix-backups
+  namespace: termix
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: termix-backups-nfs
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: termix-backup-cron
+  namespace: termix
+spec:
+  schedule: "0 3 * * *" # 03:00 UTC ≈ 05:00 CEST (after kuma/vaultwarden)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: pg-dump
+              image: postgres:16-alpine
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: PGHOST
+                  value: termix-postgres
+                - name: PGPORT
+                  value: "5432"
+                - name: PGUSER
+                  value: termix
+                - name: PGDATABASE
+                  value: termix
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: termix-db
+                      key: POSTGRES_PASSWORD
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  echo "Waiting for postgres..."
+                  until pg_isready -q; do sleep 2; done
+                  OUT="/backup/termix-$(date -u +%Y%m%d-%H%M%S).sql.gz"
+                  echo "Dumping ${PGDATABASE}@${PGHOST} -> ${OUT}"
+                  pg_dump --no-owner --no-acl | gzip -c > "${OUT}"
+                  ls -lh "${OUT}"
+                  # Retention: keep last 7 archives
+                  ls -1t /backup/termix-*.sql.gz 2>/dev/null | tail -n +8 | xargs -r rm -f
+                  echo "Done. Archives:"
+                  ls -1t /backup/termix-*.sql.gz 2>/dev/null || true
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+          volumes:
+            - name: backup
+              persistentVolumeClaim:
+                claimName: termix-backups

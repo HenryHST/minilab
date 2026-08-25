@@ -1,0 +1,166 @@
+# Bootstrap restore from NFS (cluster rebuild). Default is off — set ConfigMap enabled=true
+# (and force=true if Termix already migrated an empty DB) then Argo Sync; set enabled=false after.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: termix-restore
+  namespace: termix
+data:
+  enabled: "false"
+  archive: "latest"
+  force: "false"
+  replicas: "2"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: termix-restore
+  namespace: termix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: termix-restore
+  namespace: termix
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale"]
+    verbs: ["get", "list", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: termix-restore
+  namespace: termix
+subjects:
+  - kind: ServiceAccount
+    name: termix-restore
+    namespace: termix
+roleRef:
+  kind: Role
+  name: termix-restore
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: termix-bootstrap-restore
+  namespace: termix
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      serviceAccountName: termix-restore
+      restartPolicy: Never
+      containers:
+        - name: restore
+          image: alpine/k8s:1.32.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PGHOST
+              value: termix-postgres
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              value: termix
+            - name: PGDATABASE
+              value: termix
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: termix-db
+                  key: POSTGRES_PASSWORD
+            - name: RESTORE_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: termix-restore
+                  key: enabled
+            - name: RESTORE_ARCHIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: termix-restore
+                  key: archive
+            - name: RESTORE_FORCE
+              valueFrom:
+                configMapKeyRef:
+                  name: termix-restore
+                  key: force
+            - name: TERMIX_REPLICAS
+              valueFrom:
+                configMapKeyRef:
+                  name: termix-restore
+                  key: replicas
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+              apk add --no-cache postgresql16-client >/dev/null
+
+              if [[ "${RESTORE_ENABLED}" != "true" ]]; then
+                echo "termix-restore.enabled!=true — skip"
+                exit 0
+              fi
+
+              DEPLOY="termix"
+              NS="termix"
+              echo "Scaling ${DEPLOY} to 0..."
+              if kubectl -n "${NS}" get deploy "${DEPLOY}" >/dev/null 2>&1; then
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas=0
+                kubectl -n "${NS}" rollout status deploy/"${DEPLOY}" --timeout=120s || true
+                for i in $(seq 1 60); do
+                  N="$(kubectl -n "${NS}" get pods -l app.kubernetes.io/name=termix --field-selector=status.phase!=Succeeded,status.phase!=Failed -o name 2>/dev/null | wc -l | tr -d ' ')"
+                  [[ "${N}" == "0" ]] && break
+                  sleep 2
+                done
+              fi
+
+              echo "Waiting for postgres..."
+              until pg_isready -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -q; do sleep 2; done
+
+              TABLES="$(psql -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -Atc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';")"
+              echo "public tables: ${TABLES}"
+
+              if [[ "${TABLES}" != "0" && "${RESTORE_FORCE}" != "true" ]]; then
+                echo "DB not empty and force!=true — abort (set force=true for rebuild overwrite)" >&2
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${TERMIX_REPLICAS}" || true
+                exit 1
+              fi
+
+              if [[ "${RESTORE_ARCHIVE}" == "latest" ]]; then
+                ARCHIVE="$(ls -1t /backup/termix-*.sql.gz 2>/dev/null | head -n1 || true)"
+              else
+                ARCHIVE="/backup/${RESTORE_ARCHIVE}"
+              fi
+              if [[ -z "${ARCHIVE}" || ! -f "${ARCHIVE}" ]]; then
+                echo "No backup archive found under /backup (archive=${RESTORE_ARCHIVE})" >&2
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${TERMIX_REPLICAS}" || true
+                exit 1
+              fi
+              echo "Restoring from ${ARCHIVE}"
+
+              if [[ "${TABLES}" != "0" ]]; then
+                echo "DROP SCHEMA public CASCADE..."
+                psql -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -v ON_ERROR_STOP=1 -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO termix; GRANT ALL ON SCHEMA public TO public;"
+              fi
+
+              gunzip -c "${ARCHIVE}" | psql -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -v ON_ERROR_STOP=1
+              echo "Restore OK"
+
+              echo "Scaling ${DEPLOY} to ${TERMIX_REPLICAS}..."
+              if kubectl -n "${NS}" get deploy "${DEPLOY}" >/dev/null 2>&1; then
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${TERMIX_REPLICAS}"
+                kubectl -n "${NS}" rollout status deploy/"${DEPLOY}" --timeout=180s
+              fi
+              echo "Done. Set termix-restore.enabled=false in Git immediately."
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+      volumes:
+        - name: backup
+          persistentVolumeClaim:
+            claimName: termix-backups

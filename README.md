@@ -38,7 +38,7 @@ Jeder Ordner unter `apps/<name>/` ist eine eigenständige Workload-App. Registri
 | pgweb | `apps/pgweb/` | `pgweb` | `pgweb.stadthagen.dev` (Port 8081) |
 | web | `apps/web/` | `homepage` | `web.stadthagen.dev` (gethomepage v2.1.2; widgets: Argo CD, Proxmox, Uptime Kuma, Longhorn, Kubernetes, UniFi — Secret `homepage`) |
 | drawio | `apps/drawio/` | `drawio` | `drawio.stadthagen.dev` (Port 8080) |
-| termix | `apps/termix/` | `termix` | `termix.stadthagen.dev` ([Termix](https://github.com/Termix-SSH/Termix) Helm chart + Postgres, 2 replicas, Port 8080; OIDC via Authentik — Secrets `termix-oauth` / `termix-ha` / `termix-db`, Admin-Gruppe `Termix Admins`) |
+| termix | `apps/termix/` | `termix` | `termix.stadthagen.dev` ([Termix](https://github.com/Termix-SSH/Termix) Helm chart + Postgres, 2 replicas, Port 8080; OIDC via Authentik — Secrets `termix-oauth` / `termix-ha` / `termix-db`, Admin-Gruppe `Termix Admins`; daily NFS DB backup + bootstrap restore → `192.168.0.25:/var/nfs/shared/infra01/termix-backups`) |
 | headlamp | `apps/headlamp/` | `kube-system` | `headlamp.stadthagen.dev` ([Headlamp](https://kubernetes-sigs.github.io/headlamp/) Helm 0.45.0; Plugin Manager: [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) 0.1.1, [gatekeeper](https://github.com/open-policy-agent/gatekeeper-headlamp-plugin) 0.2.0) |
 | status | `apps/status/` | `uptimekuma` | `status.stadthagen.dev` (Uptime Kuma, Port 3001, hostPath `/var/lib/uptimekuma`; daily NFS backup CronJob → `192.168.0.25:/var/nfs/shared/infra01/uptimekuma-backups`) |
 | vaultwarden | `apps/vaultwarden/` | `vaultwarden` | `vaultwarden.stadthagen.dev` (Vaultwarden 1.37.2, Longhorn PVC 2Gi, Authentik SSO; daily NFS backup CronJob → `192.168.0.25:/var/nfs/shared/infra01/vaultwarden-backups`) |
@@ -51,6 +51,8 @@ Longhorn: Replika-Daten lokal `/var/lib/longhorn` auf Worker mit Label `node.lon
 Uptime Kuma (`status`): CronJob `kuma-backup-cron` (01:00 UTC) tar’t `/app/data` per `kubectl exec` nach NFS `192.168.0.25:/var/nfs/shared/infra01/uptimekuma-backups` (Retention 7). Manuell: `kubectl -n uptimekuma create job --from=cronjob/kuma-backup-cron kuma-backup-manual`.
 
 Vaultwarden: CronJob `vaultwarden-backup-cron` (02:00 UTC) tar’t `/data` per `kubectl exec` nach NFS `192.168.0.25:/var/nfs/shared/infra01/vaultwarden-backups` (Retention 7). Manuell: `kubectl -n vaultwarden create job --from=cronjob/vaultwarden-backup-cron vaultwarden-backup-manual`.
+
+Termix: CronJob `termix-backup-cron` (03:00 UTC) `pg_dump` → NFS `192.168.0.25:/var/nfs/shared/infra01/termix-backups` (Retention 7). Manuell: `kubectl -n termix create job --from=cronjob/termix-backup-cron termix-backup-manual`. Bootstrap-Restore (Cluster-Neuaufsetzen): ConfigMap `termix-restore` → `enabled=true` (bei bereits migrierter DB zusätzlich `force=true`), Argo Sync (PostSync-Job); danach sofort `enabled=false` committen. Secrets müssen über SecretSpec wiederhergestellt werden (`TERMIX_OAUTH_CLIENT_SECRET`, **gleiche** `TERMIX_HA_CRYPTO_HEX` wie beim Backup). NAS-Ordner vorher anlegen: `mkdir -p /var/nfs/shared/infra01/termix-backups`.
 
 Grafana-Werte basieren auf [JimsGarage GitOps/Grafana](https://github.com/JamesTurland/JimsGarage/tree/main/Kubernetes/GitOps/Grafana) (Helm via Kustomize, Traefik IngressRoute statt Chart-Ingress). Grafana Prometheus-Datasource zeigt auf `http://prometheus.prometheus.svc.cluster.local:9090`.
 

@@ -2,17 +2,26 @@
 
 GitOps-Manifeste für [Argo CD](https://argo-cd.readthedocs.io/) auf dem **nXk3**-Cluster.
 
-Argo CD Applications werden in Infra_LAB Ansible registriert (`argocd_applications` in `group_vars`). Dieses Repo liefert die Manifeste unter `apps/`.
+Ansible legt nur die Parent-Application `root` an (`argocd_applications` in Infra_LAB). Child-Applications und Sync Waves liegen hier unter [`apps/argocd-apps/`](apps/argocd-apps/).
 
 ## Struktur
 
 ```
+apps/argocd-apps/          # App-of-Apps: Application CRs + sync-wave
 apps/<name>/
-  kustomization.yaml   # Kustomize-Einstieg
+  kustomization.yaml       # Kustomize-Einstieg der Workload-App
   …
 ```
 
-Jeder Ordner ist eine eigenständige App (Deployment/Service/IngressRoute oder Helm via Kustomize `helmCharts`).
+Jeder Ordner unter `apps/<name>/` ist eine eigenständige Workload-App. Registrierung erfolgt über ein Manifest in `apps/argocd-apps/` mit `argocd.argoproj.io/sync-wave`.
+
+### Sync waves
+
+| Wave | Apps |
+|------|------|
+| 1 | cert-manager, longhorn, newt |
+| 2 | grafana, prometheus, unifipoller, authentik, termix |
+| 3 | omni-tools, it-tools, pgweb, web, drawio, status, grafana-loki, alertmanager, vaultwarden |
 
 ## Apps
 
@@ -31,8 +40,6 @@ Jeder Ordner ist eine eigenständige App (Deployment/Service/IngressRoute oder H
 | prometheus | `apps/prometheus/` | `prometheus` | `prometheus.stadthagen.dev` (prom/prometheus:v3.7.1, scrape jobs in `scrape-config.yaml`, Longhorn PVC 5Gi, 1 replica) |
 | longhorn | `apps/longhorn/` | `longhorn-system` | `longhorn.stadthagen.dev` (Helm v1.12.1, default StorageClass, backups → NFS `192.168.0.25`) |
 
-`apps/nxk3/` ist für die Umbrella-App `minilab` vorgesehen (optional / noch leer).
-
 Longhorn: Replika-Daten lokal `/var/lib/longhorn` auf Worker mit Label `node.longhorn.io/create-default-disk=true` (nxk3-w01–w03). Backup-Target: `nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups?nfsOptions=nfsvers=3,nolock` (UniFi NAS benötigt NFSv3).
 
 Uptime Kuma (`status`): CronJob `kuma-backup-cron` (01:00 UTC) tar’t `/app/data` per `kubectl exec` nach NFS `192.168.0.25:/var/nfs/shared/infra01/uptimekuma-backups` (Retention 7). Manuell: `kubectl -n uptimekuma create job --from=cronjob/kuma-backup-cron kuma-backup-manual`.
@@ -46,8 +53,8 @@ Scrape-Jobs für Prometheus in `apps/prometheus/scrape-config.yaml` ergänzen (Y
 ## Neue App hinzufügen
 
 1. Ordner `apps/<name>/` anlegen mit `kustomization.yaml`, typischerweise `deployment.yaml`, `service.yaml`, `ingressroute.yaml`.
-2. Nach `main` pushen.
-3. In Infra_LAB unter `argocd_applications` einen Eintrag ergänzen und `ansible-playbook site.yaml --tags argocd --limit nxk3-cp01` ausführen.
+2. Application-Manifest in `apps/argocd-apps/<name>.yaml` mit passender `sync-wave` (1/2/3) ergänzen und in `kustomization.yaml` listen.
+3. Nach `main` pushen; Parent `root` synct die Child-App automatisch.
 
 ## TLS
 

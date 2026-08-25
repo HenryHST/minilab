@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: argocd
+resources:
+  - cert-manager.yaml
+  - longhorn.yaml
+  - newt.yaml
+  - grafana.yaml
+  - prometheus.yaml
+  - unifipoller.yaml
+  - authentik.yaml
+  - termix.yaml
+  - omni-tools.yaml
+  - it-tools.yaml
+  - pgweb.yaml
+  - web.yaml
+  - drawio.yaml
+  - status.yaml
+  - grafana-loki.yaml
+  - alertmanager.yaml
+  - vaultwarden.yaml

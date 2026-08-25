@@ -7,3 +7,4 @@ resources:
   - certificate.yaml
   - ingressroute.yaml
   - backup-cronjob.yaml
+  - restore-bootstrap.yaml

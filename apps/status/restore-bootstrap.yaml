@@ -1,0 +1,164 @@
+# Bootstrap restore from NFS (cluster rebuild). Default is off — set ConfigMap enabled=true
+# (and force=true if hostPath already has kuma.db) then Argo Sync; set enabled=false after.
+#
+# Data is hostPath on pi4cl; Job pins to that node and mounts hostPath + NFS directly
+# (no nested worker — hostPath can be attached after scale-to-0).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: uptimekuma-restore
+  namespace: uptimekuma
+data:
+  enabled: "false"
+  archive: "latest"
+  force: "false"
+  replicas: "1"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: uptimekuma-restore
+  namespace: uptimekuma
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: uptimekuma-restore
+  namespace: uptimekuma
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale"]
+    verbs: ["get", "list", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: uptimekuma-restore
+  namespace: uptimekuma
+subjects:
+  - kind: ServiceAccount
+    name: uptimekuma-restore
+    namespace: uptimekuma
+roleRef:
+  kind: Role
+  name: uptimekuma-restore
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: uptimekuma-bootstrap-restore
+  namespace: uptimekuma
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      serviceAccountName: uptimekuma-restore
+      restartPolicy: Never
+      nodeSelector:
+        kubernetes.io/hostname: pi4cl
+      containers:
+        - name: restore
+          image: alpine/k8s:1.32.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: RESTORE_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: uptimekuma-restore
+                  key: enabled
+            - name: RESTORE_ARCHIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: uptimekuma-restore
+                  key: archive
+            - name: RESTORE_FORCE
+              valueFrom:
+                configMapKeyRef:
+                  name: uptimekuma-restore
+                  key: force
+            - name: KUMA_REPLICAS
+              valueFrom:
+                configMapKeyRef:
+                  name: uptimekuma-restore
+                  key: replicas
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+
+              if [[ "${RESTORE_ENABLED}" != "true" ]]; then
+                echo "uptimekuma-restore.enabled!=true — skip"
+                exit 0
+              fi
+
+              DEPLOY="status"
+              NS="uptimekuma"
+
+              echo "Scaling ${DEPLOY} to 0..."
+              if kubectl -n "${NS}" get deploy "${DEPLOY}" >/dev/null 2>&1; then
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas=0
+                kubectl -n "${NS}" rollout status deploy/"${DEPLOY}" --timeout=120s || true
+                for i in $(seq 1 60); do
+                  N="$(kubectl -n "${NS}" get pods -l app=status --field-selector=status.phase!=Succeeded,status.phase!=Failed -o name 2>/dev/null | wc -l | tr -d ' ')"
+                  [[ "${N}" == "0" ]] && break
+                  sleep 2
+                done
+              fi
+
+              HAS_DB=0
+              if [[ -f /data/kuma.db ]]; then
+                HAS_DB=1
+              fi
+              echo "kuma.db present=${HAS_DB}"
+
+              if [[ "${HAS_DB}" == "1" && "${RESTORE_FORCE}" != "true" ]]; then
+                echo "data not empty and force!=true — abort (set force=true for rebuild overwrite)" >&2
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${KUMA_REPLICAS}" || true
+                exit 1
+              fi
+
+              if [[ "${RESTORE_ARCHIVE}" == "latest" ]]; then
+                ARCHIVE="$(ls -1t /backup/uptimekuma-*.tar.gz 2>/dev/null | head -n1 || true)"
+              else
+                ARCHIVE="/backup/${RESTORE_ARCHIVE}"
+              fi
+              if [[ -z "${ARCHIVE}" || ! -f "${ARCHIVE}" ]]; then
+                echo "No backup archive found under /backup (archive=${RESTORE_ARCHIVE})" >&2
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${KUMA_REPLICAS}" || true
+                exit 1
+              fi
+              echo "Restoring from ${ARCHIVE}"
+
+              if [[ "${HAS_DB}" == "1" || "${RESTORE_FORCE}" == "true" ]]; then
+                echo "Clearing /data..."
+                find /data -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+              fi
+              tar xzf "${ARCHIVE}" -C /data
+              ls -la /data
+              echo "Restore OK"
+
+              echo "Scaling ${DEPLOY} to ${KUMA_REPLICAS}..."
+              if kubectl -n "${NS}" get deploy "${DEPLOY}" >/dev/null 2>&1; then
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${KUMA_REPLICAS}"
+                kubectl -n "${NS}" rollout status deploy/"${DEPLOY}" --timeout=180s
+              fi
+              echo "Done. Set uptimekuma-restore.enabled=false in Git immediately."
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: backup
+              mountPath: /backup
+      volumes:
+        - name: data
+          hostPath:
+            path: /var/lib/uptimekuma
+            type: DirectoryOrCreate
+        - name: backup
+          persistentVolumeClaim:
+            claimName: uptimekuma-backups

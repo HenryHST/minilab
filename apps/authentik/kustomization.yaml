@@ -12,6 +12,7 @@ helmCharts:
 resources:
   - namespace.yaml
   - media-pvc.yaml
+  - media-sync-cronjob.yaml
   - certificate.yaml
   - ingressroute.yaml
   - default-headers.yaml

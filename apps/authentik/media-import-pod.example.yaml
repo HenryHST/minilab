@@ -1,4 +1,7 @@
-# Copy media from Docker IdP host after PVC is Bound:
+# Copy media from Docker IdP host after PVC is Bound (one-shot migration).
+# Ongoing brand sync from NFS: CronJob authentik-media-sync (media-sync-cronjob.yaml)
+#   schedule every 6h — source 192.168.0.25:/var/nfs/shared/infra01/media/public/branding
+#   → PVC authentik-media /media/public/branding
 #
 #   ssh auth-host 'sudo tar -C /opt/homelab/data/authentik/media -czf - .' > /tmp/authentik-media.tgz
 #   kubectl -n authentik run media-import --rm -it --restart=Never \
@@ -7,6 +10,7 @@
 # Or use the Job below (edit hostPath / nodeName if using a one-shot node copy).
 #
 # Prefer: kubectl cp into a temporary pod that mounts authentik-media.
+# Manual CronJob run: kubectl -n authentik create job --from=cronjob/authentik-media-sync media-sync-manual
 apiVersion: v1
 kind: Pod
 metadata:

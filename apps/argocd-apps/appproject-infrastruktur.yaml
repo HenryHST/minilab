@@ -1,12 +1,12 @@
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
-  name: Infrastruktur
+  name: infrastruktur
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
-  description: Homelab platform / infrastructure
+  description: Infrastruktur — Homelab platform
   sourceRepos:
     - https://github.com/HenryHST/minilab
   destinations:

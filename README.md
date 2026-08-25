@@ -2,7 +2,7 @@
 
 GitOps-Manifeste für [Argo CD](https://argo-cd.readthedocs.io/) auf dem **nXk3**-Cluster.
 
-Ansible legt nur die Parent-Application `homelab` an (`argocd_applications` in Infra_LAB). Child-Applications, Sync Waves und AppProject `Infrastruktur` liegen hier unter [`apps/argocd-apps/`](apps/argocd-apps/).
+Ansible legt nur die Parent-Application `homelab` an (`argocd_applications` in Infra_LAB). Child-Applications, Sync Waves und AppProject `infrastruktur` (Anzeige: Infrastruktur) liegen hier unter [`apps/argocd-apps/`](apps/argocd-apps/).
 
 ## Struktur
 
@@ -19,12 +19,12 @@ Jeder Ordner unter `apps/<name>/` ist eine eigenständige Workload-App. Registri
 
 | Wave | Apps |
 |------|------|
-| 0 | AppProject `Infrastruktur` |
+| 0 | AppProject `infrastruktur` |
 | 1 | cert-manager, longhorn, newt |
 | 2 | grafana, prometheus, unifipoller, authentik, termix |
 | 3 | omni-tools, it-tools, pgweb, web, drawio, status, grafana-loki, alertmanager, vaultwarden |
 
-### AppProject `Infrastruktur`
+### AppProject `infrastruktur`
 
 `cert-manager`, `longhorn`, `newt`, `grafana`, `grafana-loki`, `alertmanager`, `authentik` — alle anderen Apps nutzen `default`.
 

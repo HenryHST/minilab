@@ -33,6 +33,10 @@
         href: https://termix.stadthagen.dev
         icon: si-gnubash-#4EAA25
         description: SSH terminal (OIDC)
+    - Vaultwarden:
+        href: https://vaultwarden.stadthagen.dev
+        icon: si-bitwarden-#175DDC
+        description: password manager (SSO)
 - Monitoring:
     - Longhorn:
         href: https://longhorn.stadthagen.dev

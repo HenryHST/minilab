@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaultwarden
+  labels:
+    app: vaultwarden
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: vaultwarden
+  template:
+    metadata:
+      labels:
+        app: vaultwarden
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: nxk3-w02
+      containers:
+        - name: vaultwarden
+          image: vaultwarden/server:1.34.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+            - name: DOMAIN
+              value: https://vaultwarden.stadthagen.dev
+            - name: SIGNUPS_ALLOWED
+              value: "false"
+            - name: INVITATIONS_ALLOWED
+              value: "true"
+            - name: SSO_ENABLED
+              value: "true"
+            - name: SSO_AUTHORITY
+              value: https://idp.stadthagen.dev/application/o/vaultwarden/
+            - name: SSO_CLIENT_ID
+              value: vaultwarden
+            - name: SSO_SCOPES
+              value: openid email profile offline_access
+            - name: SSO_ALLOW_UNKNOWN_EMAIL_VERIFICATION
+              value: "false"
+            - name: SSO_SIGNUPS_MATCH_EMAIL
+              value: "true"
+          envFrom:
+            - secretRef:
+                name: vaultwarden-oauth
+            - secretRef:
+                name: vaultwarden-admin
+          readinessProbe:
+            httpGet:
+              path: /alive
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /alive
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: vaultwarden-data

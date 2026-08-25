@@ -11,3 +11,4 @@ helmCharts:
 resources:
   - certificate.yaml
   - ingressroute.yaml
+  - login-sa.yaml

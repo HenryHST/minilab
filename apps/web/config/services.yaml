@@ -2,7 +2,7 @@
 - nXk3:
     - Argo CD:
         href: https://argocd.stadthagen.dev
-        icon: argocd.svg
+        icon: argocd.png
         description: GitOps
         widget:
           type: argocd
@@ -61,6 +61,10 @@
         href: https://grafana.stadthagen.dev
         icon: si-grafana-#F46800
         description: dashboards & alerting
+    - Headlamp:
+        href: https://headlamp.stadthagen.dev
+        icon: si-docker-#2496ED
+        description: dashboards
     - Prometheus:
         href: https://prometheus.stadthagen.dev
         icon: si-prometheus-#E6522C

@@ -12,6 +12,9 @@ spec:
   destinations:
     - server: https://kubernetes.default.svc
       namespace: certmanager
+    # cert-manager chart: leader-election Roles/RoleBindings + webhook auth reader
+    - server: https://kubernetes.default.svc
+      namespace: kube-system
     - server: https://kubernetes.default.svc
       namespace: longhorn-system
     - server: https://kubernetes.default.svc

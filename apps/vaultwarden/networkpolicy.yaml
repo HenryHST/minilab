@@ -1,0 +1,32 @@
+# Vaultwarden: ingress allow Traefik + in-namespace (Termix-style).
+# No Newt — not published via pangolin-publish.
+# Egress left open (Authentik OIDC, updates). Add *-egress from _templates when ready.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: vaultwarden-ingress
+  namespace: vaultwarden
+  labels:
+    app.kubernetes.io/name: vaultwarden
+    app.kubernetes.io/part-of: vaultwarden
+spec:
+  podSelector:
+    matchLabels:
+      app: vaultwarden
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: vaultwarden
+      ports:
+        - protocol: TCP
+          port: 80
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 80

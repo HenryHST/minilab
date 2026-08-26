@@ -1,0 +1,115 @@
+# Reusable NetworkPolicy sketch for minilab app namespaces (Cilium enforces networking.k8s.io).
+#
+# Copy into apps/<app>/networkpolicy.yaml and replace placeholders:
+#   {{NAMESPACE}}  e.g. vaultwarden
+#   {{APP_LABEL}}  pod label key/value selecting the workload
+#   {{PORT}}       container/service port Traefik or Newt dial
+#
+# Modes:
+#   A) Ingress-only (recommended start) — egress stays open (OIDC, NFS, DB, …).
+#   B) Add egress deny only after listing DNS + every required destination.
+#
+# Cluster facts (nXk3):
+#   - Traefik NS: traefik  (kubernetes.io/metadata.name=traefik)
+#   - Newt NS:    newt     (only if Pangolin publish hits this Service)
+#   - CoreDNS:    kube-system, label k8s-app=kube-dns, UDP/TCP 53
+#
+# Do NOT apply default-deny without the Traefik (and Newt, if used) allow rules.
+---
+# 1) Default deny ingress for selected pods (empty ingress list via policyTypes only
+#    would also work with a separate deny; here deny is implied once any Ingress policy
+#    selects the pod — allow rules below are the only permitted sources.)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{NAMESPACE}}-ingress
+  namespace: {{NAMESPACE}}
+  labels:
+    app.kubernetes.io/name: {{NAMESPACE}}
+    app.kubernetes.io/part-of: {{NAMESPACE}}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{APP_LABEL}}
+  policyTypes:
+    - Ingress
+  ingress:
+    # Same namespace (probes, sidecars, in-NS clients)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{NAMESPACE}}
+      ports:
+        - protocol: TCP
+          port: {{PORT}}
+    # LAN / Traefik IngressRoute
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: {{PORT}}
+    # OPTIONAL — uncomment only if Pangolin Newt publishes this Service
+    # - from:
+    #     - namespaceSelector:
+    #         matchLabels:
+    #           kubernetes.io/metadata.name: newt
+    #   ports:
+    #     - protocol: TCP
+    #       port: {{PORT}}
+---
+# 2) OPTIONAL egress lockdown — enable only after inventory of outbound deps.
+#    Adding policyTypes: [Egress] with a short allow-list DENIES everything else.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{NAMESPACE}}-egress
+  namespace: {{NAMESPACE}}
+  labels:
+    app.kubernetes.io/name: {{NAMESPACE}}
+    app.kubernetes.io/part-of: {{NAMESPACE}}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{APP_LABEL}}
+  policyTypes:
+    - Egress
+  egress:
+    # Cluster DNS (CoreDNS)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Same namespace (DB, redis, …)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{NAMESPACE}}
+    # EXAMPLE — Authentik OIDC (in-cluster or via Service/Ingress)
+    # - to:
+    #     - namespaceSelector:
+    #         matchLabels:
+    #           kubernetes.io/metadata.name: authentik
+    #   ports:
+    #     - protocol: TCP
+    #       port: 80
+    # EXAMPLE — HTTPS to public IdP / APIs (broad; prefer NS selector when possible)
+    # - to:
+    #     - ipBlock:
+    #         cidr: 0.0.0.0/0
+    #         except:
+    #           - 10.0.0.0/8
+    #           - 192.168.0.0/16
+    #           - 172.16.0.0/12
+    #   ports:
+    #     - protocol: TCP
+    #       port: 443

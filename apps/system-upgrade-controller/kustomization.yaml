@@ -1,0 +1,8 @@
+# Rancher system-upgrade-controller v0.20.1 (controller + CRDs only; no Plan CRs yet).
+# https://docs.k3s.io/upgrades/automated
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: system-upgrade
+resources:
+  - https://github.com/rancher/system-upgrade-controller/releases/download/v0.20.1/crd.yaml
+  - https://github.com/rancher/system-upgrade-controller/releases/download/v0.20.1/system-upgrade-controller.yaml

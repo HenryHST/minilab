@@ -20,13 +20,13 @@ Jeder Ordner unter `apps/<name>/` ist eine eigenständige Workload-App. Registri
 | Wave | Apps |
 |------|------|
 | 0 | AppProject `infrastruktur` |
-| 1 | cert-manager, longhorn, newt |
+| 1 | cert-manager, longhorn, newt, system-upgrade-controller |
 | 2 | grafana, prometheus, unifipoller, authentik, termix, headlamp |
 | 3 | omni-tools, it-tools, pgweb, web, drawio, status, grafana-loki, alertmanager, vaultwarden |
 
 ### AppProject `infrastruktur`
 
-`cert-manager`, `longhorn`, `newt`, `grafana`, `grafana-loki`, `alertmanager`, `authentik` — alle anderen Apps nutzen `default`.
+`cert-manager`, `longhorn`, `newt`, `system-upgrade-controller`, `grafana`, `grafana-loki`, `alertmanager`, `authentik` — alle anderen Apps nutzen `default`.
 
 ## Apps
 
@@ -45,6 +45,7 @@ Jeder Ordner unter `apps/<name>/` ist eine eigenständige Workload-App. Registri
 | grafana | `apps/grafana/` | `grafana` | `grafana.stadthagen.dev` (Helm chart 10.5.15, Longhorn PVC 5Gi, 1 replica) |
 | prometheus | `apps/prometheus/` | `prometheus` | `prometheus.stadthagen.dev` (prom/prometheus:v3.7.1, scrape jobs in `scrape-config.yaml`, Longhorn PVC 5Gi, 1 replica) |
 | longhorn | `apps/longhorn/` | `longhorn-system` | `longhorn.stadthagen.dev` (Helm v1.12.1, default StorageClass, backups → NFS `192.168.0.25`) |
+| system-upgrade-controller | `apps/system-upgrade-controller/` | `system-upgrade` | Rancher SUC v0.20.1 (CRDs + Controller). **Keine** Upgrade-`Plan`s — kein automatisches k3s-Upgrade, bis Plans ergänzt werden. |
 
 Longhorn: Replika-Daten lokal `/var/lib/longhorn` auf Worker mit Label `node.longhorn.io/create-default-disk=true` (nxk3-w01–w03). Backup-Target: `nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups?nfsOptions=nfsvers=3,nolock` (UniFi NAS benötigt NFSv3).
 

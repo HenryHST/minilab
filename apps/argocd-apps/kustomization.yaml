@@ -6,6 +6,7 @@ resources:
   - cert-manager.yaml
   - longhorn.yaml
   - newt.yaml
+  - system-upgrade-controller.yaml
   - grafana.yaml
   - prometheus.yaml
   - unifipoller.yaml

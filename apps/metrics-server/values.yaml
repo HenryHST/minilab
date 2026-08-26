@@ -1,0 +1,12 @@
+# Official metrics-server chart — k3s bundled metrics-server stays disabled.
+# Kubelet serving certs are not signed by the cluster CA → insecure TLS scrape.
+args:
+  - --kubelet-insecure-tls
+
+replicas: 1
+
+nodeSelector:
+  worker: "true"
+
+metrics:
+  enabled: true

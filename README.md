@@ -20,19 +20,21 @@ Jeder Ordner unter `apps/<name>/` ist eine eigenständige Workload-App. Registri
 | Wave | Apps |
 |------|------|
 | 0 | AppProject `infrastruktur` |
-| 1 | cert-manager, longhorn, newt, system-upgrade-controller |
+| 1 | cert-manager, longhorn, newt, system-upgrade-controller, metrics-server |
 | 2 | grafana, prometheus, unifipoller, authentik, termix, headlamp |
 | 3 | omni-tools, it-tools, pgweb, web, drawio, status, grafana-loki, alertmanager, vaultwarden |
 
 ### AppProject `infrastruktur`
 
-`cert-manager`, `longhorn`, `newt`, `system-upgrade-controller`, `grafana`, `grafana-loki`, `alertmanager`, `authentik` — alle anderen Apps nutzen `default`.
+`cert-manager`, `longhorn`, `newt`, `system-upgrade-controller`, `metrics-server`, `grafana`, `grafana-loki`, `alertmanager`, `authentik` — alle anderen Apps nutzen `default`.
 
 ## Apps
 
 | App | Pfad | Namespace | Host / Hinweis |
 |-----|------|-----------|----------------|
 | cert-manager | `apps/cert-manager/` | `certmanager` | Helm via Kustomize (`jetstack/cert-manager` v1.19.0) |
+| metrics-server | `apps/metrics-server/` | `kube-system` | Helm chart 3.13.1 (`metrics.k8s.io` for HPA / `kubectl top`); k3s bundled metrics-server stays disabled; `--kubelet-insecure-tls` |
+| longhorn | `apps/longhorn/` | `longhorn-system` | `longhorn.stadthagen.dev` (Helm v1.12.1, default StorageClass, backups → NFS `192.168.0.25`) |
 | omni-tools | `apps/omni-tools/` | `omnitools` | `omni-tools.stadthagen.dev` |
 | it-tools | `apps/it-tools/` | `it-tools` | `it-tools.stadthagen.dev` |
 | pgweb | `apps/pgweb/` | `pgweb` | `pgweb.stadthagen.dev` (Port 8081) |
@@ -44,7 +46,6 @@ Jeder Ordner unter `apps/<name>/` ist eine eigenständige Workload-App. Registri
 | vaultwarden | `apps/vaultwarden/` | `vaultwarden` | `vaultwarden.stadthagen.dev` (Vaultwarden 1.37.2, Longhorn PVC 2Gi, Authentik SSO; daily NFS backup + bootstrap restore → `192.168.0.25:/var/nfs/shared/infra01/vaultwarden-backups`) |
 | grafana | `apps/grafana/` | `grafana` | `grafana.stadthagen.dev` (Helm chart 10.5.15, Longhorn PVC 5Gi, 1 replica) |
 | prometheus | `apps/prometheus/` | `prometheus` | `prometheus.stadthagen.dev` (prom/prometheus:v3.7.1, scrape jobs in `scrape-config.yaml`, Longhorn PVC 5Gi, 1 replica) |
-| longhorn | `apps/longhorn/` | `longhorn-system` | `longhorn.stadthagen.dev` (Helm v1.12.1, default StorageClass, backups → NFS `192.168.0.25`) |
 | system-upgrade-controller | `apps/system-upgrade-controller/` | `system-upgrade` | Rancher SUC v0.20.1 (CRDs + Controller). **Keine** Upgrade-`Plan`s — kein automatisches k3s-Upgrade, bis Plans ergänzt werden. |
 
 Longhorn: Replika-Daten lokal `/var/lib/longhorn` auf Worker mit Label `node.longhorn.io/create-default-disk=true` (nxk3-w01–w03). Backup-Target: `nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups?nfsOptions=nfsvers=3,nolock` (UniFi NAS benötigt NFSv3).

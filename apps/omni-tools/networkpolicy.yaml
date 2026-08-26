@@ -1,0 +1,31 @@
+# omni-tools: ingress allow Traefik + in-namespace (Vaultwarden/Termix pattern).
+# Namespace is omnitools. No Newt — not published via pangolin-publish. Egress left open.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: omni-tools-ingress
+  namespace: omnitools
+  labels:
+    app.kubernetes.io/name: omni-tools
+    app.kubernetes.io/part-of: omni-tools
+spec:
+  podSelector:
+    matchLabels:
+      app: omni-tools
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: omnitools
+      ports:
+        - protocol: TCP
+          port: 80
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 80

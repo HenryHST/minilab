@@ -1,0 +1,31 @@
+# it-tools: ingress allow Traefik + in-namespace (Vaultwarden/Termix pattern).
+# No Newt — not published via pangolin-publish. Egress left open.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: it-tools-ingress
+  namespace: it-tools
+  labels:
+    app.kubernetes.io/name: it-tools
+    app.kubernetes.io/part-of: it-tools
+spec:
+  podSelector:
+    matchLabels:
+      app: it-tools
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: it-tools
+      ports:
+        - protocol: TCP
+          port: 80
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 80

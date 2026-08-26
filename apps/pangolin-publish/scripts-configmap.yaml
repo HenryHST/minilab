@@ -13,16 +13,24 @@ data:
     apk add --no-cache curl jq >/dev/null
 
     if [ -z "${PANGOLIN_API_KEY:-}" ]; then
-      echo "ERROR: PANGOLIN_API_KEY / Secret pangolin-api missing" >&2
+      echo "ERROR: PANGOLIN_API_KEY / Secret pangolin-api api-key missing" >&2
+      exit 1
+    fi
+    if [ -z "${HETZNER_DNS_TOKEN:-}" ]; then
+      echo "ERROR: HETZNER_DNS_TOKEN / Secret pangolin-api hetzner-token missing" >&2
       exit 1
     fi
 
     AUTH="Authorization: Bearer ${PANGOLIN_API_KEY}"
+    HAUTH="Authorization: Bearer ${HETZNER_DNS_TOKEN}"
     BASE="${PANGOLIN_API_BASE%/}"
     ORG="${PANGOLIN_ORG_ID}"
     SITE_MATCH="${PANGOLIN_SITE_MATCH}"
     BASE_DOMAIN="${PANGOLIN_BASE_DOMAIN}"
+    DNS_ZONE="${DNS_ZONE:-$BASE_DOMAIN}"
+    PUBLIC_IP="${PANGOLIN_PUBLIC_IP}"
     RESOURCES_FILE=/config/resources.json
+    HC_API="https://api.hetzner.cloud/v1"
 
     api() {
       method="$1"
@@ -37,7 +45,71 @@ data:
       fi
     }
 
-    echo "Resolving domain ${BASE_DOMAIN} ..."
+    # Hetzner Cloud DNS — zone id_or_name may be the zone name (e.g. stadthagen.dev)
+    hc() {
+      method="$1"
+      path="$2"
+      shift 2
+      if [ "$#" -gt 0 ]; then
+        curl -sfS -X "$method" -H "$HAUTH" -H "Accept: application/json" -H "Content-Type: application/json" \
+          -d "$1" "${HC_API}${path}"
+      else
+        curl -sfS -X "$method" -H "$HAUTH" -H "Accept: application/json" \
+          "${HC_API}${path}"
+      fi
+    }
+
+    hc_code() {
+      method="$1"
+      path="$2"
+      shift 2
+      if [ "$#" -gt 0 ]; then
+        curl -sS -o /tmp/hc-body.json -w "%{http_code}" -X "$method" -H "$HAUTH" \
+          -H "Accept: application/json" -H "Content-Type: application/json" \
+          -d "$1" "${HC_API}${path}"
+      else
+        curl -sS -o /tmp/hc-body.json -w "%{http_code}" -X "$method" -H "$HAUTH" \
+          -H "Accept: application/json" "${HC_API}${path}"
+      fi
+    }
+
+    upsert_dns_a() {
+      name="$1"
+      ip="$2"
+      comment="$3"
+      echo "DNS upsert ${name}.${DNS_ZONE} A → ${ip}"
+      code="$(hc_code GET "/zones/${DNS_ZONE}/rrsets/${name}/A" || true)"
+      body="$(jq -nc --arg name "$name" --arg ip "$ip" --arg comment "$comment" \
+        '{name:$name,type:"A",ttl:3600,records:[{value:$ip,comment:$comment}],labels:{}}')"
+      set_body="$(jq -nc --arg ip "$ip" --arg comment "$comment" \
+        '{records:[{value:$ip,comment:$comment}]}')"
+      if [ "$code" = "200" ]; then
+        echo "DNS set_records existing A ${name}"
+        hc POST "/zones/${DNS_ZONE}/rrsets/${name}/A/actions/set_records" "$set_body" >/dev/null
+      elif [ "$code" = "404" ]; then
+        echo "DNS create A ${name}"
+        hc POST "/zones/${DNS_ZONE}/rrsets" "$body" >/dev/null
+      else
+        echo "ERROR: unexpected DNS GET status ${code} for ${name}/A" >&2
+        cat /tmp/hc-body.json >&2 || true
+        exit 1
+      fi
+    }
+
+    delete_dns_a() {
+      name="$1"
+      echo "DNS delete ${name}.${DNS_ZONE} A (if present)"
+      code="$(hc_code DELETE "/zones/${DNS_ZONE}/rrsets/${name}/A" || true)"
+      case "$code" in
+        200|201|204|404) echo "DNS delete status=${code}" ;;
+        *)
+          echo "WARN: DNS delete status=${code} for ${name}/A" >&2
+          cat /tmp/hc-body.json >&2 || true
+          ;;
+      esac
+    }
+
+    echo "Resolving Pangolin domain ${BASE_DOMAIN} ..."
     DOMAINS_JSON="$(api GET "/org/${ORG}/domains")"
     DOMAIN_ID="$(echo "$DOMAINS_JSON" | jq -r --arg d "$BASE_DOMAIN" '
       (.data.domains // .data // [])
@@ -85,7 +157,6 @@ data:
       tport="$3"
       tmethod="$4"
       TARGETS_JSON="$(api GET "/resource/${rid}/targets" || echo '{}')"
-      # Prefer exact site+ip match; otherwise migrate the first existing target (site cutover).
       tid="$(echo "$TARGETS_JSON" | jq -r --argjson sid "$SITE_ID" --arg ip "$tip" '
         (.data.targets // .data // []) as $t
         | ($t | map(select(.siteId == $sid and .ip == $ip)) | .[0].targetId)
@@ -109,6 +180,7 @@ data:
     while IFS= read -r entry; do
       key="$(echo "$entry" | jq -r '.key')"
       enabled="$(echo "$entry" | jq -r '.value.enabled // false')"
+      want_dns="$(echo "$entry" | jq -r 'if .value.dns == null then true else .value.dns end')"
       name="$(echo "$entry" | jq -r '.value.name')"
       nice_id="$(echo "$entry" | jq -r '.value.niceId // .key')"
       subdomain="$(echo "$entry" | jq -r '.value.subdomain')"
@@ -119,7 +191,7 @@ data:
       tmethod="$(echo "$entry" | jq -r '.value.target.method // "http"')"
       full_domain="${subdomain}.${BASE_DOMAIN}"
 
-      echo "=== ${key} (${full_domain}) enabled=${enabled} ==="
+      echo "=== ${key} (${full_domain}) enabled=${enabled} dns=${want_dns} ==="
       rid="$(find_resource_id "$nice_id" "$full_domain")"
 
       if [ "$enabled" != "true" ]; then
@@ -128,6 +200,9 @@ data:
           api POST "/resource/${rid}" "$(jq -nc '{enabled:false}')" >/dev/null
         else
           echo "Resource absent — nothing to disable"
+        fi
+        if [ "$want_dns" = "true" ]; then
+          delete_dns_a "$subdomain"
         fi
         continue
       fi
@@ -154,6 +229,10 @@ data:
       echo "Updating resource ${rid} (ssl=${ssl} sso=${sso} niceId=${nice_id})"
       api POST "/resource/${rid}" "$update_body" >/dev/null
       upsert_target "$rid" "$tip" "$tport" "$tmethod"
+
+      if [ "$want_dns" = "true" ]; then
+        upsert_dns_a "$subdomain" "$PUBLIC_IP" "pangolin-publish:${key}"
+      fi
       echo "OK ${full_domain}"
     done <"$ENTRIES_FILE"
     rm -f "$ENTRIES_FILE"

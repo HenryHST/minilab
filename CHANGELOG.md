@@ -4,15 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-26
+
+Parallel ownership: `pangolin-publish` owns k3s Newt public resources **and** their Hetzner DNS A records.
+
 ### Added
 
-- `pangolin-publish` — PostSync Job upserts Pangolin public resources (first: `termix-ext.stadthagen.dev` → Termix ClusterIP on Newt site `k3s`); toggle via ConfigMap `resources.json`
+- `pangolin-publish` — PostSync Job upserts Pangolin public resources (`termix-ext`, `idp`) on Newt site `k3s`; toggle via ConfigMap `resources.json`
+- **Hetzner DNS** in reconcile — upsert A → `pangolinPublicIp` when `dns: true`; delete A when `enabled: false`
+- ConfigMap: `dnsZone`, `pangolinPublicIp`; Secret `pangolin-api` keys `api-key` + `hetzner-token`
 - Termix NetworkPolicy: allow ingress from `traefik` + `newt` (+ in-namespace)
-- `pangolin-publish`: migrate Authentik `idp.stadthagen.dev` to Newt site `k3s` → `authentik-server.authentik.svc:80` (target cutover)
+- Authentik `idp.stadthagen.dev` target cutover to `authentik-server.authentik.svc:80`
 
 ### Changed
 
-- Termix: dual access documented — internal `termix.stadthagen.dev` (Traefik) unchanged; public via Pangolin
+- Termix: dual access — internal `termix.stadthagen.dev` (Traefik) unchanged; public via Pangolin
+- README: ownership table vs Terraform (no dual-write of the same hostname)
 
 ## [0.6.0] - 2026-08-25
 

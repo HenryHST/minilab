@@ -1,5 +1,5 @@
-# Pangolin Integration API reconcile — upsert/disable public resources on the k3s Newt site.
-# Config: ConfigMap pangolin-publish-config. Auth: Secret pangolin-api (key api-key).
+# Pangolin Integration API + Hetzner DNS reconcile for k3s Newt publish.
+# Config: ConfigMap pangolin-publish-config. Auth: Secret pangolin-api (api-key, hetzner-token).
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -12,7 +12,10 @@ data:
   orgId: "stadthagen-dev"
   siteMatch: "k3s"
   baseDomain: "stadthagen.dev"
+  dnsZone: "stadthagen.dev"
+  pangolinPublicIp: "91.132.145.33"
   # JSON map: key → resource definition. Toggle enabled to disable without deleting the entry.
+  # dns: true (default) upserts Hetzner A → pangolinPublicIp; enabled:false deletes that A RRset.
   resources.json: |
     {
       "termix": {
@@ -22,6 +25,7 @@ data:
         "subdomain": "termix-ext",
         "ssl": true,
         "sso": false,
+        "dns": true,
         "target": {
           "ip": "termix.termix.svc.cluster.local",
           "port": 8080,
@@ -35,6 +39,7 @@ data:
         "subdomain": "idp",
         "ssl": true,
         "sso": false,
+        "dns": true,
         "target": {
           "ip": "authentik-server.authentik.svc.cluster.local",
           "port": 80,
@@ -94,11 +99,26 @@ spec:
                 configMapKeyRef:
                   name: pangolin-publish-config
                   key: baseDomain
+            - name: DNS_ZONE
+              valueFrom:
+                configMapKeyRef:
+                  name: pangolin-publish-config
+                  key: dnsZone
+            - name: PANGOLIN_PUBLIC_IP
+              valueFrom:
+                configMapKeyRef:
+                  name: pangolin-publish-config
+                  key: pangolinPublicIp
             - name: PANGOLIN_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: pangolin-api
                   key: api-key
+            - name: HETZNER_DNS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: pangolin-api
+                  key: hetzner-token
           volumeMounts:
             - name: config
               mountPath: /config

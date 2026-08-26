@@ -14,3 +14,4 @@ resources:
   - ingressroute.yaml
   - datasources.yaml
   - networkpolicy.yaml
+  - dashboard-proxmox-syslog.yaml

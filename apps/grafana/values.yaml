@@ -28,6 +28,10 @@ extraConfigmapMounts:
     configMap: grafana-datasources
     mountPath: /etc/grafana/provisioning/datasources
     readOnly: true
+  - name: grafana-dashboard-proxmox-syslog
+    configMap: grafana-dashboard-proxmox-syslog
+    mountPath: /var/lib/grafana/dashboards/proxmox
+    readOnly: true
 
 # Official UniFi Poller Prometheus dashboards (grafana.com / unpoller/dashboards)
 # plus Argo CD / Authentik / Home Assistant / Hetzner Cloud
@@ -78,6 +82,14 @@ dashboardProviders:
         editable: false
         options:
           path: /var/lib/grafana/dashboards/hetzner
+      - name: proxmox
+        orgId: 1
+        folder: Proxmox
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/proxmox
 
 dashboards:
   unpoller:

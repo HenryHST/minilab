@@ -11,6 +11,12 @@ Receives RFC3164 syslog from `pve01`/`pve02`/`pve03` and pushes to in-cluster Lo
 
 ## Proxmox rsyslog (each node)
 
+Proxmox uses **journald only** by default — install rsyslog first:
+
+```bash
+apt-get install -y rsyslog
+```
+
 Create `/etc/rsyslog.d/30-alloy.conf`:
 
 ```
@@ -21,7 +27,7 @@ Create `/etc/rsyslog.d/30-alloy.conf`:
 Then:
 
 ```bash
-systemctl restart rsyslog
+systemctl enable --now rsyslog
 logger -t alloy-test "hello from $(hostname)"
 ```
 
@@ -29,10 +35,15 @@ TCP alternative: `*.* @@192.168.0.217:1514` (double `@`).
 
 Optional DNS: `syslog.stadthagen.dev` → `192.168.0.217` (UniFi/Hetzner LAN record) and use that hostname in rsyslog.
 
-## Verify
+## Grafana
 
-```bash
-kubectl -n alloy get pods,svc
-kubectl -n alloy logs deploy/alloy --tail=50
-# Grafana Explore → Loki → {job="syslog"}
-```
+Dashboard **Proxmox Syslog** (folder Proxmox):
+
+| Panel | Query |
+|-------|--------|
+| all | `{job="syslog"}` |
+| pve01 | `{job="syslog", host=~"pve01.*"}` |
+| pve02 | `{job="syslog", host=~"pve02.*"}` |
+| pve03 | `{job="syslog", host=~"pve03.*"}` |
+
+Explore: same queries; IP fallback `src_ip="192.168.0.110|108|109"`.

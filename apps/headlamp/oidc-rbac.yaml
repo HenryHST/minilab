@@ -1,0 +1,14 @@
+# Authentik group "Headlamp Admins" (OIDC groups claim) → cluster-admin.
+# Requires kube-apiserver OIDC (Ansible k3s_vars.server.oidc).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: headlamp-oidc-admins
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: Headlamp Admins

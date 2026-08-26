@@ -1,5 +1,7 @@
 # Headlamp — https://kubernetes-sigs.github.io/headlamp/
 # Chart 0.45.0; plugins via in-cluster Plugin Manager sidecar.
+# OIDC: Authentik app slug headlamp → Secret headlamp-oidc (Ansible SecretSpec).
+# API-server OIDC + CRB headlamp-oidc-admins required for cluster access after login.
 
 fullnameOverride: headlamp
 
@@ -11,6 +13,13 @@ nodeSelector:
 config:
   inCluster: true
   watchPlugins: true
+  oidc:
+    secret:
+      create: false
+    externalSecret:
+      enabled: true
+      name: headlamp-oidc
+      hasScopes: true
 
 ingress:
   enabled: false

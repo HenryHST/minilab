@@ -12,3 +12,4 @@ resources:
   - certificate.yaml
   - ingressroute.yaml
   - login-sa.yaml
+  - oidc-rbac.yaml

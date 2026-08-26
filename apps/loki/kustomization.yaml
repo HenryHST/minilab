@@ -13,3 +13,4 @@ resources:
   - pvc.yaml
   - certificate.yaml
   - ingressroute.yaml
+  - networkpolicy.yaml

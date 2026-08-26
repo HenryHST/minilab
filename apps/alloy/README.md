@@ -42,8 +42,8 @@ Dashboard **Proxmox Syslog** (folder Proxmox):
 | Panel | Query |
 |-------|--------|
 | all | `{job="syslog"}` |
-| pve01 | `{job="syslog", host=~"pve01.*"}` |
-| pve02 | `{job="syslog", host=~"pve02.*"}` |
-| pve03 | `{job="syslog", host=~"pve03.*"}` |
+| pve01 | `{job="syslog"} \| host=~"pve01.*" or src_ip="192.168.0.110"` |
+| pve02 | `{job="syslog"} \| host=~"pve02.*" or src_ip="192.168.0.108"` |
+| pve03 | `{job="syslog"} \| host=~"pve03.*" or src_ip="192.168.0.109"` |
 
-Explore: same queries; IP fallback `src_ip="192.168.0.110|108|109"`.
+`or` must be in the LogQL **pipeline** (after `|`), not between two stream selectors.

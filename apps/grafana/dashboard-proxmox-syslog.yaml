@@ -33,7 +33,7 @@ data:
           "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
           "id": 1,
           "options": {
-            "content": "## Proxmox syslog (via Alloy → Loki)\n\n| Host | Explore query |\n|------|----------------|\n| all | `{job=\"syslog\"}` |\n| pve01 | `{job=\"syslog\", host=~\"pve01.*\"}` |\n| pve02 | `{job=\"syslog\", host=~\"pve02.*\"}` |\n| pve03 | `{job=\"syslog\", host=~\"pve03.*\"}` |\n\nIP fallback: `src_ip` = `.110` / `.108` / `.109`.",
+            "content": "## Proxmox syslog (via Alloy → Loki)\n\n| Host | Explore query |\n|------|----------------|\n| all | `{job=\"syslog\"}` |\n| pve01 | `{job=\"syslog\"} \\| host=~\"pve01.*\" or src_ip=\"192.168.0.110\"` |\n| pve02 | `{job=\"syslog\"} \\| host=~\"pve02.*\" or src_ip=\"192.168.0.108\"` |\n| pve03 | `{job=\"syslog\"} \\| host=~\"pve03.*\" or src_ip=\"192.168.0.109\"` |\n\nNote: `or` belongs in the **pipeline** after `\\|`, not between two `{…}` selectors.",
             "mode": "markdown"
           },
           "title": "Queries",
@@ -78,7 +78,7 @@ data:
             {
               "datasource": { "type": "loki", "uid": "loki" },
               "editorMode": "code",
-              "expr": "{job=\"syslog\", host=~\"pve01.*\"} or {job=\"syslog\", src_ip=\"192.168.0.110\"}",
+              "expr": "{job=\"syslog\"} | host=~\"pve01.*\" or src_ip=\"192.168.0.110\"",
               "queryType": "range",
               "refId": "A"
             }
@@ -101,7 +101,7 @@ data:
             {
               "datasource": { "type": "loki", "uid": "loki" },
               "editorMode": "code",
-              "expr": "{job=\"syslog\", host=~\"pve02.*\"} or {job=\"syslog\", src_ip=\"192.168.0.108\"}",
+              "expr": "{job=\"syslog\"} | host=~\"pve02.*\" or src_ip=\"192.168.0.108\"",
               "queryType": "range",
               "refId": "A"
             }
@@ -124,7 +124,7 @@ data:
             {
               "datasource": { "type": "loki", "uid": "loki" },
               "editorMode": "code",
-              "expr": "{job=\"syslog\", host=~\"pve03.*\"} or {job=\"syslog\", src_ip=\"192.168.0.109\"}",
+              "expr": "{job=\"syslog\"} | host=~\"pve03.*\" or src_ip=\"192.168.0.109\"",
               "queryType": "range",
               "refId": "A"
             }

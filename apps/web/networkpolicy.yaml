@@ -1,0 +1,32 @@
+# Homepage (web): ingress allow Traefik + in-namespace (Vaultwarden/Termix pattern).
+# Namespace is homepage. No Newt — not published via pangolin-publish. Egress left open
+# (widgets/API calls to cluster services and external URLs).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web-ingress
+  namespace: homepage
+  labels:
+    app.kubernetes.io/name: web
+    app.kubernetes.io/part-of: homepage
+spec:
+  podSelector:
+    matchLabels:
+      app: web
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: homepage
+      ports:
+        - protocol: TCP
+          port: 3000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 3000

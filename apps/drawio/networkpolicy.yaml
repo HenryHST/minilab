@@ -1,0 +1,31 @@
+# drawio: ingress allow Traefik + in-namespace (Vaultwarden/Termix pattern).
+# No Newt — not published via pangolin-publish. Egress left open.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: drawio-ingress
+  namespace: drawio
+  labels:
+    app.kubernetes.io/name: drawio
+    app.kubernetes.io/part-of: drawio
+spec:
+  podSelector:
+    matchLabels:
+      app: drawio
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: drawio
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 8080

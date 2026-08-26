@@ -12,3 +12,4 @@ resources:
   - postgres.yaml
   - backup-cronjob.yaml
   - restore-bootstrap.yaml
+  - networkpolicy.yaml

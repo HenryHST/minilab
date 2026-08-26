@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: pangolin-publish
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  project: infrastruktur
+  source:
+    repoURL: https://github.com/HenryHST/minilab
+    path: apps/pangolin-publish
+    targetRevision: HEAD
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: pangolin-publish
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - Validate=true

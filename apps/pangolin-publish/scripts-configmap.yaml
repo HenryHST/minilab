@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pangolin-publish-scripts
+  namespace: pangolin-publish
+  labels:
+    app.kubernetes.io/name: pangolin-publish
+data:
+  reconcile.sh: |
+    #!/bin/sh
+    set -eu
+
+    apk add --no-cache curl jq >/dev/null
+
+    if [ -z "${PANGOLIN_API_KEY:-}" ]; then
+      echo "ERROR: PANGOLIN_API_KEY / Secret pangolin-api missing" >&2
+      exit 1
+    fi
+
+    AUTH="Authorization: Bearer ${PANGOLIN_API_KEY}"
+    BASE="${PANGOLIN_API_BASE%/}"
+    ORG="${PANGOLIN_ORG_ID}"
+    SITE_MATCH="${PANGOLIN_SITE_MATCH}"
+    BASE_DOMAIN="${PANGOLIN_BASE_DOMAIN}"
+    RESOURCES_FILE=/config/resources.json
+
+    api() {
+      method="$1"
+      path="$2"
+      shift 2
+      if [ "$#" -gt 0 ]; then
+        curl -sfS -X "$method" -H "$AUTH" -H "Accept: application/json" -H "Content-Type: application/json" \
+          -d "$1" "${BASE}${path}"
+      else
+        curl -sfS -X "$method" -H "$AUTH" -H "Accept: application/json" \
+          "${BASE}${path}"
+      fi
+    }
+
+    echo "Resolving domain ${BASE_DOMAIN} ..."
+    DOMAINS_JSON="$(api GET "/org/${ORG}/domains")"
+    DOMAIN_ID="$(echo "$DOMAINS_JSON" | jq -r --arg d "$BASE_DOMAIN" '
+      (.data.domains // .data // [])
+      | map(select(.baseDomain == $d))
+      | .[0].domainId // empty
+    ')"
+    if [ -z "$DOMAIN_ID" ]; then
+      echo "ERROR: domain ${BASE_DOMAIN} not found" >&2
+      echo "$DOMAINS_JSON" | jq . >&2 || true
+      exit 1
+    fi
+    echo "domainId=${DOMAIN_ID}"
+
+    echo "Resolving site match=${SITE_MATCH} ..."
+    SITES_JSON="$(api GET "/org/${ORG}/sites")"
+    SITE_ID="$(echo "$SITES_JSON" | jq -r --arg m "$SITE_MATCH" '
+      (.data.sites // .data // [])
+      | map(select((.name | ascii_downcase) == ($m | ascii_downcase) or .niceId == $m))
+      | .[0].siteId // empty
+      | tostring
+    ')"
+    if [ -z "$SITE_ID" ] || [ "$SITE_ID" = "null" ]; then
+      echo "ERROR: site matching ${SITE_MATCH} not found" >&2
+      echo "$SITES_JSON" | jq . >&2 || true
+      exit 1
+    fi
+    echo "siteId=${SITE_ID}"
+
+    RESOURCES_JSON="$(api GET "/org/${ORG}/resources")"
+
+    find_resource_id() {
+      nice="$1"
+      full="$2"
+      echo "$RESOURCES_JSON" | jq -r --arg n "$nice" --arg f "$full" '
+        (.data.resources // .data // [])
+        | map(select(.niceId == $n or .fullDomain == $f or .subdomain == ($f | split(".")[0])))
+        | .[0].resourceId // empty
+        | tostring
+      '
+    }
+
+    upsert_target() {
+      rid="$1"
+      tip="$2"
+      tport="$3"
+      tmethod="$4"
+      TARGETS_JSON="$(api GET "/resource/${rid}/targets" || echo '{}')"
+      tid="$(echo "$TARGETS_JSON" | jq -r --argjson sid "$SITE_ID" --arg ip "$tip" --argjson port "$tport" '
+        (.data.targets // .data // [])
+        | map(select(.siteId == $sid or .ip == $ip))
+        | .[0].targetId // empty
+        | tostring
+      ')"
+      body="$(jq -nc --argjson siteId "$SITE_ID" --arg ip "$tip" --argjson port "$tport" --arg method "$tmethod" \
+        '{siteId:$siteId,ip:$ip,port:$port,method:$method,enabled:true}')"
+      if [ -n "$tid" ] && [ "$tid" != "null" ]; then
+        echo "Updating target ${tid} → ${tip}:${tport}"
+        api POST "/target/${tid}" "$body" >/dev/null
+      else
+        echo "Creating target → ${tip}:${tport}"
+        api PUT "/resource/${rid}/target" "$body" >/dev/null
+      fi
+    }
+
+    ENTRIES_FILE="$(mktemp)"
+    jq -c 'to_entries[]' "$RESOURCES_FILE" >"$ENTRIES_FILE"
+    while IFS= read -r entry; do
+      key="$(echo "$entry" | jq -r '.key')"
+      enabled="$(echo "$entry" | jq -r '.value.enabled // false')"
+      name="$(echo "$entry" | jq -r '.value.name')"
+      nice_id="$(echo "$entry" | jq -r '.value.niceId // .key')"
+      subdomain="$(echo "$entry" | jq -r '.value.subdomain')"
+      ssl="$(echo "$entry" | jq -r 'if .value.ssl == null then true else .value.ssl end')"
+      sso="$(echo "$entry" | jq -r 'if .value.sso == null then false else .value.sso end')"
+      tip="$(echo "$entry" | jq -r '.value.target.ip')"
+      tport="$(echo "$entry" | jq -r '.value.target.port')"
+      tmethod="$(echo "$entry" | jq -r '.value.target.method // "http"')"
+      full_domain="${subdomain}.${BASE_DOMAIN}"
+
+      echo "=== ${key} (${full_domain}) enabled=${enabled} ==="
+      rid="$(find_resource_id "$nice_id" "$full_domain")"
+
+      if [ "$enabled" != "true" ]; then
+        if [ -n "$rid" ] && [ "$rid" != "null" ]; then
+          echo "Disabling resource ${rid}"
+          api POST "/resource/${rid}" "$(jq -nc '{enabled:false}')" >/dev/null
+        else
+          echo "Resource absent — nothing to disable"
+        fi
+        continue
+      fi
+
+      if [ -z "$rid" ] || [ "$rid" = "null" ]; then
+        echo "Creating resource subdomain=${subdomain}"
+        create_body="$(jq -nc --arg name "$name" --arg subdomain "$subdomain" --arg domainId "$DOMAIN_ID" \
+          '{name:$name,http:true,protocol:"tcp",subdomain:$subdomain,domainId:$domainId}')"
+        created="$(api PUT "/org/${ORG}/resource" "$create_body")"
+        rid="$(echo "$created" | jq -r '.data.resourceId // empty | tostring')"
+        if [ -z "$rid" ] || [ "$rid" = "null" ]; then
+          echo "ERROR: create failed: $created" >&2
+          exit 1
+        fi
+        RESOURCES_JSON="$(api GET "/org/${ORG}/resources")"
+      fi
+
+      update_body="$(jq -nc \
+        --arg name "$name" \
+        --arg niceId "$nice_id" \
+        --argjson ssl "$ssl" \
+        --argjson sso "$sso" \
+        '{name:$name,niceId:$niceId,ssl:$ssl,sso:$sso,enabled:true}')"
+      echo "Updating resource ${rid} (ssl=${ssl} sso=${sso} niceId=${nice_id})"
+      api POST "/resource/${rid}" "$update_body" >/dev/null
+      upsert_target "$rid" "$tip" "$tport" "$tmethod"
+      echo "OK ${full_domain}"
+    done <"$ENTRIES_FILE"
+    rm -f "$ENTRIES_FILE"
+
+    echo "Reconcile complete"

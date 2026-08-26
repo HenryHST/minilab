@@ -1,0 +1,106 @@
+# Pangolin Integration API reconcile — upsert/disable public resources on the k3s Newt site.
+# Config: ConfigMap pangolin-publish-config. Auth: Secret pangolin-api (key api-key).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pangolin-publish-config
+  namespace: pangolin-publish
+  labels:
+    app.kubernetes.io/name: pangolin-publish
+data:
+  apiBase: "https://api.stadthagen.dev/v1"
+  orgId: "stadthagen-dev"
+  siteMatch: "k3s"
+  baseDomain: "stadthagen.dev"
+  # JSON map: key → resource definition. Toggle enabled to disable without deleting the entry.
+  resources.json: |
+    {
+      "termix": {
+        "enabled": true,
+        "name": "termix-ext.stadthagen.dev",
+        "niceId": "termix-ext",
+        "subdomain": "termix-ext",
+        "ssl": true,
+        "sso": false,
+        "target": {
+          "ip": "termix.termix.svc.cluster.local",
+          "port": 8080,
+          "method": "http"
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pangolin-publish
+  namespace: pangolin-publish
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pangolin-publish-reconcile
+  namespace: pangolin-publish
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+  labels:
+    app.kubernetes.io/name: pangolin-publish
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pangolin-publish
+    spec:
+      serviceAccountName: pangolin-publish
+      restartPolicy: Never
+      containers:
+        - name: reconcile
+          image: alpine:3.21
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PANGOLIN_API_BASE
+              valueFrom:
+                configMapKeyRef:
+                  name: pangolin-publish-config
+                  key: apiBase
+            - name: PANGOLIN_ORG_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: pangolin-publish-config
+                  key: orgId
+            - name: PANGOLIN_SITE_MATCH
+              valueFrom:
+                configMapKeyRef:
+                  name: pangolin-publish-config
+                  key: siteMatch
+            - name: PANGOLIN_BASE_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: pangolin-publish-config
+                  key: baseDomain
+            - name: PANGOLIN_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: pangolin-api
+                  key: api-key
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+          command:
+            - /bin/sh
+            - /scripts/reconcile.sh
+      volumes:
+        - name: config
+          configMap:
+            name: pangolin-publish-config
+        - name: scripts
+          configMap:
+            name: pangolin-publish-scripts
+            defaultMode: 0555

@@ -22,6 +22,8 @@ spec:
     - server: https://kubernetes.default.svc
       namespace: newt
     - server: https://kubernetes.default.svc
+      namespace: pangolin-publish
+    - server: https://kubernetes.default.svc
       namespace: grafana
     - server: https://kubernetes.default.svc
       namespace: loki

@@ -23,3 +23,4 @@ resources:
   - grafana-loki.yaml
   - alertmanager.yaml
   - vaultwarden.yaml
+  - pangolin-publish.yaml

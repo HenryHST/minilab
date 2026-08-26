@@ -1,0 +1,39 @@
+# Ingress-only: allow Traefik (LAN host) + Newt (Pangolin publish) + in-namespace.
+# Egress unrestricted (OIDC, Postgres, guacd).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: termix-ingress
+  namespace: termix
+  labels:
+    app.kubernetes.io/name: termix
+    app.kubernetes.io/part-of: termix
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: termix
+      app.kubernetes.io/instance: termix
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: termix
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: newt
+      ports:
+        - protocol: TCP
+          port: 8080

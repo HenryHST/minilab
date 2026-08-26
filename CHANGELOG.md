@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- `pangolin-publish` — PostSync Job upserts Pangolin public resources (first: `termix-ext.stadthagen.dev` → Termix ClusterIP on Newt site `k3s`); toggle via ConfigMap `resources.json`
+- Termix NetworkPolicy: allow ingress from `traefik` + `newt` (+ in-namespace)
+
+### Changed
+
+- Termix: dual access documented — internal `termix.stadthagen.dev` (Traefik) unchanged; public via Pangolin
+
 ## [0.6.0] - 2026-08-25
 
 ### Added

@@ -21,6 +21,7 @@ resources:
   - drawio.yaml
   - status.yaml
   - grafana-loki.yaml
+  - alloy.yaml
   - alertmanager.yaml
   - vaultwarden.yaml
   - pangolin-publish.yaml

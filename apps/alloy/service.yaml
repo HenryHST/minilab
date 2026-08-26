@@ -1,0 +1,42 @@
+# Cilium L2 pool: 192.168.0.215–218 (215 Traefik, 216 Authentik LDAP → 217 Alloy syslog).
+apiVersion: v1
+kind: Service
+metadata:
+  name: alloy-syslog
+  namespace: alloy
+  labels:
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/part-of: alloy
+    app.kubernetes.io/component: syslog
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 192.168.0.217
+  selector:
+    app.kubernetes.io/name: alloy
+  ports:
+    - name: syslog-udp
+      port: 1514
+      targetPort: syslog-udp
+      protocol: UDP
+    - name: syslog-tcp
+      port: 1514
+      targetPort: syslog-tcp
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alloy
+  namespace: alloy
+  labels:
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/part-of: alloy
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: alloy
+  ports:
+    - name: http
+      port: 12345
+      targetPort: http
+      protocol: TCP

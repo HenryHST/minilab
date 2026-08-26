@@ -1,0 +1,67 @@
+// Syslog from Proxmox (pve01–pve03) → Loki.
+// Listen 1514 UDP/TCP (RFC3164 — Debian/Proxmox rsyslog default).
+// Docs: https://grafana.com/docs/alloy/latest/reference/components/loki/loki.source.syslog/
+
+logging {
+  level  = "info"
+  format = "logfmt"
+}
+
+loki.write "cluster" {
+  endpoint {
+    url = "http://loki-gateway.loki.svc.cluster.local/loki/api/v1/push"
+  }
+  external_labels = {
+    cluster = "nxk3",
+  }
+}
+
+// Rule definitions applied via loki.source.syslog.relabel_rules (maps __syslog_* before drop).
+loki.relabel "syslog" {
+  forward_to = [loki.write.cluster.receiver]
+
+  rule {
+    source_labels = ["__syslog_message_hostname"]
+    target_label  = "host"
+  }
+
+  rule {
+    source_labels = ["__syslog_message_app_name"]
+    target_label  = "app"
+  }
+
+  rule {
+    source_labels = ["__syslog_message_severity"]
+    target_label  = "level"
+  }
+
+  rule {
+    source_labels = ["__syslog_connection_ip_address"]
+    target_label  = "src_ip"
+  }
+}
+
+loki.source.syslog "proxmox" {
+  forward_to    = [loki.write.cluster.receiver]
+  relabel_rules = loki.relabel.syslog.rules
+
+  listener {
+    address       = "0.0.0.0:1514"
+    protocol      = "udp"
+    syslog_format = "rfc3164"
+    labels = {
+      job      = "syslog",
+      protocol = "udp",
+    }
+  }
+
+  listener {
+    address       = "0.0.0.0:1514"
+    protocol      = "tcp"
+    syslog_format = "rfc3164"
+    labels = {
+      job      = "syslog",
+      protocol = "tcp",
+    }
+  }
+}

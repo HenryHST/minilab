@@ -13,3 +13,4 @@ resources:
   - ingressroute.yaml
   - login-sa.yaml
   - oidc-rbac.yaml
+  - networkpolicy.yaml

@@ -1,0 +1,31 @@
+# Uptime Kuma (status): ingress allow Traefik + in-namespace (Vaultwarden/Termix pattern).
+# Namespace is uptimekuma. No Newt. Egress left open (HTTP(S) probes to monitored targets).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: status-ingress
+  namespace: uptimekuma
+  labels:
+    app.kubernetes.io/name: status
+    app.kubernetes.io/part-of: uptimekuma
+spec:
+  podSelector:
+    matchLabels:
+      app: status
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: uptimekuma
+      ports:
+        - protocol: TCP
+          port: 3001
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 3001

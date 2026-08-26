@@ -1,0 +1,33 @@
+# Headlamp: ingress allow Traefik + in-namespace (Vaultwarden/Termix pattern).
+# Lives in kube-system; pod port is 4466 (Service maps 80→http/4466).
+# No Newt. Egress left open (OIDC to Authentik, plugin downloads, apiserver).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: headlamp-ingress
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: headlamp
+    app.kubernetes.io/part-of: headlamp
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: headlamp
+      app.kubernetes.io/instance: headlamp
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 4466
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 4466

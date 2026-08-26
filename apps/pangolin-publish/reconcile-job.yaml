@@ -27,6 +27,19 @@ data:
           "port": 8080,
           "method": "http"
         }
+      },
+      "idp": {
+        "enabled": true,
+        "name": "idp.stadthagen.dev",
+        "niceId": "idp",
+        "subdomain": "idp",
+        "ssl": true,
+        "sso": false,
+        "target": {
+          "ip": "authentik-server.authentik.svc.cluster.local",
+          "port": 80,
+          "method": "http"
+        }
       }
     }
 ---

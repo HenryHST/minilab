@@ -85,19 +85,21 @@ data:
       tport="$3"
       tmethod="$4"
       TARGETS_JSON="$(api GET "/resource/${rid}/targets" || echo '{}')"
-      tid="$(echo "$TARGETS_JSON" | jq -r --argjson sid "$SITE_ID" --arg ip "$tip" --argjson port "$tport" '
-        (.data.targets // .data // [])
-        | map(select(.siteId == $sid or .ip == $ip))
-        | .[0].targetId // empty
+      # Prefer exact site+ip match; otherwise migrate the first existing target (site cutover).
+      tid="$(echo "$TARGETS_JSON" | jq -r --argjson sid "$SITE_ID" --arg ip "$tip" '
+        (.data.targets // .data // []) as $t
+        | ($t | map(select(.siteId == $sid and .ip == $ip)) | .[0].targetId)
+          // ($t | .[0].targetId)
+          // empty
         | tostring
       ')"
       body="$(jq -nc --argjson siteId "$SITE_ID" --arg ip "$tip" --argjson port "$tport" --arg method "$tmethod" \
         '{siteId:$siteId,ip:$ip,port:$port,method:$method,enabled:true}')"
       if [ -n "$tid" ] && [ "$tid" != "null" ]; then
-        echo "Updating target ${tid} → ${tip}:${tport}"
+        echo "Updating target ${tid} → site=${SITE_ID} ${tip}:${tport}"
         api POST "/target/${tid}" "$body" >/dev/null
       else
-        echo "Creating target → ${tip}:${tport}"
+        echo "Creating target → site=${SITE_ID} ${tip}:${tport}"
         api PUT "/resource/${rid}/target" "$body" >/dev/null
       fi
     }

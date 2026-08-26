@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 
 - `pangolin-publish` — PostSync Job upserts Pangolin public resources (first: `termix-ext.stadthagen.dev` → Termix ClusterIP on Newt site `k3s`); toggle via ConfigMap `resources.json`
 - Termix NetworkPolicy: allow ingress from `traefik` + `newt` (+ in-namespace)
+- `pangolin-publish`: migrate Authentik `idp.stadthagen.dev` to Newt site `k3s` → `authentik-server.authentik.svc:80` (target cutover)
 
 ### Changed
 

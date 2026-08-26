@@ -41,7 +41,7 @@ Jeder Ordner unter `apps/<name>/` ist eine eigenständige Workload-App. Registri
 | web | `apps/web/` | `homepage` | `web.stadthagen.dev` (gethomepage v2.1.2; widgets: Argo CD, Proxmox, Uptime Kuma, Longhorn, Kubernetes, UniFi — Secret `homepage`) |
 | drawio | `apps/drawio/` | `drawio` | `drawio.stadthagen.dev` (Port 8080) |
 | newt | `apps/newt/` | `newt` | Pangolin Newt tunnel agent (site k3s) |
-| pangolin-publish | `apps/pangolin-publish/` | `pangolin-publish` | PostSync Job: Pangolin Integration API upsert (e.g. `termix-ext.stadthagen.dev` → Termix ClusterIP); toggle in ConfigMap `resources.json` |
+| pangolin-publish | `apps/pangolin-publish/` | `pangolin-publish` | PostSync Job: Pangolin Integration API upsert — `termix-ext` → Termix ClusterIP; `idp` → Authentik ClusterIP (site k3s) |
 | termix | `apps/termix/` | `termix` | `termix.stadthagen.dev` (internal Traefik) + public `termix-ext.stadthagen.dev` via Pangolin; OIDC Authentik — Secrets `termix-oauth` / `termix-ha` / `termix-db`; NetworkPolicy allows traefik + newt |
 | headlamp | `apps/headlamp/` | `kube-system` | `headlamp.stadthagen.dev` ([Headlamp](https://kubernetes-sigs.github.io/headlamp/) Helm 0.45.0; Plugin Manager: [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) 0.1.1, [gatekeeper](https://github.com/open-policy-agent/gatekeeper-headlamp-plugin) 0.2.0) |
 | status | `apps/status/` | `uptimekuma` | `status.stadthagen.dev` (Uptime Kuma 2.5.3, **SQLite** auf hostPath `/var/lib/uptimekuma` @ `pi4cl`; daily NFS backup + bootstrap restore → `192.168.0.25:/var/nfs/shared/infra01/uptimekuma-backups`) |

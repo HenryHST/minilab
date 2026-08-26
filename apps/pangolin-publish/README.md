@@ -1,33 +1,33 @@
 # Pangolin publish — public HTTP resources via Integration API + Newt (k3s site)
 
 GitOps reconcile for Pangolin public resources that terminate on the **k3s** Newt site.
-Termix workload stays in `apps/termix` (internal Traefik host unchanged).
+Workload apps stay in their own Argo apps (internal Traefik hosts unchanged where applicable).
 
-## URLs
+## Resources (ConfigMap `resources.json`)
 
-| Access | Hostname | Path |
-|--------|----------|------|
-| Internal / LAN | `https://termix.stadthagen.dev` | Traefik IngressRoute (`apps/termix`) |
-| Internet | `https://termix-ext.stadthagen.dev` | Pangolin → Newt → `termix.termix.svc.cluster.local:8080` |
+| Key | Public host | Target (Newt → ClusterIP) | Notes |
+|-----|-------------|---------------------------|--------|
+| `termix` | `termix-ext.stadthagen.dev` | `termix.termix.svc.cluster.local:8080` | Internal LAN: `termix.stadthagen.dev` via Traefik |
+| `idp` | `idp.stadthagen.dev` | `authentik-server.authentik.svc.cluster.local:80` | Migrated from Pangolin site Stadthagen-pro / `192.168.0.210:9443` |
 
-Auth on both hosts: **Termix + Authentik only** (Pangolin `sso: false`).
+Auth: **app + Authentik only** (Pangolin `sso: false`). TLS terminates at Pangolin; Newt uses HTTP to the ClusterIP.
 
 ## Toggle
 
-Edit `resources.json` in [`reconcile-job.yaml`](reconcile-job.yaml) ConfigMap:
+Edit `resources.json` in [`reconcile-job.yaml`](reconcile-job.yaml):
 
 ```json
-"termix": { "enabled": true, ... }
+"idp": { "enabled": true, ... }
 ```
 
-Set `"enabled": false` and sync to **disable** the Pangolin resource (does not delete). Add further keys under the same map for more apps.
+Set `"enabled": false` and sync to **disable** the Pangolin resource. Reconcile **migrates** an existing target to the k3s site (updates siteId/ip/port) instead of leaving a stale Stadthagen-pro target.
 
 ## Prerequisites
 
-1. Newt app healthy (`apps/newt`), site name/niceId **`k3s`** in Pangolin.
-2. SecretSpec `PANGOLIN_API_KEY` → Secret `pangolin-api` in `pangolin-publish` (`ansible-playbook site.yaml --tags secrets`).
-3. DNS A `termix-ext` → Pangolin public IP (`terraform/pangolin` `dns_records.termix_ext`).
-4. Authentik redirect URIs for `termix_external_url` (`terraform/authentik`).
+1. Newt healthy (`apps/newt`), site name/niceId **`k3s`**.
+2. SecretSpec `PANGOLIN_API_KEY` → Secret `pangolin-api` (`ansible-playbook site.yaml --tags secrets`).
+3. DNS A for public hosts → Pangolin IP (`terraform/pangolin` `dns_records`).
+4. For `idp`: Authentik app synced (minilab `apps/authentik`); after cutover, remove `idp` from `terraform/pangolin` `resources` and `terraform state rm` so Terraform does not reset the target.
 
 ## Sync
 

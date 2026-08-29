@@ -25,3 +25,4 @@ resources:
   - alertmanager.yaml
   - vaultwarden.yaml
   - pangolin-publish.yaml
+  - stirling-pdf.yaml

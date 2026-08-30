@@ -7,3 +7,12 @@ resources:
   - certificate.yaml
   - ingressroute.yaml
 
+helmCharts:
+  - name: stirling-pdf
+    repo: https://stirling-tools.github.io/Stirling-PDF-chart
+    version: 3.1.0
+    releaseName: stirling-pdf
+    namespace: stirling-pdf
+    includeCRDs: true
+    valuesFile: values.yaml
+

@@ -12,7 +12,7 @@ spec:
   template:
     metadata:
       labels:
-        app: status
+        app: stirling-pdf
     spec:
       nodeSelector:
         kubernetes.io/hostname: pi1cl

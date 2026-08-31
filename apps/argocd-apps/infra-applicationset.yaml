@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: infra
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/HenryHST/minilab
+        revision: main
+        directories:
+          - path: infra/*
+          # Bootstrap stays in apps/argocd-apps/ until self-managed via infra/argocd/.
+          - path: infra/argocd
+            exclude: true
+          - path: infra/kargo
+            exclude: true
+  template:
+    metadata:
+      name: "{{ path.basename }}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "0"
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: infrastruktur
+      source:
+        repoURL: https://github.com/HenryHST/minilab
+        targetRevision: main
+        path: "{{ path }}"
+      destination:
+        server: https://kubernetes.default.svc
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
+        syncOptions:
+          - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true
+          - PruneLast=true
+          - ServerSideApply=true
+          - RespectIgnoreDifferences=true

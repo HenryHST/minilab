@@ -7,40 +7,42 @@ Ansible legt nur die Parent-Application `homelab` an (`argocd_applications` in I
 ## Struktur
 
 ```
-apps/argocd-apps/          # App-of-Apps: Application CRs, AppProject, sync-wave
-apps/<name>/
-  kustomization.yaml       # Kustomize-Einstieg der Workload-App
+apps/argocd-apps/          # Bootstrap: AppProject, ApplicationSet infra, verbleibende Application-CRs
+infra/<name>/              # Infrastruktur-Workloads (ApplicationSet „infra“, sync-wave 0)
+apps/<name>/               # User-Apps (noch einzelne Application-CRs)
+  kustomization.yaml
   …
 ```
 
-Jeder Ordner unter `apps/<name>/` ist eine eigenständige Workload-App. Registrierung erfolgt über ein Manifest in `apps/argocd-apps/` mit `argocd.argoproj.io/sync-wave`.
+Infrastruktur-Apps unter `infra/*` werden vom ApplicationSet [`infra`](apps/argocd-apps/infra-applicationset.yaml) automatisch registriert (ein Ordner = eine Application). User-Apps unter `apps/<name>/` weiterhin über Manifeste in `apps/argocd-apps/`.
 
 ### Sync waves
 
 | Wave | Apps |
 |------|------|
-| 0 | AppProject `infrastruktur` |
-| 1 | cert-manager, longhorn, newt, system-upgrade-controller, metrics-server, kube-prometheus-stack |
+| 0 | AppProject `infrastruktur`, ApplicationSet `infra` → `infra/cert-manager`, `infra/newt`, `infra/metrics-server`, `infra/registry` |
+| 1 | longhorn, system-upgrade-controller, kube-prometheus-stack |
 | 2 | unifipoller, authentik, termix, headlamp |
 | 3 | omni-tools, it-tools, pgweb, web, drawio, status, grafana-loki, vaultwarden, pangolin-publish |
 
 ### AppProject `infrastruktur`
 
-`cert-manager`, `longhorn`, `newt`, `pangolin-publish`, `system-upgrade-controller`, `metrics-server`, `kube-prometheus-stack`, `grafana-loki`, `authentik` — alle anderen Apps nutzen `default`.
+ApplicationSet-Apps (`infra/*`) und `longhorn`, `pangolin-publish`, `system-upgrade-controller`, `kube-prometheus-stack`, `grafana-loki`, `authentik` — alle anderen Apps nutzen `default`.
 
 ## Apps
 
 | App | Pfad | Namespace | Host / Hinweis |
 |-----|------|-----------|----------------|
-| cert-manager | `apps/cert-manager/` | `certmanager` | Helm via Kustomize (`jetstack/cert-manager` v1.19.0) |
-| metrics-server | `apps/metrics-server/` | `kube-system` | Helm chart 3.13.1 (`metrics.k8s.io` for HPA / `kubectl top`); k3s bundled metrics-server stays disabled; `--kubelet-insecure-tls` |
+| cert-manager | `infra/cert-manager/` | `certmanager` | Helm via Kustomize (`jetstack/cert-manager` v1.21.1 + Hetzner webhook) |
+| metrics-server | `infra/metrics-server/` | `kube-system` | Helm chart 3.14.0; k3s bundled metrics-server disabled; `--kubelet-insecure-tls` |
+| registry | `infra/registry/` | `kube-system` | In-cluster registry Service (`kube-registry:5000`) |
 | longhorn | `apps/longhorn/` | `longhorn-system` | `longhorn.stadthagen.dev` (Helm v1.12.1, default StorageClass, backups → NFS `192.168.0.25`) |
 | omni-tools | `apps/omni-tools/` | `omnitools` | `omni-tools.stadthagen.dev` |
 | it-tools | `apps/it-tools/` | `it-tools` | `it-tools.stadthagen.dev` |
 | pgweb | `apps/pgweb/` | `pgweb` | `pgweb.stadthagen.dev` (Port 8081) |
 | web | `apps/web/` | `homepage` | `web.stadthagen.dev` (gethomepage v2.1.2; widgets: Argo CD, Proxmox, Uptime Kuma, Longhorn, Kubernetes, UniFi — Secret `homepage`) |
 | drawio | `apps/drawio/` | `drawio` | `drawio.stadthagen.dev` (Port 8080) |
-| newt | `apps/newt/` | `newt` | Pangolin Newt tunnel agent (site k3s) |
+| newt | `infra/newt/` | `newt` | Pangolin Newt tunnel agent (site k3s) |
 | pangolin-publish | `apps/pangolin-publish/` | `pangolin-publish` | PostSync Job: Pangolin Integration API upsert — `termix-ext` → Termix ClusterIP; `idp` → Authentik ClusterIP (site k3s) |
 | termix | `apps/termix/` | `termix` | `termix.stadthagen.dev` (internal Traefik) + public `termix-ext.stadthagen.dev` via Pangolin; OIDC Authentik — Secrets `termix-oauth` / `termix-ha` / `termix-db`; NetworkPolicy allows traefik + newt |
 | headlamp | `apps/headlamp/` | `kube-system` | `headlamp.stadthagen.dev` ([Headlamp](https://kubernetes-sigs.github.io/headlamp/) Helm 0.45.0; Plugin Manager: [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) 0.1.1, [gatekeeper](https://github.com/open-policy-agent/gatekeeper-headlamp-plugin) 0.2.0) |
@@ -80,13 +82,17 @@ kubectl create token headlamp-admin -n kube-system
 
 ## Neue App hinzufügen
 
+**Infrastruktur (`infra/`):** Ordner `infra/<name>/` mit `kustomization.yaml` anlegen — ApplicationSet `infra` erzeugt die Application automatisch (sync-wave 0). Ausnahmen: `infra/argocd/` (Bootstrap, später self-managed) und `infra/kargo/` (noch manuell).
+
+**User-App (`apps/`):**
+
 1. Ordner `apps/<name>/` anlegen mit `kustomization.yaml`, typischerweise `deployment.yaml`, `service.yaml`, `ingressroute.yaml`.
 2. Application-Manifest in `apps/argocd-apps/<name>.yaml` mit passender `sync-wave` (1/2/3) ergänzen und in `kustomization.yaml` listen.
 3. Nach `main` pushen; Parent `homelab` synct die Child-App automatisch.
 
-### Langfristig: ApplicationSets (homelab-Pattern)
+### Langfristig: `infra/argocd/` (homelab-Pattern)
 
-Das [Talos-Homelab](https://github.com/mortennordbye/homelab/tree/main/k8s/talos/infra/argocd) nutzt ApplicationSets (`infra` für `k8s/talos/infra/*`, `apps` für Workloads) statt einzelner Application-CRs. minilab bleibt vorerst beim App-of-Apps-Muster; eine spätere Migration kann das homelab-Layout übernehmen.
+Das [Talos-Homelab](https://github.com/mortennordbye/homelab/tree/main/k8s/talos/infra/argocd) verwaltet Argo CD selbst über `infra/argocd/` (ApplicationSet, AppProjects, …). minilab bootstrapped das ApplicationSet vorerst aus `apps/argocd-apps/`; Ziel ist die vollständige Verlagerung nach `infra/argocd/`.
 
 ## TLS
 

@@ -9,7 +9,7 @@ GitOps reconcile for Pangolin public resources that terminate on the **k3s** New
 | Pangolin host / Compose / Traefik | Terraform `module.host` |
 | Site **Stadthagen-pro** + LAN targets (`ha02`, `udmse`, `auth`, …) | Terraform `module.pangolin_config` |
 | DNS for TF hosts (`api`, `auth`, `ha02`, …) | Terraform `module.dns` |
-| Site **k3s** Newt agent | minilab `apps/newt` |
+| Site **k3s** Newt agent | minilab `infra/newt` |
 | Public resources on site **k3s** (`termix-ext`, `idp`, …) | this app (Integration API) |
 | DNS A for those publish hosts | this app (Hetzner Cloud DNS API) |
 

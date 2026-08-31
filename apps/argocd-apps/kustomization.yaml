@@ -3,11 +3,9 @@ kind: Kustomization
 namespace: argocd
 resources:
   - appproject-infrastruktur.yaml
-  - cert-manager.yaml
+  - infra-applicationset.yaml
   - longhorn.yaml
-  - newt.yaml
   - system-upgrade-controller.yaml
-  - metrics-server.yaml
   - kube-prometheus-stack.yaml
   - unifipoller.yaml
   - authentik.yaml

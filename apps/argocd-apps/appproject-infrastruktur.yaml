@@ -11,6 +11,10 @@ spec:
     - https://github.com/HenryHST/minilab
     - https://prometheus-community.github.io/helm-charts
   destinations:
+    # Wildcard covers ApplicationSet apps when destination.namespace is unset or
+    # includes cluster-scoped resources (cert-manager ClusterIssuer, etc.).
+    - server: https://kubernetes.default.svc
+      namespace: '*'
     - server: https://kubernetes.default.svc
       namespace: certmanager
     # cert-manager chart: leader-election Roles/RoleBindings + webhook auth reader

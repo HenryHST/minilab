@@ -19,6 +19,8 @@ spec:
             exclude: true
           - path: infra/kargo
             exclude: true
+        values:
+          destinationNamespace: '{{ if eq .path.basename "cert-manager" }}certmanager{{ else if eq .path.basename "metrics-server" }}kube-system{{ else if eq .path.basename "registry" }}kube-system{{ else if eq .path.basename "kube-prometheus-stack" }}monitoring{{ else if eq .path.basename "loki" }}monitoring{{ else if eq .path.basename "alloy" }}alloy{{ else }}{{ .path.basename }}{{ end }}'
   template:
     metadata:
       name: '{{ if eq .path.basename "loki" }}grafana-loki{{ else }}{{ .path.basename }}{{ end }}'
@@ -51,7 +53,7 @@ spec:
       {{- end }}
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{ if eq .path.basename "cert-manager" }}certmanager{{ else if eq .path.basename "metrics-server" }}kube-system{{ else if eq .path.basename "registry" }}kube-system{{ else if eq .path.basename "kube-prometheus-stack" }}monitoring{{ else if eq .path.basename "loki" }}monitoring{{ else if eq .path.basename "alloy" }}alloy{{ else }}{{ .path.basename }}{{ end }}'
+        namespace: "{{ .values.destinationNamespace }}"
       syncPolicy:
         automated:
           prune: true

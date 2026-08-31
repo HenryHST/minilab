@@ -64,6 +64,8 @@ Login: lokaler Admin **und** Authentik SSO (`oauth_auto_login: false`). Rollen �
 
 Externe Scrape-Jobs (Proxmox, Pangolin, Home Assistant, Unpoller, Authentik, Argo CD) liegen in `apps/kube-prometheus-stack/values.yaml` unter `prometheus.prometheusSpec.additionalScrapeConfigs`. Custom Alert-Rules: `homelab-alerts.yaml`. Alertmanager: E-Mail an `info@henrystadthagen.de`.
 
+Das Helm-Chart wird über **native Argo-CD-Helm-Quelle** (Multi-Source Application) gerendert; Kustomize-Ressourcen (Ingress, Certificates, Rules) liegen im selben App-Pfad. So umgeht man den Kustomize-Helm-CMP auf Port 8081, der bei diesem großen Chart fehlschlagen kann.
+
 **Migration:** Secrets `grafana-oauth` und optional `grafana-hcloud` müssen im Namespace `monitoring` existieren (vorher `grafana`). Beispiel: `apps/kube-prometheus-stack/oauth-secret.example.yaml`.
 
 Headlamp-Login ([Service Account token](https://headlamp.dev/docs/latest/installation/#create-a-service-account-token)): SA `headlamp-admin` mit ClusterRoleBinding `headlamp-admin-ui` → `cluster-admin` (Chart-CRB `headlamp-admin` gilt dem Pod-SA `headlamp`). Long-lived Token in Secret `headlamp-admin-token` (Hülle in Git, Wert nur im Cluster) — Ausgabe in die Login-Maske einfügen:

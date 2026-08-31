@@ -7,10 +7,20 @@ metadata:
     argocd.argoproj.io/sync-wave: "1"
 spec:
   project: infrastruktur
-  source:
-    repoURL: https://github.com/HenryHST/minilab
-    path: apps/kube-prometheus-stack
-    targetRevision: HEAD
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: 88.5.4
+      helm:
+        releaseName: kube-prometheus-stack
+        valueFiles:
+          - $values/apps/kube-prometheus-stack/values.yaml
+    - repoURL: https://github.com/HenryHST/minilab
+      targetRevision: HEAD
+      ref: values
+    - repoURL: https://github.com/HenryHST/minilab
+      targetRevision: HEAD
+      path: apps/kube-prometheus-stack
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
@@ -21,5 +31,4 @@ spec:
       allowEmpty: false
     syncOptions:
       - CreateNamespace=true
-      - Validate=true
       - ServerSideApply=true

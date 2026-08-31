@@ -10,7 +10,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- Moved `cert-manager`, `newt`, `metrics-server` from `apps/` to `infra/`; removed individual Application CRs (big-bang cutover)
+- All Application manifests in `apps/argocd-apps/` use `targetRevision: main` instead of `HEAD` (fixes `revision HEAD must be resolved` on homelab / child apps)
+
 - `infra/registry/kustomization.yaml` trimmed to existing `service.yaml` only (`kube-system`)
 
 ### Migration notes

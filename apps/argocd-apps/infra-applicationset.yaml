@@ -51,11 +51,7 @@ spec:
       {{- end }}
       destination:
         server: https://kubernetes.default.svc
-        {{- if or (eq .path.basename "kube-prometheus-stack") (eq .path.basename "loki") }}
-        namespace: monitoring
-        {{- else if eq .path.basename "alloy" }}
-        namespace: alloy
-        {{- end }}
+        namespace: '{{ if eq .path.basename "cert-manager" }}certmanager{{ else if eq .path.basename "metrics-server" }}kube-system{{ else if eq .path.basename "registry" }}kube-system{{ else if eq .path.basename "kube-prometheus-stack" }}monitoring{{ else if eq .path.basename "loki" }}monitoring{{ else if eq .path.basename "alloy" }}alloy{{ else }}{{ .path.basename }}{{ end }}'
       syncPolicy:
         automated:
           prune: true

@@ -12,6 +12,6 @@ spec:
       kind: Rule
       services:
         - name: stirling-pdf
-          port: 80
+          port: 8080
   tls:
     secretName: stirling-pdf-tls

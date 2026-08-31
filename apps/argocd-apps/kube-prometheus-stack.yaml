@@ -16,10 +16,10 @@ spec:
         valueFiles:
           - $values/apps/kube-prometheus-stack/values.yaml
     - repoURL: https://github.com/HenryHST/minilab
-      targetRevision: HEAD
+      targetRevision: main
       ref: values
     - repoURL: https://github.com/HenryHST/minilab
-      targetRevision: HEAD
+      targetRevision: main
       path: apps/kube-prometheus-stack
   destination:
     server: https://kubernetes.default.svc

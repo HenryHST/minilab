@@ -4,7 +4,7 @@ metadata:
   name: infra
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
@@ -51,7 +51,7 @@ spec:
         - resources-finalizer.argocd.argoproj.io
     spec:
       project: infrastruktur
-      {{- if .multiSource }}
+      {{- if dig "multiSource" false . }}
       sources:
         - repoURL: https://prometheus-community.github.io/helm-charts
           chart: kube-prometheus-stack

@@ -18,7 +18,7 @@ apps/<name>/               # User-Apps (noch einzelne Application-CRs)
   …
 ```
 
-Infrastruktur-Apps unter `infra/*` werden vom ApplicationSet [`infra`](apps/argocd-apps/infra-applicationset.yaml) automatisch registriert (ein Ordner = eine Application). User-Apps unter `apps/<name>/` weiterhin über Manifeste in `apps/argocd-apps/`.
+Infrastruktur-Apps unter `infra/*` werden vom ApplicationSet [`infra`](apps/argocd-apps/infra-applicationset.yaml) über einen expliziten List-Generator registriert (Pfad, Namespace, Sync-Wave pro Eintrag). User-Apps unter `apps/<name>/` weiterhin über Manifeste in `apps/argocd-apps/`.
 
 ### Sync waves
 
@@ -87,7 +87,7 @@ kubectl create token headlamp-admin -n kube-system
 
 ## Neue App hinzufügen
 
-**Infrastruktur (`infra/`):** Ordner `infra/<name>/` mit `kustomization.yaml` anlegen — ApplicationSet `infra` erzeugt die Application automatisch (sync-wave 0, Ausnahmen: kube-prometheus-stack wave 1, loki/alloy wave 3). Ausnahmen: `infra/argocd/` (Bootstrap, später self-managed) und `infra/kargo/` (noch manuell).
+**Infrastruktur (`infra/`):** Ordner `infra/<name>/` mit `kustomization.yaml` anlegen und Eintrag in [`apps/argocd-apps/infra-applicationset.yaml`](apps/argocd-apps/infra-applicationset.yaml) (`list` generator: `app`, `path`, `namespace`, `syncWave`) ergänzen. Ausnahmen: `infra/argocd/` (Bootstrap, später self-managed) und `infra/kargo/` (noch manuell).
 
 **User-App (`apps/`):**
 
@@ -115,3 +115,15 @@ kubectl get clusterissuer letsencrypt-prod
 ```
 
 Altes manuelles Kopieren von `stadthagen-tls` aus `traefik` ist nicht mehr nötig.
+
+## Troubleshooting (Argo CD)
+
+**`namespace '' do not match any of the allowed destinations`:** AppProject `infrastruktur` und ApplicationSet `infra` aus `main` syncen (`argocd app sync homelab`). Jede infra-App braucht einen expliziten `namespace`-Eintrag im List-Generator.
+
+**`Unable to create .../.git/index.lock': File exists`:** Hängender Git-Checkout im repo-server Cache — repo-server neu starten:
+
+```bash
+kubectl rollout restart deployment argocd-repo-server -n argocd
+```
+
+Falls es danach weiter auftritt, betroffene Cache-Locks im repo-server-Pod entfernen oder den Pod löschen (Cache wird neu aufgebaut).

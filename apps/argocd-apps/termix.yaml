@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/HenryHST/minilab
     path: apps/termix
-    targetRevision: HEAD
+    targetRevision: main
   destination:
     server: https://kubernetes.default.svc
     namespace: termix

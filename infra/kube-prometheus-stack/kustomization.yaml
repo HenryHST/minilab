@@ -13,5 +13,5 @@ resources:
   - datasources.yaml
   - dashboard-proxmox-syslog.yaml
 
-# Helm chart is rendered via native Argo CD Helm source (see argocd-apps/kube-prometheus-stack.yaml).
+# Helm chart is rendered via native Argo CD Helm source (ApplicationSet infra templatePatch).
 # Kustomize helmCharts would hit the repo-server CMP sidecar (:8081) and fail on this large chart.

@@ -25,11 +25,11 @@ spec:
     - server: https://kubernetes.default.svc
       namespace: pangolin-publish
     - server: https://kubernetes.default.svc
-      namespace: registry
-    - server: https://kubernetes.default.svc
       namespace: monitoring
     - server: https://kubernetes.default.svc
       namespace: authentik
+    - server: https://kubernetes.default.svc
+      namespace: alloy
   clusterResourceWhitelist:
     - group: "*"
       kind: "*"

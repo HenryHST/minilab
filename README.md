@@ -25,13 +25,13 @@ Infrastruktur-Apps unter `infra/*` werden vom ApplicationSet [`infra`](apps/argo
 | Wave | Apps |
 |------|------|
 | 0 | AppProject `infrastruktur`, ApplicationSet `infra` → `infra/cert-manager`, `infra/newt`, `infra/metrics-server`, `infra/registry` |
-| 1 | longhorn, system-upgrade-controller, kube-prometheus-stack |
+| 1 | longhorn, system-upgrade-controller, ApplicationSet → `infra/kube-prometheus-stack` |
 | 2 | unifipoller, authentik, termix, headlamp |
-| 3 | omni-tools, it-tools, pgweb, web, drawio, status, grafana-loki, vaultwarden, pangolin-publish |
+| 3 | omni-tools, it-tools, pgweb, web, drawio, status, ApplicationSet → `infra/loki` (App `grafana-loki`), `infra/alloy`, vaultwarden, pangolin-publish |
 
 ### AppProject `infrastruktur`
 
-ApplicationSet-Apps (`infra/*`) und `longhorn`, `pangolin-publish`, `system-upgrade-controller`, `kube-prometheus-stack`, `grafana-loki`, `authentik` — alle anderen Apps nutzen `default`.
+ApplicationSet-Apps (`infra/*`) und `longhorn`, `pangolin-publish`, `system-upgrade-controller`, `authentik` — alle anderen Apps nutzen `default`.
 
 ## Apps
 
@@ -52,8 +52,9 @@ ApplicationSet-Apps (`infra/*`) und `longhorn`, `pangolin-publish`, `system-upgr
 | headlamp | `apps/headlamp/` | `kube-system` | `headlamp.stadthagen.dev` ([Headlamp](https://kubernetes-sigs.github.io/headlamp/) Helm 0.45.0; Plugin Manager: [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) 0.1.1, [gatekeeper](https://github.com/open-policy-agent/gatekeeper-headlamp-plugin) 0.2.0) |
 | status | `apps/status/` | `uptimekuma` | `status.stadthagen.dev` (Uptime Kuma 2.5.3, **SQLite** auf hostPath `/var/lib/uptimekuma` @ `pi4cl`; daily NFS backup + bootstrap restore → `192.168.0.25:/var/nfs/shared/infra01/uptimekuma-backups`) |
 | vaultwarden | `apps/vaultwarden/` | `vaultwarden` | `vaultwarden.stadthagen.dev` (Vaultwarden 1.37.2, Longhorn PVC 2Gi, Authentik SSO; daily NFS backup + bootstrap restore → `192.168.0.25:/var/nfs/shared/infra01/vaultwarden-backups`) |
-| kube-prometheus-stack | `apps/kube-prometheus-stack/` | `monitoring` | `grafana.stadthagen.dev`, `prometheus.stadthagen.dev`, `alert-manager.stadthagen.dev` (Helm chart 88.5.4: Prometheus Operator, Grafana, Alertmanager, node-exporter, kube-state-metrics; Longhorn PVC 5Gi / 9d retention; E-Mail alerts) |
-| grafana-loki | `apps/loki/` | `monitoring` | `loki.stadthagen.dev` (Helm chart 18.11.7, Longhorn PVC 2Gi) |
+| kube-prometheus-stack | `infra/kube-prometheus-stack/` | `monitoring` | `grafana.stadthagen.dev`, `prometheus.stadthagen.dev`, `alert-manager.stadthagen.dev` (Helm chart 88.5.4: Prometheus Operator, Grafana, Alertmanager, node-exporter, kube-state-metrics; Longhorn PVC 5Gi / 9d retention; E-Mail alerts) |
+| grafana-loki | `infra/loki/` | `monitoring` | `loki.stadthagen.dev` (Helm chart 18.11.7, Longhorn PVC 2Gi) |
+| alloy | `infra/alloy/` | `alloy` | Syslog → Loki (`loki-gateway.monitoring.svc.cluster.local`) |
 | system-upgrade-controller | `apps/system-upgrade-controller/` | `system-upgrade` | Rancher SUC v0.20.1 (CRDs + Controller). **Keine** Upgrade-`Plan`s — kein automatisches k3s-Upgrade, bis Plans ergänzt werden. |
 
 Longhorn: Replika-Daten lokal `/var/lib/longhorn` auf Worker mit Label `node.longhorn.io/create-default-disk=true` (nxk3-w01–w03). Backup-Target: `nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups?nfsOptions=nfsvers=3,nolock` (UniFi NAS benötigt NFSv3).
@@ -68,11 +69,11 @@ Grafana-Werte im kube-prometheus-stack basieren auf [JimsGarage GitOps/Grafana](
 
 Login: lokaler Admin **und** Authentik SSO (`oauth_auto_login: false`). Rollen über Authentik-Gruppen `Grafana Admins` → Admin, `Grafana Editors` → Editor, sonst Viewer. Provisionierte Dashboards: UniFi Poller, Argo CD (19993), Authentik (14837), Home Assistant Overview (16888), Proxmox Syslog.
 
-Externe Scrape-Jobs (Proxmox, Pangolin, Home Assistant, Unpoller, Authentik, Argo CD) liegen in `apps/kube-prometheus-stack/values.yaml` unter `prometheus.prometheusSpec.additionalScrapeConfigs`. Custom Alert-Rules: `homelab-alerts.yaml`. Alertmanager: E-Mail an `info@henrystadthagen.de`.
+Externe Scrape-Jobs (Proxmox, Pangolin, Home Assistant, Unpoller, Authentik, Argo CD) liegen in `infra/kube-prometheus-stack/values.yaml` unter `prometheus.prometheusSpec.additionalScrapeConfigs`. Custom Alert-Rules: `homelab-alerts.yaml`. Alertmanager: E-Mail an `info@henrystadthagen.de`.
 
-Das Helm-Chart wird über **native Argo-CD-Helm-Quelle** (Multi-Source Application) gerendert; Kustomize-Ressourcen (Ingress, Certificates, Rules) liegen im selben App-Pfad. So umgeht man den Kustomize-Helm-CMP auf Port 8081, der bei diesem großen Chart fehlschlagen kann.
+Das Helm-Chart wird über **native Argo-CD-Helm-Quelle** (Multi-Source via ApplicationSet `infra`) gerendert; Kustomize-Ressourcen (Ingress, Certificates, Rules) liegen im selben App-Pfad. So umgeht man den Kustomize-Helm-CMP auf Port 8081, der bei diesem großen Chart fehlschlagen kann.
 
-**Migration:** Secrets `grafana-oauth` und optional `grafana-hcloud` müssen im Namespace `monitoring` existieren (vorher `grafana`). Beispiel: `apps/kube-prometheus-stack/oauth-secret.example.yaml`.
+**Migration:** Secrets `grafana-oauth` und optional `grafana-hcloud` müssen im Namespace `monitoring` existieren (vorher `grafana`). Beispiel: `infra/kube-prometheus-stack/oauth-secret.example.yaml`.
 
 Headlamp-Login ([Service Account token](https://headlamp.dev/docs/latest/installation/#create-a-service-account-token)): SA `headlamp-admin` mit ClusterRoleBinding `headlamp-admin-ui` → `cluster-admin` (Chart-CRB `headlamp-admin` gilt dem Pod-SA `headlamp`). Long-lived Token in Secret `headlamp-admin-token` (Hülle in Git, Wert nur im Cluster) — Ausgabe in die Login-Maske einfügen:
 
@@ -86,7 +87,7 @@ kubectl create token headlamp-admin -n kube-system
 
 ## Neue App hinzufügen
 
-**Infrastruktur (`infra/`):** Ordner `infra/<name>/` mit `kustomization.yaml` anlegen — ApplicationSet `infra` erzeugt die Application automatisch (sync-wave 0). Ausnahmen: `infra/argocd/` (Bootstrap, später self-managed) und `infra/kargo/` (noch manuell).
+**Infrastruktur (`infra/`):** Ordner `infra/<name>/` mit `kustomization.yaml` anlegen — ApplicationSet `infra` erzeugt die Application automatisch (sync-wave 0, Ausnahmen: kube-prometheus-stack wave 1, loki/alloy wave 3). Ausnahmen: `infra/argocd/` (Bootstrap, später self-managed) und `infra/kargo/` (noch manuell).
 
 **User-App (`apps/`):**
 

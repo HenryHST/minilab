@@ -24,7 +24,7 @@ Infrastruktur-Apps unter `infra/*` werden vom ApplicationSet [`infra`](apps/argo
 
 | Wave | Apps |
 |------|------|
-| 0 | AppProject `infrastruktur`, ApplicationSet `infra` → `infra/cert-manager`, `infra/newt`, `infra/metrics-server`, `infra/registry` |
+| 0 | AppProject `infrastruktur`, ApplicationSet `infra` → `infra/cert-manager`, `infra/newt`, `infra/metrics-server`, `infra/registry` (List-Generator; AppProject wave 0, ApplicationSet wave 1) |
 | 1 | longhorn, system-upgrade-controller, ApplicationSet → `infra/kube-prometheus-stack` |
 | 2 | unifipoller, authentik, termix, headlamp |
 | 3 | omni-tools, it-tools, pgweb, web, drawio, status, ApplicationSet → `infra/loki` (App `grafana-loki`), `infra/alloy`, vaultwarden, pangolin-publish |
@@ -118,7 +118,7 @@ Altes manuelles Kopieren von `stadthagen-tls` aus `traefik` ist nicht mehr nöti
 
 ## Troubleshooting (Argo CD)
 
-**`namespace '' do not match any of the allowed destinations`:** AppProject `infrastruktur` und ApplicationSet `infra` aus `main` syncen (`argocd app sync homelab`). Jede infra-App braucht einen expliziten `namespace`-Eintrag im List-Generator.
+**`app is not allowed in project "infrastruktur"` / leerer Namespace:** ApplicationSet `infra` aus `main` syncen. Das Template nutzt `dig "multiSource" false .` — mit `missingkey=error` schlägt `{{- if .multiSource }}` für alle Apps ohne dieses Feld (z. B. `newt`) fehl und erzeugt kaputte Application-Specs. Nach Fix: `kubectl -n argocd annotate applicationset infra argocd.argoproj.io/refresh=hard --overwrite && argocd app sync homelab`
 
 **`Unable to create .../.git/index.lock': File exists`:** Hängender Git-Checkout im repo-server Cache — repo-server neu starten:
 

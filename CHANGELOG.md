@@ -6,21 +6,17 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- `kube-prometheus-stack` — consolidates Prometheus Operator, Grafana, Alertmanager, node-exporter, and kube-state-metrics in namespace `monitoring` (chart 88.5.4; adapted from [mortennordbye/homelab](https://github.com/mortennordbye/homelab/tree/main/k8s/talos/infra/kube-prometheus-stack))
-- Custom `homelab-alerts` PrometheusRules (workload + platform alerts)
-- Longhorn ServiceMonitor for Prometheus Operator scraping
+- ApplicationSet `infra` — auto-registers `infra/cert-manager`, `infra/newt`, `infra/metrics-server`, `infra/registry` (homelab-style; sync-wave 0)
 
 ### Changed
 
-- **Breaking:** removed standalone `prometheus`, `grafana`, and `alertmanager` apps — replaced by `kube-prometheus-stack`
-- Loki moved from namespace `loki` to `monitoring`; Alloy push URL updated
-- AppProject `infrastruktur` destination namespace `monitoring` replaces `grafana`, `prometheus`, `alertmanager`, `loki`
+- Moved `cert-manager`, `newt`, `metrics-server` from `apps/` to `infra/`; removed individual Application CRs (big-bang cutover)
+- `infra/registry/kustomization.yaml` trimmed to existing `service.yaml` only (`kube-system`)
 
 ### Migration notes
 
-- Copy or recreate Secrets `grafana-oauth` and `grafana-hcloud` in namespace `monitoring` before sync
-- Prometheus/Grafana TSDB data in old namespaces is not migrated automatically (new PVCs in `monitoring`)
-- Hostnames unchanged: `grafana.stadthagen.dev`, `prometheus.stadthagen.dev`, `alert-manager.stadthagen.dev`, `loki.stadthagen.dev`
+- After sync: old Applications `cert-manager`, `newt`, `metrics-server` are replaced by ApplicationSet-generated apps with the same names
+- Requires Argo CD ApplicationSet controller (bundled with argo-cd Helm chart)
 
 ## [0.7.0] - 2026-08-26
 

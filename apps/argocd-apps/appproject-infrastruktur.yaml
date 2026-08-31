@@ -24,11 +24,7 @@ spec:
     - server: https://kubernetes.default.svc
       namespace: pangolin-publish
     - server: https://kubernetes.default.svc
-      namespace: grafana
-    - server: https://kubernetes.default.svc
-      namespace: loki
-    - server: https://kubernetes.default.svc
-      namespace: alertmanager
+      namespace: monitoring
     - server: https://kubernetes.default.svc
       namespace: authentik
   clusterResourceWhitelist:

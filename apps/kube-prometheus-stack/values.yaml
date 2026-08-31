@@ -1,0 +1,347 @@
+# kube-prometheus-stack — adapted from mortennordbye/homelab k8s/talos/infra/kube-prometheus-stack
+# Grafana dashboards/OIDC preserved from apps/grafana/values.yaml
+
+prometheus:
+  ingress:
+    enabled: false
+  prometheusSpec:
+    replicas: 1
+    retention: 9d
+    retentionSize: 2GB
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+    serviceMonitorNamespaceSelector: {}
+    serviceMonitorSelector: {}
+    podMonitorNamespaceSelector: {}
+    podMonitorSelector: {}
+    additionalScrapeConfigs:
+      - job_name: pexpve01
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - pexpve01.stadthagen.dev:9221
+      - job_name: pexpve02
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - pexpve02.stadthagen.dev:9221
+      - job_name: pexpve03
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - pexpve03.stadthagen.dev:9221
+      - job_name: pangolin
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - pangolin.stadthagen.dev:9100
+      - job_name: homeassistant
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - ha02.stadthagen.dev:9100
+      - job_name: unpoller
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - unpoller.unpoller.svc.cluster.local:9130
+      - job_name: authentik
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - authentik-server-metrics.authentik.svc.cluster.local:9300
+              - authentik-worker-metrics.authentik.svc.cluster.local:9300
+      - job_name: argocd-server
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - argo-cd-argocd-server-metrics.argocd.svc.cluster.local:8083
+      - job_name: argocd-repo-server
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - argo-cd-argocd-repo-server-metrics.argocd.svc.cluster.local:8084
+      - job_name: argocd-application-controller
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - argo-cd-argocd-application-controller-metrics.argocd.svc.cluster.local:8082
+
+grafana:
+  enabled: true
+  replicas: 1
+  ingress:
+    enabled: false
+  deploymentStrategy:
+    type: Recreate
+  nodeSelector:
+    worker: "true"
+  persistence:
+    enabled: true
+    type: pvc
+    existingClaim: grafana-data
+    storageClassName: longhorn
+  plugins:
+    - apricote-hcloud-datasource
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: unpoller
+          orgId: 1
+          folder: UniFi Poller
+          type: file
+          disableDeletion: false
+          editable: false
+          options:
+            path: /var/lib/grafana/dashboards/unpoller
+        - name: argocd
+          orgId: 1
+          folder: Argo CD
+          type: file
+          disableDeletion: false
+          editable: false
+          options:
+            path: /var/lib/grafana/dashboards/argocd
+        - name: authentik
+          orgId: 1
+          folder: Authentik
+          type: file
+          disableDeletion: false
+          editable: false
+          options:
+            path: /var/lib/grafana/dashboards/authentik
+        - name: homeassistant
+          orgId: 1
+          folder: Home Assistant
+          type: file
+          disableDeletion: false
+          editable: false
+          options:
+            path: /var/lib/grafana/dashboards/homeassistant
+        - name: hetzner
+          orgId: 1
+          folder: Hetzner Cloud
+          type: file
+          disableDeletion: false
+          editable: false
+          options:
+            path: /var/lib/grafana/dashboards/hetzner
+        - name: proxmox
+          orgId: 1
+          folder: Proxmox
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/proxmox
+  dashboards:
+    unpoller:
+      client-dpi:
+        gnetId: 11310
+        revision: 10
+        datasource: Prometheus
+      network-sites:
+        gnetId: 11311
+        revision: 10
+        datasource: Prometheus
+      usw-insights:
+        gnetId: 11312
+        revision: 10
+        datasource: Prometheus
+      usg-insights:
+        gnetId: 11313
+        revision: 10
+        datasource: Prometheus
+      uap-insights:
+        gnetId: 11314
+        revision: 10
+        datasource: Prometheus
+      client-insights:
+        gnetId: 11315
+        revision: 10
+        datasource: Prometheus
+    argocd:
+      operational-overview:
+        gnetId: 19993
+        datasource: Prometheus
+    authentik:
+      authentik:
+        gnetId: 14837
+        datasource: Prometheus
+    homeassistant:
+      overview:
+        gnetId: 16888
+        datasource: Prometheus
+    hetzner:
+      servers-load-balancers:
+        gnetId: 20257
+        datasource: Hetzner Cloud
+  grafana.ini:
+    server:
+      root_url: https://grafana.stadthagen.dev
+      domain: grafana.stadthagen.dev
+    users:
+      allow_sign_up: false
+    auth:
+      oauth_auto_login: false
+    auth.generic_oauth:
+      enabled: true
+      name: authentik
+      allow_sign_up: true
+      client_id: $__file{/etc/secrets/auth_generic_oauth/client-id}
+      client_secret: $__file{/etc/secrets/auth_generic_oauth/client-secret}
+      scopes: openid profile email
+      auth_url: https://idp.stadthagen.dev/application/o/authorize/
+      token_url: https://idp.stadthagen.dev/application/o/token/
+      api_url: https://idp.stadthagen.dev/application/o/userinfo/
+      signout_redirect_url: https://idp.stadthagen.dev/application/o/grafana/end-session/
+      role_attribute_path: "contains(groups[*], 'Grafana Admins') && 'Admin' || contains(groups[*], 'Grafana Editors') && 'Editor' || 'Viewer'"
+      role_attribute_strict: false
+    analytics:
+      check_for_updates: true
+    log:
+      mode: console
+  envValueFrom:
+    HCLOUD_API_TOKEN:
+      secretKeyRef:
+        name: grafana-hcloud
+        key: token
+        optional: true
+  extraSecretMounts:
+    - name: auth-generic-oauth-secret-mount
+      secretName: grafana-oauth
+      mountPath: /etc/secrets/auth_generic_oauth
+      readOnly: true
+      defaultMode: 0440
+    - name: hcloud-api-token
+      secretName: grafana-hcloud
+      mountPath: /etc/secrets/hcloud
+      readOnly: true
+      defaultMode: 0440
+      optional: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+    datasources:
+      enabled: true
+      label: grafana_datasource
+      defaultDatasourceEnabled: false
+
+alertmanager:
+  enabled: true
+  ingress:
+    enabled: false
+  alertmanagerSpec:
+    replicas: 1
+    retention: 120h
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
+  config:
+    global:
+      smtp_smarthost: mail.henrstadthagen.de:25
+      smtp_from: auto@henrystadthagen.de
+    route:
+      receiver: email
+      group_by: [alertname]
+    receivers:
+      - name: email
+        email_configs:
+          - to: info@henrystadthagen.de
+
+nodeExporter:
+  enabled: true
+
+kubeStateMetrics:
+  enabled: true
+
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+
+kubeApiServer:
+  enabled: false
+
+kubelet:
+  enabled: true
+
+kubeControllerManager:
+  enabled: false
+
+coreDns:
+  enabled: true
+
+kubeEtcd:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+
+kubeProxy:
+  enabled: false
+
+defaultRules:
+  create: true
+  disabled:
+    KubeHpaMaxedOut: true
+  rules:
+    alertmanager: false
+    etcd: false
+    configReloaders: false
+    general: true
+    k8s: true
+    kubeApiserverAvailability: false
+    kubeApiserverSlos: false
+    kubelet: true
+    kubeProxy: false
+    kubePrometheusGeneral: true
+    kubePrometheusNodeRecording: true
+    kubernetesApps: true
+    kubernetesResources: true
+    kubernetesStorage: true
+    kubernetesSystem: true
+    kubeScheduler: false
+    kubeStateMetrics: true
+    network: true
+    node: true
+    nodeExporterAlerting: true
+    nodeExporterRecording: true
+    prometheus: true
+    prometheusOperator: true

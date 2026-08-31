@@ -6,7 +6,7 @@ Receives RFC3164 syslog from `pve01`/`pve02`/`pve03` and pushes to in-cluster Lo
 |------|--------|
 | LB IP | `192.168.0.217` (Cilium pool) |
 | Port | **1514** UDP/TCP |
-| Loki | `http://loki-gateway.loki.svc.cluster.local/loki/api/v1/push` |
+| Loki | `http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push` |
 | Grafana | `{job="syslog"}` or `{job="syslog", host="pve02"}` |
 
 ## Proxmox rsyslog (each node)

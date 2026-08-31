@@ -20,13 +20,13 @@ Jeder Ordner unter `apps/<name>/` ist eine eigenständige Workload-App. Registri
 | Wave | Apps |
 |------|------|
 | 0 | AppProject `infrastruktur` |
-| 1 | cert-manager, longhorn, newt, system-upgrade-controller, metrics-server |
-| 2 | grafana, prometheus, unifipoller, authentik, termix, headlamp |
-| 3 | omni-tools, it-tools, pgweb, web, drawio, status, grafana-loki, alertmanager, vaultwarden, pangolin-publish |
+| 1 | cert-manager, longhorn, newt, system-upgrade-controller, metrics-server, kube-prometheus-stack |
+| 2 | unifipoller, authentik, termix, headlamp |
+| 3 | omni-tools, it-tools, pgweb, web, drawio, status, grafana-loki, vaultwarden, pangolin-publish |
 
 ### AppProject `infrastruktur`
 
-`cert-manager`, `longhorn`, `newt`, `pangolin-publish`, `system-upgrade-controller`, `metrics-server`, `grafana`, `grafana-loki`, `alertmanager`, `authentik` — alle anderen Apps nutzen `default`.
+`cert-manager`, `longhorn`, `newt`, `pangolin-publish`, `system-upgrade-controller`, `metrics-server`, `kube-prometheus-stack`, `grafana-loki`, `authentik` — alle anderen Apps nutzen `default`.
 
 ## Apps
 
@@ -46,8 +46,8 @@ Jeder Ordner unter `apps/<name>/` ist eine eigenständige Workload-App. Registri
 | headlamp | `apps/headlamp/` | `kube-system` | `headlamp.stadthagen.dev` ([Headlamp](https://kubernetes-sigs.github.io/headlamp/) Helm 0.45.0; Plugin Manager: [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) 0.1.1, [gatekeeper](https://github.com/open-policy-agent/gatekeeper-headlamp-plugin) 0.2.0) |
 | status | `apps/status/` | `uptimekuma` | `status.stadthagen.dev` (Uptime Kuma 2.5.3, **SQLite** auf hostPath `/var/lib/uptimekuma` @ `pi4cl`; daily NFS backup + bootstrap restore → `192.168.0.25:/var/nfs/shared/infra01/uptimekuma-backups`) |
 | vaultwarden | `apps/vaultwarden/` | `vaultwarden` | `vaultwarden.stadthagen.dev` (Vaultwarden 1.37.2, Longhorn PVC 2Gi, Authentik SSO; daily NFS backup + bootstrap restore → `192.168.0.25:/var/nfs/shared/infra01/vaultwarden-backups`) |
-| grafana | `apps/grafana/` | `grafana` | `grafana.stadthagen.dev` (Helm chart 10.5.15, Longhorn PVC 5Gi, 1 replica) |
-| prometheus | `apps/prometheus/` | `prometheus` | `prometheus.stadthagen.dev` (prom/prometheus:v3.7.1, scrape jobs in `scrape-config.yaml`, Longhorn PVC 5Gi, 1 replica) |
+| kube-prometheus-stack | `apps/kube-prometheus-stack/` | `monitoring` | `grafana.stadthagen.dev`, `prometheus.stadthagen.dev`, `alert-manager.stadthagen.dev` (Helm chart 88.5.4: Prometheus Operator, Grafana, Alertmanager, node-exporter, kube-state-metrics; Longhorn PVC 5Gi / 9d retention; E-Mail alerts) |
+| grafana-loki | `apps/loki/` | `monitoring` | `loki.stadthagen.dev` (Helm chart 18.11.7, Longhorn PVC 2Gi) |
 | system-upgrade-controller | `apps/system-upgrade-controller/` | `system-upgrade` | Rancher SUC v0.20.1 (CRDs + Controller). **Keine** Upgrade-`Plan`s — kein automatisches k3s-Upgrade, bis Plans ergänzt werden. |
 
 Longhorn: Replika-Daten lokal `/var/lib/longhorn` auf Worker mit Label `node.longhorn.io/create-default-disk=true` (nxk3-w01–w03). Backup-Target: `nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups?nfsOptions=nfsvers=3,nolock` (UniFi NAS benötigt NFSv3).
@@ -58,11 +58,13 @@ Vaultwarden: CronJob `vaultwarden-backup-cron` (02:00 UTC) tar’t `/data` per `
 
 Termix: CronJob `termix-backup-cron` (03:00 UTC) `pg_dump` → NFS `192.168.0.25:/var/nfs/shared/infra01/termix-backups` (Retention 7). Manuell: `kubectl -n termix create job --from=cronjob/termix-backup-cron termix-backup-manual`. Bootstrap-Restore (Cluster-Neuaufsetzen): ConfigMap `termix-restore` → `enabled=true` (bei bereits migrierter DB zusätzlich `force=true`), Argo Sync (PostSync-Job); danach sofort `enabled=false` committen. Secrets müssen über SecretSpec wiederhergestellt werden (`TERMIX_OAUTH_CLIENT_SECRET`, **gleiche** `TERMIX_HA_CRYPTO_HEX` wie beim Backup). NAS-Ordner vorher anlegen: `mkdir -p /var/nfs/shared/infra01/termix-backups`.
 
-Grafana-Werte basieren auf [JimsGarage GitOps/Grafana](https://github.com/JamesTurland/JimsGarage/tree/main/Kubernetes/GitOps/Grafana) (Helm via Kustomize, Traefik IngressRoute statt Chart-Ingress). Grafana Prometheus-Datasource zeigt auf `http://prometheus.prometheus.svc.cluster.local:9090`.
+Grafana-Werte im kube-prometheus-stack basieren auf [JimsGarage GitOps/Grafana](https://github.com/JamesTurland/JimsGarage/tree/main/Kubernetes/GitOps/Grafana) und [mortennordbye/homelab](https://github.com/mortennordbye/homelab/tree/main/k8s/talos/infra/kube-prometheus-stack) (Helm via Kustomize, Traefik IngressRoute). Grafana Prometheus-Datasource zeigt auf `http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090`.
 
-Login: lokaler Admin **und** Authentik SSO (`oauth_auto_login: false`). Rollen über Authentik-Gruppen `Grafana Admins` → Admin, `Grafana Editors` → Editor, sonst Viewer. Provisionierte Dashboards: UniFi Poller, Argo CD (19993), Authentik (14837), Home Assistant Overview (16888).
+Login: lokaler Admin **und** Authentik SSO (`oauth_auto_login: false`). Rollen über Authentik-Gruppen `Grafana Admins` → Admin, `Grafana Editors` → Editor, sonst Viewer. Provisionierte Dashboards: UniFi Poller, Argo CD (19993), Authentik (14837), Home Assistant Overview (16888), Proxmox Syslog.
 
-Scrape-Jobs für Prometheus in `apps/prometheus/scrape-config.yaml` ergänzen (YAML-Liste); Reload per ConfigMap-Update (config-reloader) oder `/-/reload`. Argo-CD-Metriken: Services `*-metrics` in Namespace `argocd` (Helm `metrics.enabled`, ohne ServiceMonitor).
+Externe Scrape-Jobs (Proxmox, Pangolin, Home Assistant, Unpoller, Authentik, Argo CD) liegen in `apps/kube-prometheus-stack/values.yaml` unter `prometheus.prometheusSpec.additionalScrapeConfigs`. Custom Alert-Rules: `homelab-alerts.yaml`. Alertmanager: E-Mail an `info@henrystadthagen.de`.
+
+**Migration:** Secrets `grafana-oauth` und optional `grafana-hcloud` müssen im Namespace `monitoring` existieren (vorher `grafana`). Beispiel: `apps/kube-prometheus-stack/oauth-secret.example.yaml`.
 
 Headlamp-Login ([Service Account token](https://headlamp.dev/docs/latest/installation/#create-a-service-account-token)): SA `headlamp-admin` mit ClusterRoleBinding `headlamp-admin-ui` → `cluster-admin` (Chart-CRB `headlamp-admin` gilt dem Pod-SA `headlamp`). Long-lived Token in Secret `headlamp-admin-token` (Hülle in Git, Wert nur im Cluster) — Ausgabe in die Login-Maske einfügen:
 
@@ -79,6 +81,10 @@ kubectl create token headlamp-admin -n kube-system
 1. Ordner `apps/<name>/` anlegen mit `kustomization.yaml`, typischerweise `deployment.yaml`, `service.yaml`, `ingressroute.yaml`.
 2. Application-Manifest in `apps/argocd-apps/<name>.yaml` mit passender `sync-wave` (1/2/3) ergänzen und in `kustomization.yaml` listen.
 3. Nach `main` pushen; Parent `homelab` synct die Child-App automatisch.
+
+### Langfristig: ApplicationSets (homelab-Pattern)
+
+Das [Talos-Homelab](https://github.com/mortennordbye/homelab/tree/main/k8s/talos/infra/argocd) nutzt ApplicationSets (`infra` für `k8s/talos/infra/*`, `apps` für Workloads) statt einzelner Application-CRs. minilab bleibt vorerst beim App-of-Apps-Muster; eine spätere Migration kann das homelab-Layout übernehmen.
 
 ## TLS
 

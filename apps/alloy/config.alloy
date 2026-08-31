@@ -9,7 +9,7 @@ logging {
 
 loki.write "cluster" {
   endpoint {
-    url = "http://loki-gateway.loki.svc.cluster.local/loki/api/v1/push"
+    url = "http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push"
   }
   external_labels = {
     cluster = "nxk3",

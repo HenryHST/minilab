@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- `kube-prometheus-stack` — consolidates Prometheus Operator, Grafana, Alertmanager, node-exporter, and kube-state-metrics in namespace `monitoring` (chart 88.5.4; adapted from [mortennordbye/homelab](https://github.com/mortennordbye/homelab/tree/main/k8s/talos/infra/kube-prometheus-stack))
+- Custom `homelab-alerts` PrometheusRules (workload + platform alerts)
+- Longhorn ServiceMonitor for Prometheus Operator scraping
+
+### Changed
+
+- **Breaking:** removed standalone `prometheus`, `grafana`, and `alertmanager` apps — replaced by `kube-prometheus-stack`
+- Loki moved from namespace `loki` to `monitoring`; Alloy push URL updated
+- AppProject `infrastruktur` destination namespace `monitoring` replaces `grafana`, `prometheus`, `alertmanager`, `loki`
+
+### Migration notes
+
+- Copy or recreate Secrets `grafana-oauth` and `grafana-hcloud` in namespace `monitoring` before sync
+- Prometheus/Grafana TSDB data in old namespaces is not migrated automatically (new PVCs in `monitoring`)
+- Hostnames unchanged: `grafana.stadthagen.dev`, `prometheus.stadthagen.dev`, `alert-manager.stadthagen.dev`, `loki.stadthagen.dev`
+
 ## [0.7.0] - 2026-08-26
 
 Parallel ownership: `pangolin-publish` owns k3s Newt public resources **and** their Hetzner DNS A records.

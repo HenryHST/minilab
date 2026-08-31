@@ -17,3 +17,9 @@ defaultSettings:
 defaultBackupStore:
   # UniFi NAS export requires NFSv3 (v4 returns "No such file or directory").
   backupTarget: nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups?nfsOptions=nfsvers=3,nolock
+
+metrics:
+  serviceMonitor:
+    enabled: true
+    additionalLabels:
+      release: kube-prometheus-stack

@@ -9,28 +9,49 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-    - git:
-        repoURL: https://github.com/HenryHST/minilab
-        revision: main
-        directories:
-          - path: infra/*
-          # Bootstrap stays in apps/argocd-apps/ until self-managed via infra/argocd/.
-          - path: infra/argocd
-            exclude: true
-          - path: infra/kargo
-            exclude: true
-        values:
-          destinationNamespace: '{{ if eq .path.basename "cert-manager" }}certmanager{{ else if eq .path.basename "metrics-server" }}kube-system{{ else if eq .path.basename "registry" }}kube-system{{ else if eq .path.basename "kube-prometheus-stack" }}monitoring{{ else if eq .path.basename "loki" }}monitoring{{ else if eq .path.basename "alloy" }}alloy{{ else }}{{ .path.basename }}{{ end }}'
+    # Explicit list: reliable destination.namespace (git-directory values templating
+    # can render empty on some Argo CD versions). Add new infra/* apps here.
+    - list:
+        elements:
+          - app: cert-manager
+            path: infra/cert-manager
+            namespace: certmanager
+            syncWave: "0"
+          - app: metrics-server
+            path: infra/metrics-server
+            namespace: kube-system
+            syncWave: "0"
+          - app: registry
+            path: infra/registry
+            namespace: kube-system
+            syncWave: "0"
+          - app: newt
+            path: infra/newt
+            namespace: newt
+            syncWave: "0"
+          - app: kube-prometheus-stack
+            path: infra/kube-prometheus-stack
+            namespace: monitoring
+            syncWave: "1"
+            multiSource: true
+          - app: grafana-loki
+            path: infra/loki
+            namespace: monitoring
+            syncWave: "3"
+          - app: alloy
+            path: infra/alloy
+            namespace: alloy
+            syncWave: "3"
   template:
     metadata:
-      name: '{{ if eq .path.basename "loki" }}grafana-loki{{ else }}{{ .path.basename }}{{ end }}'
+      name: "{{ .app }}"
       annotations:
-        argocd.argoproj.io/sync-wave: '{{ if eq .path.basename "kube-prometheus-stack" }}1{{ else if or (eq .path.basename "loki") (eq .path.basename "alloy") }}3{{ else }}0{{ end }}'
+        argocd.argoproj.io/sync-wave: "{{ .syncWave }}"
       finalizers:
         - resources-finalizer.argocd.argoproj.io
     spec:
       project: infrastruktur
-      {{- if eq .path.basename "kube-prometheus-stack" }}
+      {{- if .multiSource }}
       sources:
         - repoURL: https://prometheus-community.github.io/helm-charts
           chart: kube-prometheus-stack
@@ -44,16 +65,16 @@ spec:
           ref: values
         - repoURL: https://github.com/HenryHST/minilab
           targetRevision: main
-          path: infra/kube-prometheus-stack
+          path: "{{ .path }}"
       {{- else }}
       source:
         repoURL: https://github.com/HenryHST/minilab
         targetRevision: main
-        path: "{{ .path.path }}"
+        path: "{{ .path }}"
       {{- end }}
       destination:
         server: https://kubernetes.default.svc
-        namespace: "{{ .values.destinationNamespace }}"
+        namespace: "{{ .namespace }}"
       syncPolicy:
         automated:
           prune: true

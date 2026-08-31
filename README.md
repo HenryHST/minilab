@@ -82,6 +82,10 @@ kubectl create token headlamp-admin -n kube-system
 2. Application-Manifest in `apps/argocd-apps/<name>.yaml` mit passender `sync-wave` (1/2/3) ergänzen und in `kustomization.yaml` listen.
 3. Nach `main` pushen; Parent `homelab` synct die Child-App automatisch.
 
+### Langfristig: ApplicationSets (homelab-Pattern)
+
+Das [Talos-Homelab](https://github.com/mortennordbye/homelab/tree/main/k8s/talos/infra/argocd) nutzt ApplicationSets (`infra` für `k8s/talos/infra/*`, `apps` für Workloads) statt einzelner Application-CRs. minilab bleibt vorerst beim App-of-Apps-Muster; eine spätere Migration kann das homelab-Layout übernehmen.
+
 ## TLS
 
 IngressRoutes nutzen **cert-manager** (`Certificate` + `ClusterIssuer letsencrypt-prod`). Pro App existiert `certificate.yaml`; das TLS-Secret heißt `<app>-tls` (z. B. `grafana-tls`).

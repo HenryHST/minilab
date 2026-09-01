@@ -1,2 +1,6 @@
 crds:
   enabled: true
+
+# DNS01 self-check: use Hetzner recursive nameservers (controller flags, not ClusterIssuer fields).
+dns01RecursiveNameservers: "helium.ns.hetzner.de:53,oxygen.ns.hetzner.com:53"
+dns01RecursiveNameserversOnly: true

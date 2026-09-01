@@ -9,34 +9,68 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-    # Explicit list: reliable destination.namespace. Add new infra/* apps here.
+    # helmChart entries use native Argo CD Helm (not kustomize helmCharts).
+    # extras adds a git path for Kustomize resources alongside Helm.
     - list:
         elements:
           - app: cert-manager
             path: infra/cert-manager
             namespace: certmanager
             syncWave: "0"
+            helmRepo: https://charts.jetstack.io
+            helmChart: cert-manager
+            helmVersion: v1.21.1
+            helmReleaseName: cert-manager
+            helmValuesFile: infra/cert-manager/values.yaml
+            extras: true
+          - app: cert-manager-webhook-hetzner
+            namespace: certmanager
+            syncWave: "0"
+            helmRepo: https://charts.hetzner.cloud
+            helmChart: cert-manager-webhook-hetzner
+            helmVersion: "0.9.0"
+            helmReleaseName: cert-manager-webhook-hetzner
+            helmValuesFile: infra/cert-manager/webhook-values.yaml
           - app: metrics-server
-            path: infra/metrics-server
             namespace: kube-system
             syncWave: "0"
+            helmRepo: https://kubernetes-sigs.github.io/metrics-server/
+            helmChart: metrics-server
+            helmVersion: "3.14.0"
+            helmReleaseName: metrics-server
+            helmValuesFile: infra/metrics-server/values.yaml
           - app: registry
             path: infra/registry
             namespace: kube-system
             syncWave: "0"
           - app: newt
-            path: infra/newt
             namespace: newt
             syncWave: "0"
+            helmRepo: https://charts.fossorial.io
+            helmChart: newt
+            helmVersion: "1.5.0"
+            helmReleaseName: newt
+            helmValuesFile: infra/newt/values.yaml
           - app: kube-prometheus-stack
             path: infra/kube-prometheus-stack
             namespace: monitoring
             syncWave: "1"
-            multiSource: true
+            helmRepo: https://prometheus-community.github.io/helm-charts
+            helmChart: kube-prometheus-stack
+            helmVersion: "88.5.4"
+            helmReleaseName: kube-prometheus-stack
+            helmValuesFile: infra/kube-prometheus-stack/values.yaml
+            extras: true
           - app: grafana-loki
             path: infra/loki
             namespace: monitoring
             syncWave: "3"
+            helmRepo: https://grafana-community.github.io/helm-charts
+            helmChart: loki
+            helmVersion: "18.11.7"
+            helmReleaseName: loki
+            helmValuesFile: infra/loki/values.yaml
+            extras: true
           - app: alloy
             path: infra/alloy
             namespace: alloy
@@ -69,24 +103,25 @@ spec:
           - PruneLast=true
           - ServerSideApply=true
           - RespectIgnoreDifferences=true
-  # goTemplate conditionals must live in templatePatch (valid YAML string), not inline in template.
   templatePatch: |
-    {{- if dig "multiSource" false . }}
+    {{- if dig "helmChart" "" . }}
     spec:
       sources:
-        - repoURL: https://prometheus-community.github.io/helm-charts
-          chart: kube-prometheus-stack
-          targetRevision: 88.5.4
+        - repoURL: {{ .helmRepo }}
+          chart: {{ .helmChart }}
+          targetRevision: {{ .helmVersion }}
           helm:
-            releaseName: kube-prometheus-stack
+            releaseName: {{ dig "helmReleaseName" .app . }}
             valueFiles:
-              - $values/infra/kube-prometheus-stack/values.yaml
+              - $values/{{ .helmValuesFile }}
         - repoURL: https://github.com/HenryHST/minilab
           targetRevision: main
           ref: values
+        {{- if dig "extras" false . }}
         - repoURL: https://github.com/HenryHST/minilab
           targetRevision: main
           path: {{ .path }}
+        {{- end }}
     {{- else }}
     spec:
       source:

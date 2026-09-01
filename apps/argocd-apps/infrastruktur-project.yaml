@@ -1,0 +1,24 @@
+# Bootstrap: AppProject must exist before any Application references project "infrastruktur".
+# Uses project "default" so this Application can sync even when infrastruktur is missing.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infrastruktur-project
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/HenryHST/minilab
+    path: apps/argocd-bootstrap
+    targetRevision: main
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -128,7 +128,7 @@ kubectl apply -f https://raw.githubusercontent.com/HenryHST/minilab/main/apps/ar
 argocd app sync homelab
 ```
 
-**`MalformedYAMLError` in `infra-applicationset.yaml`:** ApplicationSets mit goTemplate (`{{- if ... }}`) dürfen nicht in `kustomize build apps/argocd-apps` liegen — sie liegen in `apps/argocd-apps/raw/` und werden über die Application `infra-applicationset` deployed.
+**`MalformedYAMLError` in `infra-applicationset.yaml`:** goTemplate-Conditionals (`{{- if ... }}`) dürfen nicht inline im `template`-Block stehen — nur in `templatePatch` (mehrzeiliger String). Die Datei liegt in `apps/argocd-apps/raw/`.
 
 **`app is not allowed in project "infrastruktur"` / leerer Namespace:** ApplicationSet `infra` aus `main` syncen. Das Template nutzt `dig "multiSource" false .` — mit `missingkey=error` schlägt `{{- if .multiSource }}` für alle Apps ohne dieses Feld (z. B. `newt`) fehl und erzeugt kaputte Application-Specs. Nach Fix: `kubectl -n argocd annotate applicationset infra argocd.argoproj.io/refresh=hard --overwrite && argocd app sync homelab`
 

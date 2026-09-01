@@ -12,21 +12,22 @@ Ansible legt nur die Parent-Application `homelab` an (`argocd_applications` in I
 
 ```
 apps/argocd-apps/bootstrap/  # AppProject infrastruktur (via Application infrastruktur-project, wave -2)
-apps/argocd-apps/          # Bootstrap: ApplicationSet infra, verbleibende Application-CRs
+apps/argocd-apps/raw/       # ApplicationSet infra (goTemplate — nicht via kustomize build)
+apps/argocd-apps/          # Bootstrap: Application-CRs (kustomize)
 infra/<name>/              # Infrastruktur-Workloads (ApplicationSet „infra“, sync-wave 0)
 apps/<name>/               # User-Apps (noch einzelne Application-CRs)
   kustomization.yaml
   …
 ```
 
-Infrastruktur-Apps unter `infra/*` werden vom ApplicationSet [`infra`](apps/argocd-apps/infra-applicationset.yaml) über einen expliziten List-Generator registriert (Pfad, Namespace, Sync-Wave pro Eintrag). User-Apps unter `apps/<name>/` weiterhin über Manifeste in `apps/argocd-apps/`.
+Infrastruktur-Apps unter `infra/*` werden vom ApplicationSet [`infra`](apps/argocd-apps/raw/infra-applicationset.yaml) über einen expliziten List-Generator registriert (Pfad, Namespace, Sync-Wave pro Eintrag). Das ApplicationSet liegt in `raw/` (goTemplate, kein kustomize build). User-Apps unter `apps/<name>/` weiterhin über Manifeste in `apps/argocd-apps/`.
 
 ### Sync waves
 
 | Wave | Apps |
 |------|------|
 | -2 | AppProject `infrastruktur` (direkt via `homelab`) + Application `infrastruktur-project` (Self-Heal) |
-| 2 | ApplicationSet `infra` (List-Generator → cert-manager, newt, metrics-server, registry, kube-prometheus-stack, …) |
+| 0 | Application `infra-applicationset` → ApplicationSet `infra` (`apps/argocd-apps/raw/`) |
 | 1 | longhorn, system-upgrade-controller |
 | 2 | unifipoller, authentik, termix, headlamp |
 | 3 | omni-tools, it-tools, pgweb, web, drawio, status, grafana-loki, alloy, vaultwarden, pangolin-publish |
@@ -89,7 +90,7 @@ kubectl create token headlamp-admin -n kube-system
 
 ## Neue App hinzufügen
 
-**Infrastruktur (`infra/`):** Ordner `infra/<name>/` mit `kustomization.yaml` anlegen und Eintrag in [`apps/argocd-apps/infra-applicationset.yaml`](apps/argocd-apps/infra-applicationset.yaml) (`list` generator: `app`, `path`, `namespace`, `syncWave`) ergänzen. Ausnahmen: `infra/argocd/` (Bootstrap, später self-managed) und `infra/kargo/` (noch manuell).
+**Infrastruktur (`infra/`):** Ordner `infra/<name>/` mit `kustomization.yaml` anlegen und Eintrag in [`apps/argocd-apps/raw/infra-applicationset.yaml`](apps/argocd-apps/raw/infra-applicationset.yaml) (`list` generator: `app`, `path`, `namespace`, `syncWave`) ergänzen. Ausnahmen: `infra/argocd/` (Bootstrap, später self-managed) und `infra/kargo/` (noch manuell).
 
 **User-App (`apps/`):**
 
@@ -126,6 +127,8 @@ Altes manuelles Kopieren von `stadthagen-tls` aus `traefik` ist nicht mehr nöti
 kubectl apply -f https://raw.githubusercontent.com/HenryHST/minilab/main/apps/argocd-apps/bootstrap/appproject-infrastruktur.yaml
 argocd app sync homelab
 ```
+
+**`MalformedYAMLError` in `infra-applicationset.yaml`:** ApplicationSets mit goTemplate (`{{- if ... }}`) dürfen nicht in `kustomize build apps/argocd-apps` liegen — sie liegen in `apps/argocd-apps/raw/` und werden über die Application `infra-applicationset` deployed.
 
 **`app is not allowed in project "infrastruktur"` / leerer Namespace:** ApplicationSet `infra` aus `main` syncen. Das Template nutzt `dig "multiSource" false .` — mit `missingkey=error` schlägt `{{- if .multiSource }}` für alle Apps ohne dieses Feld (z. B. `newt`) fehl und erzeugt kaputte Application-Specs. Nach Fix: `kubectl -n argocd annotate applicationset infra argocd.argoproj.io/refresh=hard --overwrite && argocd app sync homelab`
 

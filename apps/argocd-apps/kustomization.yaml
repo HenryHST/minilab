@@ -5,8 +5,6 @@ resources:
   - infrastruktur-project.yaml
   - bootstrap/
   - infra-applicationset-app.yaml
-  - longhorn.yaml
-  - system-upgrade-controller.yaml
   - unifipoller.yaml
   - authentik.yaml
   - termix.yaml

@@ -78,6 +78,16 @@ Das Helm-Chart wird über **native Argo-CD-Helm-Quelle** (Multi-Source via Appli
 
 **Migration:** Secrets `grafana-oauth` und optional `grafana-hcloud` müssen im Namespace `monitoring` existieren (vorher `grafana`). Beispiel: `infra/kube-prometheus-stack/oauth-secret.example.yaml`.
 
+**Migration standalone Application → ApplicationSet `infra`:** Wenn eine App denselben Namen behält (z. B. `longhorn`), kann die alte Application beim Prune in `Terminating` hängen, während das ApplicationSet sie neu anlegt — Fehler `no new finalizers can be added if the object is being deleted`. Workload-Ressourcen bleiben erhalten; nur die Application-CR muss weg:
+
+```bash
+kubectl patch application longhorn -n argocd --type merge -p '{"metadata":{"finalizers":null}}'
+kubectl -n argocd annotate applicationset infra argocd.argoproj.io/refresh=hard --overwrite
+argocd app sync longhorn
+```
+
+Optional vor dem Merge: `argocd app delete longhorn --cascade=orphan` (Ressourcen behalten, Application-CR entfernen).
+
 Headlamp-Login ([Service Account token](https://headlamp.dev/docs/latest/installation/#create-a-service-account-token)): SA `headlamp-admin` mit ClusterRoleBinding `headlamp-admin-ui` → `cluster-admin` (Chart-CRB `headlamp-admin` gilt dem Pod-SA `headlamp`). Long-lived Token in Secret `headlamp-admin-token` (Hülle in Git, Wert nur im Cluster) — Ausgabe in die Login-Maske einfügen:
 
 ```bash

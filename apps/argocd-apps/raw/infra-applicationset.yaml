@@ -9,8 +9,7 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-    # Explicit list: reliable destination.namespace (git-directory values templating
-    # can render empty on some Argo CD versions). Add new infra/* apps here.
+    # Explicit list: reliable destination.namespace. Add new infra/* apps here.
     - list:
         elements:
           - app: cert-manager
@@ -51,27 +50,6 @@ spec:
         - resources-finalizer.argocd.argoproj.io
     spec:
       project: infrastruktur
-      {{- if dig "multiSource" false . }}
-      sources:
-        - repoURL: https://prometheus-community.github.io/helm-charts
-          chart: kube-prometheus-stack
-          targetRevision: 88.5.4
-          helm:
-            releaseName: kube-prometheus-stack
-            valueFiles:
-              - $values/infra/kube-prometheus-stack/values.yaml
-        - repoURL: https://github.com/HenryHST/minilab
-          targetRevision: main
-          ref: values
-        - repoURL: https://github.com/HenryHST/minilab
-          targetRevision: main
-          path: "{{ .path }}"
-      {{- else }}
-      source:
-        repoURL: https://github.com/HenryHST/minilab
-        targetRevision: main
-        path: "{{ .path }}"
-      {{- end }}
       destination:
         server: https://kubernetes.default.svc
         namespace: "{{ .namespace }}"
@@ -91,3 +69,28 @@ spec:
           - PruneLast=true
           - ServerSideApply=true
           - RespectIgnoreDifferences=true
+  # goTemplate conditionals must live in templatePatch (valid YAML string), not inline in template.
+  templatePatch: |
+    {{- if dig "multiSource" false . }}
+    spec:
+      sources:
+        - repoURL: https://prometheus-community.github.io/helm-charts
+          chart: kube-prometheus-stack
+          targetRevision: 88.5.4
+          helm:
+            releaseName: kube-prometheus-stack
+            valueFiles:
+              - $values/infra/kube-prometheus-stack/values.yaml
+        - repoURL: https://github.com/HenryHST/minilab
+          targetRevision: main
+          ref: values
+        - repoURL: https://github.com/HenryHST/minilab
+          targetRevision: main
+          path: {{ .path }}
+    {{- else }}
+    spec:
+      source:
+        repoURL: https://github.com/HenryHST/minilab
+        targetRevision: main
+        path: {{ .path }}
+    {{- end }}

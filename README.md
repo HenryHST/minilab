@@ -40,7 +40,7 @@ ApplicationSet-Apps (`infra/*`) und `longhorn`, `pangolin-publish`, `system-upgr
 
 | App | Pfad | Namespace | Host / Hinweis |
 |-----|------|-----------|----------------|
-| cert-manager | `infra/cert-manager/` | `certmanager` | Helm via Kustomize (`jetstack/cert-manager` v1.21.1 + Hetzner webhook) |
+| cert-manager | `infra/cert-manager/` | `certmanager` | Native Helm v1.21.1; `ClusterIssuer` via Helm `extraObjects`; webhook: App `cert-manager-webhook-hetzner` |
 | metrics-server | `infra/metrics-server/` | `kube-system` | Helm chart 3.14.0; k3s bundled metrics-server disabled; `--kubelet-insecure-tls` |
 | registry | `infra/registry/` | `kube-system` | In-cluster registry Service (`kube-registry:5000`) |
 | longhorn | `apps/longhorn/` | `longhorn-system` | `longhorn.stadthagen.dev` (Helm v1.12.1, default StorageClass, backups → NFS `192.168.0.25`) |
@@ -74,7 +74,7 @@ Login: lokaler Admin **und** Authentik SSO (`oauth_auto_login: false`). Rollen �
 
 Externe Scrape-Jobs (Proxmox, Pangolin, Home Assistant, Unpoller, Authentik, Argo CD) liegen in `infra/kube-prometheus-stack/values.yaml` unter `prometheus.prometheusSpec.additionalScrapeConfigs`. Custom Alert-Rules: `homelab-alerts.yaml`. Alertmanager: E-Mail an `info@henrystadthagen.de`.
 
-Das Helm-Chart wird über **native Argo-CD-Helm-Quelle** (Multi-Source via ApplicationSet `infra`) gerendert; Kustomize-Ressourcen (Ingress, Certificates, Rules) liegen im selben App-Pfad. So umgeht man den Kustomize-Helm-CMP auf Port 8081, der bei diesem großen Chart fehlschlagen kann.
+Das Helm-Chart wird über **native Argo-CD-Helm-Quelle** (Multi-Source via ApplicationSet `infra`) gerendert; Extras (Ingress, Certificates, Rules) liegen in `manifests/` als Plain YAML (kein Kustomize — sonst CMP `:8081`).
 
 **Migration:** Secrets `grafana-oauth` und optional `grafana-hcloud` müssen im Namespace `monitoring` existieren (vorher `grafana`). Beispiel: `infra/kube-prometheus-stack/oauth-secret.example.yaml`.
 

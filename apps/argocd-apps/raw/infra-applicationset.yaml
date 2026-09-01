@@ -14,7 +14,6 @@ spec:
     - list:
         elements:
           - app: cert-manager
-            path: infra/cert-manager
             namespace: certmanager
             syncWave: "0"
             helmRepo: https://charts.jetstack.io
@@ -22,7 +21,6 @@ spec:
             helmVersion: v1.21.1
             helmReleaseName: cert-manager
             helmValuesFile: infra/cert-manager/values.yaml
-            extras: true
           - app: cert-manager-webhook-hetzner
             namespace: certmanager
             syncWave: "0"
@@ -52,7 +50,7 @@ spec:
             helmReleaseName: newt
             helmValuesFile: infra/newt/values.yaml
           - app: kube-prometheus-stack
-            path: infra/kube-prometheus-stack
+            path: infra/kube-prometheus-stack/manifests
             namespace: monitoring
             syncWave: "1"
             helmRepo: https://prometheus-community.github.io/helm-charts
@@ -62,7 +60,7 @@ spec:
             helmValuesFile: infra/kube-prometheus-stack/values.yaml
             extras: true
           - app: grafana-loki
-            path: infra/loki
+            path: infra/loki/manifests
             namespace: monitoring
             syncWave: "3"
             helmRepo: https://grafana-community.github.io/helm-charts

@@ -11,7 +11,8 @@ Ansible legt nur die Parent-Application `homelab` an (`argocd_applications` in I
 ## Struktur
 
 ```
-apps/argocd-apps/          # Bootstrap: AppProject, ApplicationSet infra, verbleibende Application-CRs
+apps/argocd-bootstrap/     # AppProject infrastruktur (via Application infrastruktur-project, wave -2)
+apps/argocd-apps/          # Bootstrap: ApplicationSet infra, verbleibende Application-CRs
 infra/<name>/              # Infrastruktur-Workloads (ApplicationSet „infra“, sync-wave 0)
 apps/<name>/               # User-Apps (noch einzelne Application-CRs)
   kustomization.yaml
@@ -24,10 +25,11 @@ Infrastruktur-Apps unter `infra/*` werden vom ApplicationSet [`infra`](apps/argo
 
 | Wave | Apps |
 |------|------|
-| 0 | AppProject `infrastruktur`, ApplicationSet `infra` → `infra/cert-manager`, `infra/newt`, `infra/metrics-server`, `infra/registry` (List-Generator; AppProject wave 0, ApplicationSet wave 1) |
-| 1 | longhorn, system-upgrade-controller, ApplicationSet → `infra/kube-prometheus-stack` |
+| -2 | AppProject `infrastruktur` (direkt via `homelab`) + Application `infrastruktur-project` (Self-Heal) |
+| 2 | ApplicationSet `infra` (List-Generator → cert-manager, newt, metrics-server, registry, kube-prometheus-stack, …) |
+| 1 | longhorn, system-upgrade-controller |
 | 2 | unifipoller, authentik, termix, headlamp |
-| 3 | omni-tools, it-tools, pgweb, web, drawio, status, ApplicationSet → `infra/loki` (App `grafana-loki`), `infra/alloy`, vaultwarden, pangolin-publish |
+| 3 | omni-tools, it-tools, pgweb, web, drawio, status, grafana-loki, alloy, vaultwarden, pangolin-publish |
 
 ### AppProject `infrastruktur`
 
@@ -117,6 +119,13 @@ kubectl get clusterissuer letsencrypt-prod
 Altes manuelles Kopieren von `stadthagen-tls` aus `traefik` ist nicht mehr nötig.
 
 ## Troubleshooting (Argo CD)
+
+**`AppProject "infrastruktur" not found`:** AppProject wird über die Bootstrap-Application `infrastruktur-project` (sync-wave -2, project `default`) aus [`apps/argocd-bootstrap/`](apps/argocd-bootstrap/) bereitgestellt — nicht mehr direkt aus `apps/argocd-apps/`. Nach Merge: `argocd app sync homelab`, dann `argocd app sync infrastruktur-project`. Sofort-Fix ohne Warten:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/HenryHST/minilab/main/apps/argocd-bootstrap/appproject-infrastruktur.yaml
+argocd app sync homelab
+```
 
 **`app is not allowed in project "infrastruktur"` / leerer Namespace:** ApplicationSet `infra` aus `main` syncen. Das Template nutzt `dig "multiSource" false .` — mit `missingkey=error` schlägt `{{- if .multiSource }}` für alle Apps ohne dieses Feld (z. B. `newt`) fehl und erzeugt kaputte Application-Specs. Nach Fix: `kubectl -n argocd annotate applicationset infra argocd.argoproj.io/refresh=hard --overwrite && argocd app sync homelab`
 

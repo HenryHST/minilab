@@ -13,7 +13,7 @@ Ansible legt nur die Parent-Application `homelab` an (`argocd_applications` in I
 ```
 apps/argocd-apps/bootstrap/  # AppProject infrastruktur (via Application infrastruktur-project, wave -2)
 apps/argocd-apps/raw/       # ApplicationSet infra (goTemplate — nicht via kustomize build)
-apps/argocd-apps/          # Bootstrap: Application-CRs (kustomize)
+apps/argocd-apps/          # Bootstrap: Application-CRs (Plain YAML, kein kustomization.yaml — sonst CMP :8081)
 infra/<name>/              # Infrastruktur-Workloads (ApplicationSet „infra“, sync-wave 0)
 apps/<name>/               # User-Apps (noch einzelne Application-CRs)
   kustomization.yaml
@@ -26,7 +26,7 @@ Infrastruktur-Apps unter `infra/*` werden vom ApplicationSet [`infra`](apps/argo
 
 | Wave | Apps |
 |------|------|
-| -2 | AppProject `infrastruktur` (direkt via `homelab`) + Application `infrastruktur-project` (Self-Heal) |
+| -2 | Application `infrastruktur-project` → AppProject `infrastruktur` (`apps/argocd-apps/bootstrap/`) |
 | 0 | Application `infra-applicationset` → ApplicationSet `infra` (`apps/argocd-apps/raw/`) |
 | 1 | ApplicationSet → `infra/longhorn`, `infra/system-upgrade-controller`, `infra/kube-prometheus-stack` |
 | 2 | unifipoller, authentik, termix, headlamp |
@@ -131,7 +131,9 @@ Altes manuelles Kopieren von `stadthagen-tls` aus `traefik` ist nicht mehr nöti
 
 ## Troubleshooting (Argo CD)
 
-**`AppProject "infrastruktur" not found`:** AppProject liegt in [`apps/argocd-apps/bootstrap/`](apps/argocd-apps/bootstrap/) und wird von `homelab` (direkt) sowie `infrastruktur-project` (Self-Heal) bereitgestellt. Nach Merge: `argocd app sync homelab`. Sofort-Fix:
+**`dial tcp …:8081: connect: no route to host` (CMP):** Der repo-server leitet Kustomize-Builds mit `helmCharts` (oder manchmal jedes Kustomize) an den CMP-Sidecar `:8081` — der ist im Cluster nicht erreichbar. **`homelab`** muss `path: apps/argocd-apps` **ohne** `kustomization.yaml` nutzen (Plain-Directory). Infra-Apps: Native Helm via ApplicationSet `infra`. Noch betroffen: **`headlamp`**, **`termix`**, **`unifipoller`** (`helmCharts` in `apps/*/kustomization.yaml`) — Phase-4-Migration auf Native Helm oder CMP-Sidecar reparieren (Infra_LAB).
+
+**`AppProject "infrastruktur" not found`:** AppProject liegt in [`apps/argocd-apps/bootstrap/`](apps/argocd-apps/bootstrap/) und wird von `infrastruktur-project` (sync-wave -2) bereitgestellt. Nach Merge: `argocd app sync homelab`. Sofort-Fix:
 
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/HenryHST/minilab/main/apps/argocd-apps/bootstrap/appproject-infrastruktur.yaml

@@ -4,7 +4,7 @@ namespace: argocd
 resources:
   - infrastruktur-project.yaml
   - bootstrap/
-  - infra-applicationset.yaml
+  - infra-applicationset-app.yaml
   - longhorn.yaml
   - system-upgrade-controller.yaml
   - unifipoller.yaml

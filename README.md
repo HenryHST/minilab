@@ -11,7 +11,7 @@ Ansible legt nur die Parent-Application `homelab` an (`argocd_applications` in I
 ## Struktur
 
 ```
-apps/argocd-bootstrap/     # AppProject infrastruktur (via Application infrastruktur-project, wave -2)
+apps/argocd-apps/bootstrap/  # AppProject infrastruktur (via Application infrastruktur-project, wave -2)
 apps/argocd-apps/          # Bootstrap: ApplicationSet infra, verbleibende Application-CRs
 infra/<name>/              # Infrastruktur-Workloads (ApplicationSet „infra“, sync-wave 0)
 apps/<name>/               # User-Apps (noch einzelne Application-CRs)
@@ -120,10 +120,10 @@ Altes manuelles Kopieren von `stadthagen-tls` aus `traefik` ist nicht mehr nöti
 
 ## Troubleshooting (Argo CD)
 
-**`AppProject "infrastruktur" not found`:** AppProject wird über die Bootstrap-Application `infrastruktur-project` (sync-wave -2, project `default`) aus [`apps/argocd-bootstrap/`](apps/argocd-bootstrap/) bereitgestellt — nicht mehr direkt aus `apps/argocd-apps/`. Nach Merge: `argocd app sync homelab`, dann `argocd app sync infrastruktur-project`. Sofort-Fix ohne Warten:
+**`AppProject "infrastruktur" not found`:** AppProject liegt in [`apps/argocd-apps/bootstrap/`](apps/argocd-apps/bootstrap/) und wird von `homelab` (direkt) sowie `infrastruktur-project` (Self-Heal) bereitgestellt. Nach Merge: `argocd app sync homelab`. Sofort-Fix:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/HenryHST/minilab/main/apps/argocd-bootstrap/appproject-infrastruktur.yaml
+kubectl apply -f https://raw.githubusercontent.com/HenryHST/minilab/main/apps/argocd-apps/bootstrap/appproject-infrastruktur.yaml
 argocd app sync homelab
 ```
 

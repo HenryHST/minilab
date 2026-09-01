@@ -11,7 +11,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/HenryHST/minilab
-    path: apps/argocd-bootstrap
+    path: apps/argocd-apps/bootstrap
     targetRevision: main
   destination:
     server: https://kubernetes.default.svc

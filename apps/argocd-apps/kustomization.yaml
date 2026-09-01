@@ -3,8 +3,7 @@ kind: Kustomization
 namespace: argocd
 resources:
   - infrastruktur-project.yaml
-  # Direct apply (wave -2) so AppProject exists before ApplicationSet (wave 2).
-  - ../argocd-bootstrap/appproject-infrastruktur.yaml
+  - bootstrap/
   - infra-applicationset.yaml
   - longhorn.yaml
   - system-upgrade-controller.yaml

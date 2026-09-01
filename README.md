@@ -28,13 +28,13 @@ Infrastruktur-Apps unter `infra/*` werden vom ApplicationSet [`infra`](apps/argo
 |------|------|
 | -2 | AppProject `infrastruktur` (direkt via `homelab`) + Application `infrastruktur-project` (Self-Heal) |
 | 0 | Application `infra-applicationset` → ApplicationSet `infra` (`apps/argocd-apps/raw/`) |
-| 1 | longhorn, system-upgrade-controller |
+| 1 | ApplicationSet → `infra/longhorn`, `infra/system-upgrade-controller`, `infra/kube-prometheus-stack` |
 | 2 | unifipoller, authentik, termix, headlamp |
 | 3 | omni-tools, it-tools, pgweb, web, drawio, status, grafana-loki, alloy, vaultwarden, pangolin-publish |
 
 ### AppProject `infrastruktur`
 
-ApplicationSet-Apps (`infra/*`) und `longhorn`, `pangolin-publish`, `system-upgrade-controller`, `authentik` — alle anderen Apps nutzen `default`.
+ApplicationSet-Apps (`infra/*`) und `pangolin-publish`, `authentik` — alle anderen Apps nutzen `default`.
 
 ## Apps
 
@@ -43,7 +43,7 @@ ApplicationSet-Apps (`infra/*`) und `longhorn`, `pangolin-publish`, `system-upgr
 | cert-manager | `infra/cert-manager/` | `certmanager` | Native Helm v1.21.1; `ClusterIssuer` via Helm `extraObjects`; webhook: App `cert-manager-webhook-hetzner` |
 | metrics-server | `infra/metrics-server/` | `kube-system` | Helm chart 3.14.0; k3s bundled metrics-server disabled; `--kubelet-insecure-tls` |
 | registry | `infra/registry/` | `kube-system` | In-cluster registry Service (`kube-registry:5000`) |
-| longhorn | `apps/longhorn/` | `longhorn-system` | `longhorn.stadthagen.dev` (Helm v1.12.1, default StorageClass, backups → NFS `192.168.0.25`) |
+| longhorn | `infra/longhorn/` | `longhorn-system` | `longhorn.stadthagen.dev` (Native Helm v1.12.1, default StorageClass, backups → NFS `192.168.0.25`) |
 | omni-tools | `apps/omni-tools/` | `omnitools` | `omni-tools.stadthagen.dev` |
 | it-tools | `apps/it-tools/` | `it-tools` | `it-tools.stadthagen.dev` |
 | pgweb | `apps/pgweb/` | `pgweb` | `pgweb.stadthagen.dev` (Port 8081) |
@@ -58,7 +58,7 @@ ApplicationSet-Apps (`infra/*`) und `longhorn`, `pangolin-publish`, `system-upgr
 | kube-prometheus-stack | `infra/kube-prometheus-stack/` | `monitoring` | `grafana.stadthagen.dev`, `prometheus.stadthagen.dev`, `alert-manager.stadthagen.dev` (Helm chart 88.5.4: Prometheus Operator, Grafana, Alertmanager, node-exporter, kube-state-metrics; Longhorn PVC 5Gi / 9d retention; E-Mail alerts) |
 | grafana-loki | `infra/loki/` | `monitoring` | `loki.stadthagen.dev` (Helm chart 18.11.7, Longhorn PVC 2Gi) |
 | alloy | `infra/alloy/` | `alloy` | Syslog → Loki (`loki-gateway.monitoring.svc.cluster.local`) |
-| system-upgrade-controller | `apps/system-upgrade-controller/` | `system-upgrade` | Rancher SUC v0.20.1 (CRDs + Controller). **Keine** Upgrade-`Plan`s — kein automatisches k3s-Upgrade, bis Plans ergänzt werden. |
+| system-upgrade-controller | `infra/system-upgrade-controller/` | `system-upgrade` | Rancher SUC v0.20.1 (CRDs + Controller, vendored upstream). **Keine** Upgrade-`Plan`s — kein automatisches k3s-Upgrade, bis Plans ergänzt werden. |
 
 Longhorn: Replika-Daten lokal `/var/lib/longhorn` auf Worker mit Label `node.longhorn.io/create-default-disk=true` (nxk3-w01–w03). Backup-Target: `nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups?nfsOptions=nfsvers=3,nolock` (UniFi NAS benötigt NFSv3).
 

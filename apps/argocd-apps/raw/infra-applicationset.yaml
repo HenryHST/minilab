@@ -49,6 +49,20 @@ spec:
             helmVersion: "1.5.0"
             helmReleaseName: newt
             helmValuesFile: infra/newt/values.yaml
+          - app: longhorn
+            path: infra/longhorn/manifests
+            namespace: longhorn-system
+            syncWave: "1"
+            helmRepo: https://charts.longhorn.io/
+            helmChart: longhorn
+            helmVersion: v1.12.1
+            helmReleaseName: longhorn
+            helmValuesFile: infra/longhorn/values.yaml
+            extras: true
+          - app: system-upgrade-controller
+            path: infra/system-upgrade-controller
+            namespace: system-upgrade
+            syncWave: "1"
           - app: kube-prometheus-stack
             path: infra/kube-prometheus-stack/manifests
             namespace: monitoring

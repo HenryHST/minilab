@@ -131,7 +131,7 @@ Altes manuelles Kopieren von `stadthagen-tls` aus `traefik` ist nicht mehr nöti
 
 ## Troubleshooting (Argo CD)
 
-**`dial tcp …:8081: connect: no route to host` (CMP):** Der repo-server leitet Kustomize-Builds mit `helmCharts` (oder manchmal jedes Kustomize) an den CMP-Sidecar `:8081` — der ist im Cluster nicht erreichbar. **`homelab`** muss `path: apps/argocd-apps` **ohne** `kustomization.yaml` nutzen (Plain-Directory). Infra-Apps: Native Helm via ApplicationSet `infra`. Noch betroffen: **`headlamp`**, **`termix`**, **`unifipoller`** (`helmCharts` in `apps/*/kustomization.yaml`) — Phase-4-Migration auf Native Helm oder CMP-Sidecar reparieren (Infra_LAB).
+**`dial tcp …:8081: connect: no route to host` (CMP):** Der repo-server leitet Kustomize-Builds (inkl. `configMapGenerator`, `helmCharts`) an den CMP-Sidecar `:8081` — der ist im Cluster nicht erreichbar. **`homelab`** muss `path: apps/argocd-apps` **ohne** `kustomization.yaml` nutzen (Plain-Directory). ApplicationSet `infra`: Native Helm für Charts; Git-Pfade **ohne** `kustomization.yaml` (`registry`, `system-upgrade-controller`, `alloy`). Noch betroffen: **`headlamp`**, **`termix`**, **`unifipoller`**, **`status`** (Kustomize) — Migration auf Plain-Directory/Native Helm oder CMP-Sidecar reparieren (Infra_LAB). Nach Fix: `kubectl -n argocd annotate applicationset infra argocd.argoproj.io/refresh=hard --overwrite && argocd app sync homelab`
 
 **`AppProject "infrastruktur" not found`:** AppProject liegt in [`apps/argocd-apps/bootstrap/`](apps/argocd-apps/bootstrap/) und wird von `infrastruktur-project` (sync-wave -2) bereitgestellt. Nach Merge: `argocd app sync homelab`. Sofort-Fix:
 

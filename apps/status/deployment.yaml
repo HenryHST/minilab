@@ -19,8 +19,31 @@ spec:
       containers:
         - name: status
           image: louislam/uptime-kuma:2.5.3
+          env:
+            - name: UPTIME_KUMA_PORT
+              value: "3001"
           ports:
-            - containerPort: 3001
+            - name: http
+              containerPort: 3001
+          startupProbe:
+            exec:
+              command: ["extra/healthcheck"]
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command: ["extra/healthcheck"]
+            periodSeconds: 60
+            timeoutSeconds: 30
+            failureThreshold: 3
           volumeMounts:
             - name: data
               mountPath: /app/data

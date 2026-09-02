@@ -1,0 +1,158 @@
+# Rendered Helm chart — regenerate with:
+# helm template unpoller unpoller/unpoller --version 2.4.0 -f values.yaml --namespace unpoller
+---
+# Source: unpoller/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: unpoller
+  labels:
+    helm.sh/chart: unpoller-2.4.0
+    app.kubernetes.io/name: unpoller
+    app.kubernetes.io/instance: unpoller
+    app.kubernetes.io/version: "v3.5.0"
+    app.kubernetes.io/managed-by: Helm
+automountServiceAccountToken: true
+---
+# Source: unpoller/templates/unpoller-config-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: unpoller
+  labels:
+    helm.sh/chart: unpoller-2.4.0
+    app.kubernetes.io/name: unpoller
+    app.kubernetes.io/instance: unpoller
+    app.kubernetes.io/version: "v3.5.0"
+    app.kubernetes.io/managed-by: Helm
+stringData:
+  up.conf: |
+    [poller]
+    debug = false
+    quiet = false
+    plugins = []
+    [prometheus]
+    disable = false
+    http_listen = "0.0.0.0:9130"
+    report_errors = false
+    [influxdb]
+    disable = true
+    [unifi]
+    dynamic = false
+    [loki]
+    disable = true
+---
+# Source: unpoller/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: unpoller
+  labels:
+    helm.sh/chart: unpoller-2.4.0
+    app.kubernetes.io/name: unpoller
+    app.kubernetes.io/instance: unpoller
+    app.kubernetes.io/version: "v3.5.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9130
+      targetPort: tcp
+      protocol: TCP
+      name: tcp
+  selector:
+    app.kubernetes.io/name: unpoller
+    app.kubernetes.io/instance: unpoller
+---
+# Source: unpoller/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unpoller
+  labels:
+    helm.sh/chart: unpoller-2.4.0
+    app.kubernetes.io/name: unpoller
+    app.kubernetes.io/instance: unpoller
+    app.kubernetes.io/version: "v3.5.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: unpoller
+      app.kubernetes.io/instance: unpoller
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: unpoller-2.4.0
+        app.kubernetes.io/name: unpoller
+        app.kubernetes.io/instance: unpoller
+        app.kubernetes.io/version: "v3.5.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      serviceAccountName: unpoller
+      securityContext:
+        {}
+      containers:
+        - name: unpoller
+          securityContext:
+            {}
+          image: "ghcr.io/unpoller/unpoller:v3.5.0"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: UP_UNIFI_DEFAULT_URL
+              valueFrom:
+                secretKeyRef:
+                  key: url
+                  name: unpoller-unifi
+            - name: UP_UNIFI_DEFAULT_USER
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: unpoller-unifi
+            - name: UP_UNIFI_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: pass
+                  name: unpoller-unifi
+            - name: UP_UNIFI_CONTROLLER_TYPE
+              value: unifi_os
+            - name: UP_UNIFI_DEFAULT_VERIFY_SSL
+              value: "false"
+            - name: UP_UNIFI_DEFAULT_SITE_0
+              value: default
+            - name: UP_PROMETHEUS_DISABLE
+              value: "false"
+            - name: UP_PROMETHEUS_NAMESPACE
+              value: unpoller
+          ports:
+            - containerPort: 9130
+              name: tcp
+              protocol: TCP
+            - containerPort: 9130
+              name: udp
+              protocol: UDP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: tcp
+          readinessProbe:
+            httpGet:
+              path: /
+              port: tcp
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/unpoller/up.conf
+              subPath: up.conf
+      volumes:
+        - name: config-volume
+          secret:
+            secretName: unpoller
+      nodeSelector:
+        worker: "true"

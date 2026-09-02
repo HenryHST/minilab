@@ -15,8 +15,8 @@ apps/argocd-apps/bootstrap/  # AppProject infrastruktur (via Application infrast
 apps/argocd-apps/raw/       # ApplicationSet infra (goTemplate — nicht via kustomize build)
 apps/argocd-apps/          # Bootstrap: Application-CRs (Plain YAML, kein kustomization.yaml — sonst CMP :8081)
 infra/<name>/              # Infrastruktur-Workloads (ApplicationSet „infra“, sync-wave 0)
-apps/<name>/               # User-Apps (noch einzelne Application-CRs)
-  kustomization.yaml
+apps/<name>/               # User-Apps (Plain YAML, kein kustomization.yaml)
+  deployment.yaml
   …
 ```
 
@@ -100,13 +100,15 @@ kubectl create token headlamp-admin -n kube-system
 
 ## Neue App hinzufügen
 
-**Infrastruktur (`infra/`):** Ordner `infra/<name>/` mit `kustomization.yaml` anlegen und Eintrag in [`apps/argocd-apps/raw/infra-applicationset.yaml`](apps/argocd-apps/raw/infra-applicationset.yaml) (`list` generator: `app`, `path`, `namespace`, `syncWave`) ergänzen. Ausnahmen: `infra/argocd/` (Bootstrap, später self-managed) und `infra/kargo/` (noch manuell).
+**Infrastruktur (`infra/`):** Ordner `infra/<name>/` mit Plain YAML anlegen (kein `kustomization.yaml`) und Eintrag in [`apps/argocd-apps/raw/infra-applicationset.yaml`](apps/argocd-apps/raw/infra-applicationset.yaml) (`list` generator: `app`, `path`, `namespace`, `syncWave`) ergänzen. Helm-Apps: Native Helm via ApplicationSet; Git-Extras als Plain Directory in `manifests/`. Ausnahmen: `infra/argocd/` (Bootstrap, später self-managed) und `infra/kargo/` (noch manuell).
 
 **User-App (`apps/`):**
 
-1. Ordner `apps/<name>/` anlegen mit `kustomization.yaml`, typischerweise `deployment.yaml`, `service.yaml`, `ingressroute.yaml`.
-2. Application-Manifest in `apps/argocd-apps/<name>.yaml` mit passender `sync-wave` (1/2/3) ergänzen und in `kustomization.yaml` listen.
-3. Nach `main` pushen; Parent `homelab` synct die Child-App automatisch.
+1. Ordner `apps/<name>/` anlegen mit Plain YAML (`deployment.yaml`, `service.yaml`, `ingressroute.yaml`, …) — **`metadata.namespace` in jeder namespaced Resource setzen** (kein `kustomization.yaml`).
+2. Helm-Apps (`headlamp`, `termix`, `unifipoller`): Chart in `helm-manifest.yaml` rendern (`helm template …`) und neben Extras committen; Regenerations-Befehl steht im Dateikopf.
+3. ConfigMaps: statische `configmap.yaml` statt `configMapGenerator` (z. B. `web` → `configmap.yaml` + `config/*.yaml` als Quelle).
+4. Application-Manifest in `apps/argocd-apps/<name>.yaml` mit passender `sync-wave` (1/2/3) ergänzen.
+5. Nach `main` pushen; Parent `homelab` synct die Child-App automatisch.
 
 ### Langfristig: `infra/argocd/` (homelab-Pattern)
 
@@ -131,7 +133,7 @@ Altes manuelles Kopieren von `stadthagen-tls` aus `traefik` ist nicht mehr nöti
 
 ## Troubleshooting (Argo CD)
 
-**`dial tcp …:8081: connect: no route to host` (CMP):** Der repo-server leitet Kustomize-Builds (inkl. `configMapGenerator`, `helmCharts`) an den CMP-Sidecar `:8081` — der ist im Cluster nicht erreichbar. **`homelab`** muss `path: apps/argocd-apps` **ohne** `kustomization.yaml` nutzen (Plain-Directory). ApplicationSet `infra`: Native Helm für Charts; Git-Pfade **ohne** `kustomization.yaml` (`registry`, `system-upgrade-controller`, `alloy`). Noch betroffen: **`headlamp`**, **`termix`**, **`unifipoller`**, **`status`** (Kustomize) — Migration auf Plain-Directory/Native Helm oder CMP-Sidecar reparieren (Infra_LAB). Nach Fix: `kubectl -n argocd annotate applicationset infra argocd.argoproj.io/refresh=hard --overwrite && argocd app sync homelab`
+**`dial tcp …:8081: connect: no route to host` (CMP):** Der repo-server leitet **Kustomize**-Builds an den CMP-Sidecar `:8081` — der ist im Cluster nicht erreichbar. **Lösung:** Plain Directory (kein `kustomization.yaml`); Helm-Charts als `helm template` in `helm-manifest.yaml` committen oder Native Helm via ApplicationSet. Alle minilab-Apps sind migriert. Nach Fix: `kubectl -n argocd annotate applicationset infra argocd.argoproj.io/refresh=hard --overwrite && argocd app sync homelab`
 
 **`AppProject "infrastruktur" not found`:** AppProject liegt in [`apps/argocd-apps/bootstrap/`](apps/argocd-apps/bootstrap/) und wird von `infrastruktur-project` (sync-wave -2) bereitgestellt. Nach Merge: `argocd app sync homelab`. Sofort-Fix:
 

@@ -31,6 +31,8 @@ spec:
             capabilities:
               drop:
                 - ALL
+              add:
+                - NET_RAW
           env:
             - name: UPTIME_KUMA_PORT
               value: "3001"

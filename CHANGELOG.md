@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - `status` (Uptime Kuma) — Kubernetes startup, readiness, and liveness probes (`extra/healthcheck` + HTTP `/`)
-- `status` — Pod Security Standards `restricted` on namespace `uptimekuma`; Local PV/PVC replaces hostPath in pod specs
+- `status` — Pod Security: `enforce: baseline` (ICMP/`NET_RAW`), `audit/warn: restricted`; Local PV/PVC replaces hostPath in pod specs
 - ApplicationSet `infra` — auto-registers `infra/cert-manager`, `infra/newt`, `infra/metrics-server`, `infra/registry` (homelab-style; sync-wave 0)
 
 ### Changed

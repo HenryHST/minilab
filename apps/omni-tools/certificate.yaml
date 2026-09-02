@@ -2,6 +2,7 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: omni-tools-stadthagen-dev
+  namespace: omnitools
 spec:
   secretName: omni-tools-tls
   issuerRef:

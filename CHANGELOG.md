@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- `pangolin-publish` — registered via ApplicationSet `infra` (replaces standalone Application CR)
 - `status` (Uptime Kuma) — Kubernetes startup, readiness, and liveness probes (`extra/healthcheck` + HTTP `/`)
 - ApplicationSet `infra` — plain YAML for `registry`, `system-upgrade-controller`, `alloy` (no `kustomization.yaml`; avoids CMP `:8081`)
 - All user apps under `apps/` — plain directory (no `kustomization.yaml`); Helm apps use committed `helm-manifest.yaml` (`headlamp`, `termix`, `unifipoller`); `web` uses static `configmap.yaml`
@@ -19,8 +20,9 @@ All notable changes to this project will be documented in this file.
 
 ### Migration notes
 
-- After sync: old Applications `cert-manager`, `newt`, `metrics-server` are replaced by ApplicationSet-generated apps with the same names
+- After sync: old Applications `cert-manager`, `newt`, `metrics-server`, `pangolin-publish` are replaced by ApplicationSet-generated apps with the same names
 - Requires Argo CD ApplicationSet controller (bundled with argo-cd Helm chart)
+- If old `pangolin-publish` Application hangs in Terminating while ApplicationSet recreates it: `kubectl patch application pangolin-publish -n argocd --type merge -p '{"metadata":{"finalizers":null}}'` then refresh ApplicationSet `infra`
 
 ## [0.7.0] - 2026-08-26
 

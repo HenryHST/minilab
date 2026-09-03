@@ -34,7 +34,7 @@ Infrastruktur-Apps unter `infra/*` werden vom ApplicationSet [`infra`](apps/argo
 
 ### AppProject `infrastruktur`
 
-ApplicationSet-Apps (`infra/*`) und `pangolin-publish`, `authentik` — alle anderen Apps nutzen `default`.
+ApplicationSet-Apps (`infra/*`, inkl. `pangolin-publish`) und `authentik` — alle anderen Apps nutzen `default`.
 
 ## Apps
 

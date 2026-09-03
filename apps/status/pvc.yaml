@@ -25,6 +25,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: uptimekuma-data
+  namespace: uptimekuma
 spec:
   accessModes:
     - ReadWriteOnce

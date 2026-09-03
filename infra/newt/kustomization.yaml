@@ -1,2 +1,0 @@
-# Helm chart is rendered via native Argo CD Helm source (ApplicationSet infra).
-# Kustomize helmCharts would hit the repo-server CMP sidecar (:8081).

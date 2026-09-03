@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
 
 - `status` (Uptime Kuma) — Kubernetes startup, readiness, and liveness probes (`extra/healthcheck` + HTTP `/`)
 - `status` — Pod Security: `enforce: baseline` (ICMP/`NET_RAW`), `audit/warn: restricted`; Local PV/PVC replaces hostPath in pod specs
+- ApplicationSet `infra` — plain YAML for `registry`, `system-upgrade-controller`, `alloy` (no `kustomization.yaml`; avoids CMP `:8081`)
+- All user apps under `apps/` — plain directory (no `kustomization.yaml`); Helm apps use committed `helm-manifest.yaml` (`headlamp`, `termix`, `unifipoller`); `web` uses static `configmap.yaml`
 - ApplicationSet `infra` — auto-registers `infra/cert-manager`, `infra/newt`, `infra/metrics-server`, `infra/registry` (homelab-style; sync-wave 0)
 
 ### Changed

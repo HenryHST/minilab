@@ -1,0 +1,262 @@
+# Rendered Helm chart — regenerate with:
+# helm template termix ./charts/termix -f values.yaml --namespace termix
+---
+# Source: termix/templates/pdb.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: termix
+  labels:
+    helm.sh/chart: termix-0.1.0
+    app.kubernetes.io/name: termix
+    app.kubernetes.io/instance: termix
+    app.kubernetes.io/version: "2.7.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: termix
+      app.kubernetes.io/instance: termix
+---
+# Source: termix/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: termix
+  labels:
+    helm.sh/chart: termix-0.1.0
+    app.kubernetes.io/name: termix
+    app.kubernetes.io/instance: termix
+    app.kubernetes.io/version: "2.7.0"
+    app.kubernetes.io/managed-by: Helm
+automountServiceAccountToken: false
+---
+# Source: termix/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: termix
+  labels:
+    helm.sh/chart: termix-0.1.0
+    app.kubernetes.io/name: termix
+    app.kubernetes.io/instance: termix
+    app.kubernetes.io/version: "2.7.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: termix
+    app.kubernetes.io/instance: termix
+---
+# Source: termix/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: termix
+  labels:
+    helm.sh/chart: termix-0.1.0
+    app.kubernetes.io/name: termix
+    app.kubernetes.io/instance: termix
+    app.kubernetes.io/version: "2.7.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 2
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: termix
+      app.kubernetes.io/instance: termix
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: termix
+        app.kubernetes.io/instance: termix
+    spec:
+      serviceAccountName: termix
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: termix
+          securityContext:
+            {}
+          image: "ghcr.io/lukegus/termix:release-2.7.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: ALLOW_PASSWORD_RESET
+              value: "true"
+            - name: ALLOW_REGISTRATION
+              value: "false"
+            - name: DATABASE_POOL_MAX
+              value: "10"
+            - name: DATA_DIR
+              value: "/app/data"
+            - name: GUACD_RECORDING_BACKEND_PATH
+              value: "/app/data/session_recordings/guacamole"
+            - name: GUACD_RECORDING_PATH
+              value: "/termix-data/session_recordings/guacamole"
+            - name: NODE_ENV
+              value: "production"
+            - name: OIDC_ADMIN_GROUP
+              value: "Termix Admins"
+            - name: OIDC_ALLOW_REGISTRATION
+              value: "true"
+            - name: OIDC_AUTHORIZATION_URL
+              value: "https://idp.stadthagen.dev/application/o/authorize/"
+            - name: OIDC_CLIENT_ID
+              value: "termix"
+            - name: OIDC_FORCE_HTTPS
+              value: "true"
+            - name: OIDC_GROUP_CLAIM
+              value: "groups"
+            - name: OIDC_ISSUER_URL
+              value: "https://idp.stadthagen.dev/application/o/termix/"
+            - name: OIDC_SCOPES
+              value: "openid email profile"
+            - name: OIDC_TOKEN_URL
+              value: "https://idp.stadthagen.dev/application/o/token/"
+            - name: PORT
+              value: "8080"
+            - name: GUACD_HOST
+              value: "127.0.0.1"
+            - name: GUACD_TUNNEL_HOST
+              value: "termix"
+            - name: DATABASE_DIALECT
+              value: "postgres"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: termix-ha
+                  key: DATABASE_URL
+            - name: GUACD_TUNNEL_HOST
+              value: 127.0.0.1
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: client-secret
+                  name: termix-oauth
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: JWT_SECRET
+                  name: termix-ha
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: ENCRYPTION_KEY
+                  name: termix-ha
+            - name: OIDC_SYSTEM_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: OIDC_SYSTEM_SECRET
+                  name: termix-ha
+            - name: WEBAUTHN_SYSTEM_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: WEBAUTHN_SYSTEM_SECRET
+                  name: termix-ha
+            - name: GUACAMOLE_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: GUACAMOLE_ENCRYPTION_KEY
+                  name: termix-ha
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            limits:
+              memory: 1Gi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+        - name: guacd
+          image: "guacamole/guacd:1.6.0"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsNonRoot: true
+            runAsUser: 1000
+          ports:
+            - name: guacd
+              containerPort: 4822
+              protocol: TCP
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+          volumeMounts:
+            - name: data
+              mountPath: /termix-data
+      volumes:
+        - name: data
+          emptyDir: {}
+      nodeSelector:
+        worker: "true"
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/instance: termix
+                app.kubernetes.io/name: termix
+            topologyKey: kubernetes.io/hostname
+---
+# Source: termix/templates/traefik-ingressroute.yaml
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: termix
+  labels:
+    helm.sh/chart: termix-0.1.0
+    app.kubernetes.io/name: termix
+    app.kubernetes.io/instance: termix
+    app.kubernetes.io/version: "2.7.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`termix.stadthagen.dev`) && PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: termix
+          port: 8080
+  tls:
+    secretName: termix-tls

@@ -1,0 +1,207 @@
+# Plain ConfigMap for Homepage — keep in sync with apps/web/config/*.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage-config
+  namespace: homepage
+data:
+  bookmarks.yaml: |
+    ---
+    - Repositories:
+      - Devops-labs:
+        - icon: si-github-#FFFFFF
+          href: https://github.com/henryhst/devops-labs
+      - Dotfiles:
+        - icon: si-github-#FFFFFF
+          href: https://github.com/henryhst/dotfiles
+      - Cheat-Sheets:
+        - icon: si-github-#FFFFFF
+          href: https://github.com/henryhst/cheat-sheets
+      - minilab:
+        - icon: si-github-#FFFFFF
+          href: https://github.com/HenryHST/minilab
+    
+    - Developer:
+        - Github:
+            - abbr: GH
+              icon: si-github-#FFFFFF
+              href: https://github.com/
+
+  docker.yaml: |
+    ---
+    # Docker socket integration not used in cluster
+
+  kubernetes.yaml: |
+    ---
+    mode: cluster
+
+  services.yaml: |
+    ---
+    - nXk3:
+        - Argo CD:
+            href: https://argocd.stadthagen.dev
+            icon: argocd.png
+            description: GitOps
+            widget:
+              type: argocd
+              url: http://argo-cd-argocd-server.argocd.svc.cluster.local
+              key: "{{HOMEPAGE_VAR_ARGOCD_KEY}}"
+              fields: ["apps", "synced", "outOfSync", "healthy"]
+        - Proxmox:
+            href: https://pve01.stadthagen.dev:8006
+            icon: proxmox.png
+            description: pve01–pve03 cluster
+            widget:
+              type: proxmox
+              url: https://pve01.stadthagen.dev:8006
+              username: "{{HOMEPAGE_VAR_PROXMOX_USER}}"
+              password: "{{HOMEPAGE_VAR_PROXMOX_TOKEN}}"
+              fields: ["vms", "lxc", "resources.cpu", "resources.mem"]
+        - Traefik:
+            href: https://traefik.stadthagen.dev
+            icon: traefik.png
+            description: Ingress LB 192.168.0.215
+        - Authentik:
+            href: https://idp.stadthagen.dev
+            icon: authentik.svg
+            description: Identity Provider (OIDC)
+    - Tools:
+        - Omni Tools:
+            href: https://omni-tools.stadthagen.dev
+            icon: si-docker-#2496ED
+            description: omni-tools
+        - IT Tools:
+            href: https://it-tools.stadthagen.dev
+            icon: si-docker-#2496ED
+            description: it-tools
+        - pgweb:
+            href: https://pgweb.stadthagen.dev
+            icon: si-postgresql-#4169E1
+            description: PostgreSQL Web UI
+        - Draw.io:
+            href: https://drawio.stadthagen.dev
+            icon: si-diagramsdotnet-#F08705
+            description: diagram editor
+        - Termix:
+            href: https://termix.stadthagen.dev
+            icon: si-gnubash-#4EAA25
+            description: SSH terminal (OIDC)
+        - Vaultwarden:
+            href: https://vaultwarden.stadthagen.dev
+            icon: si-bitwarden-#175DDC
+            description: password manager (SSO)
+    - Monitoring:
+        - Longhorn:
+            href: https://longhorn.stadthagen.dev
+            icon: si-rancher-#0075A8
+            description: distributed storage
+        - Grafana:
+            href: https://grafana.stadthagen.dev
+            icon: si-grafana-#F46800
+            description: dashboards & alerting
+        - Headlamp:
+            href: https://headlamp.stadthagen.dev
+            icon: si-docker-#2496ED
+            description: dashboards
+        - Prometheus:
+            href: https://prometheus.stadthagen.dev
+            icon: si-prometheus-#E6522C
+            description: metrics & scrape targets
+        - Alertmanager:
+            href: https://alert-manager.stadthagen.dev
+            icon: si-prometheus-#E6522C
+            description: alert routing & silences
+        - Loki:
+            href: https://loki.stadthagen.dev
+            icon: si-grafana-#F46800
+            description: log aggregation
+        - Uptime Kuma:
+            href: https://status.stadthagen.dev
+            icon: si-statuspage-#300A27
+            description: status.stadthagen.dev
+            widget:
+              type: uptimekuma
+              url: http://status.uptimekuma.svc.cluster.local:3001
+              slug: homelab
+
+  settings.yaml: |
+    ---
+    title: Stadthagen Home
+    description: nXk3 Dashboard
+    headerStyle: boxed
+    language: de
+    hideVersion: true
+    hideErrors: true
+    
+    providers:
+      longhorn:
+        url: http://longhorn-frontend.longhorn-system.svc.cluster.local
+    
+    background:
+      image: https://images.unsplash.com/photo-1637825891028-564f672aa42c
+      blur: md
+      brightness: 60
+      opacity: 60
+    
+    cardBlur: sm
+    useEqualHeights: true
+    
+    layout:
+      nXk3:
+        header: true
+        icon: mdi-kubernetes-#FFFFFF
+      Tools:
+        header: true
+        icon: mdi-auto-fix-#FFFFFF
+      Monitoring:
+        header: true
+        icon: mdi-list-status-#FFFFFF
+
+  widgets.yaml: |
+    ---
+    - resources:
+        cpu: true
+        memory: true
+        disk: /
+        refresh: 3000
+    
+    - datetime:
+        text_size: xl
+        locale: de
+        format:
+            timeStyle: long
+            dateStyle: long
+            hourCycle: h23
+    
+    - kubernetes:
+        cluster:
+          show: true
+          cpu: true
+          memory: true
+          showLabel: true
+          label: nXk3
+        nodes:
+          show: true
+          cpu: true
+          memory: true
+          showLabel: true
+    
+    - longhorn:
+        expanded: true
+        total: true
+        labels: true
+        nodes: true
+    
+    - unifi_console:
+        url: "{{HOMEPAGE_VAR_UNIFI_URL}}"
+        username: "{{HOMEPAGE_VAR_UNIFI_USER}}"
+        password: "{{HOMEPAGE_VAR_UNIFI_PASS}}"
+    
+    # OpenWeatherMap requires OPENWEATHERMAP_API_KEY — see secret.env.example
+    # - openweathermap:
+    #     latitude: 49.86014928642
+    #     longitude: 8.55687651842
+    #     provider: openweathermap
+    #     units: metric
+    #     cache: 5
+    #     label: Griesheim

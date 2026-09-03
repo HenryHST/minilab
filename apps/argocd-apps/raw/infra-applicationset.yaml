@@ -87,6 +87,10 @@ spec:
             path: infra/alloy
             namespace: alloy
             syncWave: "3"
+          - app: pangolin-publish
+            path: apps/pangolin-publish
+            namespace: pangolin-publish
+            syncWave: "3"
   template:
     metadata:
       name: "{{ .app }}"

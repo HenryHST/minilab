@@ -1,8 +1,7 @@
 # Bootstrap restore from NFS (cluster rebuild). Default is off — set ConfigMap enabled=true
-# (and force=true if hostPath already has kuma.db) then Argo Sync; set enabled=false after.
+# (and force=true if PVC already has kuma.db) then Argo Sync; set enabled=false after.
 #
-# Data is hostPath on pi4cl; Job pins to that node and mounts hostPath + NFS directly
-# (no nested worker — hostPath can be attached after scale-to-0).
+# Data PVC is local on pi4cl; Job pins to that node and mounts data PVC + NFS backup PVC.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -61,10 +60,22 @@ spec:
       restartPolicy: Never
       nodeSelector:
         kubernetes.io/hostname: pi4cl
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: restore
           image: alpine/k8s:1.32.0
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           env:
             - name: RESTORE_ENABLED
               valueFrom:
@@ -156,9 +167,8 @@ spec:
               mountPath: /backup
       volumes:
         - name: data
-          hostPath:
-            path: /var/lib/uptimekuma
-            type: DirectoryOrCreate
+          persistentVolumeClaim:
+            claimName: uptimekuma-data
         - name: backup
           persistentVolumeClaim:
             claimName: uptimekuma-backups

@@ -17,9 +17,23 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/hostname: pi4cl
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: status
           image: louislam/uptime-kuma:2.5.3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - NET_RAW
           env:
             - name: UPTIME_KUMA_PORT
               value: "3001"
@@ -56,6 +70,5 @@ spec:
               memory: 512Mi
       volumes:
         - name: data
-          hostPath:
-            path: /var/lib/uptimekuma
-            type: DirectoryOrCreate
+          persistentVolumeClaim:
+            claimName: uptimekuma-data

@@ -1,0 +1,36 @@
+# Local PV on pi4cl — same host path as former hostPath mount; Pod spec uses PVC (restricted-compatible).
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: uptimekuma-data-pi4cl
+spec:
+  capacity:
+    storage: 4Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: uptimekuma-local
+  local:
+    path: /var/lib/uptimekuma
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - pi4cl
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: uptimekuma-data
+  namespace: uptimekuma
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: uptimekuma-local
+  volumeName: uptimekuma-data-pi4cl
+  resources:
+    requests:
+      storage: 4Gi

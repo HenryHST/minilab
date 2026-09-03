@@ -82,9 +82,20 @@ spec:
         spec:
           serviceAccountName: backup-runner
           restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
           containers:
             - name: trigger-backup
               image: alpine/k8s:1.32.0
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
               command:
                 - /bin/bash
                 - -c

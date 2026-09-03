@@ -18,9 +18,21 @@ Offizielle Hinweise: [Migration v1→v2](https://github.com/louislam/uptime-kuma
 
 ## Persistence
 
-- **hostPath** `/var/lib/uptimekuma` → `/app/data` auf Node **`pi4cl`** (`nodeSelector`)
+- **Local PV/PVC** `uptimekuma-data` → `/var/lib/uptimekuma` auf Node **`pi4cl`** (ersetzt direktes `hostPath` im Pod — kompatibel mit Pod Security `restricted` audit/warn)
+- Deployment + Restore gepinnt auf `pi4cl` (`nodeSelector`)
 - Kein Longhorn-PVC: Daten lokal auf dem Pi; Cluster-Storage war bei Einführung knapp / Node-Pin bewusst
 - Wechsel auf Longhorn nur, wenn der Pin auf `pi4cl` stört (dann Worker mit Longhorn, Restore-Pfad anpassen)
+
+## Pod Security (baseline enforce, restricted audit/warn)
+
+Namespace `uptimekuma`:
+
+| Label | Wert | Grund |
+|-------|------|-------|
+| `enforce` | `baseline` | ICMP-Ping-Monitore benötigen `NET_RAW` (unter `restricted` verboten) |
+| `audit` / `warn` | `restricted` | Abweichungen vom strengen Profil werden protokolliert/gemeldet |
+
+Deployment: `runAsUser`/`fsGroup` 1000, `capabilities.drop: [ALL]`, `capabilities.add: [NET_RAW]`, `seccompProfile: RuntimeDefault`
 
 ## Backup / Restore
 

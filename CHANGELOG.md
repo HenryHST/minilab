@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- AppProject `infrastruktur` moved to `apps/argocd-apps/raw/` (managed by Application `infra-applicationset`); removed Application `infrastruktur-project` and `bootstrap/` — fixes missing project for Longhorn / ApplicationSet apps; destinations use `server: "*"`
 - All Application manifests in `apps/argocd-apps/` use `targetRevision: main` instead of `HEAD` (fixes `revision HEAD must be resolved` on homelab / child apps)
 
 - `infra/registry/kustomization.yaml` trimmed to existing `service.yaml` only (`kube-system`)
@@ -24,6 +25,7 @@ All notable changes to this project will be documented in this file.
 - After sync: old Applications `cert-manager`, `newt`, `metrics-server`, `pangolin-publish` are replaced by ApplicationSet-generated apps with the same names
 - Requires Argo CD ApplicationSet controller (bundled with argo-cd Helm chart)
 - If old `pangolin-publish` Application hangs in Terminating while ApplicationSet recreates it: `kubectl patch application pangolin-publish -n argocd --type merge -p '{"metadata":{"finalizers":null}}'` then refresh ApplicationSet `infra`
+- After AppProject move: `argocd app sync infra-applicationset`; delete orphan `infrastruktur-project` if present (`argocd app delete infrastruktur-project --cascade=orphan`)
 
 ## [0.7.0] - 2026-08-26
 

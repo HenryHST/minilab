@@ -4,13 +4,16 @@ metadata:
   name: infrastruktur
   namespace: argocd
   annotations:
+    # Applied by Application infra-applicationset (path apps/argocd-apps/raw) before ApplicationSet.
     argocd.argoproj.io/sync-wave: "-2"
 spec:
-  description: Infrastruktur — Homelab platform
+  description: Infrastruktur — Homelab platform (ApplicationSet infra + authentik)
   sourceRepos:
     - "*"
   destinations:
-    - server: https://kubernetes.default.svc
+    # Wildcard server avoids mismatches (…svc vs …svc:443) that yield
+    # "app is not allowed in project infrastruktur".
+    - server: "*"
       namespace: "*"
   clusterResourceWhitelist:
     - group: "*"

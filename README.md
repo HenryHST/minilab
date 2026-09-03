@@ -11,22 +11,21 @@ Ansible legt nur die Parent-Application `homelab` an (`argocd_applications` in I
 ## Struktur
 
 ```
-apps/argocd-apps/bootstrap/  # AppProject infrastruktur (via Application infrastruktur-project, wave -2)
-apps/argocd-apps/raw/       # ApplicationSet infra (goTemplate — nicht via kustomize build)
+apps/argocd-apps/raw/       # AppProject infrastruktur + ApplicationSet infra (goTemplate — nicht via kustomize build)
 apps/argocd-apps/          # Bootstrap: Application-CRs (Plain YAML, kein kustomization.yaml — sonst CMP :8081)
-infra/<name>/              # Infrastruktur-Workloads (ApplicationSet „infra“, sync-wave 0)
+infra/<name>/              # Infrastruktur-Workloads (ApplicationSet „infra“)
 apps/<name>/               # User-Apps (Plain YAML, kein kustomization.yaml)
   deployment.yaml
   …
 ```
 
-Infrastruktur-Apps unter `infra/*` werden vom ApplicationSet [`infra`](apps/argocd-apps/raw/infra-applicationset.yaml) über einen expliziten List-Generator registriert (Pfad, Namespace, Sync-Wave pro Eintrag). Das ApplicationSet liegt in `raw/` (goTemplate, kein kustomize build). User-Apps unter `apps/<name>/` weiterhin über Manifeste in `apps/argocd-apps/`.
+Infrastruktur-Apps unter `infra/*` (plus `pangolin-publish`) werden vom ApplicationSet [`infra`](apps/argocd-apps/raw/infra-applicationset.yaml) über einen expliziten List-Generator registriert (Pfad, Namespace, Sync-Wave pro Eintrag). AppProject `infrastruktur` und ApplicationSet liegen in `raw/` und werden von Application `infra-applicationset` (project `default`) bereitgestellt. User-Apps unter `apps/<name>/` weiterhin über Manifeste in `apps/argocd-apps/`.
 
 ### Sync waves
 
 | Wave | Apps |
 |------|------|
-| -2 | Application `infrastruktur-project` → AppProject `infrastruktur` (`apps/argocd-apps/bootstrap/`) |
+| -2 | AppProject `infrastruktur` (via Application `infra-applicationset` → `apps/argocd-apps/raw/`) |
 | 0 | Application `infra-applicationset` → ApplicationSet `infra` (`apps/argocd-apps/raw/`) |
 | 1 | ApplicationSet → `infra/longhorn`, `infra/system-upgrade-controller`, `infra/kube-prometheus-stack` |
 | 2 | unifipoller, authentik, termix, headlamp |
@@ -135,16 +134,21 @@ Altes manuelles Kopieren von `stadthagen-tls` aus `traefik` ist nicht mehr nöti
 
 **`dial tcp …:8081: connect: no route to host` (CMP):** Der repo-server leitet **Kustomize**-Builds an den CMP-Sidecar `:8081` — der ist im Cluster nicht erreichbar. **Lösung:** Plain Directory (kein `kustomization.yaml`); Helm-Charts als `helm template` in `helm-manifest.yaml` committen oder Native Helm via ApplicationSet. Alle minilab-Apps sind migriert. Nach Fix: `kubectl -n argocd annotate applicationset infra argocd.argoproj.io/refresh=hard --overwrite && argocd app sync homelab`
 
-**`AppProject "infrastruktur" not found`:** AppProject liegt in [`apps/argocd-apps/bootstrap/`](apps/argocd-apps/bootstrap/) und wird von `infrastruktur-project` (sync-wave -2) bereitgestellt. Nach Merge: `argocd app sync homelab`. Sofort-Fix:
+**`app is not allowed in project "infrastruktur"` / `AppProject "infrastruktur" not found`:** AppProject liegt in [`apps/argocd-apps/raw/appproject-infrastruktur.yaml`](apps/argocd-apps/raw/appproject-infrastruktur.yaml) und wird von Application `infra-applicationset` (project `default`, sync-wave -2 auf dem AppProject) bereitgestellt. Longhorn & Co. brauchen dieses Project (Multi-Source Helm + Git). Nach Merge:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/HenryHST/minilab/main/apps/argocd-apps/bootstrap/appproject-infrastruktur.yaml
-argocd app sync homelab
+argocd app sync infra-applicationset
+# Sofort-Fix falls Project fehlt:
+kubectl apply -f https://raw.githubusercontent.com/HenryHST/minilab/main/apps/argocd-apps/raw/appproject-infrastruktur.yaml
+kubectl -n argocd annotate applicationset infra argocd.argoproj.io/refresh=hard --overwrite
+argocd app sync longhorn
 ```
+
+Alte Application `infrastruktur-project` / Pfad `bootstrap/` entfallen — ggf. orphan Application löschen: `argocd app delete infrastruktur-project --cascade=orphan` (oder Finalizer patchen).
 
 **`MalformedYAMLError` in `infra-applicationset.yaml`:** goTemplate-Conditionals (`{{- if ... }}`) dürfen nicht inline im `template`-Block stehen — nur in `templatePatch` (mehrzeiliger String). Die Datei liegt in `apps/argocd-apps/raw/`.
 
-**`app is not allowed in project "infrastruktur"` / leerer Namespace:** ApplicationSet `infra` aus `main` syncen. Das Template nutzt `dig "multiSource" false .` — mit `missingkey=error` schlägt `{{- if .multiSource }}` für alle Apps ohne dieses Feld (z. B. `newt`) fehl und erzeugt kaputte Application-Specs. Nach Fix: `kubectl -n argocd annotate applicationset infra argocd.argoproj.io/refresh=hard --overwrite && argocd app sync homelab`
+**ApplicationSet erzeugt kaputte Specs / leerer Namespace:** ApplicationSet `infra` aus `main` syncen. Das Template nutzt `dig "helmChart" "" .` — mit `missingkey=error` müssen optionale Felder über `dig` gelesen werden. Nach Fix: `kubectl -n argocd annotate applicationset infra argocd.argoproj.io/refresh=hard --overwrite && argocd app sync homelab`
 
 **`Unable to create .../.git/index.lock': File exists`:** Hängender Git-Checkout im repo-server Cache — repo-server neu starten:
 

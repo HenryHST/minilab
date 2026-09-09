@@ -73,6 +73,8 @@ Login: lokaler Admin **und** Authentik SSO (`oauth_auto_login: false`). Rollen �
 
 Externe Scrape-Jobs (Proxmox, Pangolin, Home Assistant, Unpoller, Authentik, Argo CD) liegen in `infra/kube-prometheus-stack/values.yaml` unter `prometheus.prometheusSpec.additionalScrapeConfigs`. Custom Alert-Rules: `homelab-alerts.yaml`. Alertmanager: E-Mail an `info@henrystadthagen.de`.
 
+**Baseline Alerting (Design):** Vorschläge, Scope, Testing und offene Fragen → [`infra/kube-prometheus-stack/ALERTING.md`](infra/kube-prometheus-stack/ALERTING.md).
+
 Das Helm-Chart wird über **native Argo-CD-Helm-Quelle** (Multi-Source via ApplicationSet `infra`) gerendert; Extras (Ingress, Certificates, Rules) liegen in `manifests/` als Plain YAML (kein Kustomize — sonst CMP `:8081`).
 
 **Migration:** Secrets `grafana-oauth` und optional `grafana-hcloud` müssen im Namespace `monitoring` existieren (vorher `grafana`). Beispiel: `infra/kube-prometheus-stack/oauth-secret.example.yaml`.

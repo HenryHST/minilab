@@ -71,9 +71,9 @@ Grafana-Werte im kube-prometheus-stack basieren auf [JimsGarage GitOps/Grafana](
 
 Login: lokaler Admin **und** Authentik SSO (`oauth_auto_login: false`). Rollen über Authentik-Gruppen `Grafana Admins` → Admin, `Grafana Editors` → Editor, sonst Viewer. Provisionierte Dashboards: UniFi Poller, Argo CD (19993), Authentik (14837), Home Assistant Overview (16888), Proxmox Syslog.
 
-Externe Scrape-Jobs (Proxmox, Pangolin, Home Assistant, Unpoller, Authentik, Argo CD) liegen in `infra/kube-prometheus-stack/values.yaml` unter `prometheus.prometheusSpec.additionalScrapeConfigs`. Custom Alert-Rules: `homelab-alerts.yaml`. Alertmanager: E-Mail an `info@henrystadthagen.de`.
+Externe Scrape-Jobs (Proxmox, Pangolin, Home Assistant, Unpoller, Authentik, Argo CD) liegen in `infra/kube-prometheus-stack/values.yaml` unter `prometheus.prometheusSpec.additionalScrapeConfigs`. Custom Alert-Rules: `homelab-alerts.yaml`. Alertmanager: E-Mail an `info@henrystadthagen.de` mit getrennten Routes für `critical` / `warning`.
 
-**Baseline Alerting (Design):** Vorschläge, Scope, Testing und offene Fragen → [`infra/kube-prometheus-stack/ALERTING.md`](infra/kube-prometheus-stack/ALERTING.md).
+**Baseline Alerting (V1+V2):** PrometheusRules + Loki Ruler (Proxmox syslog) → Alertmanager. Design, Severity-Matrix, Testing und Runbook → [`infra/kube-prometheus-stack/ALERTING.md`](infra/kube-prometheus-stack/ALERTING.md). Tests: `infra/kube-prometheus-stack/tests/run-tests.sh`.
 
 Das Helm-Chart wird über **native Argo-CD-Helm-Quelle** (Multi-Source via ApplicationSet `infra`) gerendert; Extras (Ingress, Certificates, Rules) liegen in `manifests/` als Plain YAML (kein Kustomize — sonst CMP `:8081`).
 

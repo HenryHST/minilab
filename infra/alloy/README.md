@@ -47,3 +47,9 @@ Dashboard **Proxmox Syslog** (folder Proxmox):
 | pve03 | `{job="syslog"} \| host=~"pve03.*" or src_ip="192.168.0.109"` |
 
 `or` must be in the LogQL **pipeline** (after `|`), not between two stream selectors.
+
+## Alerting
+
+Loki Ruler evaluates syslog LogQL alerts and sends them to Alertmanager
+(`infra/loki/manifests/loki-alerting-rules.yaml`). Overview:
+[`infra/kube-prometheus-stack/ALERTING.md`](../kube-prometheus-stack/ALERTING.md).

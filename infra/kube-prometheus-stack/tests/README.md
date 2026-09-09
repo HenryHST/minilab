@@ -36,6 +36,8 @@ Or use the helper script:
 | PodCrashLooping | CrashLoopBackOff for 11m |
 | PVENodeDown | `pve_up{id=~node/.*}==0` for 3m |
 | PVEStorageAlmostFull | storage usage 97% for 6m |
+| CiliumBpfMapPressure | map pressure 0.95 for 11m |
+| CiliumDaemonSetUnavailable | unavailable=2 for 11m |
 
 Loki LogQL rules (`infra/loki/manifests/loki-alerting-rules.yaml`) are not covered by promtool; validate after deploy via Loki ruler API / Alertmanager.
 

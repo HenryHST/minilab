@@ -91,3 +91,44 @@ tests:
               summary: "PVE storage storage/pve01/local-lvm >95% used"
               description: |
                 Proxmox storage `storage/pve01/local-lvm` is above 95% used (97%, exporter `pexpve01.stadthagen.dev:9221`). Free space immediately.
+
+  - interval: 1m
+    input_series:
+      - series: 'cilium_bpf_map_pressure{map_name="cilium_policy_0000",pod="cilium-abc",job="cilium-agent"}'
+        values: "0.95x20"
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: CiliumBpfMapPressure
+        exp_alerts:
+          - exp_labels:
+              alertname: CiliumBpfMapPressure
+              severity: warning
+              source: prometheus
+              map_name: cilium_policy_0000
+              pod: cilium-abc
+              job: cilium-agent
+            exp_annotations:
+              summary: "Cilium BPF map cilium_policy_0000 >90% on cilium-abc"
+              description: |
+                eBPF map `cilium_policy_0000` on agent `cilium-abc` is above 90% capacity (0.95).
+                Full maps can cause drops and update errors. Review map sizing / Cilium docs.
+
+  - interval: 1m
+    input_series:
+      - series: 'kube_daemonset_status_number_unavailable{namespace="kube-system",daemonset="cilium"}'
+        values: "2x20"
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: CiliumDaemonSetUnavailable
+        exp_alerts:
+          - exp_labels:
+              alertname: CiliumDaemonSetUnavailable
+              severity: critical
+              source: prometheus
+              namespace: kube-system
+              daemonset: cilium
+            exp_annotations:
+              summary: "Cilium DaemonSet has 2 unavailable pod(s)"
+              description: |
+                DaemonSet `kube-system/cilium` has unavailable pods for over 10 minutes.
+                Check: kubectl -n kube-system get ds cilium; kubectl -n kube-system get pods -l k8s-app=cilium

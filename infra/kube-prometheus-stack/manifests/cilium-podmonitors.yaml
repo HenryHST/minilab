@@ -1,0 +1,75 @@
+# Scrape Cilium agent / operator / Hubble metrics (ports 9962 / 9963 / 9965).
+# Requires Cilium Helm: prometheus.enabled=true (and optionally hubble.metrics).
+# See ALERTING.md — Cilium is not managed in this repo; metrics must be enabled on the CNI install.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: cilium-agent
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    app.kubernetes.io/component: cilium
+spec:
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  selector:
+    matchLabels:
+      k8s-app: cilium
+  podMetricsEndpoints:
+    - targetPort: 9962
+      interval: 30s
+      path: /metrics
+      relabelings:
+        - action: replace
+          replacement: cilium-agent
+          targetLabel: job
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: cilium-operator
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    app.kubernetes.io/component: cilium
+spec:
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  selector:
+    matchLabels:
+      io.cilium/app: operator
+  podMetricsEndpoints:
+    - targetPort: 9963
+      interval: 30s
+      path: /metrics
+      relabelings:
+        - action: replace
+          replacement: cilium-operator
+          targetLabel: job
+---
+# Hubble metrics share the cilium-agent pods when hubble.metrics is enabled.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: cilium-hubble
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    app.kubernetes.io/component: cilium
+spec:
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  selector:
+    matchLabels:
+      k8s-app: cilium
+  podMetricsEndpoints:
+    - targetPort: 9965
+      interval: 30s
+      path: /metrics
+      relabelings:
+        - action: replace
+          replacement: cilium-hubble
+          targetLabel: job

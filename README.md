@@ -73,7 +73,7 @@ Login: lokaler Admin **und** Authentik SSO (`oauth_auto_login: false`). Rollen �
 
 Externe Scrape-Jobs (Proxmox, Pangolin, Home Assistant, Unpoller, Authentik, Argo CD) liegen in `infra/kube-prometheus-stack/values.yaml` unter `prometheus.prometheusSpec.additionalScrapeConfigs`. Custom Alert-Rules: `homelab-alerts.yaml`. Alertmanager: E-Mail an `info@henrystadthagen.de` mit getrennten Routes für `critical` / `warning`.
 
-**Baseline Alerting (V1+V2):** PrometheusRules + Loki Ruler (Proxmox syslog) → Alertmanager. Design, Severity-Matrix, Testing und Runbook → [`infra/kube-prometheus-stack/ALERTING.md`](infra/kube-prometheus-stack/ALERTING.md). Tests: `infra/kube-prometheus-stack/tests/run-tests.sh`.
+**Baseline Alerting (V1+V2):** PrometheusRules (Workload, Proxmox, **Cilium**) + Loki Ruler (Proxmox syslog) → Alertmanager. Cilium scrape via `cilium-podmonitors.yaml` (Ports 9962/9963/9965; Cilium-Helm `prometheus.enabled` nötig). Design, Severity-Matrix, Testing und Runbook → [`infra/kube-prometheus-stack/ALERTING.md`](infra/kube-prometheus-stack/ALERTING.md). Tests: `infra/kube-prometheus-stack/tests/run-tests.sh`.
 
 Das Helm-Chart wird über **native Argo-CD-Helm-Quelle** (Multi-Source via ApplicationSet `infra`) gerendert; Extras (Ingress, Certificates, Rules) liegen in `manifests/` als Plain YAML (kein Kustomize — sonst CMP `:8081`).
 

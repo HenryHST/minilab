@@ -257,3 +257,93 @@ spec:
             summary: 'PVE replication failed for {{ $labels.id }}'
             description: |
               Proxmox replication for `{{ $labels.id }}` has {{ $value }} failed sync(s) (exporter `{{ $labels.instance }}`).
+
+    # Cilium CNI (PodMonitors in cilium-podmonitors.yaml). Needs prometheus.enabled on Cilium install.
+    - name: baseline.cilium
+      rules:
+        - alert: CiliumDaemonSetUnavailable
+          expr: |
+            kube_daemonset_status_number_unavailable{namespace="kube-system", daemonset="cilium"} > 0
+          for: 10m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'Cilium DaemonSet has {{ $value }} unavailable pod(s)'
+            description: |
+              DaemonSet `kube-system/cilium` has unavailable pods for over 10 minutes.
+              Check: kubectl -n kube-system get ds cilium; kubectl -n kube-system get pods -l k8s-app=cilium
+
+        - alert: CiliumAgentDown
+          expr: up{job="cilium-agent"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'Cilium agent scrape down ({{ $labels.pod }}/{{ $labels.instance }})'
+            description: |
+              Prometheus cannot scrape Cilium agent metrics on `{{ $labels.instance }}` for over 5 minutes.
+              Ensure `prometheus.enabled=true` on the Cilium Helm release and port 9962 is open.
+
+        - alert: CiliumOperatorDown
+          expr: up{job="cilium-operator"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'Cilium operator scrape down ({{ $labels.pod }}/{{ $labels.instance }})'
+            description: |
+              Prometheus cannot scrape Cilium operator metrics on `{{ $labels.instance }}` for over 5 minutes.
+              Check: kubectl -n kube-system get deploy -l io.cilium/app=operator
+
+        - alert: CiliumControllersFailing
+          expr: sum by (pod) (cilium_controllers_failing) > 0
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Cilium controllers failing on {{ $labels.pod }}'
+            description: |
+              Cilium agent `{{ $labels.pod }}` reports failing controllers for over 10 minutes.
+              Check: kubectl -n kube-system logs {{ $labels.pod }} --tail=100
+
+        - alert: CiliumBpfMapPressure
+          expr: cilium_bpf_map_pressure > 0.9
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Cilium BPF map {{ $labels.map_name }} >90% on {{ $labels.pod }}'
+            description: |
+              eBPF map `{{ $labels.map_name }}` on agent `{{ $labels.pod }}` is above 90% capacity ({{ $value | printf "%.2f" }}).
+              Full maps can cause drops and update errors. Review map sizing / Cilium docs.
+
+        - alert: CiliumHighDropRate
+          expr: |
+            sum by (pod, reason) (rate(cilium_drop_count_total[5m])) > 100
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Cilium high drop rate on {{ $labels.pod }} (reason={{ $labels.reason }})'
+            description: |
+              Agent `{{ $labels.pod }}` drops >100 pkt/s (reason `{{ $labels.reason }}`) for over 10 minutes.
+              PolicyDenied often means NetworkPolicy; other reasons may indicate datapath issues.
+              Check Hubble/UI or: kubectl -n kube-system exec {{ $labels.pod }} -c cilium-agent -- cilium-dbg status
+
+        - alert: CiliumUnreachableNodes
+          expr: max(cilium_unreachable_nodes) > 0
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Cilium reports {{ $value }} unreachable node(s)'
+            description: |
+              Cilium health checks report unreachable nodes for over 10 minutes.
+              Check node networking and: kubectl -n kube-system exec ds/cilium -c cilium-agent -- cilium-health status

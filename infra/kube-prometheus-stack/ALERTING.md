@@ -1,10 +1,11 @@
 # Baseline Alerting — Design & Implementation
 
 **Status:** Accepted — **V1 (PrometheusRule) + V2 (Loki Ruler)**, E-Mail only,
-critical/warning getrennt geroutet, Chart-`defaultRules` behalten, Proxmox in Baseline.
+critical/warning getrennt geroutet, Chart-`defaultRules` behalten, Proxmox **und
+Cilium** in Baseline.
 
 Ziel: Baseline-Alarming für das Minilab über **Prometheus**, **Loki**, **Grafana**,
-**Alertmanager** (Node-/Workload-Signale, Proxmox Metrics + Syslog).
+**Alertmanager** (Node-/Workload-Signale, Proxmox Metrics + Syslog, Cilium CNI).
 
 ---
 
@@ -17,6 +18,7 @@ Ziel: Baseline-Alarming für das Minilab über **Prometheus**, **Loki**, **Grafa
 | Routing | critical vs warning getrennt (Subject + Repeat-Intervall) |
 | Chart `defaultRules` | behalten |
 | Proxmox / pve-exporter | Teil von Baseline v1 |
+| Cilium / Hubble metrics | Teil von Baseline v1 (PodMonitors + Rules) |
 
 ---
 
@@ -32,7 +34,8 @@ Grafana (Datasource Alertmanager, UI) ─┘
 
 | Quelle | Artefakt |
 |--------|----------|
-| Metrics / Workload / Proxmox | `manifests/homelab-alerts.yaml` |
+| Metrics / Workload / Proxmox / Cilium | `manifests/homelab-alerts.yaml` |
+| Cilium scrape (agent/operator/hubble) | `manifests/cilium-podmonitors.yaml` |
 | Chart defaults (Node CPU/RAM/Disk, kube apps, …) | `values.yaml` → `defaultRules` |
 | Alertmanager Routing | `values.yaml` → `alertmanager.config` |
 | Log alerts (Proxmox syslog) | `infra/loki/manifests/loki-alerting-rules.yaml` + `infra/loki/values.yaml` `rulerConfig` |
@@ -80,6 +83,28 @@ Inhibit (Auszug): critical unterdrückt warning bei gleichem `namespace`+`pod`;
 Bewusst **nicht** enthalten: „alle gestoppten VMs/CTs“ und „Guest not backed up“
 (zu noisy im Lab).
 
+### `baseline.cilium` (PodMonitors → Jobs `cilium-agent` / `cilium-operator` / `cilium-hubble`)
+
+- CiliumDaemonSetUnavailable (critical; via kube-state-metrics)
+- CiliumAgentDown / CiliumOperatorDown (critical; scrape `up`)
+- CiliumControllersFailing (warning)
+- CiliumBpfMapPressure (warning, >90%)
+- CiliumHighDropRate (warning, >100 pkt/s)
+- CiliumUnreachableNodes (warning)
+
+**Voraussetzung (außerhalb dieses Repos):** Cilium-Helm muss Metrics exponieren, z. B.:
+
+```bash
+helm upgrade cilium cilium/cilium -n kube-system --reuse-values \
+  --set prometheus.enabled=true \
+  --set operator.prometheus.enabled=true \
+  --set hubble.enabled=true \
+  --set hubble.metrics.enabled="{drop,tcp,flow,icmp,dns}"
+```
+
+Ports: Agent `9962`, Operator `9963`, Hubble `9965`. Ohne Metrics-Listener bleiben
+Agent/Operator-`up`-Alerts aus (keine Targets); DaemonSet-Alert greift trotzdem.
+
 ### Loki `baseline.proxmox.syslog`
 
 - ProxmoxSyslogHighErrorRate (warning)
@@ -100,7 +125,7 @@ infra/kube-prometheus-stack/tests/run-tests.sh
 ```
 
 Nutzt `promtool check rules` + `promtool test rules` (Fixtures für Deployment,
-CrashLoop, PVENodeDown, PVEStorageAlmostFull).
+CrashLoop, PVE, Cilium BPF-Map / DaemonSet).
 
 ### Loki Rules
 
@@ -126,6 +151,9 @@ Nach Deploy:
 | ContainerOOMKilled | Memory Limit erhöhen; Leak prüfen |
 | PVENodeDown / PVEExporterDown | Node/Exporter-Host erreichbar? Credentials? |
 | PVEStorageAlmostFull | Storage aufräumen / erweitern auf Proxmox |
+| CiliumDaemonSetUnavailable / CiliumAgentDown | `kubectl -n kube-system get ds,pods -l k8s-app=cilium`; Metrics enabled? |
+| CiliumBpfMapPressure | Map-Kapazität / Cilium-Version; Docs zu map pressure |
+| CiliumHighDropRate | NetworkPolicies (PolicyDenied) vs. Datapath; Hubble flows |
 | ProxmoxSyslogKernelOOM | RAM auf dem Host; QEMU Ballooning / Overcommit |
 | CertificateExpiringSoon | `kubectl describe certificate`; cert-manager Logs |
 

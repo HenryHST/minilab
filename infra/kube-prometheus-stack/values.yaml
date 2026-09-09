@@ -272,7 +272,7 @@ alertmanager:
         memory: 128Mi
   config:
     global:
-      smtp_smarthost: mail.henrstadthagen.de:25
+      smtp_smarthost: mail.henrystadthagen.de:25
       smtp_from: auto@henrystadthagen.de
     # Baseline: critical vs warning → same inbox, different cadence + subject.
     # See infra/kube-prometheus-stack/ALERTING.md

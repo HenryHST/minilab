@@ -41,6 +41,16 @@ spec:
             path: infra/registry
             namespace: kube-system
             syncWave: "0"
+          - app: registry-ui
+            path: infra/registry-ui/manifests
+            namespace: registry-ui
+            syncWave: "0"
+            helmRepo: https://helm.joxit.dev
+            helmChart: docker-registry-ui
+            helmVersion: "1.1.4"
+            helmReleaseName: registry-ui
+            helmValuesFile: infra/registry-ui/values.yaml
+            extras: true
           - app: newt
             namespace: newt
             syncWave: "0"

@@ -1,0 +1,86 @@
+# registry-ui: Traefik + in-namespace ingress; egress to in-cluster registry.
+# No Newt — not published via pangolin-publish.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: registry-ui-ingress
+  namespace: registry-ui
+  labels:
+    app.kubernetes.io/name: docker-registry-ui
+    app.kubernetes.io/part-of: registry-ui
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: docker-registry-ui
+      app.kubernetes.io/instance: registry-ui
+      app.kubernetes.io/component: user-interface
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: registry-ui
+      ports:
+        - protocol: TCP
+          port: 80
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 80
+---
+# Egress allow-list for UI → registry (+ DNS). Enable Authentik rule when
+# ForwardAuth middleware is activated (see ../authentik-forwardauth.example.yaml).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: registry-ui-egress
+  namespace: registry-ui
+  labels:
+    app.kubernetes.io/name: docker-registry-ui
+    app.kubernetes.io/part-of: registry-ui
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: docker-registry-ui
+      app.kubernetes.io/instance: registry-ui
+      app.kubernetes.io/component: user-interface
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Existing registry Service (infra/registry → kube-registry:5000)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app: kube-registry
+      ports:
+        - protocol: TCP
+          port: 5000
+    # OPTIONAL — Authentik Outpost (ForwardAuth). Uncomment with middleware.
+    # - to:
+    #     - namespaceSelector:
+    #         matchLabels:
+    #           kubernetes.io/metadata.name: authentik
+    #   ports:
+    #     - protocol: TCP
+    #       port: 9000
+    #     - protocol: TCP
+    #       port: 80

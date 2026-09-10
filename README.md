@@ -42,6 +42,7 @@ ApplicationSet-Apps (`infra/*`, inkl. `pangolin-publish`) und `authentik` — al
 | cert-manager | `infra/cert-manager/` | `certmanager` | Native Helm v1.21.1; `ClusterIssuer` via Helm `extraObjects`; webhook: App `cert-manager-webhook-hetzner` |
 | metrics-server | `infra/metrics-server/` | `kube-system` | Helm chart 3.14.0; k3s bundled metrics-server disabled; `--kubelet-insecure-tls` |
 | registry | `infra/registry/` | `kube-system` | In-cluster registry Service (`kube-registry:5000`) |
+| registry-ui | `infra/registry-ui/` | `registry-ui` | `registry-ui.stadthagen.dev` ([Joxit](https://github.com/Joxit/docker-registry-ui) Helm 1.1.4 / image 2.6.0; proxies `kube-registry:5000`; Authentik ForwardAuth vorbereitet) |
 | longhorn | `infra/longhorn/` | `longhorn-system` | `longhorn.stadthagen.dev` (Native Helm v1.12.1, default StorageClass, backups → NFS `192.168.0.25`) |
 | omni-tools | `apps/omni-tools/` | `omnitools` | `omni-tools.stadthagen.dev` |
 | it-tools | `apps/it-tools/` | `it-tools` | `it-tools.stadthagen.dev` |

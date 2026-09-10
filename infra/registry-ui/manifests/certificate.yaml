@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: registry-ui-stadthagen-dev
+  namespace: registry-ui
+spec:
+  secretName: registry-ui-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - registry-ui.stadthagen.dev

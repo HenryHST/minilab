@@ -272,15 +272,55 @@ alertmanager:
         memory: 128Mi
   config:
     global:
-      smtp_smarthost: mail.henrstadthagen.de:25
+      smtp_smarthost: mail.henrystadthagen.de:25
       smtp_from: auto@henrystadthagen.de
+    # Baseline: critical vs warning → same inbox, different cadence + subject.
+    # See infra/kube-prometheus-stack/ALERTING.md
     route:
-      receiver: email
-      group_by: [alertname]
+      receiver: email-warning
+      group_by: [alertname, severity]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+      routes:
+        - matchers:
+            - severity = critical
+          receiver: email-critical
+          group_wait: 0s
+          group_interval: 5m
+          repeat_interval: 4h
+          continue: false
+        - matchers:
+            - severity = warning
+          receiver: email-warning
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 12h
+          continue: false
+    inhibit_rules:
+      - source_matchers:
+          - severity = critical
+        target_matchers:
+          - severity = warning
+        equal: [namespace, pod]
+      - source_matchers:
+          - alertname = PVENodeDown
+        target_matchers:
+          - severity = warning
+        equal: [instance]
     receivers:
-      - name: email
+      - name: email-critical
         email_configs:
           - to: info@henrystadthagen.de
+            send_resolved: true
+            headers:
+              Subject: "[CRITICAL][minilab] {{ .GroupLabels.alertname }}"
+      - name: email-warning
+        email_configs:
+          - to: info@henrystadthagen.de
+            send_resolved: true
+            headers:
+              Subject: "[WARNING][minilab] {{ .GroupLabels.alertname }}"
 
 nodeExporter:
   enabled: true

@@ -20,6 +20,22 @@ loki:
           period: 24h
   limits_config:
     retention_period: 168h
+  # Baseline V2: evaluate LogQL rules and send to Alertmanager.
+  # Rule files: manifests/loki-alerting-rules.yaml (label loki_rule, tenant fake).
+  rulerConfig:
+    enable_api: true
+    enable_alertmanager_v2: true
+    alertmanager_url: http://kube-prometheus-stack-alertmanager.monitoring.svc.cluster.local:9093
+    storage:
+      type: local
+      local:
+        directory: /rules
+    rule_path: /tmp/loki/rules-temp
+    ring:
+      kvstore:
+        store: inmemory
+    wal:
+      dir: /var/loki/ruler-wal
 
 singleBinary:
   replicas: 1
@@ -30,6 +46,19 @@ singleBinary:
     dataVolumeParameters:
       persistentVolumeClaim:
         claimName: loki-data
+  # Sidecar ingests ConfigMaps labeled loki_rule (chart default).
+  sidecar: true
+
+sidecar:
+  rules:
+    enabled: true
+    label: loki_rule
+    folder: /rules
+    # ConfigMap annotation loki_ruler_tenant: fake → /rules/fake (auth off).
+    folderAnnotation: loki_ruler_tenant
+
+ruler:
+  enabled: true
 
 gateway:
   enabled: true

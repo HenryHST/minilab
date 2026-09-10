@@ -1,3 +1,6 @@
+# Baseline + platform alerts for minilab (Prometheus → Alertmanager).
+# Chart defaultRules stay enabled; this file adds workload/platform/Proxmox extras.
+# Design: infra/kube-prometheus-stack/ALERTING.md
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -6,13 +9,14 @@ metadata:
     release: kube-prometheus-stack
 spec:
   groups:
-    - name: homelab.workload
+    - name: baseline.workload
       rules:
         - alert: ContainerRestartingFrequently
           expr: increase(kube_pod_container_status_restarts_total[15m]) > 3
           for: 2m
           labels:
             severity: warning
+            source: prometheus
           annotations:
             summary: 'Container {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }} restarted >3 times in 15m'
             description: |
@@ -27,6 +31,7 @@ spec:
           for: 5m
           labels:
             severity: critical
+            source: prometheus
           annotations:
             summary: 'Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has 0 ready replicas'
             description: |
@@ -38,6 +43,7 @@ spec:
           for: 10m
           labels:
             severity: critical
+            source: prometheus
           annotations:
             summary: 'Pod {{ $labels.namespace }}/{{ $labels.pod }} container {{ $labels.container }} crash-looping'
             description: |
@@ -52,19 +58,48 @@ spec:
           for: 1m
           labels:
             severity: warning
+            source: prometheus
           annotations:
             summary: 'Container {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }} OOMKilled'
             description: |
               Container `{{ $labels.container }}` in pod `{{ $labels.namespace }}/{{ $labels.pod }}` was OOMKilled in the last 10 minutes.
               Raise the memory request/limit. Check: kubectl -n {{ $labels.namespace }} describe pod {{ $labels.pod }}
 
-    - name: homelab.platform
+        - alert: PodNotReady
+          expr: |
+            sum by (namespace, pod) (
+              kube_pod_status_phase{phase=~"Pending|Unknown"}
+            ) > 0
+          for: 15m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Pod {{ $labels.namespace }}/{{ $labels.pod }} not ready (Pending/Unknown) >15m'
+            description: |
+              Pod `{{ $labels.namespace }}/{{ $labels.pod }}` has been Pending or Unknown for over 15 minutes.
+              Check: kubectl -n {{ $labels.namespace }} describe pod {{ $labels.pod }}
+
+        - alert: PersistentVolumeClaimPending
+          expr: kube_persistentvolumeclaim_status_phase{phase="Pending"} == 1
+          for: 15m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} Pending >15m'
+            description: |
+              PVC `{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}` has been Pending for over 15 minutes.
+              Check: kubectl -n {{ $labels.namespace }} describe pvc {{ $labels.persistentvolumeclaim }}
+
+    - name: baseline.platform
       rules:
         - alert: ArgoCDAppDegraded
           expr: argocd_app_info{health_status!="Healthy",health_status!=""} == 1
           for: 15m
           labels:
             severity: warning
+            source: prometheus
           annotations:
             summary: 'ArgoCD app {{ $labels.name }} health={{ $labels.health_status }} sync={{ $labels.sync_status }}'
             description: |
@@ -76,6 +111,7 @@ spec:
           for: 20m
           labels:
             severity: warning
+            source: prometheus
           annotations:
             summary: 'ArgoCD app {{ $labels.name }} stuck sync={{ $labels.sync_status }} for >20m'
             description: |
@@ -87,6 +123,7 @@ spec:
           for: 1h
           labels:
             severity: warning
+            source: prometheus
           annotations:
             summary: 'Certificate {{ $labels.namespace }}/{{ $labels.name }} expires in {{ $value | humanizeDuration }}'
             description: |
@@ -107,7 +144,206 @@ spec:
           for: 15m
           labels:
             severity: warning
+            source: prometheus
           annotations:
             summary: 'HPA {{ $labels.namespace }}/{{ $labels.horizontalpodautoscaler }} running at max replicas'
             description: |
               HPA `{{ $labels.namespace }}/{{ $labels.horizontalpodautoscaler }}` has been at max replicas for over 15 minutes.
+
+    # Proxmox via prometheus-pve-exporter (jobs pexpve01–03).
+    # Intentionally omit "all guests down" / "not backed up" — too noisy for lab VMs left stopped.
+    - name: baseline.proxmox
+      rules:
+        - alert: PVEExporterDown
+          expr: up{job=~"pexpve0[123]"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'PVE exporter {{ $labels.job }} ({{ $labels.instance }}) down'
+            description: |
+              Scrape target `{{ $labels.instance }}` for job `{{ $labels.job }}` has been down for over 5 minutes.
+              Check exporter host reachability and credentials.
+
+        - alert: PVENodeDown
+          expr: pve_up{id=~"node/.*"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'PVE node {{ $labels.id }} down ({{ $labels.instance }})'
+            description: |
+              Proxmox VE node `{{ $labels.id }}` reports down via pve-exporter on `{{ $labels.instance }}`.
+
+        - alert: PVEClusterNotQuorate
+          expr: pve_cluster_info{quorate="0"} == 1
+          for: 1m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'PVE cluster lost quorum ({{ $labels.instance }})'
+            description: |
+              Proxmox VE cluster is not quorate (exporter `{{ $labels.instance }}`). Check node connectivity and corosync.
+
+        - alert: PVEHighCPUUsage
+          expr: pve_cpu_usage_ratio{id=~"node/.*"} * 100 > 90
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'PVE node {{ $labels.id }} CPU >90% ({{ $value | printf "%.0f" }}%)'
+            description: |
+              Proxmox node `{{ $labels.id }}` CPU usage is above 90% for over 10 minutes (exporter `{{ $labels.instance }}`).
+
+        - alert: PVEHighMemoryUsage
+          expr: |
+            (
+              pve_memory_usage_bytes{id=~"node/.*"}
+                / pve_memory_size_bytes{id=~"node/.*"}
+            ) * 100 > 90
+            and pve_memory_size_bytes{id=~"node/.*"} > 0
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'PVE node {{ $labels.id }} memory >90% ({{ $value | printf "%.0f" }}%)'
+            description: |
+              Proxmox node `{{ $labels.id }}` memory usage is above 90% for over 10 minutes (exporter `{{ $labels.instance }}`).
+
+        - alert: PVEStorageFillingUp
+          expr: |
+            (
+              pve_disk_usage_bytes{id=~"storage/.*"}
+                / pve_disk_size_bytes{id=~"storage/.*"}
+            ) * 100 > 80
+            and pve_disk_size_bytes{id=~"storage/.*"} > 0
+          for: 15m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'PVE storage {{ $labels.id }} >80% used'
+            description: |
+              Proxmox storage `{{ $labels.id }}` is above 80% used ({{ $value | printf "%.0f" }}%, exporter `{{ $labels.instance }}`).
+
+        - alert: PVEStorageAlmostFull
+          expr: |
+            (
+              pve_disk_usage_bytes{id=~"storage/.*"}
+                / pve_disk_size_bytes{id=~"storage/.*"}
+            ) * 100 > 95
+            and pve_disk_size_bytes{id=~"storage/.*"} > 0
+          for: 5m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'PVE storage {{ $labels.id }} >95% used'
+            description: |
+              Proxmox storage `{{ $labels.id }}` is above 95% used ({{ $value | printf "%.0f" }}%, exporter `{{ $labels.instance }}`). Free space immediately.
+
+        - alert: PVEReplicationFailed
+          expr: pve_replication_failed_syncs > 0
+          for: 15m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'PVE replication failed for {{ $labels.id }}'
+            description: |
+              Proxmox replication for `{{ $labels.id }}` has {{ $value }} failed sync(s) (exporter `{{ $labels.instance }}`).
+
+    # Cilium CNI (PodMonitors in cilium-podmonitors.yaml). Needs prometheus.enabled on Cilium install.
+    - name: baseline.cilium
+      rules:
+        - alert: CiliumDaemonSetUnavailable
+          expr: |
+            kube_daemonset_status_number_unavailable{namespace="kube-system", daemonset="cilium"} > 0
+          for: 10m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'Cilium DaemonSet has {{ $value }} unavailable pod(s)'
+            description: |
+              DaemonSet `kube-system/cilium` has unavailable pods for over 10 minutes.
+              Check: kubectl -n kube-system get ds cilium; kubectl -n kube-system get pods -l k8s-app=cilium
+
+        - alert: CiliumAgentDown
+          expr: up{job="cilium-agent"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'Cilium agent scrape down ({{ $labels.pod }}/{{ $labels.instance }})'
+            description: |
+              Prometheus cannot scrape Cilium agent metrics on `{{ $labels.instance }}` for over 5 minutes.
+              Ensure `prometheus.enabled=true` on the Cilium Helm release and port 9962 is open.
+
+        - alert: CiliumOperatorDown
+          expr: up{job="cilium-operator"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'Cilium operator scrape down ({{ $labels.pod }}/{{ $labels.instance }})'
+            description: |
+              Prometheus cannot scrape Cilium operator metrics on `{{ $labels.instance }}` for over 5 minutes.
+              Check: kubectl -n kube-system get deploy -l io.cilium/app=operator
+
+        - alert: CiliumControllersFailing
+          expr: sum by (pod) (cilium_controllers_failing) > 0
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Cilium controllers failing on {{ $labels.pod }}'
+            description: |
+              Cilium agent `{{ $labels.pod }}` reports failing controllers for over 10 minutes.
+              Check: kubectl -n kube-system logs {{ $labels.pod }} --tail=100
+
+        - alert: CiliumBpfMapPressure
+          expr: cilium_bpf_map_pressure > 0.9
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Cilium BPF map {{ $labels.map_name }} >90% on {{ $labels.pod }}'
+            description: |
+              eBPF map `{{ $labels.map_name }}` on agent `{{ $labels.pod }}` is above 90% capacity ({{ $value | printf "%.2f" }}).
+              Full maps can cause drops and update errors. Review map sizing / Cilium docs.
+
+        - alert: CiliumHighDropRate
+          expr: |
+            sum by (pod, reason) (rate(cilium_drop_count_total[5m])) > 100
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Cilium high drop rate on {{ $labels.pod }} (reason={{ $labels.reason }})'
+            description: |
+              Agent `{{ $labels.pod }}` drops >100 pkt/s (reason `{{ $labels.reason }}`) for over 10 minutes.
+              PolicyDenied often means NetworkPolicy; other reasons may indicate datapath issues.
+              Check Hubble/UI or: kubectl -n kube-system exec {{ $labels.pod }} -c cilium-agent -- cilium-dbg status
+
+        - alert: CiliumUnreachableNodes
+          expr: max(cilium_unreachable_nodes) > 0
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Cilium reports {{ $value }} unreachable node(s)'
+            description: |
+              Cilium health checks report unreachable nodes for over 10 minutes.
+              Check node networking and: kubectl -n kube-system exec ds/cilium -c cilium-agent -- cilium-health status

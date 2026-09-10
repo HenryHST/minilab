@@ -1,0 +1,134 @@
+# promtool unit tests for baseline PrometheusRules.
+# Regenerate sibling baseline-rules.yaml before running (see README.md).
+rule_files:
+  - baseline-rules.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'kube_deployment_status_replicas_available{namespace="demo",deployment="web"}'
+        values: "0x20"
+      - series: 'kube_deployment_spec_replicas{namespace="demo",deployment="web"}'
+        values: "1x20"
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: DeploymentUnavailable
+        exp_alerts:
+          - exp_labels:
+              alertname: DeploymentUnavailable
+              severity: critical
+              source: prometheus
+              namespace: demo
+              deployment: web
+            exp_annotations:
+              summary: "Deployment demo/web has 0 ready replicas"
+              description: |
+                Deployment `demo/web` wants >0 replicas but has 0 available for over 5 minutes.
+                Check: kubectl -n demo describe deploy web
+
+  - interval: 1m
+    input_series:
+      - series: 'kube_pod_container_status_waiting_reason{namespace="demo",pod="web-1",container="app",reason="CrashLoopBackOff"}'
+        values: "1x20"
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: PodCrashLooping
+        exp_alerts:
+          - exp_labels:
+              alertname: PodCrashLooping
+              severity: critical
+              source: prometheus
+              namespace: demo
+              pod: web-1
+              container: app
+              reason: CrashLoopBackOff
+            exp_annotations:
+              summary: "Pod demo/web-1 container app crash-looping"
+              description: |
+                Container `app` in pod `demo/web-1` has been in CrashLoopBackOff for over 10 minutes.
+                Check: kubectl -n demo logs web-1 -c app --previous
+
+  - interval: 1m
+    input_series:
+      - series: 'pve_up{id="node/pve01",instance="pexpve01.stadthagen.dev:9221",job="pexpve01"}'
+        values: "0x10"
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: PVENodeDown
+        exp_alerts:
+          - exp_labels:
+              alertname: PVENodeDown
+              severity: critical
+              source: prometheus
+              id: node/pve01
+              instance: pexpve01.stadthagen.dev:9221
+              job: pexpve01
+            exp_annotations:
+              summary: "PVE node node/pve01 down (pexpve01.stadthagen.dev:9221)"
+              description: |
+                Proxmox VE node `node/pve01` reports down via pve-exporter on `pexpve01.stadthagen.dev:9221`.
+
+  - interval: 1m
+    input_series:
+      - series: 'pve_disk_usage_bytes{id="storage/pve01/local-lvm",instance="pexpve01.stadthagen.dev:9221",job="pexpve01"}'
+        values: "970x20"
+      - series: 'pve_disk_size_bytes{id="storage/pve01/local-lvm",instance="pexpve01.stadthagen.dev:9221",job="pexpve01"}'
+        values: "1000x20"
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: PVEStorageAlmostFull
+        exp_alerts:
+          - exp_labels:
+              alertname: PVEStorageAlmostFull
+              severity: critical
+              source: prometheus
+              id: storage/pve01/local-lvm
+              instance: pexpve01.stadthagen.dev:9221
+              job: pexpve01
+            exp_annotations:
+              summary: "PVE storage storage/pve01/local-lvm >95% used"
+              description: |
+                Proxmox storage `storage/pve01/local-lvm` is above 95% used (97%, exporter `pexpve01.stadthagen.dev:9221`). Free space immediately.
+
+  - interval: 1m
+    input_series:
+      - series: 'cilium_bpf_map_pressure{map_name="cilium_policy_0000",pod="cilium-abc",job="cilium-agent"}'
+        values: "0.95x20"
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: CiliumBpfMapPressure
+        exp_alerts:
+          - exp_labels:
+              alertname: CiliumBpfMapPressure
+              severity: warning
+              source: prometheus
+              map_name: cilium_policy_0000
+              pod: cilium-abc
+              job: cilium-agent
+            exp_annotations:
+              summary: "Cilium BPF map cilium_policy_0000 >90% on cilium-abc"
+              description: |
+                eBPF map `cilium_policy_0000` on agent `cilium-abc` is above 90% capacity (0.95).
+                Full maps can cause drops and update errors. Review map sizing / Cilium docs.
+
+  - interval: 1m
+    input_series:
+      - series: 'kube_daemonset_status_number_unavailable{namespace="kube-system",daemonset="cilium"}'
+        values: "2x20"
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: CiliumDaemonSetUnavailable
+        exp_alerts:
+          - exp_labels:
+              alertname: CiliumDaemonSetUnavailable
+              severity: critical
+              source: prometheus
+              namespace: kube-system
+              daemonset: cilium
+            exp_annotations:
+              summary: "Cilium DaemonSet has 2 unavailable pod(s)"
+              description: |
+                DaemonSet `kube-system/cilium` has unavailable pods for over 10 minutes.
+                Check: kubectl -n kube-system get ds cilium; kubectl -n kube-system get pods -l k8s-app=cilium

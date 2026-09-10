@@ -1,0 +1,63 @@
+# Log-based baseline alerts (Alloy Proxmox syslog → Loki → Alertmanager).
+# Picked up by Loki rules sidecar (label loki_rule, tenant fake).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-alerting-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/part-of: loki
+    loki_rule: "true"
+  annotations:
+    loki_ruler_tenant: fake
+data:
+  baseline-syslog.yaml: |
+    groups:
+      - name: baseline.proxmox.syslog
+        interval: 1m
+        rules:
+          - alert: ProxmoxSyslogHighErrorRate
+            expr: |
+              sum by (host) (
+                count_over_time({job="syslog"} |~ "(?i)error|fail|fatal|panic" [15m])
+              ) > 50
+            for: 10m
+            labels:
+              severity: warning
+              source: loki
+            annotations:
+              summary: "High Proxmox syslog error rate on {{ $labels.host }}"
+              description: |
+                Host `{{ $labels.host }}` produced more than 50 error/fail/fatal/panic log lines in 15m (via Alloy → Loki).
+                Explore: {job="syslog"} | host=~"{{ $labels.host }}.*" |~ "(?i)error|fail|fatal|panic"
+
+          - alert: ProxmoxSyslogKernelOOM
+            expr: |
+              sum by (host) (
+                count_over_time({job="syslog"} |~ "(?i)Out of memory|oom-kill|Killed process" [10m])
+              ) > 0
+            for: 0m
+            labels:
+              severity: critical
+              source: loki
+            annotations:
+              summary: "Kernel OOM signatures in syslog on {{ $labels.host }}"
+              description: |
+                Host `{{ $labels.host }}` logged OOM / killed-process messages in the last 10 minutes.
+                Explore: {job="syslog"} | host=~"{{ $labels.host }}.*" |~ "(?i)Out of memory|oom-kill|Killed process"
+
+          - alert: ProxmoxSyslogDiskErrors
+            expr: |
+              sum by (host) (
+                count_over_time({job="syslog"} |~ "(?i)I/O error|ext4-fs error|XFS .*error|Buffer I/O error" [15m])
+              ) > 0
+            for: 5m
+            labels:
+              severity: critical
+              source: loki
+            annotations:
+              summary: "Disk/filesystem errors in syslog on {{ $labels.host }}"
+              description: |
+                Host `{{ $labels.host }}` logged filesystem or I/O errors for over 5 minutes.
+                Explore: {job="syslog"} | host=~"{{ $labels.host }}.*" |~ "(?i)I/O error|ext4|XFS"

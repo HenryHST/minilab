@@ -1,0 +1,44 @@
+# Joxit docker-registry-ui Helm chart 1.1.4 / app 2.6.0
+# https://github.com/Joxit/docker-registry-ui
+# Chart: https://helm.joxit.dev → docker-registry-ui
+#
+# Proxies the existing in-cluster registry (infra/registry → kube-registry:5000)
+# via NGINX_PROXY_PASS_URL to avoid CORS / Mixed Content.
+
+global:
+  name: registry-ui
+  imagePullPolicy: IfNotPresent
+
+ui:
+  replicas: 1
+  title: "minilab Registry"
+  proxy: true
+  dockerRegistryUrl: http://kube-registry.kube-system.svc.cluster.local:5000
+  singleRegistry: true
+  registrySecured: false
+  deleteImages: true
+  showContentDigest: true
+  showCatalogNbTags: true
+  catalogElementsLimit: 1000
+  taglistPageSize: 100
+  defaultTheme: auto
+  # Pin image tag (chart appVersion 2.6.0)
+  image: joxit/docker-registry-ui:2.6.0
+  runAsRoot: true
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 80
+  # Traefik IngressRoute lives in manifests/ (cert-manager + Authentik prep)
+  ingress:
+    enabled: false
+
+# Existing registry is managed by infra/registry (kube-system Service).
+registry:
+  enabled: false

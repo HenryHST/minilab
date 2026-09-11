@@ -2,6 +2,8 @@
 
 GitOps-Manifeste für [Argo CD](https://argo-cd.readthedocs.io/) auf dem **nXk3**-Cluster.
 
+**Architekturentscheidungen:** [`docs/adr/`](docs/adr/) (ADRs zu GitOps, Plain YAML, ApplicationSet, TLS, Storage, IdP, Pangolin, Alerting, …).
+
 Ansible legt nur die Parent-Application `homelab` an (`argocd_applications` in Infra_LAB). Child-Applications, Sync Waves und AppProject `infrastruktur` (Anzeige: Infrastruktur) liegen hier unter [`apps/argocd-apps/`](apps/argocd-apps/).
 
 **Wichtig:** Die Parent-App `homelab` muss `targetRevision: main` nutzen (nicht `HEAD`) — sonst schlägt das Laden/Syncen mit `revision HEAD must be resolved` fehl.

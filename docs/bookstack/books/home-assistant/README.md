@@ -15,3 +15,10 @@ BookStack: Shelf **Anleitungen** → Buch **Home Assistant**. Kapitel in dieser 
 | 7 | [`07-stoerungen.md`](07-stoerungen.md) | Wenn etwas nicht klappt |
 
 Vorlage: [`../../templates/vorlage-anleitung-nicht-it.md`](../../templates/vorlage-anleitung-nicht-it.md). Screenshots später in BookStack ergänzen.
+
+## E-Mail bei Änderungen
+
+Neue Version / Update per Mail: siehe [`BENACHRICHTIGUNGEN.md`](BENACHRICHTIGUNGEN.md)
+
+- **BookStack Watch** → Live-Edits im Wiki
+- **GitHub Action** → Push auf `main` in diesem Ordner (Empfänger: [`recipients.yaml`](recipients.yaml))

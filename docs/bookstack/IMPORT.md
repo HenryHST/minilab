@@ -52,6 +52,8 @@ Buch **Home Assistant** — Reihenfolge aus `books/home-assistant/`:
 
 URL der Instanz: `https://ha02.stadthagen.dev`
 
+Nach dem Import: Buch in BookStack **beobachten (Watch)**, damit Nutzer bei Seitenänderungen eine E-Mail bekommen. Git-seitige Mails: siehe [`books/home-assistant/BENACHRICHTIGUNGEN.md`](books/home-assistant/BENACHRICHTIGUNGEN.md).
+
 ## 5. Optional: API-Import
 
 BookStack REST API (`/api/books`, `/api/chapters`, `/api/pages`) mit Token eines Admin-Users. Für den ersten Wurf reicht manueller Import; ein Script kann später ergänzt werden.

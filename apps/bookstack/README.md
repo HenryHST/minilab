@@ -50,6 +50,11 @@ helm template bookstack ./charts/bookstack -f values.yaml --namespace bookstack 
 
 Strukturierte Bücher, Vorlagen und Import-Anleitung: [`docs/bookstack/`](../../docs/bookstack/).
 
+### E-Mail bei Buch-Änderungen (Home Assistant)
+
+1. **Live-Wiki:** Nutzer beobachten das Buch *Home Assistant* in BookStack (Watch) — SMTP muss stehen (`bookstack-smtp`, Rollenrecht „Receive notifications“).
+2. **Git:** Workflow [`.github/workflows/notify-home-assistant-book.yml`](../../.github/workflows/notify-home-assistant-book.yml) mailt bei Push auf `main` unter `docs/bookstack/books/home-assistant/` (Empfänger [`recipients.yaml`](../../docs/bookstack/books/home-assistant/recipients.yaml), Secrets laut [`BENACHRICHTIGUNGEN.md`](../../docs/bookstack/books/home-assistant/BENACHRICHTIGUNGEN.md)).
+
 ## Theme-Module / „Plugins“ (Vorschläge)
 
 BookStack hat keine klassischen Plugins; ab v26.03 gibt es **Theme Modules** ([Hacks](https://www.bookstackapp.com/hacks/), [header-hacks](https://github.com/florinm03/bookstack-header-hacks)).

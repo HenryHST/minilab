@@ -9,7 +9,7 @@ Dieses Verzeichnis ist die **Git-Seite** der Dokumentation. Live-Bücher liegen 
 | [`templates/`](templates/) | Seiten-Vorlagen (Page Templates) |
 | [`books/minilab/`](books/minilab/) | Buch **Minilab** — Plattform-/Ops-Doku (Spiegel von README + ADRs) |
 | [`books/anleitungen/`](books/anleitungen/) | Allgemeine **Nicht-IT**-Step-by-Step-Anleitungen |
-| [`books/home-assistant/`](books/home-assistant/) | Buch **Home Assistant** — Bedienung für Nicht-IT (`ha02.stadthagen.dev`) |
+| [`books/home-assistant/`](books/home-assistant/) | Buch **Home Assistant** — Bedienung für Nicht-IT (`ha02.stadthagen.dev`); Ops: [`../home-assistant/ha02.md`](../home-assistant/ha02.md) |
 | [`IMPORT.md`](IMPORT.md) | Import-Reihenfolge und Checkliste |
 
 ## Pflege-Regel

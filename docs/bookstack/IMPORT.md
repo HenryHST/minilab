@@ -42,19 +42,22 @@ Kapitel aus `books/anleitungen/` übernehmen (einfache Sprache, nummerierte Schr
 
 Buch **Home Assistant** — Reihenfolge aus `books/home-assistant/`:
 
-1. Überblick
-2. Anmelden & App
-3. Übersicht lesen
-4. Lichter & Schalter
-5. Klima & Heizung
-6. Szenen & Automationen
-7. Zigbee
-8. Matter
-9. Homematic
-10. Bluetooth
-11. Wenn etwas nicht klappt
+1. Voraussetzungen
+2. Überblick
+3. Anmelden & App
+4. Übersicht lesen
+5. Lichter & Schalter
+6. Klima & Heizung
+7. Szenen & Automationen
+8. Zigbee
+9. Matter
+10. Homematic
+11. Bluetooth
+12. Wenn etwas nicht klappt
 
-URL der Instanz: `https://ha02.stadthagen.dev`
+URL der Instanz: `https://ha02.stadthagen.dev`  
+Ops-Doku (Admin): [`../home-assistant/ha02.md`](../home-assistant/ha02.md)
+
 
 Nach dem Import: Buch in BookStack **beobachten (Watch)**, damit Nutzer bei Seitenänderungen eine E-Mail bekommen. Git-seitige Mails: siehe [`books/home-assistant/BENACHRICHTIGUNGEN.md`](books/home-assistant/BENACHRICHTIGUNGEN.md).
 

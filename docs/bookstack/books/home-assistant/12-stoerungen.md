@@ -44,7 +44,8 @@ Home Assistant-Problem
 
 ## Weitere Hilfe
 
-- Dieses Buch: Kapitel *Anmelden*, *Übersicht*, *Lichter*, *Klima*, *Szenen*
+- Bedienung: *Anmelden*, *Übersicht*, *Lichter*, *Klima*, *Szenen*
+- Funktechniken: *Zigbee*, *Matter*, *Homematic*, *Bluetooth*
 - Wiki: https://book.stadthagen.dev
 - Status: https://status.stadthagen.dev
 - Ansprechpartner: Homelab-Admin

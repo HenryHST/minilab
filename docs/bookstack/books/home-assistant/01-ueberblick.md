@@ -34,6 +34,7 @@ Sie müssen **nichts installieren oder programmieren**, um Alltagsfunktionen zu 
 
 | Kapitel | Thema |
 |---------|--------|
+| Voraussetzungen | Was Nutzer und Betrieb brauchen |
 | Anmelden & App | Login, Home Assistant Companion App |
 | Die Übersicht lesen | Dashboards, Räume, Farben/Status |
 | Lichter & Schalter | Ein-/Ausschalten, Dimmen |

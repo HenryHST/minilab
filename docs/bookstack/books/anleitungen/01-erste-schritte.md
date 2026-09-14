@@ -22,6 +22,7 @@ Sie kennen die wichtigsten Homelab-Seiten und können sich mit Ihrem Konto anmel
 |------|---------|
 | Startseite | https://web.stadthagen.dev |
 | Wiki (BookStack) | https://book.stadthagen.dev |
+| Home Assistant | https://ha02.stadthagen.dev |
 | Passwort-Safe | https://vaultwarden.stadthagen.dev |
 | Status | https://status.stadthagen.dev |
 

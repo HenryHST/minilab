@@ -23,6 +23,8 @@ Format angelehnt an [Michael Nygard](https://cognitect.com/blog/2011/11/15/docum
 | [0013](0013-baseline-alerting.md) | Baseline Alerting (Prometheus + Loki) | Accepted |
 | [0014](0014-helm-strategie.md) | Helm: Native Argo-Helm vs. committed `helm-manifest.yaml` | Accepted |
 | [0015](0015-backup-restore-cronjobs.md) | App-Backups per CronJob auf NFS | Accepted |
+| [0016](0016-bookstack-wissensdatenbank.md) | BookStack als zentrale Wissensdatenbank | Accepted |
+| [0017](0017-bookstack-theme-modules.md) | BookStack Theme Modules statt Plugins | Accepted |
 
 ## Neues ADR anlegen
 

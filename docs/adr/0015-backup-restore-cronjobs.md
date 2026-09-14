@@ -15,7 +15,7 @@ Longhorn-Volume-Backups decken nicht alle App-Semantiken ab (SQLite-Dateien, `pg
 - **Bootstrap-Restore** über ConfigMap (`*-restore`: `enabled` / optional `force`) und PostSync-Job; nach erfolgreichem Restore sofort `enabled=false` committen.
 - Secrets weiterhin über SecretSpecs wiederherstellen (gleiche Crypto-Keys wo nötig, z. B. Termix).
 
-Beispiele: Uptime Kuma 01:00 UTC, Vaultwarden 02:00, Termix 03:00 — Details in den App-READMEs / Root-README.
+Beispiele: Uptime Kuma 01:00 UTC, Vaultwarden 02:00, Termix 03:00, BookStack 04:00 — Details in den App-READMEs / Root-README.
 
 ## Konsequenzen
 

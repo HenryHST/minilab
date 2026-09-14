@@ -31,7 +31,7 @@ Infrastruktur-Apps unter `infra/*` (plus `pangolin-publish`) werden vom Applicat
 | 0 | Application `infra-applicationset` → ApplicationSet `infra` (`apps/argocd-apps/raw/`) |
 | 1 | ApplicationSet → `infra/longhorn`, `infra/system-upgrade-controller`, `infra/kube-prometheus-stack` |
 | 2 | unifipoller, authentik, termix, headlamp |
-| 3 | omni-tools, it-tools, pgweb, web, drawio, status, grafana-loki, alloy, vaultwarden, pangolin-publish |
+| 3 | omni-tools, it-tools, pgweb, web, drawio, status, grafana-loki, alloy, vaultwarden, bookstack, pangolin-publish |
 
 ### AppProject `infrastruktur`
 
@@ -57,6 +57,7 @@ ApplicationSet-Apps (`infra/*`, inkl. `pangolin-publish`) und `authentik` — al
 | headlamp | `apps/headlamp/` | `kube-system` | `headlamp.stadthagen.dev` ([Headlamp](https://kubernetes-sigs.github.io/headlamp/) Helm 0.45.0; Plugin Manager: [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) 0.1.1, [gatekeeper](https://github.com/open-policy-agent/gatekeeper-headlamp-plugin) 0.2.0) |
 | status | `apps/status/` | `uptimekuma` | `status.stadthagen.dev` (Uptime Kuma 2.5.3, **SQLite** auf Local PV `/var/lib/uptimekuma` @ `pi4cl`, PSS `baseline` enforce / `restricted` audit; daily NFS backup + bootstrap restore → `192.168.0.25:/var/nfs/shared/infra01/uptimekuma-backups`) |
 | vaultwarden | `apps/vaultwarden/` | `vaultwarden` | `vaultwarden.stadthagen.dev` (Vaultwarden 1.37.2, Longhorn PVC 2Gi, Authentik SSO; daily NFS backup + bootstrap restore → `192.168.0.25:/var/nfs/shared/infra01/vaultwarden-backups`) |
+| bookstack | `apps/bookstack/` | `bookstack` | `book.stadthagen.dev` (BookStack via gabe565 Helm → `helm-manifest.yaml`, MariaDB hostPath @ `nxk3-w01`, Authentik OIDC, SMTP vorbereitet; daily NFS backup + bootstrap restore → `192.168.0.25:/var/nfs/shared/infra01/bookstack-backups`; Inhalte unter `docs/bookstack/`) |
 | kube-prometheus-stack | `infra/kube-prometheus-stack/` | `monitoring` | `grafana.stadthagen.dev`, `prometheus.stadthagen.dev`, `alert-manager.stadthagen.dev` (Helm chart 88.5.4: Prometheus Operator, Grafana, Alertmanager, node-exporter, kube-state-metrics; Longhorn PVC 5Gi / 9d retention; E-Mail alerts) |
 | grafana-loki | `infra/loki/` | `monitoring` | `loki.stadthagen.dev` (Helm chart 18.11.7, Longhorn PVC 2Gi) |
 | alloy | `infra/alloy/` | `alloy` | Syslog → Loki (`loki-gateway.monitoring.svc.cluster.local`) |
@@ -69,6 +70,8 @@ Uptime Kuma (`status`): **SQLite** bewusst (kein MariaDB — siehe [`apps/status
 Vaultwarden: CronJob `vaultwarden-backup-cron` (02:00 UTC) tar’t `/data` per `kubectl exec` nach NFS `192.168.0.25:/var/nfs/shared/infra01/vaultwarden-backups` (Retention 7). Manuell: `kubectl -n vaultwarden create job --from=cronjob/vaultwarden-backup-cron vaultwarden-backup-manual`. Bootstrap-Restore (Cluster-Neuaufsetzen): ConfigMap `vaultwarden-restore` → `enabled=true` (bei vorhandener `db.sqlite3` zusätzlich `force=true`), Argo Sync (PostSync-Job skaliert App auf 0, Worker entpackt Archiv auf PVC `vaultwarden-data`); danach sofort `enabled=false` committen. Secrets über SecretSpec: `VAULTWARDEN_OAUTH_CLIENT_SECRET`, `VAULTWARDEN_ADMIN_TOKEN`.
 
 Termix: CronJob `termix-backup-cron` (03:00 UTC) `pg_dump` → NFS `192.168.0.25:/var/nfs/shared/infra01/termix-backups` (Retention 7). Manuell: `kubectl -n termix create job --from=cronjob/termix-backup-cron termix-backup-manual`. Bootstrap-Restore (Cluster-Neuaufsetzen): ConfigMap `termix-restore` → `enabled=true` (bei bereits migrierter DB zusätzlich `force=true`), Argo Sync (PostSync-Job); danach sofort `enabled=false` committen. Secrets müssen über SecretSpec wiederhergestellt werden (`TERMIX_OAUTH_CLIENT_SECRET`, **gleiche** `TERMIX_HA_CRYPTO_HEX` wie beim Backup). NAS-Ordner vorher anlegen: `mkdir -p /var/nfs/shared/infra01/termix-backups`.
+
+BookStack: CronJob `bookstack-backup-cron` (04:00 UTC) sichert MariaDB-Dump + `/config` nach NFS `192.168.0.25:/var/nfs/shared/infra01/bookstack-backups` (Retention 7). Manuell: `kubectl -n bookstack create job --from=cronjob/bookstack-backup-cron bookstack-backup-manual`. Bootstrap-Restore: ConfigMap `bookstack-restore` → `enabled=true` (bei vorhandener DB zusätzlich `force=true`), Argo Sync (PostSync-Job); danach sofort `enabled=false` committen. Secrets: `bookstack-app` / `bookstack-db` / `bookstack-oauth` / `bookstack-smtp`. NAS: `mkdir -p /var/nfs/shared/infra01/bookstack-backups`. Git-Inhalte & Import: [`docs/bookstack/`](docs/bookstack/).
 
 Grafana-Werte im kube-prometheus-stack basieren auf [JimsGarage GitOps/Grafana](https://github.com/JamesTurland/JimsGarage/tree/main/Kubernetes/GitOps/Grafana) und [mortennordbye/homelab](https://github.com/mortennordbye/homelab/tree/main/k8s/talos/infra/kube-prometheus-stack) (Helm via Kustomize, Traefik IngressRoute). Grafana Prometheus-Datasource zeigt auf `http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090`.
 

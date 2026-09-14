@@ -9,6 +9,7 @@ Nach erfolgreichem Deploy von `bookstack` und Authentik-OIDC-Login als Admin:
    - **Erste Schritte am Homelab**
    - **Zugang & Passwörter**
    - **Status & Störungen**
+   - **Home Assistant** (Step-by-Step)
 
 ## 2. Seitenvorlagen
 
@@ -36,6 +37,20 @@ Quellen: Root-`README.md`, `docs/adr/*`, App-READMEs. Kurz halten; auf Git verli
 ## 4. Nicht-IT-Anleitungen
 
 Kapitel aus `books/anleitungen/` übernehmen (einfache Sprache, nummerierte Schritte, Screenshots später ergänzen).
+
+## 4b. Home Assistant
+
+Buch **Home Assistant** — Reihenfolge aus `books/home-assistant/`:
+
+1. Überblick
+2. Anmelden & App
+3. Übersicht lesen
+4. Lichter & Schalter
+5. Klima & Heizung
+6. Szenen & Automationen
+7. Wenn etwas nicht klappt
+
+URL der Instanz: `https://ha02.stadthagen.dev`
 
 ## 5. Optional: API-Import
 

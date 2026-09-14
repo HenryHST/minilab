@@ -39,6 +39,10 @@ Sie müssen **nichts installieren oder programmieren**, um Alltagsfunktionen zu 
 | Lichter & Schalter | Ein-/Ausschalten, Dimmen |
 | Klima & Heizung | Temperatur lesen und stellen |
 | Szenen & Automationen | Fertige Abläufe starten |
+| Zigbee | Funklampen, Sensoren, Mesh |
+| Matter | Herstellerübergreifende Geräte |
+| Homematic | Heizung, Taster, Kontakte (DE) |
+| Bluetooth | BLE-Sensoren und Reichweite |
 | Wenn etwas nicht klappt | Häufige Probleme |
 
 ## Hilfe

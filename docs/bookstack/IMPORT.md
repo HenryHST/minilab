@@ -48,7 +48,11 @@ Buch **Home Assistant** — Reihenfolge aus `books/home-assistant/`:
 4. Lichter & Schalter
 5. Klima & Heizung
 6. Szenen & Automationen
-7. Wenn etwas nicht klappt
+7. Zigbee
+8. Matter
+9. Homematic
+10. Bluetooth
+11. Wenn etwas nicht klappt
 
 URL der Instanz: `https://ha02.stadthagen.dev`
 

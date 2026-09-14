@@ -12,7 +12,11 @@ BookStack: Shelf **Anleitungen** → Buch **Home Assistant**. Kapitel in dieser 
 | 4 | [`04-lichter-schalter.md`](04-lichter-schalter.md) | Lichter & Schalter |
 | 5 | [`05-klima-heizung.md`](05-klima-heizung.md) | Klima & Heizung |
 | 6 | [`06-szenen-automationen.md`](06-szenen-automationen.md) | Szenen & Automationen |
-| 7 | [`07-stoerungen.md`](07-stoerungen.md) | Wenn etwas nicht klappt |
+| 7 | [`08-zigbee.md`](08-zigbee.md) | Zigbee |
+| 8 | [`09-matter.md`](09-matter.md) | Matter |
+| 9 | [`10-homematic.md`](10-homematic.md) | Homematic |
+| 10 | [`11-bluetooth.md`](11-bluetooth.md) | Bluetooth |
+| 11 | [`12-stoerungen.md`](12-stoerungen.md) | Wenn etwas nicht klappt |
 
 Vorlage: [`../../templates/vorlage-anleitung-nicht-it.md`](../../templates/vorlage-anleitung-nicht-it.md). Screenshots später in BookStack ergänzen.
 

@@ -1,0 +1,133 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backup-runner
+  namespace: bookstack
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: backup-runner-role
+  namespace: bookstack
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: backup-runner-rolebinding
+  namespace: bookstack
+subjects:
+  - kind: ServiceAccount
+    name: backup-runner
+    namespace: bookstack
+roleRef:
+  kind: Role
+  name: backup-runner-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# PV carries mountOptions (core Pod nfs volumes cannot); UniFi NAS needs NFSv3 + nolock.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: bookstack-backups-nfs
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=3
+    - nolock
+  nfs:
+    server: 192.168.0.25
+    path: /var/nfs/shared/infra01/bookstack-backups
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bookstack-backups
+  namespace: bookstack
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: bookstack-backups-nfs
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: bookstack-backup-cron
+  namespace: bookstack
+spec:
+  schedule: "0 4 * * *" # 04:00 UTC ≈ 06:00 CEST (after kuma/vaultwarden/termix)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          serviceAccountName: backup-runner
+          restartPolicy: Never
+          containers:
+            - name: trigger-backup
+              image: alpine/k8s:1.32.0
+              env:
+                - name: MYSQL_PWD
+                  valueFrom:
+                    secretKeyRef:
+                      name: bookstack-db
+                      key: MARIADB_PASSWORD
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  apk add --no-cache mariadb-client tar gzip >/dev/null
+
+                  STAMP="$(date -u +%Y%m%d-%H%M%S)"
+                  WORK="/tmp/bookstack-${STAMP}"
+                  OUT="/backup/bookstack-${STAMP}.tar.gz"
+                  mkdir -p "${WORK}"
+
+                  echo "Dumping MariaDB bookstack@bookstack-mariadb..."
+                  mysqldump \
+                    -h bookstack-mariadb -u bookstack --single-transaction --routines --triggers \
+                    bookstack | gzip -c > "${WORK}/db.sql.gz"
+
+                  BS_POD="$(kubectl -n bookstack get pod -l app.kubernetes.io/name=bookstack,app.kubernetes.io/instance=bookstack -o jsonpath='{.items[0].metadata.name}')"
+                  if [[ -z "${BS_POD}" ]]; then
+                    echo "No bookstack pod found" >&2
+                    exit 1
+                  fi
+                  echo "Archiving pod/${BS_POD} /config -> config.tar.gz"
+                  kubectl -n bookstack exec "${BS_POD}" -c bookstack -- tar czf - -C /config . > "${WORK}/config.tar.gz"
+
+                  tar czf "${OUT}" -C "${WORK}" .
+                  ls -lh "${OUT}"
+                  rm -rf "${WORK}"
+
+                  # Retention: keep last 7 archives
+                  ls -1t /backup/bookstack-*.tar.gz 2>/dev/null | tail -n +8 | xargs -r rm -f
+                  echo "Done. Archives:"
+                  ls -1t /backup/bookstack-*.tar.gz 2>/dev/null || true
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+          volumes:
+            - name: backup
+              persistentVolumeClaim:
+                claimName: bookstack-backups

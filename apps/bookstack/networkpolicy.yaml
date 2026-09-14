@@ -1,0 +1,56 @@
+# BookStack: ingress allow Traefik + in-namespace (Vaultwarden/Termix-style).
+# No Newt — internal only (book.stadthagen.dev), not published via pangolin-publish.
+# Egress left open (Authentik OIDC, SMTP, MariaDB).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bookstack-ingress
+  namespace: bookstack
+  labels:
+    app.kubernetes.io/name: bookstack
+    app.kubernetes.io/part-of: bookstack
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: bookstack
+      app.kubernetes.io/instance: bookstack
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: bookstack
+      ports:
+        - protocol: TCP
+          port: 80
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bookstack-mariadb-ingress
+  namespace: bookstack
+  labels:
+    app.kubernetes.io/name: bookstack-mariadb
+    app.kubernetes.io/part-of: bookstack
+spec:
+  podSelector:
+    matchLabels:
+      app: bookstack-mariadb
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: bookstack
+      ports:
+        - protocol: TCP
+          port: 3306

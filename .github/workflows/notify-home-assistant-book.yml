@@ -1,0 +1,112 @@
+# E-Mail bei Änderungen am Buch Home Assistant (Git)
+
+# Läuft bei Push auf main, wenn Markdown unter docs/bookstack/books/home-assistant/ geändert wurde.
+# Empfänger: docs/bookstack/books/home-assistant/recipients.yaml
+# Secrets: siehe docs/bookstack/books/home-assistant/BENACHRICHTIGUNGEN.md
+
+name: Notify Home Assistant book
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/bookstack/books/home-assistant/**"
+      - "!docs/bookstack/books/home-assistant/BENACHRICHTIGUNGEN.md"
+      - "!docs/bookstack/books/home-assistant/recipients.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Collect changed files
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            FILES="$(find docs/bookstack/books/home-assistant -type f -name '*.md' ! -name 'BENACHRICHTIGUNGEN.md' ! -name 'README.md' | sort | sed 's|^|- |')"
+            SUBJECT="[minilab] Home-Assistant-Buch — manueller Notify-Test"
+          else
+            # Vorheriger Commit auf dem Branch (Push); Fallback: leere Liste
+            BEFORE="${{ github.event.before }}"
+            if [[ -z "${BEFORE}" || "${BEFORE}" =~ ^0+$ ]]; then
+              FILES="$(git show --name-only --pretty='' HEAD | grep '^docs/bookstack/books/home-assistant/' || true)"
+            else
+              FILES="$(git diff --name-only "${BEFORE}" "${{ github.sha }}" -- 'docs/bookstack/books/home-assistant/' || true)"
+            fi
+            FILES="$(printf '%s\n' "${FILES}" | grep -vE 'BENACHRICHTIGUNGEN\.md$|recipients\.yaml$|README\.md$' || true)"
+            if [[ -z "${FILES}" ]]; then
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "Keine relevanten Dateiänderungen — überspringe Mail."
+              exit 0
+            fi
+            FILES="$(printf '%s\n' "${FILES}" | sed 's|^|- |')"
+            SUBJECT="[minilab] Home-Assistant-Buch geändert (${{ github.sha }})"
+          fi
+          {
+            echo "skip=false"
+            echo "subject<<EOF"
+            echo "${SUBJECT}"
+            echo "EOF"
+            echo "files<<EOF"
+            echo "${FILES}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Load recipients
+        id: recipients
+        if: steps.changes.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # recipients.yaml: Zeilen "- email@…"
+          TO="$(grep -E '^\s*-\s*[^#[:space:]]' docs/bookstack/books/home-assistant/recipients.yaml \
+            | sed -E 's/^\s*-\s*//' | tr '\n' ',' | sed 's/,$/\n/')"
+          if [[ -z "${TO}" ]]; then
+            echo "Keine Empfänger in recipients.yaml" >&2
+            exit 1
+          fi
+          echo "to=${TO}" >> "$GITHUB_OUTPUT"
+          echo "Empfänger: ${TO}"
+
+      - name: Send email
+        if: steps.changes.outputs.skip != 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_SERVER }}
+          server_port: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_PORT }}
+          secure: false
+          # Leer ok, wenn Relay ohne Auth (wie Alertmanager Port 25)
+          username: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_USERNAME }}
+          password: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_PASSWORD }}
+          ignore_cert: true
+          from: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_FROM }}
+          to: ${{ steps.recipients.outputs.to }}
+          subject: ${{ steps.changes.outputs.subject }}
+          body: |
+            Das Buch „Home Assistant“ wurde in Git aktualisiert.
+
+            Repository: ${{ github.repository }}
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            Autor: ${{ github.actor }}
+            Vergleich: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+
+            Geänderte Dateien:
+            ${{ steps.changes.outputs.files }}
+
+            ---
+            Live-Wiki (nach Import): https://book.stadthagen.dev
+            HA-Instanz: https://ha02.stadthagen.dev
+            Doku Benachrichtigungen: docs/bookstack/books/home-assistant/BENACHRICHTIGUNGEN.md
+
+            Für Änderungen direkt in BookStack: Buch „Home Assistant“ beobachten (Watch).

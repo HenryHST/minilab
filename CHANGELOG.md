@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- `bookstack` — BookStack Wiki on `book.stadthagen.dev` (gabe565 Helm → committed `helm-manifest.yaml`, MariaDB, Authentik OIDC, SMTP prepared, NFS backup/restore); ADRs 0016/0017; Git content under `docs/bookstack/`
 - Architecture Decision Records under [`docs/adr/`](docs/adr/) (GitOps, Plain Directory, ApplicationSet, TLS, Longhorn, Authentik, Pangolin, Alerting, Helm strategy, backups, …)
 - `registry-ui` — Joxit docker-registry-ui (Helm 1.1.4 / image 2.6.0) via ApplicationSet `infra`; namespace `registry-ui`, host `registry-ui.stadthagen.dev`; proxies existing `kube-registry:5000`; Authentik ForwardAuth prepared
 - Baseline Alerting (V1+V2) — PrometheusRules (`homelab-alerts.yaml`: workload, platform, Proxmox pve-exporter, Cilium) + PodMonitors für Cilium/Hubble + Loki Ruler LogQL rules (Proxmox syslog) → Alertmanager; critical/warning E-Mail routes; `promtool` tests under `infra/kube-prometheus-stack/tests/`; design/runbook in `ALERTING.md`

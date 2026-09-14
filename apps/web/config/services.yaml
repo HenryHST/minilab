@@ -52,6 +52,10 @@
         href: https://vaultwarden.stadthagen.dev
         icon: si-bitwarden-#175DDC
         description: password manager (SSO)
+    - BookStack:
+        href: https://book.stadthagen.dev
+        icon: bookstack.png
+        description: Wissensdatenbank (OIDC)
 - Monitoring:
     - Longhorn:
         href: https://longhorn.stadthagen.dev

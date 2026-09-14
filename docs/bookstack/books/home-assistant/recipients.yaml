@@ -1,0 +1,3 @@
+recipients:
+  # Gleicher Verteiler wie Alertmanager-Warnungen — bei Bedarf erweitern
+  - info@henrystadthagen.de

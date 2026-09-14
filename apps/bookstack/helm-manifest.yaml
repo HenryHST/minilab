@@ -1,0 +1,199 @@
+# Rendered Helm chart — regenerate with:
+# helm template bookstack ./charts/bookstack -f values.yaml --namespace bookstack > helm-manifest.yaml
+---
+# Source: bookstack/templates/common.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: bookstack-config
+  labels:
+    app.kubernetes.io/instance: bookstack
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: bookstack
+    app.kubernetes.io/version: version-v26.05.5
+    helm.sh/chart: bookstack-0.20.0
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "5Gi"
+---
+# Source: bookstack/templates/common.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: bookstack
+  labels:
+    app.kubernetes.io/service: bookstack
+    app.kubernetes.io/instance: bookstack
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: bookstack
+    app.kubernetes.io/version: version-v26.05.5
+    helm.sh/chart: bookstack-0.20.0
+  annotations:
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/instance: bookstack
+    app.kubernetes.io/name: bookstack
+---
+# Source: bookstack/templates/common.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookstack
+  labels:
+    app.kubernetes.io/instance: bookstack
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: bookstack
+    app.kubernetes.io/version: version-v26.05.5
+    helm.sh/chart: bookstack-0.20.0
+spec:
+  revisionHistoryLimit: 3
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bookstack
+      app.kubernetes.io/instance: bookstack
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bookstack
+        app.kubernetes.io/instance: bookstack
+    spec:
+      
+      serviceAccountName: default
+      automountServiceAccountToken: true
+      securityContext:
+        fsGroup: 911
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: true
+      containers:
+        - name: bookstack
+          image: lscr.io/linuxserver/bookstack:version-v26.05.5
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: APP_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: APP_KEY
+                  name: bookstack-app
+            - name: APP_LANG
+              value: de
+            - name: APP_URL
+              value: https://book.stadthagen.dev
+            - name: AUTH_AUTO_INITIATE
+              value: "true"
+            - name: AUTH_METHOD
+              value: oidc
+            - name: DB_DATABASE
+              value: bookstack
+            - name: DB_HOST
+              value: bookstack-mariadb
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: MARIADB_PASSWORD
+                  name: bookstack-db
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USERNAME
+              value: bookstack
+            - name: MAIL_DRIVER
+              value: smtp
+            - name: MAIL_FROM
+              value: auto@henrystadthagen.de
+            - name: MAIL_FROM_NAME
+              value: BookStack
+            - name: MAIL_HOST
+              value: mail.henrystadthagen.de
+            - name: MAIL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: bookstack-smtp
+            - name: MAIL_PORT
+              value: "25"
+            - name: MAIL_USERNAME
+              value: auto@henrystadthagen.de
+            - name: OIDC_CLIENT_ID
+              value: bookstack
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: client-secret
+                  name: bookstack-oauth
+            - name: OIDC_DISPLAY_NAME_CLAIMS
+              value: name
+            - name: OIDC_END_SESSION_ENDPOINT
+              value: "true"
+            - name: OIDC_EXTERNAL_ID_CLAIM
+              value: sub
+            - name: OIDC_GROUPS_CLAIM
+              value: groups
+            - name: OIDC_ISSUER
+              value: https://idp.stadthagen.dev/application/o/bookstack/
+            - name: OIDC_ISSUER_DISCOVER
+              value: "true"
+            - name: OIDC_NAME
+              value: Authentik
+            - name: OIDC_REMOVE_FROM_GROUPS
+              value: "false"
+            - name: OIDC_USER_TO_GROUPS
+              value: "true"
+            - name: PGID
+              value: "911"
+            - name: PUID
+              value: "911"
+            - name: QUEUE_CONNECTION
+              value: database
+            - name: TZ
+              value: Europe/Berlin
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            tcpSocket:
+              port: 80
+            timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            tcpSocket:
+              port: 80
+            timeoutSeconds: 1
+          startupProbe:
+            failureThreshold: 30
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            tcpSocket:
+              port: 80
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: 1Gi
+            requests:
+              cpu: 50m
+              memory: 256Mi
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: bookstack-config

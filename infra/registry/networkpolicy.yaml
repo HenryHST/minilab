@@ -1,0 +1,33 @@
+# kube-registry: ClusterIP only — allow in-cluster clients (any namespace) + Traefik.
+# No Newt — not published via pangolin-publish. External access is Traefik TLS only
+# (registry.stadthagen.dev). Egress unrestricted (filesystem storage, no remote proxy).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kube-registry-ingress
+  namespace: kube-system
+  labels:
+    app: kube-registry
+    app.kubernetes.io/name: kube-registry
+    app.kubernetes.io/part-of: registry
+spec:
+  podSelector:
+    matchLabels:
+      app: kube-registry
+      app.kubernetes.io/component: registry
+  policyTypes:
+    - Ingress
+  ingress:
+    # Image pulls / UI proxy / GC exec path from any namespace
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 5000

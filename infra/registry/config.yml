@@ -1,0 +1,19 @@
+# Source of truth for ConfigMap registry-config (configmap.yaml). Keep in sync.
+# Distribution filesystem backend — S3/RustFS-style object stores often lack
+# resumable blob appends that registry needs.
+version: 0.1
+log:
+  fields:
+    service: registry
+storage:
+  cache:
+    blobdescriptor: inmemory
+  delete:
+    enabled: true
+  filesystem:
+    rootdirectory: /var/lib/registry
+http:
+  addr: :5000
+  headers:
+    X-Content-Type-Options: [nosniff]
+  # /v2/ is used for readiness/liveness probes

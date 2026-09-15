@@ -3,10 +3,16 @@ kind: Service
 metadata:
   name: kube-registry
   namespace: kube-system
+  labels:
+    app: kube-registry
+    app.kubernetes.io/name: kube-registry
+    app.kubernetes.io/part-of: registry
 spec:
   selector:
     app: kube-registry
   ports:
-    - port: 5000
+    - name: http
+      port: 5000
       targetPort: 5000
-  type: LoadBalancer
+  # ClusterIP only — expose via Traefik IngressRoute (registry.stadthagen.dev), not LAN LoadBalancer.
+  type: ClusterIP

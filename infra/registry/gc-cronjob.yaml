@@ -1,0 +1,105 @@
+# Weekly registry GC; without it the PVC fills silently and pushes fail. The registry is
+# flipped read-only first because a push during the sweep corrupts the store.
+# UI tag delete (registry-ui) does not reclaim blob space — this job does.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kube-registry-gc
+  namespace: kube-system
+  labels:
+    app: kube-registry
+    app.kubernetes.io/name: kube-registry
+    app.kubernetes.io/part-of: registry
+    app.kubernetes.io/component: maintenance
+spec:
+  schedule: "0 4 * * 0"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: kube-registry
+            app.kubernetes.io/name: kube-registry
+            app.kubernetes.io/component: maintenance
+        spec:
+          restartPolicy: Never
+          serviceAccountName: kube-registry-gc
+          containers:
+            - name: gc
+              # NOT registry.k8s.io/kubectl: distroless (no bash) → StartError.
+              image: docker.io/alpine/k8s:1.37.0@sha256:b421c2e9419edb98db39b6ab641669f4db7bb2acf354f22450c6b7e7176d1ff4
+              command: [/bin/bash, -euo, pipefail, -c]
+              args:
+                - /opt/repo-scripts/run-garbage-collection.sh
+              volumeMounts:
+                - name: repo-scripts
+                  mountPath: /opt/repo-scripts
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 64Mi
+                limits:
+                  memory: 256Mi
+          volumes:
+            - name: repo-scripts
+              configMap:
+                name: kube-registry-gc-scripts
+                defaultMode: 0555
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kube-registry-gc
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: kube-registry
+    app.kubernetes.io/part-of: registry
+    app.kubernetes.io/component: maintenance
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kube-registry-gc
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: kube-registry
+    app.kubernetes.io/part-of: registry
+    app.kubernetes.io/component: maintenance
+rules:
+  # list/watch cannot use resourceNames; get/patch scoped to kube-registry.
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["kube-registry"]
+    verbs: ["get", "patch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kube-registry-gc
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: kube-registry
+    app.kubernetes.io/part-of: registry
+    app.kubernetes.io/component: maintenance
+subjects:
+  - kind: ServiceAccount
+    name: kube-registry-gc
+    namespace: kube-system
+roleRef:
+  kind: Role
+  name: kube-registry-gc
+  apiGroup: rbac.authorization.k8s.io

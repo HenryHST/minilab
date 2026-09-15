@@ -1,0 +1,29 @@
+# ConfigMap for kube-registry — keep in sync with config.yml
+# (no kustomization.yaml; avoids Argo CMP :8081).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kube-registry-config
+  namespace: kube-system
+  labels:
+    app: kube-registry
+    app.kubernetes.io/name: kube-registry
+    app.kubernetes.io/part-of: registry
+    app.kubernetes.io/component: config
+data:
+  config.yml: |
+    version: 0.1
+    log:
+      fields:
+        service: registry
+    storage:
+      cache:
+        blobdescriptor: inmemory
+      delete:
+        enabled: true
+      filesystem:
+        rootdirectory: /var/lib/registry
+    http:
+      addr: :5000
+      headers:
+        X-Content-Type-Options: [nosniff]

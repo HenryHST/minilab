@@ -7,7 +7,8 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - Architecture Decision Records under [`docs/adr/`](docs/adr/) (GitOps, Plain Directory, ApplicationSet, TLS, Longhorn, Authentik, Pangolin, Alerting, Helm strategy, backups, …)
-- `registry-ui` — Joxit docker-registry-ui (Helm 1.1.4 / image 2.6.0) via ApplicationSet `infra`; namespace `registry-ui`, host `registry-ui.stadthagen.dev`; proxies existing `kube-registry:5000`; Authentik ForwardAuth prepared
+- `registry` — full Distribution `registry:3` GitOps stack under `infra/registry/` (Deployment, ClusterIP, PVC 50Gi Longhorn, config, weekly GC CronJob, Traefik `registry.stadthagen.dev`, NetworkPolicy); digest-pinned image
+- `registry-ui` — Joxit docker-registry-ui (Helm 1.1.4 / image 2.6.0) via ApplicationSet `infra`; namespace `registry-ui`, host `registry-ui.stadthagen.dev`; proxies `kube-registry:5000`; Authentik ForwardAuth **enabled** (`middleware-authentik.yaml`)
 - Baseline Alerting (V1+V2) — PrometheusRules (`homelab-alerts.yaml`: workload, platform, Proxmox pve-exporter, Cilium) + PodMonitors für Cilium/Hubble + Loki Ruler LogQL rules (Proxmox syslog) → Alertmanager; critical/warning E-Mail routes; `promtool` tests under `infra/kube-prometheus-stack/tests/`; design/runbook in `ALERTING.md`
 - `pangolin-publish` — registered via ApplicationSet `infra` (replaces standalone Application CR)
 - `status` (Uptime Kuma) — Kubernetes startup, readiness, and liveness probes (`extra/healthcheck` + HTTP `/`)
@@ -18,6 +19,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- `infra/registry` Service `kube-registry` from LoadBalancer → ClusterIP (expose via Traefik only)
+- Renovate packageRules for `registry` / `alpine/k8s` (kube-registry) and Joxit chart/image (registry-ui)
 - AppProject `infrastruktur` moved to `apps/argocd-apps/raw/` (managed by Application `infra-applicationset`); removed Application `infrastruktur-project` and `bootstrap/` — fixes missing project for Longhorn / ApplicationSet apps; destinations use `server: "*"`
 - All Application manifests in `apps/argocd-apps/` use `targetRevision: main` instead of `HEAD` (fixes `revision HEAD must be resolved` on homelab / child apps)
 
@@ -25,6 +28,7 @@ All notable changes to this project will be documented in this file.
 
 ### Migration notes
 
+- **registry**: Before first sync, remove any out-of-band `kube-registry` workload that shares `app: kube-registry` (see `infra/registry/README.md`). Service is no longer LoadBalancer — use `registry.stadthagen.dev` or ClusterDNS. Create DNS for `registry.stadthagen.dev`. Create Authentik Outpost `ak-outpost-registry-ui` or registry-ui ForwardAuth will fail.
 - After sync: old Applications `cert-manager`, `newt`, `metrics-server`, `pangolin-publish` are replaced by ApplicationSet-generated apps with the same names
 - Requires Argo CD ApplicationSet controller (bundled with argo-cd Helm chart)
 - If old `pangolin-publish` Application hangs in Terminating while ApplicationSet recreates it: `kubectl patch application pangolin-publish -n argocd --type merge -p '{"metadata":{"finalizers":null}}'` then refresh ApplicationSet `infra`

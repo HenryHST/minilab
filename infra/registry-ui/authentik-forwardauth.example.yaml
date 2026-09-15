@@ -1,9 +1,9 @@
-# Example: Traefik ForwardAuth → Authentik Outpost for registry-ui.stadthagen.dev.
-# Not applied by Argo CD (*.example.yaml). Steps:
+# Example / reference: Traefik ForwardAuth → Authentik Outpost for registry-ui.stadthagen.dev.
+# Live Middleware is applied from manifests/middleware-authentik.yaml.
+#
+# Authentik setup (still manual):
 # 1. Create Authentik Proxy Provider + Outpost for Host registry-ui.stadthagen.dev
-# 2. Copy this file to manifests/middleware-authentik.yaml and adjust address
-# 3. Uncomment middlewares on IngressRoute registry-ui
-# 4. Uncomment Authentik egress in manifests/networkpolicy.yaml
+# 2. Ensure Service name matches forwardAuth.address (default ak-outpost-registry-ui)
 #
 # apiVersion: traefik.io/v1alpha1
 # kind: Middleware

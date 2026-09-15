@@ -1,4 +1,4 @@
-# registry-ui: Traefik + in-namespace ingress; egress to in-cluster registry.
+# registry-ui: Traefik + in-namespace ingress; egress to in-cluster registry + Authentik.
 # No Newt — not published via pangolin-publish.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -32,8 +32,7 @@ spec:
         - protocol: TCP
           port: 80
 ---
-# Egress allow-list for UI → registry (+ DNS). Enable Authentik rule when
-# ForwardAuth middleware is activated (see ../authentik-forwardauth.example.yaml).
+# Egress allow-list for UI → registry (+ DNS) + Authentik Outpost (ForwardAuth).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -74,13 +73,13 @@ spec:
       ports:
         - protocol: TCP
           port: 5000
-    # OPTIONAL — Authentik Outpost (ForwardAuth). Uncomment with middleware.
-    # - to:
-    #     - namespaceSelector:
-    #         matchLabels:
-    #           kubernetes.io/metadata.name: authentik
-    #   ports:
-    #     - protocol: TCP
-    #       port: 9000
-    #     - protocol: TCP
-    #       port: 80
+    # Authentik Outpost (ForwardAuth middleware)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: authentik
+      ports:
+        - protocol: TCP
+          port: 9000
+        - protocol: TCP
+          port: 80

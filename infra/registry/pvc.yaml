@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kube-registry
+  namespace: kube-system
+  labels:
+    app: kube-registry
+    app.kubernetes.io/name: kube-registry
+    app.kubernetes.io/part-of: registry
+    app.kubernetes.io/component: storage
+  annotations:
+    # Longhorn recurring-job backup (critical tier) when groups are configured.
+    longhorn.io/recurring-job-source: enabled
+    longhorn.io/recurring-job-group: critical
+spec:
+  storageClassName: longhorn
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      # Sized after reference lab experience (10Gi filled silently). Expand online via Longhorn if needed.
+      storage: 50Gi

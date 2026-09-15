@@ -15,10 +15,7 @@ spec:
         # Helm release name registry-ui + global.name → registry-ui-user-interface
         - name: registry-ui-user-interface
           port: 80
-      # Authentik ForwardAuth (optional): uncomment after creating the Middleware
-      # from ../authentik-forwardauth.example.yaml and an Authentik Proxy Provider /
-      # Outpost for this host.
-      # middlewares:
-      #   - name: registry-ui-authentik
+      middlewares:
+        - name: registry-ui-authentik
   tls:
     secretName: registry-ui-tls

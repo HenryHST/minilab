@@ -2,5 +2,33 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "description": "Distribution registry image (infra/registry)",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["docker.io/library/registry", "library/registry", "registry"],
+      "matchFileNames": ["infra/registry/**"],
+      "groupName": "kube-registry"
+    },
+    {
+      "description": "Registry GC kubectl helper image",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["docker.io/alpine/k8s", "alpine/k8s"],
+      "matchFileNames": ["infra/registry/**"],
+      "groupName": "kube-registry"
+    },
+    {
+      "description": "Joxit docker-registry-ui image + chart",
+      "matchPackageNames": [
+        "joxit/docker-registry-ui",
+        "docker-registry-ui"
+      ],
+      "matchFileNames": [
+        "infra/registry-ui/**",
+        "apps/argocd-apps/raw/infra-applicationset.yaml"
+      ],
+      "groupName": "registry-ui"
+    }
   ]
 }

@@ -28,6 +28,7 @@ All notable changes to this project will be documented in this file.
 
 ### Migration notes
 
+- **registry**: Before first sync, remove any out-of-band `kube-registry` workload that shares `app: kube-registry` (see `infra/registry/README.md`). Service is no longer LoadBalancer — use `registry.stadthagen.dev` or ClusterDNS. Create DNS for `registry.stadthagen.dev`. Create Authentik Outpost `ak-outpost-registry-ui` or registry-ui ForwardAuth will fail.
 - After sync: old Applications `cert-manager`, `newt`, `metrics-server`, `pangolin-publish` are replaced by ApplicationSet-generated apps with the same names
 - Requires Argo CD ApplicationSet controller (bundled with argo-cd Helm chart)
 - If old `pangolin-publish` Application hangs in Terminating while ApplicationSet recreates it: `kubectl patch application pangolin-publish -n argocd --type merge -p '{"metadata":{"finalizers":null}}'` then refresh ApplicationSet `infra`

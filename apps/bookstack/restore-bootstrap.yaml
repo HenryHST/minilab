@@ -1,0 +1,165 @@
+# Bootstrap restore from NFS (cluster rebuild). Default is off — set ConfigMap enabled=true
+# (and force=true if DB/config already have data) then Argo Sync; set enabled=false after.
+#
+# Restores MariaDB dump + /config from combined archive bookstack-*.tar.gz
+# (produced by bookstack-backup-cron).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bookstack-restore
+  namespace: bookstack
+data:
+  enabled: "false"
+  archive: "latest"
+  force: "false"
+  replicas: "1"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bookstack-restore
+  namespace: bookstack
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: bookstack-restore
+  namespace: bookstack
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale"]
+    verbs: ["get", "list", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "create", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/exec", "pods/log"]
+    verbs: ["get", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bookstack-restore
+  namespace: bookstack
+subjects:
+  - kind: ServiceAccount
+    name: bookstack-restore
+    namespace: bookstack
+roleRef:
+  kind: Role
+  name: bookstack-restore
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: bookstack-bootstrap-restore
+  namespace: bookstack
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      serviceAccountName: bookstack-restore
+      restartPolicy: Never
+      containers:
+        - name: restore
+          image: alpine/k8s:1.32.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MYSQL_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: bookstack-db
+                  key: MARIADB_PASSWORD
+            - name: RESTORE_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: bookstack-restore
+                  key: enabled
+            - name: RESTORE_ARCHIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: bookstack-restore
+                  key: archive
+            - name: RESTORE_FORCE
+              valueFrom:
+                configMapKeyRef:
+                  name: bookstack-restore
+                  key: force
+            - name: BS_REPLICAS
+              valueFrom:
+                configMapKeyRef:
+                  name: bookstack-restore
+                  key: replicas
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+              apk add --no-cache mariadb-client tar gzip >/dev/null
+
+              if [[ "${RESTORE_ENABLED}" != "true" ]]; then
+                echo "bookstack-restore.enabled!=true — skip"
+                exit 0
+              fi
+
+              NS="bookstack"
+              DEPLOY="bookstack"
+              echo "Scaling ${DEPLOY} to 0..."
+              kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas=0
+              kubectl -n "${NS}" rollout status deploy/"${DEPLOY}" --timeout=120s || true
+              for i in $(seq 1 60); do
+                N="$(kubectl -n "${NS}" get pods -l app.kubernetes.io/name=bookstack --field-selector=status.phase!=Succeeded,status.phase!=Failed -o name 2>/dev/null | wc -l | tr -d ' ')"
+                [[ "${N}" == "0" ]] && break
+                sleep 2
+              done
+
+              if [[ "${RESTORE_ARCHIVE}" == "latest" ]]; then
+                ARCHIVE="$(ls -1t /backup/bookstack-*.tar.gz 2>/dev/null | head -n1 || true)"
+              else
+                ARCHIVE="/backup/${RESTORE_ARCHIVE}"
+              fi
+              if [[ -z "${ARCHIVE}" || ! -f "${ARCHIVE}" ]]; then
+                echo "No backup archive found (archive=${RESTORE_ARCHIVE})" >&2
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${BS_REPLICAS}" || true
+                exit 1
+              fi
+
+              WORK="/tmp/restore-work"
+              rm -rf "${WORK}"
+              mkdir -p "${WORK}"
+              tar xzf "${ARCHIVE}" -C "${WORK}"
+              echo "Restoring from ${ARCHIVE}"
+
+              TABLES="$(mysql -h bookstack-mariadb -u bookstack -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='bookstack';" || echo 0)"
+              echo "bookstack tables: ${TABLES}"
+              if [[ "${TABLES}" != "0" && "${RESTORE_FORCE}" != "true" ]]; then
+                echo "DB not empty and force!=true — abort" >&2
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${BS_REPLICAS}" || true
+                exit 1
+              fi
+
+              echo "Importing db.sql.gz..."
+              gunzip -c "${WORK}/db.sql.gz" | mysql -h bookstack-mariadb -u bookstack bookstack
+
+              # Scale up briefly so a pod can receive /config restore via exec+tar
+              kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas=1
+              kubectl -n "${NS}" rollout status deploy/"${DEPLOY}" --timeout=180s
+              BS_POD="$(kubectl -n "${NS}" get pod -l app.kubernetes.io/name=bookstack,app.kubernetes.io/instance=bookstack -o jsonpath='{.items[0].metadata.name}')"
+              echo "Restoring /config into pod/${BS_POD}"
+              kubectl -n "${NS}" exec "${BS_POD}" -c bookstack -- sh -c 'rm -rf /config/* /config/.[!.]* 2>/dev/null || true'
+              cat "${WORK}/config.tar.gz" | kubectl -n "${NS}" exec -i "${BS_POD}" -c bookstack -- tar xzf - -C /config
+
+              kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${BS_REPLICAS}"
+              echo "Restore OK — set bookstack-restore.enabled=false and commit"
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+      volumes:
+        - name: backup
+          persistentVolumeClaim:
+            claimName: bookstack-backups

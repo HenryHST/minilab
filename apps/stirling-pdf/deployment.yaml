@@ -16,7 +16,7 @@ spec:
         app: stirling-pdf
     spec:
       nodeSelector:
-        kubernetes.io/hostname: pi1cl
+        worker: "true"
       containers:
         - name: stirling-pdf
           image: stirlingtools/stirling-pdf:2.14.3-fat

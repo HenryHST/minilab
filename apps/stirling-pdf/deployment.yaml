@@ -22,9 +22,27 @@ spec:
           image: stirlingtools/stirling-pdf:2.14.3-fat
           ports:
             - containerPort: 8080
+          env:
+            # Fat image defaults MaxMetaspaceSize=96m — OOM during Spring/Uno startup under 512Mi
+            - name: JAVA_CUSTOM_OPTS
+              value: "-XX:MaxMetaspaceSize=256m -XX:MaxRAMPercentage=70"
+          readinessProbe:
+            httpGet:
+              path: /api/v1/info/status
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 18
+          livenessProbe:
+            httpGet:
+              path: /api/v1/info/status
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 5
           resources:
             requests:
-              cpu: 50m
-              memory: 128Mi
-            limits:
+              cpu: 100m
               memory: 512Mi
+            limits:
+              memory: 2Gi

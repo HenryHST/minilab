@@ -4,11 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-09-24
+
+GitOps-Härtung (plain directory / ApplicationSet), BookStack-Wiki, Registry, Baseline Alerting, ADRs 0001–0017. Begleit-Release Plattform: [Infra_LAB v1.6.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.6.0).
+
 ### Added
 
 - `bookstack` — BookStack Wiki on `book.stadthagen.dev` (gabe565 Helm → committed `helm-manifest.yaml`, MariaDB, Authentik OIDC, SMTP prepared, NFS backup/restore); ADRs 0016/0017; Git content under `docs/bookstack/`
-- Architecture Decision Records under [`docs/adr/`](docs/adr/) (GitOps, Plain Directory, ApplicationSet, TLS, Longhorn, Authentik, Pangolin, Alerting, Helm strategy, backups, …)
-- `registry` — full Distribution `registry:3` GitOps stack under `infra/registry/` (Deployment, ClusterIP, PVC 50Gi Longhorn, config, weekly GC CronJob, Traefik `registry.stadthagen.dev`, NetworkPolicy); digest-pinned image
+- Architecture Decision Records under [`docs/adr/`](docs/adr/) (GitOps, Plain Directory, ApplicationSet, TLS, Longhorn, Authentik, Pangolin, Alerting, Helm strategy, backups, BookStack, …)
+- `registry` — full Distribution `registry:3` GitOps stack under `infra/registry/` (Deployment, ClusterIP, PVC, config, weekly GC CronJob, Traefik `registry.stadthagen.dev`, NetworkPolicy); digest-pinned image
 - `registry-ui` — Joxit docker-registry-ui (Helm 1.1.4 / image 2.6.0) via ApplicationSet `infra`; namespace `registry-ui`, host `registry-ui.stadthagen.dev`; proxies `kube-registry:5000`; Authentik ForwardAuth **enabled** (`middleware-authentik.yaml`)
 - Baseline Alerting (V1+V2) — PrometheusRules (`homelab-alerts.yaml`: workload, platform, Proxmox pve-exporter, Cilium) + PodMonitors für Cilium/Hubble + Loki Ruler LogQL rules (Proxmox syslog) → Alertmanager; critical/warning E-Mail routes; `promtool` tests under `infra/kube-prometheus-stack/tests/`; design/runbook in `ALERTING.md`
 - `pangolin-publish` — registered via ApplicationSet `infra` (replaces standalone Application CR)
@@ -17,15 +21,25 @@ All notable changes to this project will be documented in this file.
 - ApplicationSet `infra` — plain YAML for `registry`, `system-upgrade-controller`, `alloy` (no `kustomization.yaml`; avoids CMP `:8081`)
 - All user apps under `apps/` — plain directory (no `kustomization.yaml`); Helm apps use committed `helm-manifest.yaml` (`headlamp`, `termix`, `unifipoller`); `web` uses static `configmap.yaml`
 - ApplicationSet `infra` — auto-registers `infra/cert-manager`, `infra/newt`, `infra/metrics-server`, `infra/registry` (homelab-style; sync-wave 0)
+- BookStack-Bücher **Home Assistant** (Zigbee/Matter/Homematic/Bluetooth) und erweiterte Minilab-Kapitel; E-Mail bei HA-Buch-Änderungen
 
 ### Changed
 
-- `infra/registry` Service `kube-registry` from LoadBalancer → ClusterIP (expose via Traefik only)
+- `infra/registry` Service `kube-registry` from LoadBalancer → ClusterIP (expose via Traefik only); PVC auf **2Gi** `longhorn-loki-local` + Worker-Pin (Disk-Headroom)
+- Longhorn storage over-provisioning **200%**
 - Renovate packageRules for `registry` / `alpine/k8s` (kube-registry) and Joxit chart/image (registry-ui)
 - AppProject `infrastruktur` moved to `apps/argocd-apps/raw/` (managed by Application `infra-applicationset`); removed Application `infrastruktur-project` and `bootstrap/` — fixes missing project for Longhorn / ApplicationSet apps; destinations use `server: "*"`
 - All Application manifests in `apps/argocd-apps/` use `targetRevision: main` instead of `HEAD` (fixes `revision HEAD must be resolved` on homelab / child apps)
+- `stirling-pdf` — Worker-Pin + höhere Memory/Metaspace-Limits (OOM / Bad Gateway)
+- `status` — Longhorn `longhorn-loki-local` (1 Replica) + Worker-Pin
+- `grafana` — `grafana-data` PVC neu auf `longhorn-loki-local` 2Gi
 
-- `infra/registry/kustomization.yaml` trimmed to existing `service.yaml` only (`kube-system`)
+### Fixed
+
+- cert-manager — DNS01 nameservers via Helm controller config; CRD/webhook order; `extraObjects` as Helm tpl string
+- ApplicationSet / homelab — CMP `:8081` vermeiden (kein Kustomize auf User-Apps; finalizer bei Migration standalone → infra)
+- termix-postgres Service YAML document separator
+- AppProject `infrastruktur` für Longhorn und infra-Apps
 
 ### Migration notes
 

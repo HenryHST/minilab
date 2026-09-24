@@ -1,15 +1,13 @@
-# Longhorn PVC — cluster has no pi4cl; local PV nodeAffinity would never schedule.
+# Longhorn 1-replica (cluster disks too small for default 3-replica SC)
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: uptimekuma-data
   namespace: uptimekuma
-  annotations:
-    longhorn.io/volume-replica-count: "1"
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: longhorn
+  storageClassName: longhorn-loki-local
   resources:
     requests:
       storage: 4Gi

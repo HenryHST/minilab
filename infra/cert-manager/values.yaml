@@ -5,8 +5,10 @@ crds:
 dns01RecursiveNameservers: "helium.ns.hetzner.de:53,oxygen.ns.hetzner.com:53"
 dns01RecursiveNameserversOnly: true
 
+# Chart extras-objects.yaml runs `tpl` on each item — must be a YAML string (block scalar), not a map.
 extraObjects:
-  - apiVersion: cert-manager.io/v1
+  - |
+    apiVersion: cert-manager.io/v1
     kind: ClusterIssuer
     metadata:
       name: letsencrypt-prod

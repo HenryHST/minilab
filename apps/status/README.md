@@ -18,7 +18,7 @@ Offizielle Hinweise: [Migration v1→v2](https://github.com/louislam/uptime-kuma
 
 ## Persistence
 
-- **Longhorn PVC** `uptimekuma-data` (4Gi, `longhorn`, 1 Replica) — kein Node-Pin; Cluster-Nodes sind `nxk3-*` (kein `pi4cl`)
+- **Longhorn PVC** `uptimekuma-data` (1Gi, `longhorn-loki-local`, 1 Replica) — kein Node-Pin; Cluster-Nodes sind `nxk3-*` (kein `pi4cl`)
 - Deployment + Restore ohne `nodeSelector`
 - NFS-Backups unverändert (`uptimekuma-backups`)
 

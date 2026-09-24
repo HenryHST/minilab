@@ -58,6 +58,8 @@ spec:
     spec:
       serviceAccountName: uptimekuma-restore
       restartPolicy: Never
+      nodeSelector:
+        worker: "true"
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

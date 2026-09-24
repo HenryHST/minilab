@@ -1,4 +1,4 @@
-# Longhorn 1-replica (cluster disks too small for default 3-replica SC)
+# Longhorn 1-replica local (disks tight; 1Gi is enough for Uptime Kuma SQLite)
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -10,4 +10,4 @@ spec:
   storageClassName: longhorn-loki-local
   resources:
     requests:
-      storage: 4Gi
+      storage: 1Gi

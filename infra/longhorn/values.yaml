@@ -13,6 +13,8 @@ defaultSettings:
   createDefaultDiskLabeledNodes: true
   defaultDataPath: /var/lib/longhorn
   defaultReplicaCount: 3
+  # Workers have ~32Gi disks; 100% over-provision left too little schedulable headroom for new PVCs
+  storageOverProvisioningPercentage: "200"
 
 defaultBackupStore:
   # UniFi NAS export requires NFSv3 (v4 returns "No such file or directory").

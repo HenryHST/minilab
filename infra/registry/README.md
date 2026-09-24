@@ -8,7 +8,7 @@ In-cluster [Distribution](https://github.com/distribution/distribution) registry
 | Service | `kube-registry.kube-system.svc:5000` (ClusterIP) |
 | API host | `registry.stadthagen.dev` (Traefik TLS) |
 | UI | [`infra/registry-ui`](../registry-ui/) → `registry-ui.stadthagen.dev` |
-| Storage | PVC `kube-registry` 5Gi `longhorn-loki-local` (1 replica) RWO |
+| Storage | PVC `kube-registry` 2Gi `longhorn-loki-local` (1 replica) RWO |
 | GC | CronJob `kube-registry-gc` — Sundays 04:00 UTC |
 | Sync wave | `0` (ApplicationSet `infra`) |
 

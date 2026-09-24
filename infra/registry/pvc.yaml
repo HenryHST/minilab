@@ -16,4 +16,4 @@ spec:
   resources:
     requests:
       # Fresh lab registry; expand later if image cache grows (online expand via Longhorn)
-      storage: 5Gi
+      storage: 2Gi

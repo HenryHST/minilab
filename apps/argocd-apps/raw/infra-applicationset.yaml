@@ -23,7 +23,8 @@ spec:
             helmValuesFile: infra/cert-manager/values.yaml
           - app: cert-manager-webhook-hetzner
             namespace: certmanager
-            syncWave: "0"
+            # After cert-manager (wave 0) so cert-manager.io/v1 CRDs exist for discovery
+            syncWave: "1"
             helmRepo: https://charts.hetzner.cloud
             helmChart: cert-manager-webhook-hetzner
             helmVersion: "0.9.0"
@@ -116,7 +117,7 @@ spec:
           prune: true
           selfHeal: true
         retry:
-          limit: 1
+          limit: 5
           backoff:
             duration: 10s
             factor: 2

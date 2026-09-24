@@ -15,8 +15,6 @@ spec:
       labels:
         app: status
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: pi4cl
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

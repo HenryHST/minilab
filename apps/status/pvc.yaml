@@ -1,36 +1,15 @@
-# Local PV on pi4cl — same host path as former hostPath mount; Pod spec uses PVC (restricted-compatible).
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: uptimekuma-data-pi4cl
-spec:
-  capacity:
-    storage: 4Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: uptimekuma-local
-  local:
-    path: /var/lib/uptimekuma
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - pi4cl
----
+# Longhorn PVC — cluster has no pi4cl; local PV nodeAffinity would never schedule.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: uptimekuma-data
   namespace: uptimekuma
+  annotations:
+    longhorn.io/volume-replica-count: "1"
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: uptimekuma-local
-  volumeName: uptimekuma-data-pi4cl
+  storageClassName: longhorn
   resources:
     requests:
       storage: 4Gi

@@ -18,19 +18,18 @@ Offizielle Hinweise: [Migration v1→v2](https://github.com/louislam/uptime-kuma
 
 ## Persistence
 
-- **Local PV/PVC** `uptimekuma-data` → `/var/lib/uptimekuma` auf Node **`pi4cl`** (ersetzt direktes `hostPath` im Pod — kompatibel mit Pod Security `restricted` audit/warn)
-- Deployment + Restore gepinnt auf `pi4cl` (`nodeSelector`)
-- Kein Longhorn-PVC: Daten lokal auf dem Pi; Cluster-Storage war bei Einführung knapp / Node-Pin bewusst
-- Wechsel auf Longhorn nur, wenn der Pin auf `pi4cl` stört (dann Worker mit Longhorn, Restore-Pfad anpassen)
+- **Longhorn PVC** `uptimekuma-data` (4Gi, `longhorn`, 1 Replica) — kein Node-Pin; Cluster-Nodes sind `nxk3-*` (kein `pi4cl`)
+- Deployment + Restore ohne `nodeSelector`
+- NFS-Backups unverändert (`uptimekuma-backups`)
 
-## Pod Security (baseline enforce, restricted audit/warn)
+## Pod Security (privileged enforce — NET_RAW for ICMP)
 
 Namespace `uptimekuma`:
 
 | Label | Wert | Grund |
 |-------|------|-------|
-| `enforce` | `baseline` | ICMP-Ping-Monitore benötigen `NET_RAW` (unter `restricted` verboten) |
-| `audit` / `warn` | `restricted` | Abweichungen vom strengen Profil werden protokolliert/gemeldet |
+| `enforce` | `privileged` | ICMP-Ping braucht `NET_RAW` — unter `baseline`/`restricted` verboten |
+| `audit` / `warn` | `baseline` | Abweichungen vom Baseline-Profil sichtbar halten |
 
 Deployment: `runAsUser`/`fsGroup` 1000, `capabilities.drop: [ALL]`, `capabilities.add: [NET_RAW]`, `seccompProfile: RuntimeDefault`
 

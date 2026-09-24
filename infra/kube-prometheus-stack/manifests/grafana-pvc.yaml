@@ -2,12 +2,11 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: grafana-data
-  annotations:
-    longhorn.io/volume-replica-count: "1"
+  namespace: monitoring
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: longhorn
+  storageClassName: longhorn-loki-local
   resources:
     requests:
-      storage: 5Gi
+      storage: 2Gi

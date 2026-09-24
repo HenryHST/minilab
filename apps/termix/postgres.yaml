@@ -12,7 +12,8 @@ spec:
       port: 5432
       targetPort: postgres
   selector:
-    app: termix-postgres---
+    app: termix-postgres
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:

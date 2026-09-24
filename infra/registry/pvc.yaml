@@ -8,15 +8,12 @@ metadata:
     app.kubernetes.io/name: kube-registry
     app.kubernetes.io/part-of: registry
     app.kubernetes.io/component: storage
-  annotations:
-    # Longhorn recurring-job backup (critical tier) when groups are configured.
-    longhorn.io/recurring-job-source: enabled
-    longhorn.io/recurring-job-group: critical
 spec:
-  storageClassName: longhorn
+  # 1-replica local SC — default longhorn (3×50Gi) cannot schedule on ~32Gi worker disks
+  storageClassName: longhorn-loki-local
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      # Sized after reference lab experience (10Gi filled silently). Expand online via Longhorn if needed.
-      storage: 50Gi
+      # Fresh lab registry; expand later if image cache grows (online expand via Longhorn)
+      storage: 5Gi

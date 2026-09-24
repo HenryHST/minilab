@@ -24,6 +24,8 @@ spec:
         app.kubernetes.io/part-of: registry
         app.kubernetes.io/component: registry
     spec:
+      nodeSelector:
+        worker: "true"
       containers:
         - name: registry
           # Pin digest (registry:3 as of 2026-06); Renovate can bump.

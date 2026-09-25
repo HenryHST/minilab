@@ -58,7 +58,7 @@ server:
       memory: 512Mi
   initContainers:
     - name: volume-permissions
-      image: busybox:1.37
+      image: busybox:1.38
       command: ["sh", "-c", "chown -R 1000:1000 /media"]
       securityContext:
         runAsUser: 0
@@ -78,7 +78,7 @@ worker:
       memory: 512Mi
   initContainers:
     - name: volume-permissions
-      image: busybox:1.37
+      image: busybox:1.38
       command: ["sh", "-c", "chown -R 1000:1000 /media"]
       securityContext:
         runAsUser: 0

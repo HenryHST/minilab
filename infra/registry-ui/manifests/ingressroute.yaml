@@ -15,7 +15,11 @@ spec:
         # Helm release name registry-ui + global.name → registry-ui-user-interface
         - name: registry-ui-user-interface
           port: 80
-      middlewares:
-        - name: registry-ui-authentik
+      # ForwardAuth disabled until Authentik Proxy Outpost Service
+      # ak-outpost-registry-ui.authentik.svc.cluster.local:9000 exists.
+      # Without it Traefik returns HTTP 500 with an empty body (empty page).
+      # Re-enable after creating the outpost (see README Authentik ForwardAuth):
+      # middlewares:
+      #   - name: registry-ui-authentik
   tls:
     secretName: registry-ui-tls

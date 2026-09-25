@@ -1,5 +1,8 @@
 # Secrets via Infra_LAB SecretSpec → authentik-credentials (envFrom overlay)
 # Pre-cutover: curl --resolve idp.stadthagen.dev:443:192.168.0.215 -skI https://idp.stadthagen.dev/
+#
+# Day-0 blueprints (Plan B): ConfigMap authentik-blueprints-day0 → /blueprints
+# Owner matrix: Infra_LAB docs/adr/0017-authentik-day0-blueprints-und-tf-reconcile.md
 
 authentik:
   log_level: info
@@ -14,6 +17,11 @@ authentik:
     use_tls: false
     use_ssl: true
     from: authentik@henrystadthagen.de
+
+# Mount GitOps blueprints (keys ending in .yaml are applied by the worker).
+blueprints:
+  configMaps:
+    - authentik-blueprints-day0
 
 global:
   nodeSelector:

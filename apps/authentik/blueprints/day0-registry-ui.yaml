@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
+# Day-0 (Plan B): ForwardAuth for registry-ui.stadthagen.dev
+# Owner: minilab blueprints — NOT managed by Infra_LAB terraform/authentik
+# Service name must stay ak-outpost-registry-ui (Traefik middleware).
+version: 1
+metadata:
+  name: day0-registry-ui
+  labels:
+    blueprints.goauthentik.io/description: Day-0 Proxy Provider + Outpost for registry-ui ForwardAuth
+entries:
+  - model: authentik_providers_proxy.proxyprovider
+    id: registry-ui-provider
+    state: present
+    identifiers:
+      name: registry-ui
+    attrs:
+      name: registry-ui
+      external_host: https://registry-ui.stadthagen.dev
+      mode: forward_single
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
+
+  - model: authentik_core.application
+    id: registry-ui-app
+    state: present
+    identifiers:
+      slug: registry-ui
+    attrs:
+      name: Registry UI
+      slug: registry-ui
+      provider: !KeyOf registry-ui-provider
+      meta_launch_url: https://registry-ui.stadthagen.dev
+      open_in_new_tab: true
+
+  - model: authentik_outposts.outpost
+    id: registry-ui-outpost
+    state: present
+    identifiers:
+      name: registry-ui
+    attrs:
+      name: registry-ui
+      type: proxy
+      # Created by Authentik worker after first boot; blueprint re-applies until found.
+      service_connection: !Find [authentik_outposts.kubernetesserviceconnection, [name, Local Kubernetes Cluster]]
+      providers:
+        - !KeyOf registry-ui-provider
+      config:
+        authentik_host: http://authentik-server.authentik.svc.cluster.local:80
+        authentik_host_insecure: true
+        kubernetes_namespace: authentik
+        kubernetes_replicas: 1
+        kubernetes_service_type: ClusterIP
+        object_naming_template: ak-outpost-%(name)s

@@ -16,3 +16,4 @@ resources:
   - certificate.yaml
   - ingressroute.yaml
   - default-headers.yaml
+  - blueprints-configmap.yaml

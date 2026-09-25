@@ -11,7 +11,7 @@ spec:
   source:
     repoURL: https://github.com/HenryHST/minilab
     path: apps/authentik
-    targetRevision: feat/authentik-idp-migration
+    targetRevision: main
   destination:
     server: https://kubernetes.default.svc
     namespace: authentik

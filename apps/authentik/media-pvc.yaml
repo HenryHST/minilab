@@ -1,0 +1,14 @@
+# Longhorn RWX for Authentik /media (app icons, branding, uploads).
+# Server + worker both mount this claim.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: authentik-media
+  namespace: authentik
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi

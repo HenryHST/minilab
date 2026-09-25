@@ -1,0 +1,90 @@
+# Sync Authentik brand assets from UniFi NAS NFS into PVC authentik-media.
+# NFS layout: …/infra01/media/public/branding/{favicon.png,key_transparent.png,…}
+# PVC mount in Authentik pods: /media → public branding at /media/public/branding/
+---
+# PV carries mountOptions (core Pod nfs volumes cannot); UniFi NAS needs NFSv3 + nolock.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: authentik-media-nfs
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=3
+    - nolock
+  nfs:
+    server: 192.168.0.25
+    path: /var/nfs/shared/infra01/media
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: authentik-media-nfs
+  namespace: authentik
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: authentik-media-nfs
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: authentik-media-sync
+  namespace: authentik
+spec:
+  schedule: "0 */6 * * *" # every 6 hours UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            worker: "true"
+          containers:
+            - name: rsync
+              image: instrumentisto/rsync-ssh:alpine
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  SRC="/nfs/public/branding"
+                  DST="/media/public/branding"
+                  if [[ ! -d "${SRC}" ]]; then
+                    echo "Missing NFS source ${SRC} — place brand assets under infra01/media/public/branding/" >&2
+                    exit 1
+                  fi
+                  mkdir -p "${DST}"
+                  echo "rsync ${SRC}/ -> ${DST}/"
+                  rsync -a --delete "${SRC}/" "${DST}/"
+                  chown -R 1000:1000 "${DST}"
+                  echo "Synced branding assets:"
+                  ls -la "${DST}"
+              securityContext:
+                runAsUser: 0
+              volumeMounts:
+                - name: nfs
+                  mountPath: /nfs
+                  readOnly: true
+                - name: media
+                  mountPath: /media
+          volumes:
+            - name: nfs
+              persistentVolumeClaim:
+                claimName: authentik-media-nfs
+            - name: media
+              persistentVolumeClaim:
+                claimName: authentik-media

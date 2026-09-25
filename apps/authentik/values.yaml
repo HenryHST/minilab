@@ -8,6 +8,10 @@ authentik:
   log_level: info
   error_reporting:
     enabled: false
+  # Seeds System Settings → Base URL when empty (AUTHENTIK_WEB__BASE_URL).
+  # Existing installs: set once in Admin → System → Settings if still blank.
+  web:
+    base_url: "https://idp.stadthagen.dev"
   postgresql:
     name: authentik
     user: authentik

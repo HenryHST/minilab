@@ -27,3 +27,16 @@ helm template authentik ./charts/authentik \
 ```
 
 IdP config (OAuth/LDAP/Brand) stays in Infra_LAB OpenTofu / `--tags authentik-bootstrap`.
+
+## Bootstrap-Admin (Anmelde-Passwort)
+
+```bash
+cd ansible/playbooks/k3s_cluster/secrets   # Infra_LAB
+secretspec get AUTHENTIK_BOOTSTRAP_PASSWORD --profile cluster
+secretspec get AUTHENTIK_BOOTSTRAP_EMAIL --profile cluster
+
+kubectl -n authentik get secret authentik-credentials \
+  -o jsonpath='{.data.AUTHENTIK_BOOTSTRAP_PASSWORD}' | base64 -d; echo
+kubectl -n authentik get secret authentik-credentials \
+  -o jsonpath='{.data.AUTHENTIK_BOOTSTRAP_EMAIL}' | base64 -d; echo
+```

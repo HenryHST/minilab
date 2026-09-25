@@ -2,6 +2,27 @@
 
 Authentik ist das zentrale IdP (`https://idp.stadthagen.dev`).
 
+## Bootstrap-Admin (Anmelde-Passwort)
+
+Erstes Admin-Login über SecretSpec `AUTHENTIK_BOOTSTRAP_EMAIL` / `AUTHENTIK_BOOTSTRAP_PASSWORD` (User oft `akadmin`). Quelle und Spiegel: Infra_LAB `ansible/playbooks/k3s_cluster/secrets/`.
+
+**SecretSpec:**
+
+```bash
+cd ansible/playbooks/k3s_cluster/secrets
+secretspec get AUTHENTIK_BOOTSTRAP_PASSWORD --profile cluster
+secretspec get AUTHENTIK_BOOTSTRAP_EMAIL --profile cluster
+```
+
+**Kubernetes (nach Ansible `--tags secrets`):**
+
+```bash
+kubectl -n authentik get secret authentik-credentials \
+  -o jsonpath='{.data.AUTHENTIK_BOOTSTRAP_PASSWORD}' | base64 -d; echo
+kubectl -n authentik get secret authentik-credentials \
+  -o jsonpath='{.data.AUTHENTIK_BOOTSTRAP_EMAIL}' | base64 -d; echo
+```
+
 ## Integrierte Apps (Beispiele)
 
 - Termix, Vaultwarden, Grafana, Headlamp, **BookStack**

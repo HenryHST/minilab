@@ -34,10 +34,6 @@ spec:
               echo "rsync ${SRC}/ -> ${DST}/"
               rsync -a --delete "${SRC}/" "${DST}/"
               chown -R 1000:1000 "${DST}"
-              # #region agent log
-              FILES=$(ls -1 "${DST}" | tr '\n' ',' | sed 's/,$//')
-              echo "{\"sessionId\":\"66de80\",\"hypothesisId\":\"H1\",\"location\":\"media-sync-bootstrap-job\",\"message\":\"bootstrap branding sync\",\"data\":{\"files\":\"${FILES}\"},\"timestamp\":$(date +%s000),\"runId\":\"brand-bootstrap\"}"
-              # #endregion
               echo "Synced branding assets:"
               ls -la "${DST}"
           securityContext:

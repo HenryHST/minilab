@@ -80,7 +80,7 @@ jobs:
 
       - name: Send email
         if: steps.changes.outputs.skip != 'true'
-        uses: dawidd6/action-send-mail@v3
+        uses: dawidd6/action-send-mail@v22
         with:
           server_address: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_SERVER }}
           server_port: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_PORT }}

@@ -1,0 +1,57 @@
+# One-shot PostSync: CronJob alone waits up to 6h; first bootstrap needs media now.
+# Same rsync as CronJob authentik-media-sync (NFS → authentik-media PVC).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: authentik-media-sync-bootstrap
+  namespace: authentik
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  ttlSecondsAfterFinished: 86400
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        worker: "true"
+      containers:
+        - name: rsync
+          image: instrumentisto/rsync-ssh:alpine
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -euo pipefail
+              SRC="/nfs/public/branding"
+              DST="/media/public/branding"
+              if [[ ! -d "${SRC}" ]]; then
+                echo "Missing NFS source ${SRC} — place brand assets under infra01/media/public/branding/" >&2
+                exit 1
+              fi
+              mkdir -p "${DST}"
+              echo "rsync ${SRC}/ -> ${DST}/"
+              rsync -a --delete "${SRC}/" "${DST}/"
+              chown -R 1000:1000 "${DST}"
+              # #region agent log
+              FILES=$(ls -1 "${DST}" | tr '\n' ',' | sed 's/,$//')
+              echo "{\"sessionId\":\"66de80\",\"hypothesisId\":\"H1\",\"location\":\"media-sync-bootstrap-job\",\"message\":\"bootstrap branding sync\",\"data\":{\"files\":\"${FILES}\"},\"timestamp\":$(date +%s000),\"runId\":\"brand-bootstrap\"}"
+              # #endregion
+              echo "Synced branding assets:"
+              ls -la "${DST}"
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: nfs
+              mountPath: /nfs
+              readOnly: true
+            - name: media
+              mountPath: /media
+      volumes:
+        - name: nfs
+          persistentVolumeClaim:
+            claimName: authentik-media-nfs
+        - name: media
+          persistentVolumeClaim:
+            claimName: authentik-media

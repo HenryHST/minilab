@@ -9,6 +9,7 @@ resources:
   - namespace.yaml
   - media-pvc.yaml
   - media-sync-cronjob.yaml
+  - media-sync-bootstrap-job.yaml
   - certificate.yaml
   - ingressroute.yaml
   - default-headers.yaml

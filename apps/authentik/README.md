@@ -2,6 +2,17 @@
 
 GitOps install for `idp.stadthagen.dev`. Day-0 blueprints: [BLUEPRINTS.md](BLUEPRINTS.md).
 
+## Brand media (logos / background)
+
+NFS source: `192.168.0.25:/var/nfs/shared/infra01/media/public/branding/` → PVC `authentik-media` at `/media/public/branding/`.
+
+- **PostSync Job** `authentik-media-sync-bootstrap` — runs once after each successful Argo sync (so Day-0 is not empty until the CronJob fires).
+- **CronJob** `authentik-media-sync` — every 6h thereafter.
+
+Manual: `kubectl -n authentik create job --from=cronjob/authentik-media-sync media-sync-manual`
+
+Brand paths in Infra_LAB Terraform: `branding/{favicon,key_transparent,website-work}.*` (served as `/files/media/public/branding/...?token=`).
+
 ## Helm (vendored + rendered)
 
 Avoids Argo CD `kustomize --enable-helm` / `helm pull` races (`charts/... already exists`).

@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-09-25
+
+Authentik cluster IdP (`apps/authentik`) inkl. Day-0 registry-ui Outpost-Blueprint; ForwardAuth wieder aktiv. Begleit-Release Plattform: [Infra_LAB v1.7.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.7.0).
+
+### Added
+
+- `apps/authentik` — GitOps IdP auf `idp.stadthagen.dev` (Helm 2026.8, Longhorn PG, Media PVC + NFS sync CronJob, IngressRoute/TLS)
+- Day-0 Blueprints — Proxy Provider + Outpost `ak-outpost-registry-ui` via ConfigMap `authentik-blueprints-day0` / Helm `blueprints.configMaps` ([`BLUEPRINTS.md`](apps/authentik/BLUEPRINTS.md)); Ownership mit Infra_LAB ADR-0017
+
+### Changed
+
+- Application `authentik` — `targetRevision: main` (nicht mehr Feature-Branch)
+- `registry-ui` — ForwardAuth Middleware wieder aktiv (#56), nachdem Day-0 Outpost bereitsteht
+
+### Notes
+
+- IdP-Config (OAuth-Flotte, LDAP, Brand) bleibt Infra_LAB OpenTofu / `--tags authentik-bootstrap`
+- Renovate bumps seit v0.8.0 (actions/checkout v7, gluetun, code-server, netshoot, send-mail) sind in diesem Tag enthalten
+
 ## [0.8.0] - 2026-09-24
 
 GitOps-Härtung (plain directory / ApplicationSet), BookStack-Wiki, Registry, Baseline Alerting, ADRs 0001–0017. Begleit-Release Plattform: [Infra_LAB v1.6.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.6.0).

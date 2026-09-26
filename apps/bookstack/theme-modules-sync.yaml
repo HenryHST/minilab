@@ -132,6 +132,8 @@ spec:
               kcp /fonts/bold/NotoSans-Bold.ttf "$NS/$POD:/app/www/storage/fonts/dompdf/NotoSans-Bold.ttf"
               kcp /fonts/regular/NotoSans.ttf "$NS/$POD:/config/www/fonts/dompdf/NotoSans.ttf"
               kcp /fonts/bold/NotoSans-Bold.ttf "$NS/$POD:/config/www/fonts/dompdf/NotoSans-Bold.ttf"
+              # php-fpm runs as abc (PUID 911); dompdf must write .ufm next to TTFs
+              kubectl -n "$NS" exec "$POD" -- sh -c 'chown -R abc:abc /app/www/storage/fonts/dompdf /config/www/fonts/dompdf && chmod 775 /app/www/storage/fonts/dompdf /config/www/fonts/dompdf && chmod 664 /app/www/storage/fonts/dompdf/*.ttf /config/www/fonts/dompdf/*.ttf'
 
               echo "Sync theme overlay (PDF font CSS)..."
               # Theme views resolve from theme_path() root (not views/)

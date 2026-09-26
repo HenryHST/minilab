@@ -184,6 +184,9 @@ spec:
                     mkdir -p /app/www/storage/fonts/dompdf
                     if [ -f /config/www/fonts/dompdf/NotoSans.ttf ]; then
                       cp -f /config/www/fonts/dompdf/NotoSans.ttf /config/www/fonts/dompdf/NotoSans-Bold.ttf /app/www/storage/fonts/dompdf/ || true
+                      chown -R abc:abc /app/www/storage/fonts/dompdf || true
+                      chmod 775 /app/www/storage/fonts/dompdf || true
+                      chmod 664 /app/www/storage/fonts/dompdf/*.ttf || true
                     fi
           volumeMounts:
             - name: config

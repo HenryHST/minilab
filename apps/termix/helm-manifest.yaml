@@ -10,7 +10,7 @@ metadata:
     helm.sh/chart: termix-0.1.0
     app.kubernetes.io/name: termix
     app.kubernetes.io/instance: termix
-    app.kubernetes.io/version: "2.7.0"
+    app.kubernetes.io/version: "2.8.0"
     app.kubernetes.io/managed-by: Helm
 spec:
   minAvailable: 1
@@ -28,7 +28,7 @@ metadata:
     helm.sh/chart: termix-0.1.0
     app.kubernetes.io/name: termix
     app.kubernetes.io/instance: termix
-    app.kubernetes.io/version: "2.7.0"
+    app.kubernetes.io/version: "2.8.0"
     app.kubernetes.io/managed-by: Helm
 automountServiceAccountToken: false
 ---
@@ -41,7 +41,7 @@ metadata:
     helm.sh/chart: termix-0.1.0
     app.kubernetes.io/name: termix
     app.kubernetes.io/instance: termix
-    app.kubernetes.io/version: "2.7.0"
+    app.kubernetes.io/version: "2.8.0"
     app.kubernetes.io/managed-by: Helm
 spec:
   type: ClusterIP
@@ -63,7 +63,7 @@ metadata:
     helm.sh/chart: termix-0.1.0
     app.kubernetes.io/name: termix
     app.kubernetes.io/instance: termix
-    app.kubernetes.io/version: "2.7.0"
+    app.kubernetes.io/version: "2.8.0"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 2
@@ -90,7 +90,7 @@ spec:
         - name: termix
           securityContext:
             {}
-          image: "ghcr.io/lukegus/termix:release-2.7.1"
+          image: "ghcr.io/lukegus/termix:release-2.8.0"
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -245,7 +245,7 @@ metadata:
     helm.sh/chart: termix-0.1.0
     app.kubernetes.io/name: termix
     app.kubernetes.io/instance: termix
-    app.kubernetes.io/version: "2.7.0"
+    app.kubernetes.io/version: "2.8.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
     kubernetes.io/ingress.class: traefik-external

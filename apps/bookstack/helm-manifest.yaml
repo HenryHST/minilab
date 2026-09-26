@@ -1,5 +1,3 @@
-# Rendered Helm chart — regenerate with:
-# helm template bookstack ./charts/bookstack -f values.yaml --namespace bookstack > helm-manifest.yaml
 ---
 # Source: bookstack/templates/common.yaml
 kind: PersistentVolumeClaim
@@ -20,6 +18,9 @@ spec:
   resources:
     requests:
       storage: "5Gi"
+
+
+
 ---
 # Source: bookstack/templates/common.yaml
 apiVersion: v1
@@ -44,6 +45,12 @@ spec:
   selector:
     app.kubernetes.io/instance: bookstack
     app.kubernetes.io/name: bookstack
+
+
+
+
+
+
 ---
 # Source: bookstack/templates/common.yaml
 apiVersion: apps/v1
@@ -123,7 +130,7 @@ spec:
                   key: password
                   name: bookstack-smtp
             - name: MAIL_PORT
-              value: "25"
+              value: "465"
             - name: MAIL_USERNAME
               value: auto@henrystadthagen.de
             - name: OIDC_CLIENT_ID

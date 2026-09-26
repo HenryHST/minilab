@@ -10,19 +10,19 @@ Wiki / Wissensdatenbank unter **https://book.stadthagen.dev** (intern, Traefik).
 | Image | `lscr.io/linuxserver/bookstack:version-v26.05.5` |
 | DB | MariaDB 11.4 (`mariadb.yaml`, hostPath `/var/lib/bookstack-mariadb` @ `nxk3-w01`) |
 | Auth | Authentik OIDC (`AUTH_METHOD=oidc`) |
-| SMTP | vorbereitet (`mail.henrystadthagen.de:25`, Secret `bookstack-smtp`) |
+| SMTP | `mail.henrystadthagen.de:465`, Secret `bookstack-smtp` (Passwort = SecretSpec `AUTHENTIK_EMAIL_PASSWORD`) |
 | Backup | CronJob 04:00 UTC → NFS `…/bookstack-backups` (DB + `/config`, Retention 7) |
 
 ## Secrets (außerhalb Git)
 
-Vor dem ersten Sync SecretSpecs / Ansible anlegen — Vorlage: [`secret.example.yaml`](secret.example.yaml).
+Vor dem ersten Sync SecretSpecs / Ansible anlegen — Vorlage: [`secret.example.yaml.txt`](secret.example.yaml.txt).
 
 | Secret | Keys |
 |--------|------|
 | `bookstack-app` | `APP_KEY` (`docker run --rm --entrypoint /bin/bash lscr.io/linuxserver/bookstack:version-v26.05.5 appkey`) |
 | `bookstack-db` | `MARIADB_PASSWORD`, `MARIADB_ROOT_PASSWORD` |
 | `bookstack-oauth` | `client-secret` (Authentik Provider) |
-| `bookstack-smtp` | `password` (optional, wenn Relay Auth braucht) |
+| `bookstack-smtp` | `password` — Ansible/SecretSpec `AUTHENTIK_EMAIL_PASSWORD` (gleicher SMTP wie Authentik; nicht aus Git) |
 
 ## Authentik
 
@@ -49,6 +49,8 @@ helm template bookstack ./charts/bookstack -f values.yaml --namespace bookstack 
 ## Phase-2-Inhalte (Git)
 
 Strukturierte Bücher, Vorlagen und Import-Anleitung: [`docs/bookstack/`](../../docs/bookstack/).
+
+**Auto-Import:** Workflow [BookStack import](../../.github/workflows/bookstack-import.yml) — siehe [`docs/bookstack/IMPORT.md`](../../docs/bookstack/IMPORT.md) § Automatischer Import (API-Token + GH Secrets `BOOKSTACK_*`).
 
 ### E-Mail bei Buch-Änderungen (Home Assistant)
 

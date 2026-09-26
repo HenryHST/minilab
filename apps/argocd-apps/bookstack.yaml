@@ -11,6 +11,9 @@ spec:
     repoURL: https://github.com/HenryHST/minilab
     path: apps/bookstack
     targetRevision: main
+    directory:
+      # Docs-only template — real secrets via Infra_LAB SecretSpec / Ansible
+      exclude: secret.example.yaml*
   destination:
     server: https://kubernetes.default.svc
     namespace: bookstack

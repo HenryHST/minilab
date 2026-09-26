@@ -46,10 +46,10 @@ env:
   OIDC_GROUPS_CLAIM: groups
   OIDC_REMOVE_FROM_GROUPS: "false"
   OIDC_EXTERNAL_ID_CLAIM: sub
-  # SMTP vorbereitet (gleicher Relay wie Alertmanager)
+  # SMTP (gleicher Relay wie Authentik: auto@henrystadthagen.de:465)
   MAIL_DRIVER: smtp
   MAIL_HOST: mail.henrystadthagen.de
-  MAIL_PORT: "25"
+  MAIL_PORT: "465"
   MAIL_FROM_NAME: BookStack
   MAIL_FROM: auto@henrystadthagen.de
   MAIL_USERNAME: auto@henrystadthagen.de

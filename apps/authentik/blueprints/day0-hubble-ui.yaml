@@ -30,6 +30,7 @@ entries:
       slug: hubble-ui
       provider: !KeyOf hubble-ui-provider
       meta_launch_url: https://hubble.stadthagen.dev
+      meta_icon: branding/hubble-light-1.svg
       open_in_new_tab: true
 
   - model: authentik_outposts.outpost

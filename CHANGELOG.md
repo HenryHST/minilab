@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-09-26
+
+Hubble UI Exposure + Authentik ForwardAuth (ADR-0018). Begleit-Release Plattform: [Infra_LAB v1.8.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.8.0).
+
+### Added
+
+- `apps/hubble-ui` — Certificate, IngressRoute, NetworkPolicy, ForwardAuth-Middleware für `hubble.stadthagen.dev` (kein zweites UI-Helm-Release)
+- Day-0 Blueprint `day0-hubble-ui` — Proxy Provider + Outpost `ak-outpost-hubble-ui`; App-Logo `branding/hubble-light-1.svg` (Authentik Media)
+
+### Notes
+
+- Workload (Relay/UI Deployments) bleibt Infra_LAB Ansible `cni_cilium` (`cilium_hubble_*`)
+- Seit v0.9.0 mit enthalten: BookStack Offline-Export/PDF-Fonts/SMTP, Authentik media-sync PostSync, Termix 2.8.0, diverse Renovate-Bumps
+
 ## [0.9.0] - 2026-09-25
 
 Authentik cluster IdP (`apps/authentik`) inkl. Day-0 registry-ui Outpost-Blueprint; ForwardAuth wieder aktiv. Begleit-Release Plattform: [Infra_LAB v1.7.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.7.0).

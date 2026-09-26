@@ -1,0 +1,32 @@
+# Hubble UI: allow Traefik (+ kube-system) to frontend port.
+# Workload owned by Cilium Helm (Ansible); labels k8s-app=hubble-ui.
+# Frontend container listens on 8081 (Service maps 80→8081).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hubble-ui-ingress
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: hubble-ui
+    app.kubernetes.io/part-of: hubble-ui
+spec:
+  podSelector:
+    matchLabels:
+      k8s-app: hubble-ui
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8081
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 8081

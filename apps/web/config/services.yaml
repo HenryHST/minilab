@@ -69,6 +69,10 @@
         href: https://headlamp.stadthagen.dev
         icon: si-docker-#2496ED
         description: dashboards
+    - Hubble UI:
+        href: https://hubble.stadthagen.dev
+        icon: si-cilium-#F8C21A
+        description: Cilium flow visualization (SSO)
     - Prometheus:
         href: https://prometheus.stadthagen.dev
         icon: si-prometheus-#E6522C

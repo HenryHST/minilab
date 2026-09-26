@@ -18,6 +18,8 @@ env:
   PGID: "911"
   APP_URL: https://book.stadthagen.dev
   APP_LANG: de
+  APP_THEME: custom
+  EXPORT_PAGE_SIZE: a4
   APP_KEY:
     secretKeyRef:
       name: bookstack-app

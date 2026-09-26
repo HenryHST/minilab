@@ -97,6 +97,8 @@ spec:
                   name: bookstack-app
             - name: APP_LANG
               value: de
+            - name: APP_THEME
+              value: custom
             - name: APP_URL
               value: https://book.stadthagen.dev
             - name: AUTH_AUTO_INITIATE
@@ -116,6 +118,8 @@ spec:
               value: "3306"
             - name: DB_USERNAME
               value: bookstack
+            - name: EXPORT_PAGE_SIZE
+              value: a4
             - name: MAIL_DRIVER
               value: smtp
             - name: MAIL_FROM
@@ -170,6 +174,17 @@ spec:
             - name: http
               containerPort: 80
               protocol: TCP
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    mkdir -p /app/www/storage/fonts/dompdf
+                    if [ -f /config/www/fonts/dompdf/NotoSans.ttf ]; then
+                      cp -f /config/www/fonts/dompdf/NotoSans.ttf /config/www/fonts/dompdf/NotoSans-Bold.ttf /app/www/storage/fonts/dompdf/ || true
+                    fi
           volumeMounts:
             - name: config
               mountPath: /config

@@ -1,0 +1,143 @@
+# Idempotent sync of BookStack theme modules (ZIPs) + dompdf fonts + theme overlay.
+# Argo PostSync hook — runs after each sync; skips installs when already present.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bookstack-theme-sync
+  namespace: bookstack
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: bookstack-theme-sync
+  namespace: bookstack
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/exec", "pods/log"]
+    verbs: ["get", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bookstack-theme-sync
+  namespace: bookstack
+subjects:
+  - kind: ServiceAccount
+    name: bookstack-theme-sync
+    namespace: bookstack
+roleRef:
+  kind: Role
+  name: bookstack-theme-sync
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: bookstack-theme-modules-sync
+  namespace: bookstack
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      serviceAccountName: bookstack-theme-sync
+      restartPolicy: Never
+      volumes:
+        - name: hack-offline
+          configMap:
+            name: bookstack-hack-offline-web-export
+        - name: hack-mermaid
+          configMap:
+            name: bookstack-hack-mermaid-viewer
+        - name: font-regular
+          configMap:
+            name: bookstack-font-notosans
+        - name: font-bold
+          configMap:
+            name: bookstack-font-notosans-bold
+        - name: theme-overlay
+          configMap:
+            name: bookstack-theme-overlay
+      containers:
+        - name: sync
+          image: alpine/k8s:1.32.0
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: hack-offline
+              mountPath: /hacks/offline
+              readOnly: true
+            - name: hack-mermaid
+              mountPath: /hacks/mermaid
+              readOnly: true
+            - name: font-regular
+              mountPath: /fonts/regular
+              readOnly: true
+            - name: font-bold
+              mountPath: /fonts/bold
+              readOnly: true
+            - name: theme-overlay
+              mountPath: /overlay
+              readOnly: true
+          command:
+            - /bin/bash
+            - -ceu
+            - |
+              NS=bookstack
+              echo "Waiting for bookstack deployment..."
+              kubectl -n "$NS" rollout status deploy/bookstack --timeout=180s
+              POD=$(kubectl -n "$NS" get pods -l app.kubernetes.io/name=bookstack -o jsonpath='{.items[0].metadata.name}')
+              echo "Using pod $POD"
+
+              # ConfigMap mounts are symlinks; kubectl cp does not follow them — materialize first.
+              kcp() {
+                local src="$1" dest="$2"
+                local tmp="/tmp/kcp-$(basename "$src")"
+                cp -L "$src" "$tmp"
+                kubectl -n "$NS" cp "$tmp" "$dest"
+                rm -f "$tmp"
+              }
+
+              install_module() {
+                local zip_host="$1"
+                local module_dir="$2"
+                local zip_name
+                zip_name="$(basename "$zip_host")"
+                local marker="/config/www/themes/custom/modules/${module_dir}/bookstack-module.json"
+                if kubectl -n "$NS" exec "$POD" -- test -f "$marker"; then
+                  echo "SKIP module ${module_dir} (already installed)"
+                  return 0
+                fi
+                echo "INSTALL module ${module_dir}"
+                kubectl -n "$NS" exec "$POD" -- mkdir -p /tmp/bookstack-hacks
+                kcp "$zip_host" "$NS/$POD:/tmp/bookstack-hacks/${zip_name}"
+                kubectl -n "$NS" exec -i "$POD" -- sh -c \
+                  "cd /app/www && printf 'yes\nyes\n' | php artisan bookstack:install-module /tmp/bookstack-hacks/${zip_name}"
+              }
+
+              install_module /hacks/offline/bookstack-offline-web-export.zip offline-web-export
+              install_module /hacks/mermaid/mermaid-viewer.zip mermaid-viewer
+
+              echo "Sync dompdf fonts..."
+              kubectl -n "$NS" exec "$POD" -- mkdir -p /app/www/storage/fonts/dompdf /config/www/fonts/dompdf
+              kcp /fonts/regular/NotoSans.ttf "$NS/$POD:/app/www/storage/fonts/dompdf/NotoSans.ttf"
+              kcp /fonts/bold/NotoSans-Bold.ttf "$NS/$POD:/app/www/storage/fonts/dompdf/NotoSans-Bold.ttf"
+              kcp /fonts/regular/NotoSans.ttf "$NS/$POD:/config/www/fonts/dompdf/NotoSans.ttf"
+              kcp /fonts/bold/NotoSans-Bold.ttf "$NS/$POD:/config/www/fonts/dompdf/NotoSans-Bold.ttf"
+
+              echo "Sync theme overlay (PDF font CSS)..."
+              # Theme views resolve from theme_path() root (not views/)
+              kcp /overlay/functions.php "$NS/$POD:/config/www/themes/custom/functions.php"
+              kcp /overlay/pdf-fonts-head.blade.php "$NS/$POD:/config/www/themes/custom/pdf-fonts-head.blade.php"
+              kubectl -n "$NS" exec "$POD" -- rm -f /config/www/themes/custom/views/pdf-fonts-head.blade.php
+
+              kubectl -n "$NS" exec "$POD" -- sh -c 'cd /app/www && php artisan view:clear'
+              echo "theme-modules-sync done"

@@ -1,0 +1,27 @@
+apiVersion: v1
+data:
+  functions.php: |
+    <?php
+
+    use BookStack\Facades\Theme;
+    use BookStack\Theming\ThemeEvents;
+    use BookStack\Theming\ThemeViews;
+
+    /**
+     * Inject PDF font CSS for dompdf exports (Noto Sans from storage/fonts/dompdf).
+     * Synced onto the custom theme by theme-modules-sync Job.
+     */
+    Theme::listen(ThemeEvents::THEME_REGISTER_VIEWS, function (ThemeViews $themeViews) {
+        $themeViews->renderBefore('layouts.parts.base-body-start', 'pdf-fonts-head', 30);
+    });
+  pdf-fonts-head.blade.php: |
+    <style>
+    /* BookStack dompdf PDF exports — https://www.bookstackapp.com/docs/admin/pdf-rendering/ */
+    .export-format-pdf.export-engine-dompdf * {
+        font-family: 'Noto Sans', 'DejaVu Sans', sans-serif;
+    }
+    </style>
+kind: ConfigMap
+metadata:
+  name: bookstack-theme-overlay
+  namespace: bookstack

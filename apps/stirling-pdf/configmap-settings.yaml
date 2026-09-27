@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stirling-pdf-settings
+  namespace: stirling-pdf
+data:
+  custom_settings.yml: |
+    system:
+      defaultLocale: de-DE
+      fileUploadLimit: 2GB
+      showUpdate: false
+    ui:
+      languages:
+        - de_DE
+    mail:
+      enabled: true
+      enableInvites: true
+      host: mail.henrystadthagen.de
+      port: 465
+      username: auto@henrystadthagen.de
+      password: ${MAIL_PASSWORD}
+      from: auto@henrystadthagen.de
+      startTlsEnable: true
+    processExecutor:
+      sessionLimit:
+        libreOfficeSessionLimit: 1
+        tesseractSessionLimit: 1
+        pythonOpenCvSessionLimit: 8
+      timeoutMinutes:
+        libreOfficetimeoutMinutes: 30
+        tesseractTimeoutMinutes: 30

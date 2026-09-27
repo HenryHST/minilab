@@ -26,6 +26,22 @@ spec:
             # Fat image defaults MaxMetaspaceSize=96m — OOM during Spring/Uno startup under 512Mi
             - name: JAVA_CUSTOM_OPTS
               value: "-XX:MaxMetaspaceSize=256m -XX:MaxRAMPercentage=70"
+            - name: SYSTEM_DEFAULTLOCALE
+              value: "de-DE"
+            - name: SYSTEMFILEUPLOADLIMIT
+              value: "2GB"
+            - name: MAIL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stirling-pdf-smtp
+                  key: password
+          volumeMounts:
+            - name: configs
+              mountPath: /configs
+            - name: settings
+              mountPath: /configs/custom_settings.yml
+              subPath: custom_settings.yml
+              readOnly: true
           readinessProbe:
             httpGet:
               path: /api/v1/info/status
@@ -46,3 +62,9 @@ spec:
               memory: 512Mi
             limits:
               memory: 2Gi
+      volumes:
+        - name: configs
+          emptyDir: {}
+        - name: settings
+          configMap:
+            name: stirling-pdf-settings

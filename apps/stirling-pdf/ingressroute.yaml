@@ -1,4 +1,13 @@
 apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: stirling-pdf-upload
+  namespace: stirling-pdf
+spec:
+  buffering:
+    maxRequestBodyBytes: 2147483648
+---
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: stirling-pdf
@@ -11,6 +20,8 @@ spec:
   routes:
     - match: Host(`stirling-pdf.stadthagen.dev`)
       kind: Rule
+      middlewares:
+        - name: stirling-pdf-upload
       services:
         - name: stirling-pdf
           port: 8080

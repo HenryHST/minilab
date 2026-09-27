@@ -17,6 +17,8 @@ spec:
       labels:
         app: bytestash
     spec:
+      nodeSelector:
+        worker: "true"
       containers:
         - name: bytestash
           image: ghcr.io/jordan-dalby/bytestash:1.5.12

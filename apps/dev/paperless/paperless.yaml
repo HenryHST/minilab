@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: paperless
+  name: paperless-web
   namespace: paperless
   labels:
     app: paperless
@@ -33,6 +33,7 @@ spec:
       labels:
         app: paperless
     spec:
+      enableServiceLinks: false
       securityContext:
         fsGroup: 1000
       nodeSelector:

@@ -55,7 +55,7 @@ data:
         "sso": false,
         "dns": true,
         "target": {
-          "ip": "paperless.paperless.svc.cluster.local",
+          "ip": "paperless-web.paperless.svc.cluster.local",
           "port": 8000,
           "method": "http"
         }

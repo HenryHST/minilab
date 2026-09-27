@@ -25,7 +25,7 @@ spec:
     - match: Host(`paperless.stadthagen.dev`)
       kind: Rule
       services:
-        - name: paperless
+        - name: paperless-web
           port: 8000
   tls:
     secretName: paperless-tls

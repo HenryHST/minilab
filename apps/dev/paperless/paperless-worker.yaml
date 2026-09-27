@@ -16,6 +16,7 @@ spec:
       labels:
         app: paperless-worker
     spec:
+      enableServiceLinks: false
       securityContext:
         fsGroup: 1000
       nodeSelector:

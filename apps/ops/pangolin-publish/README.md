@@ -21,7 +21,7 @@ Do **not** put GitOps publish hostnames in Terraform `dns_records` or `resources
 |-----|-------------|---------------------------|-----|
 | `termix` | `termix-ext.stadthagen.dev` | `termix.termix.svc.cluster.local:8080` | upsert A → Pangolin public IP |
 | `karakeep` | `karakeep-ext.stadthagen.dev` | `karakeep.karakeep.svc.cluster.local:3000` | upsert A → Pangolin public IP |
-| `paperless` | `paperless-ext.stadthagen.dev` | `paperless.paperless.svc.cluster.local:8000` | **disabled** (`enabled: false`) until flipped |
+| `paperless` | `paperless-ext.stadthagen.dev` | `paperless-web.paperless.svc.cluster.local:8000` | **disabled** (`enabled: false`) until flipped |
 | `idp` | `idp.stadthagen.dev` | `authentik-server.authentik.svc.cluster.local:80` | same |
 
 Auth: **app + Authentik only** (Pangolin `sso: false`). TLS terminates at Pangolin; Newt uses HTTP to the ClusterIP.

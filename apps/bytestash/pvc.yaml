@@ -3,12 +3,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: bytestash-data
   namespace: bytestash
-  annotations:
-    longhorn.io/volume-replica-count: "1"
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: longhorn-loki-local
+  storageClassName: longhorn
   resources:
     requests:
       storage: 5Gi

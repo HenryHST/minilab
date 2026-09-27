@@ -2,39 +2,26 @@
 
 Source: [googlefonts/noto-fonts](https://github.com/googlefonts/noto-fonts)
 
-Synced to the pod under `/app/www/storage/fonts/dompdf/` and `/config/www/fonts/dompdf/` by the Argo PostSync Job [`theme-modules-sync.yaml`](../theme-modules-sync.yaml). Delivery is via one ConfigMap per TTF (`font-cm-*.yaml`, Kubernetes ≤1 MiB limit).
+## GitOps delivery (ArgoCD path)
 
-## GitOps (ConfigMap → Pod)
+ArgoCD rejects the Application when **combined YAML in `apps/dev/bookstack/` exceeds ~10 MiB** (`exceeded max combined manifest file size` / `max combined manifest file size`). Each TTF-as-ConfigMap is ~0.75–1 MiB after base64, so only the two hinted body fonts are ConfigMaps:
 
-| Repo file (`fonts/dompdf/`) | ConfigMap | Notes |
-|-----------------------------|-----------|--------|
-| `NotoSans.ttf` | `bookstack-font-notosans` | Hinted Regular — PDF body |
-| `NotoSans-Bold.ttf` | `bookstack-font-notosans-bold` | Hinted Bold — PDF body |
-| `NotoSansMono-*.ttf` (8 weights) | `bookstack-font-notosansmono-*` | Code/monospace in PDF |
-| `NotoSerif-{Regular,Bold,Italic,Light,Medium}.ttf` | `bookstack-font-notoserif-*` | Serif family for PDF |
+| Repo file | ConfigMap | Role |
+|-----------|-----------|------|
+| `fonts/dompdf/NotoSans.ttf` | `bookstack-font-notosans` | PDF body (hinted Regular) |
+| `fonts/dompdf/NotoSans-Bold.ttf` | `bookstack-font-notosans-bold` | PDF body (hinted Bold) |
 
-Upstream paths (examples):
+PostSync Job [`theme-modules-sync.yaml`](../theme-modules-sync.yaml) copies them to `/app/www/storage/fonts/dompdf/` and `/config/www/fonts/dompdf/`.
 
-- Hinted Sans: `hinted/ttf/NotoSans/NotoSans-Regular.ttf` → committed as `NotoSans.ttf`
-- Hinted Sans Bold: `hinted/ttf/NotoSans/NotoSans-Bold.ttf`
-- Mono / Serif: `hinted/ttf/NotoSansMono/…`, `hinted/ttf/NotoSerif/…`
-
-## In repo only (not ConfigMap — exceed 1 MiB binaryData)
-
-These TTFs stay in Git as source inventory; they are **not** applied to the cluster (base64 ConfigMap would exceed the 1 MiB etcd limit):
-
-- `NotoSans-Light.ttf`, `NotoSans-Medium.ttf`, `NotoSans-Regular.ttf`, `NotoSans-SemiBold.ttf`
-- `NotoSerif-Thin.ttf`
-
-PDF body uses the smaller hinted `NotoSans.ttf` / `NotoSans-Bold.ttf` instead of the full Regular/SemiBold set.
-
-## Regenerate a ConfigMap
+Apply (server-side — avoids `last-applied-configuration` >256 KiB):
 
 ```bash
-cd apps/dev/bookstack
-kubectl create configmap bookstack-font-notosansmono-regular \
-  --from-file=NotoSansMono-Regular.ttf=fonts/dompdf/NotoSansMono-Regular.ttf \
-  --namespace=bookstack --dry-run=client -o yaml > font-cm-notosansmono-regular.yaml
-# Apply (server-side — avoids last-applied-configuration >256 KiB):
-kubectl apply --server-side --force-conflicts -f font-cm-notosansmono-regular.yaml
+kubectl apply --server-side --force-conflicts \
+  -f font-cm-notosans.yaml -f font-cm-notosans-bold.yaml
 ```
+
+## Source inventory only (not ConfigMaps)
+
+Additional TTFs under `fonts/dompdf/` (Mono, Serif, extra Sans weights) stay in Git for reference. **Do not** add `font-cm-*.yaml` for them — that blew the Argo combined manifest budget (~12 MiB of font CMs alone).
+
+Upstream examples: `hinted/ttf/NotoSans/…`, `hinted/ttf/NotoSansMono/…`, `hinted/ttf/NotoSerif/…`.

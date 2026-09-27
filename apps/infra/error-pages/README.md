@@ -12,7 +12,7 @@ Upstream: [tarampampam/error-pages](https://github.com/tarampampam/error-pages) 
 | Namespace | `error-pages` |
 | Sync wave | `1` |
 | Helm | OCI `ghcr.io/tarampampam/error-pages/charts` → native Argo Helm + `values.yaml` |
-| Extras | Catch-all `IngressRoute` (websecure) + NetworkPolicy |
+| Extras | Catch-all `IngressRoute` (websecure, `kubernetes.io/ingress.class: traefik-external`, `tls: {}`) + NetworkPolicy |
 
 Template: `app-down`. Links: Status (`status.stadthagen.dev`), Home (`web.stadthagen.dev`).
 

@@ -1,0 +1,15 @@
+# k8tz — timezone admission controller (Helm chart values).
+# Chart: https://k8tz.github.io/k8tz/  version pinned in ApplicationSet.
+timezone: Europe/Berlin
+injectionStrategy: initContainer
+injectAll: true
+createNamespace: true
+namespace: k8tz
+
+webhook:
+  failurePolicy: Ignore
+  ignoredNamespaces:
+    - kube-system
+    - k8tz
+  certManager:
+    enabled: false

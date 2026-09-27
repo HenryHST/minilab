@@ -38,6 +38,14 @@ spec:
             helmVersion: "3.14.0"
             helmReleaseName: metrics-server
             helmValuesFile: infra/metrics-server/values.yaml
+          - app: k8tz
+            namespace: k8tz
+            syncWave: "1"
+            helmRepo: https://k8tz.github.io/k8tz/
+            helmChart: k8tz
+            helmVersion: "0.20.0"
+            helmReleaseName: k8tz
+            helmValuesFile: infra/k8tz/values.yaml
           - app: registry
             path: infra/registry
             namespace: kube-system

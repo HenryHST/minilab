@@ -1,0 +1,5 @@
+book: k8tz
+book_version: "1.0.0"
+updated: "2026-09-27"
+description: Cluster-Timezone Europe/Berlin via Admission Webhook
+shelf: Plattform

@@ -11,7 +11,7 @@ Argo CD Parent-App `homelab` synct Child-Applications aus `apps/argocd-apps/`. I
 | Wave | Inhalt |
 |------|--------|
 | -2 / 0 | AppProject + ApplicationSet Bootstrap |
-| 1 | Storage / Monitoring-Basis |
+| 1 | Storage / Monitoring-Basis; **k8tz** (Timezone-Webhook) |
 | 2 | Authentik, Termix, Headlamp, … |
 | 3 | Tools, Vaultwarden, BookStack, Homepage, … |
 

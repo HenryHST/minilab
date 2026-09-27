@@ -61,8 +61,10 @@ controllers:
       volumeClaimTemplates:
         - name: data
           accessMode: ReadWriteOnce
-          size: 20Gi
+          size: 5Gi
           storageClass: longhorn
+          annotations:
+            longhorn.io/numberOfReplicas: "2"
           globalMounts:
             - path: /data
 
@@ -150,7 +152,7 @@ meilisearch:
     MEILI_ENV: production
   persistence:
     enabled: true
-    size: 5Gi
+    size: 2Gi
     storageClass: longhorn
   # skip helm test pod noise in Argo
   tests:

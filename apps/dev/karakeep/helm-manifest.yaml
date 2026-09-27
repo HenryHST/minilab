@@ -53,7 +53,7 @@ spec:
     - "ReadWriteOnce"
   resources:
     requests:
-      storage: "5Gi"
+      storage: "2Gi"
   storageClassName: "longhorn"
 ---
 # Source: karakeep/charts/meilisearch/templates/service.yaml
@@ -413,11 +413,13 @@ spec:
             name: data
   volumeClaimTemplates: 
     - metadata:
+        annotations:
+          longhorn.io/numberOfReplicas: "2"
         name: data
       spec:
         accessModes:
         - ReadWriteOnce
         resources:
           requests:
-            storage: 20Gi
+            storage: 5Gi
         storageClassName: longhorn

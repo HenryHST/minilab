@@ -1,13 +1,31 @@
-## Unreleased
-
-### Changed
-- **ADR-0022:** Workloads under `apps/{infra,monitoring,ops,dev}/`; four ApplicationSets + AppProjects; bootstrap Application `gitops-bootstrap` (replaces flat Applications + single ApplicationSet `infra` / AppProject `infrastruktur`). Issue #72.
-
 # Changelog
 
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.11.0] - 2026-09-27
+
+Apps-Buckets (#72), Authentik/ByteStash NFS Backup/Restore, Wave-3 Apps (ByteStash/SearXNG/Kromgo/k8tz). Begleit-Release Plattform: [Infra_LAB v1.9.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.9.0).
+
+### Added
+
+- **ADR-0022** — Workloads under `apps/{infra,monitoring,ops,dev}/`; four ApplicationSets + AppProjects; bootstrap Application `gitops-bootstrap` (#72)
+- `apps/dev/bytestash` — Snippet-Store mit Authentik OIDC (#69); NFS backup 06:00 UTC + bootstrap restore
+- `apps/ops/authentik` — NFS backup 05:00 UTC (`pg_dump` + `/media`) + bootstrap restore ([ADR-0015](docs/adr/0015-backup-restore-cronjobs.md))
+- Wave-3: `searxng` (#65), `kromgo` (#67), `k8tz` (#68); Stirling-PDF locale/2GB upload/mail (#66)
+- Archify workflows: `app-nfs-backup`, `app-bootstrap-restore`
+- BookStack: ByteStash `04-backup-restore`; Auto-Import Workflow + `scripts/bookstack-import/`
+
+### Fixed
+
+- Grafana `grafana-data` PVC on Immediate Longhorn SC (post-#72 cutover)
+- ByteStash Longhorn StorageClass / worker node pin
+
+### Notes
+
+- Restore bleibt bewusst getoggelt (`*-restore.enabled`); Secrets nicht im Archive
+- Branding-Media-Sync ≠ Authentik-Backup
 
 ## [0.10.0] - 2026-09-26
 

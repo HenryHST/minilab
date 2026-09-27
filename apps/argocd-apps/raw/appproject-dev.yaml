@@ -35,6 +35,8 @@ spec:
       namespace: bytestash
     - server: "*"
       namespace: karakeep
+    - server: "*"
+      namespace: paperless
   clusterResourceWhitelist:
     - group: "*"
       kind: "*"

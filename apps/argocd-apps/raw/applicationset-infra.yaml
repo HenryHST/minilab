@@ -37,6 +37,10 @@ spec:
             helmVersion: "0.19.0"
             helmReleaseName: nfd
             helmValuesFile: apps/infra/nfd/values.yaml
+          - app: redis
+            path: apps/infra/redis
+            namespace: redis
+            syncWave: "1"
           - app: error-pages
             path: apps/infra/error-pages/manifests
             namespace: error-pages

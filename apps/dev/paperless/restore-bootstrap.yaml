@@ -1,0 +1,42 @@
+# Bootstrap restore from NFS. Default off — set ConfigMap enabled=true then Argo Sync.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: paperless-restore
+  namespace: paperless
+data:
+  enabled: "false"
+  archive: "latest"
+  force: "false"
+  replicas: "1"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: paperless-restore-bootstrap
+  namespace: paperless
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: restore-gate
+          image: alpine/k8s:1.32.0
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+              ENABLED="$(kubectl -n paperless get cm paperless-restore -o jsonpath='{.data.enabled}')"
+              if [[ "${ENABLED}" != "true" ]]; then
+                echo "paperless-restore.enabled!=true — skip"
+                exit 0
+              fi
+              echo "Restore requested — scale deployments to 0, restore manually from NFS archive, then scale up."
+              echo "See apps/dev/paperless/README.md § Restore"
+              exit 1

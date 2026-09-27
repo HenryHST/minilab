@@ -46,6 +46,20 @@ data:
           "method": "http"
         }
       },
+      "paperless": {
+        "enabled": false,
+        "name": "paperless-ext.stadthagen.dev",
+        "niceId": "paperless-ext",
+        "subdomain": "paperless-ext",
+        "ssl": true,
+        "sso": false,
+        "dns": true,
+        "target": {
+          "ip": "paperless.paperless.svc.cluster.local",
+          "port": 8000,
+          "method": "http"
+        }
+      },
       "idp": {
         "enabled": true,
         "name": "idp.stadthagen.dev",

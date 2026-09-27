@@ -1,0 +1,46 @@
+# Idempotent inbox tag — runs after sync once secrets/DB exist.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: paperless-inbox-tag
+  namespace: paperless
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: inbox-tag
+          image: alpine/k8s:1.32.0
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+              for i in $(seq 1 60); do
+                POD="$(kubectl -n paperless get pod -l app=paperless -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+                READY="$(kubectl -n paperless get pod -l app=paperless -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null || true)"
+                if [[ -n "${POD}" && "${READY}" == "true" ]]; then
+                  break
+                fi
+                sleep 5
+              done
+              POD="$(kubectl -n paperless get pod -l app=paperless -o jsonpath='{.items[0].metadata.name}')"
+              if [[ -z "${POD}" ]]; then
+                echo "paperless pod not ready" >&2
+                exit 1
+              fi
+              kubectl -n paperless exec "${POD}" -c paperless -- \
+                python3 manage.py shell -c "
+              from documents.models import Tag
+              t, created = Tag.objects.get_or_create(name='inbox')
+              if not t.is_inbox_tag:
+                  t.is_inbox_tag = True
+                  t.save(update_fields=['is_inbox_tag'])
+              print('inbox tag ok', 'created=' + str(created))
+              "

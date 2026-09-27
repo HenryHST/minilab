@@ -64,6 +64,10 @@
         href: https://bytestash.stadthagen.dev
         icon: si-snippet-#4CAF50
         description: code snippets (OIDC)
+    - Paperless:
+        href: https://paperless.stadthagen.dev
+        icon: si-files-#17541
+        description: documents OCR (OIDC)
 - Monitoring:
     - Longhorn:
         href: https://longhorn.stadthagen.dev

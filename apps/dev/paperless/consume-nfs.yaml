@@ -1,0 +1,35 @@
+# HPScan consume share (UniFi Drive on un10). Expand NFS ACL to k3s node IPs before sync.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: paperless-consume-hpscan-nfs
+spec:
+  capacity:
+    storage: 50Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=3
+    - nolock
+    - soft
+    - timeo=600
+    - retrans=2
+  nfs:
+    server: un10.stadthagen.dev
+    path: /volume/16dce501-dfde-4e58-ac72-4dcf572e0ee5/.srv/.unifi-drive/HPScan/.data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-consume
+  namespace: paperless
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: paperless-consume-hpscan-nfs
+  resources:
+    requests:
+      storage: 50Gi

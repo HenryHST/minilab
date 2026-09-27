@@ -1,0 +1,31 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: paperless-stadthagen-dev
+  namespace: paperless
+spec:
+  secretName: paperless-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - paperless.stadthagen.dev
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: paperless
+  namespace: paperless
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`paperless.stadthagen.dev`)
+      kind: Rule
+      services:
+        - name: paperless
+          port: 8000
+  tls:
+    secretName: paperless-tls

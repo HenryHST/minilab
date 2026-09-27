@@ -1,6 +1,3 @@
-# Rendered Helm chart — regenerate with:
-# helm template karakeep ./charts/karakeep -f values.yaml --namespace karakeep > helm-manifest.yaml
-# Then strip meilisearch helm test Pod if present.
 ---
 # Source: karakeep/charts/meilisearch/templates/serviceaccount.yaml
 apiVersion: v1
@@ -369,7 +366,7 @@ spec:
           - name: DISABLE_PASSWORD_AUTH
             value: "true"
           - name: DISABLE_SIGNUPS
-            value: "true"
+            value: "false"
           - name: MEILI_ADDR
             value: http://karakeep-meilisearch:7700
           - name: NEXTAUTH_URL

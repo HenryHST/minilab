@@ -13,7 +13,7 @@ Upstream: [karakeep-app/karakeep](https://github.com/karakeep-app/karakeep) · C
 - TLS: cert-manager → `karakeep-tls`
 - DNS LAN: Hetzner A `karakeep` → `192.168.0.215` (not pangolin-publish)
 - DNS public: `karakeep-ext` via `apps/ops/pangolin-publish`
-- OIDC: Authentik slug `karakeep`, callback `/api/auth/callback/custom` (LAN + ext)
+- OIDC: Authentik slug `karakeep`, callback `/api/auth/callback/custom` (LAN + ext); `AUTH_TRUST_HOST=true` (no pinned `NEXTAUTH_URL`) so OAuth works on both hosts
 
 ## Secrets (Infra_LAB)
 

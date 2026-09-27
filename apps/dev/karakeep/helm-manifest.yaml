@@ -359,6 +359,8 @@ spec:
       dnsPolicy: ClusterFirst
       containers: 
         - env:
+          - name: AUTH_TRUST_HOST
+            value: "true"
           - name: BROWSER_WEB_URL
             value: http://karakeep-chrome:9222
           - name: DATA_DIR
@@ -369,8 +371,6 @@ spec:
             value: "false"
           - name: MEILI_ADDR
             value: http://karakeep-meilisearch:7700
-          - name: NEXTAUTH_URL
-            value: https://karakeep.stadthagen.dev
           - name: OAUTH_ALLOW_DANGEROUS_EMAIL_ACCOUNT_LINKING
             value: "true"
           - name: OAUTH_AUTO_REDIRECT
@@ -420,3 +420,24 @@ spec:
           requests:
             storage: 5Gi
         storageClassName: longhorn
+---
+# Source: karakeep/charts/meilisearch/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: karakeep-meilisearch-test-connection
+  labels:
+    app.kubernetes.io/name: meilisearch
+    helm.sh/chart: meilisearch-0.12.0
+    app.kubernetes.io/instance: karakeep
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args:  ['karakeep-meilisearch:7700']
+  restartPolicy: Never
+

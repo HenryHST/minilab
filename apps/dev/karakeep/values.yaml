@@ -17,7 +17,9 @@ controllers:
           tag: "0.33.1"
           pullPolicy: IfNotPresent
         env:
-          NEXTAUTH_URL: "https://karakeep.stadthagen.dev"
+          # Host-aware OAuth (LAN + karakeep-ext): do not pin NEXTAUTH_URL
+          NEXTAUTH_URL: null
+          AUTH_TRUST_HOST: "true"
           DATA_DIR: /data
           MEILI_ADDR: "http://karakeep-meilisearch:7700"
           BROWSER_WEB_URL: "http://karakeep-chrome:9222"

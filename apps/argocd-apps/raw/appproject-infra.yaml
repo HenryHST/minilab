@@ -7,7 +7,7 @@ metadata:
     # Applied by Application gitops-bootstrap (path apps/argocd-apps/raw) before ApplicationSets.
     argocd.argoproj.io/sync-wave: "-2"
 spec:
-  description: Infra — storage and timezone (longhorn, k8tz)
+  description: Infra — storage, timezone, Traefik error-pages (longhorn, k8tz, error-pages)
   sourceRepos:
     - "*"
   destinations:
@@ -15,6 +15,8 @@ spec:
       namespace: longhorn-system
     - server: "*"
       namespace: k8tz
+    - server: "*"
+      namespace: error-pages
   clusterResourceWhitelist:
     - group: "*"
       kind: "*"

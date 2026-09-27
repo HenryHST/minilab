@@ -21,6 +21,7 @@ Kurzübersicht der User-Apps (Details und Sync Waves: Root-README im Git-Repo).
 | Kromgo | kromgo.stadthagen.dev | Prometheus-Badges (LAN); kein SSO |
 | ByteStash | bytestash.stadthagen.dev | Snippets, Authentik OIDC; LAN |
 | Karakeep | karakeep.stadthagen.dev (+ karakeep-ext) | Bookmarks, Authentik OIDC; Pangolin Ext |
+| Error-Pages | (kein eigener Host) | Traefik 500–504 + Catch-all; ADR-0024 |
 
 Workloads liegen unter `apps/{infra,monitoring,ops,dev}/` und werden von vier ApplicationSets verwaltet (ADR-0022). Ops-Notiz HA: [`../../../home-assistant/ha02.md`](../../../home-assistant/ha02.md).
 

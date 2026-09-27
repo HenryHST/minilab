@@ -1,0 +1,21 @@
+# Catch-all for unmatched hosts on websecure (priority 1 — specific routes win).
+# Same-namespace Service → no allowCrossNamespace needed for this route.
+# sendSameHttpCode=true on the chart so clients get real 404 (not 200).
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: error-pages-catch-all
+  namespace: error-pages
+  labels:
+    app.kubernetes.io/name: error-pages
+    app.kubernetes.io/part-of: error-pages
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: HostRegexp(`.+`)
+      kind: Rule
+      priority: 1
+      services:
+        - name: error-pages
+          port: 8080

@@ -26,7 +26,7 @@ flowchart TB
 |------|--------|
 | -2 | AppProjects (`infra`, `monitoring`, `ops`, `dev`) |
 | 0 | Application `gitops-bootstrap` → ApplicationSets; frühe Ops (cert-manager, registry, newt, metrics-server) |
-| 1 | longhorn, k8tz, kube-prometheus-stack, system-upgrade-controller, cert-manager-webhook |
+| 1 | longhorn, k8tz, error-pages, kube-prometheus-stack, system-upgrade-controller, cert-manager-webhook |
 | 2 | authentik, termix, headlamp, hubble-ui, unifipoller |
 | 3 | Dev-Tools, Loki/Alloy, vaultwarden, bookstack, pangolin-publish, … |
 

@@ -31,6 +31,7 @@ Format angelehnt an [Michael Nygard](https://cognitect.com/blog/2011/11/15/docum
 | [0021](0021-bytestash.md) | ByteStash mit Authentik-OIDC | Accepted |
 | [0022](0022-apps-bucket-applicationsets.md) | Vier ApplicationSets nach App-Buckets | Accepted |
 | [0023](0023-karakeep.md) | Karakeep mit Authentik-OIDC und Pangolin-Ext | Accepted |
+| [0024](0024-error-pages.md) | Traefik Error-Pages (Maintenance) | Accepted |
 
 ## Neues ADR anlegen
 

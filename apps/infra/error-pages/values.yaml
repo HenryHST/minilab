@@ -1,0 +1,34 @@
+# error-pages — Traefik errors middleware + catch-all (Helm chart values).
+# Chart: oci://ghcr.io/tarampampam/error-pages/charts/error-pages  (pin in ApplicationSet)
+# Guide: https://github.com/tarampampam/error-pages/blob/master/docs/guides/k8s_ingress_traefik.md
+
+config:
+  sendSameHttpCode: true
+  htmlTemplate:
+    name: app-down
+  homepageUrl: https://web.stadthagen.dev
+  addLink:
+    - label: Status
+      url: https://status.stadthagen.dev
+    - label: Home
+      url: https://web.stadthagen.dev
+
+traefikMiddleware:
+  enabled: true
+  # Gateway / backend down only — do not rewrite Authentik 401/403 or API 4xx
+  statusCodes:
+    - "500-504"
+  query: "/{status}"
+
+deployment:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 64Mi
+
+service:
+  type: ClusterIP
+  port: 8080

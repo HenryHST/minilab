@@ -29,6 +29,16 @@ spec:
             helmVersion: "0.20.0"
             helmReleaseName: k8tz
             helmValuesFile: apps/infra/k8tz/values.yaml
+          - app: error-pages
+            path: apps/infra/error-pages/manifests
+            namespace: error-pages
+            syncWave: "1"
+            helmRepo: ghcr.io/tarampampam/error-pages/charts
+            helmChart: error-pages
+            helmVersion: "4.2.5"
+            helmReleaseName: error-pages
+            helmValuesFile: apps/infra/error-pages/values.yaml
+            extras: true
   template:
     metadata:
       name: "{{ .app }}"

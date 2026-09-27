@@ -1,0 +1,109 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: dev
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - app: stirling-pdf
+            path: apps/dev/stirling-pdf
+            namespace: stirling-pdf
+            syncWave: "3"
+          - app: bookstack
+            path: apps/dev/bookstack
+            namespace: bookstack
+            syncWave: "3"
+          - app: it-tools
+            path: apps/dev/it-tools
+            namespace: it-tools
+            syncWave: "3"
+          - app: termix
+            path: apps/dev/termix
+            namespace: termix
+            syncWave: "2"
+          - app: pgweb
+            path: apps/dev/pgweb
+            namespace: pgweb
+            syncWave: "3"
+          - app: vaultwarden
+            path: apps/dev/vaultwarden
+            namespace: vaultwarden
+            syncWave: "3"
+          - app: drawio
+            path: apps/dev/drawio
+            namespace: drawio
+            syncWave: "3"
+          - app: web
+            path: apps/dev/web
+            namespace: homepage
+            syncWave: "3"
+          - app: omni-tools
+            path: apps/dev/omni-tools
+            namespace: omnitools
+            syncWave: "3"
+          - app: searxng
+            path: apps/dev/searxng
+            namespace: searxng
+            syncWave: "3"
+          - app: bytestash
+            path: apps/dev/bytestash
+            namespace: bytestash
+            syncWave: "3"
+  template:
+    metadata:
+      name: "{{ .app }}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "{{ .syncWave }}"
+    spec:
+      project: dev
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{ .namespace }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
+        syncOptions:
+          - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true
+          - PruneLast=true
+          - ServerSideApply=true
+          - RespectIgnoreDifferences=true
+  templatePatch: |
+    {{- if dig "helmChart" "" . }}
+    spec:
+      sources:
+        - repoURL: {{ .helmRepo }}
+          chart: {{ .helmChart }}
+          targetRevision: {{ .helmVersion }}
+          helm:
+            releaseName: {{ dig "helmReleaseName" .app . }}
+            valueFiles:
+              - $values/{{ .helmValuesFile }}
+        - repoURL: https://github.com/HenryHST/minilab
+          targetRevision: main
+          ref: values
+        {{- if dig "extras" false . }}
+        - repoURL: https://github.com/HenryHST/minilab
+          targetRevision: main
+          path: {{ .path }}
+        {{- end }}
+    {{- else }}
+    spec:
+      source:
+        repoURL: https://github.com/HenryHST/minilab
+        targetRevision: main
+        path: {{ .path }}
+    {{- end }}

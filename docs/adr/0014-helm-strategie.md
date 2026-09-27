@@ -11,7 +11,7 @@ Helm-Charts sollen deploybar sein, ohne Kustomize/`helmCharts` (siehe [ADR-0003]
 
 | Bereich | Strategie |
 |---------|-----------|
-| **Infra** (`infra/*` via ApplicationSet) | **Native Argo-CD-Helm**-Quelle (+ optional zweite Git-Quelle `manifests/` für Certificates, Rules, …) |
+| **Infra** (`apps/{infra,monitoring,ops}/*` via ApplicationSets) | **Native Argo-CD-Helm**-Quelle (+ optional zweite Git-Quelle `manifests/` für Certificates, Rules, …) |
 | **User-Apps** mit Chart (`headlamp`, `termix`, `unifipoller`, …) | Chart lokal mit `helm template` rendern → committed **`helm-manifest.yaml`** (+ Extras als Plain YAML) |
 
 Regenerationsbefehl steht im Dateikopf des jeweiligen `helm-manifest.yaml`.

@@ -1,0 +1,109 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: monitoring
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - app: metrics-server
+            namespace: kube-system
+            syncWave: "0"
+            helmRepo: https://kubernetes-sigs.github.io/metrics-server/
+            helmChart: metrics-server
+            helmVersion: "3.14.0"
+            helmReleaseName: metrics-server
+            helmValuesFile: apps/monitoring/metrics-server/values.yaml
+          - app: kube-prometheus-stack
+            path: apps/monitoring/kube-prometheus-stack/manifests
+            namespace: monitoring
+            syncWave: "1"
+            helmRepo: https://prometheus-community.github.io/helm-charts
+            helmChart: kube-prometheus-stack
+            helmVersion: "88.5.4"
+            helmReleaseName: kube-prometheus-stack
+            helmValuesFile: apps/monitoring/kube-prometheus-stack/values.yaml
+            extras: true
+          - app: grafana-loki
+            path: apps/monitoring/loki/manifests
+            namespace: monitoring
+            syncWave: "3"
+            helmRepo: https://grafana-community.github.io/helm-charts
+            helmChart: loki
+            helmVersion: "18.11.7"
+            helmReleaseName: loki
+            helmValuesFile: apps/monitoring/loki/values.yaml
+            extras: true
+          - app: alloy
+            path: apps/monitoring/alloy
+            namespace: alloy
+            syncWave: "3"
+          - app: status
+            path: apps/monitoring/status
+            namespace: uptimekuma
+            syncWave: "3"
+          - app: unifipoller
+            path: apps/monitoring/unpoller
+            namespace: unpoller
+            syncWave: "2"
+          - app: kromgo
+            path: apps/monitoring/kromgo
+            namespace: kromgo
+            syncWave: "3"
+  template:
+    metadata:
+      name: "{{ .app }}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "{{ .syncWave }}"
+    spec:
+      project: monitoring
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{ .namespace }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
+        syncOptions:
+          - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true
+          - PruneLast=true
+          - ServerSideApply=true
+          - RespectIgnoreDifferences=true
+  templatePatch: |
+    {{- if dig "helmChart" "" . }}
+    spec:
+      sources:
+        - repoURL: {{ .helmRepo }}
+          chart: {{ .helmChart }}
+          targetRevision: {{ .helmVersion }}
+          helm:
+            releaseName: {{ dig "helmReleaseName" .app . }}
+            valueFiles:
+              - $values/{{ .helmValuesFile }}
+        - repoURL: https://github.com/HenryHST/minilab
+          targetRevision: main
+          ref: values
+        {{- if dig "extras" false . }}
+        - repoURL: https://github.com/HenryHST/minilab
+          targetRevision: main
+          path: {{ .path }}
+        {{- end }}
+    {{- else }}
+    spec:
+      source:
+        repoURL: https://github.com/HenryHST/minilab
+        targetRevision: main
+        path: {{ .path }}
+    {{- end }}

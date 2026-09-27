@@ -2,9 +2,9 @@
 
 ## Sync
 
-Argo Application `kromgo` (path `apps/kromgo`, automated, `CreateNamespace=true`).
+Argo Application `kromgo` (path `apps/monitoring/kromgo`, automated, `CreateNamespace=true`).
 
-Prometheus NetPol muss Ingress aus NS `kromgo` auf :9090 erlauben (`infra/kube-prometheus-stack/manifests/networkpolicy.yaml`).
+Prometheus NetPol muss Ingress aus NS `kromgo` auf :9090 erlauben (`apps/monitoring/kube-prometheus-stack/manifests/networkpolicy.yaml`).
 
 ## DNS
 

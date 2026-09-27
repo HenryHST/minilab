@@ -1,0 +1,83 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: infra
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - app: longhorn
+            path: apps/infra/longhorn/manifests
+            namespace: longhorn-system
+            syncWave: "1"
+            helmRepo: https://charts.longhorn.io/
+            helmChart: longhorn
+            helmVersion: v1.12.1
+            helmReleaseName: longhorn
+            helmValuesFile: apps/infra/longhorn/values.yaml
+            extras: true
+          - app: k8tz
+            namespace: k8tz
+            syncWave: "1"
+            helmRepo: https://k8tz.github.io/k8tz/
+            helmChart: k8tz
+            helmVersion: "0.20.0"
+            helmReleaseName: k8tz
+            helmValuesFile: apps/infra/k8tz/values.yaml
+  template:
+    metadata:
+      name: "{{ .app }}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "{{ .syncWave }}"
+    spec:
+      project: infra
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{ .namespace }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
+        syncOptions:
+          - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true
+          - PruneLast=true
+          - ServerSideApply=true
+          - RespectIgnoreDifferences=true
+  templatePatch: |
+    {{- if dig "helmChart" "" . }}
+    spec:
+      sources:
+        - repoURL: {{ .helmRepo }}
+          chart: {{ .helmChart }}
+          targetRevision: {{ .helmVersion }}
+          helm:
+            releaseName: {{ dig "helmReleaseName" .app . }}
+            valueFiles:
+              - $values/{{ .helmValuesFile }}
+        - repoURL: https://github.com/HenryHST/minilab
+          targetRevision: main
+          ref: values
+        {{- if dig "extras" false . }}
+        - repoURL: https://github.com/HenryHST/minilab
+          targetRevision: main
+          path: {{ .path }}
+        {{- end }}
+    {{- else }}
+    spec:
+      source:
+        repoURL: https://github.com/HenryHST/minilab
+        targetRevision: main
+        path: {{ .path }}
+    {{- end }}

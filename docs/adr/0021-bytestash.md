@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Datum:** 2026-09-27
-- **Kontext:** `apps/bytestash/`, Issue [HenryHST/minilab#69](https://github.com/HenryHST/minilab/issues/69)
+- **Kontext:** `apps/dev/bytestash/`, Issue [HenryHST/minilab#69](https://github.com/HenryHST/minilab/issues/69)
 
 ## Kontext
 
@@ -10,7 +10,7 @@ Homelab braucht einen selbstgehosteten Snippet-Store mit SSO; ByteStash bietet n
 
 ## Entscheidung
 
-- **Ownership:** GitOps Wave 3 plain Application (`apps/bytestash`), nicht ApplicationSet.
+- **Ownership:** GitOps Wave 3 plain Application (`apps/dev/bytestash`), nicht ApplicationSet.
 - **Host:** `bytestash.stadthagen.dev` → Traefik LB `192.168.0.215` (LAN-only).
 - **Auth:** native OIDC gegen Authentik (Redirect `/api/auth/oidc/callback`); keine ForwardAuth.
 - **Secrets:** `BYTESTASH_OAUTH_CLIENT_SECRET` + `BYTESTASH_JWT_SECRET` via SecretSpec (nicht in Git).

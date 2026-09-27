@@ -20,4 +20,4 @@ Mehrere Apps brauchen Login. Getrennte lokale User-Datenbanken skalieren schlech
 
 - Neue geschützte Apps integrieren Authentik statt eigener IdP-Inseln.
 - IdP-Ausfall betrifft SSO-Logins; lokale Break-Glass-Accounts wo vorgesehen behalten.
-- ForwardAuth für registry-ui ist aktiv (`infra/registry-ui/manifests/middleware-authentik.yaml`); Authentik Outpost `ak-outpost-registry-ui` muss existieren.
+- ForwardAuth für registry-ui ist aktiv (`apps/ops/registry-ui/manifests/middleware-authentik.yaml`); Authentik Outpost `ak-outpost-registry-ui` muss existieren.

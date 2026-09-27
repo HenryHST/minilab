@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Datum:** 2026-09-11
-- **Kontext:** `infra/newt/`, `apps/pangolin-publish/`
+- **Kontext:** `apps/ops/newt/`, `apps/ops/pangolin-publish/`
 
 ## Kontext
 
@@ -16,7 +16,7 @@ Nur ausgewählte Dienste sollen aus dem Internet erreichbar sein. Pangolin (Newt
 - Ownership-Trennung: Terraform verwaltet Host/Compose und LAN-Sites; GitOps nur k3s-Publish-Hosts — **kein Dual-Write** derselben DNS-/Resource-Einträge.
 - Auth an der App bzw. Authentik; Pangolin `sso: false` für diese Ressourcen. TLS terminiert am Pangolin-Edge.
 
-Details: [`apps/pangolin-publish/README.md`](../../apps/pangolin-publish/README.md).
+Details: [`apps/ops/pangolin-publish/README.md`](../../apps/ops/pangolin-publish/README.md).
 
 ## Konsequenzen
 

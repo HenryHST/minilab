@@ -1,8 +1,8 @@
 # ADR-0004: ApplicationSet für Infrastruktur-Apps
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0022](0022-apps-bucket-applicationsets.md)
 - **Datum:** 2026-09-11
-- **Kontext:** [`apps/argocd-apps/raw/infra-applicationset.yaml`](../../apps/argocd-apps/raw/infra-applicationset.yaml)
+- **Kontext:** [`apps/argocd-apps/raw/applicationset-infra.yaml`](../../apps/argocd-apps/raw/applicationset-infra.yaml)
 
 ## Kontext
 
@@ -23,3 +23,5 @@ User-Apps unter `apps/<name>/` bleiben bei klassischen Application-CRs in `apps/
 - Neue Infra-App = Ordner + Listeneintrag im ApplicationSet.
 - Migration von Standalone-Application → ApplicationSet kann Finalizer-Konflikte erzeugen (`Terminating` + recreate); Workload bleibt, Application-CR ggf. Finalizer patchen / orphan delete (siehe Root-README).
 - `pangolin-publish` ist bewusst über das ApplicationSet registriert (project `infrastruktur`).
+
+**Nachfolger:** [ADR-0022](0022-apps-bucket-applicationsets.md) (vier Buckets / ApplicationSets).

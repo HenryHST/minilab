@@ -18,6 +18,6 @@
 
 ConfigMap `<app>-restore` → `enabled=true` (bei vorhandenen Daten `force=true`), Argo Sync, danach sofort `enabled=false` committen.
 
-BookStack: siehe `apps/bookstack/README.md`. NAS-Ordner vorher: `mkdir -p /var/nfs/shared/infra01/bookstack-backups`.
+BookStack: siehe `apps/dev/bookstack/README.md`. NAS-Ordner vorher: `mkdir -p /var/nfs/shared/infra01/bookstack-backups`.
 
 ADR: 0015, 0009.

@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Datum:** 2026-09-14
-- **Kontext:** `apps/bookstack/`, Host `book.stadthagen.dev`
+- **Kontext:** `apps/dev/bookstack/`, Host `book.stadthagen.dev`
 
 ## Kontext
 

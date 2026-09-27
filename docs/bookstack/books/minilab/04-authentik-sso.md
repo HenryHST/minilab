@@ -35,4 +35,4 @@ kubectl -n authentik get secret authentik-credentials \
 - Redirect: `https://book.stadthagen.dev/oidc/callback`
 - Gruppen → BookStack-Rollen (optional): z. B. `BookStack Admin`, `BookStack Editor`
 
-Details: ADR-0010, App-README `apps/bookstack/README.md`.
+Details: ADR-0010, App-README `apps/dev/bookstack/README.md`.

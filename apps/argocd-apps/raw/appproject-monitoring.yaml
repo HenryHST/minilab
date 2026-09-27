@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: monitoring
+  namespace: argocd
+  annotations:
+    # Applied by Application gitops-bootstrap (path apps/argocd-apps/raw) before ApplicationSets.
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  description: Monitoring — metrics, logs, status
+  sourceRepos:
+    - "*"
+  destinations:
+    - server: "*"
+      namespace: monitoring
+    - server: "*"
+      namespace: alloy
+    - server: "*"
+      namespace: kube-system
+    - server: "*"
+      namespace: uptimekuma
+    - server: "*"
+      namespace: unpoller
+    - server: "*"
+      namespace: kromgo
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

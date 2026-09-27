@@ -1,8 +1,8 @@
 # ADR-0006: AppProject `infrastruktur` für Plattform-Apps
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0022](0022-apps-bucket-applicationsets.md)
 - **Datum:** 2026-09-11
-- **Kontext:** [`apps/argocd-apps/raw/appproject-infrastruktur.yaml`](../../apps/argocd-apps/raw/appproject-infrastruktur.yaml)
+- **Kontext:** Historisch `apps/argocd-apps/raw/appproject-infrastruktur.yaml` — siehe [ADR-0022](0022-apps-bucket-applicationsets.md)
 
 ## Kontext
 
@@ -21,3 +21,5 @@ Infra-Apps brauchen breite Rechte (Cluster-Ressourcen, Multi-Source Helm + Git, 
 - Bootstrap-Reihenfolge: Project vor ApplicationSet vor Workloads ([ADR-0007](0007-sync-waves.md)).
 - Alte Application `infrastruktur-project` / Pfad `bootstrap/` entfallen.
 - Project ist bewusst weit gefasst (Homelab-Vertrauensgrenze = dieses Repo + Cluster-Admins).
+
+**Nachfolger:** [ADR-0022](0022-apps-bucket-applicationsets.md) (AppProjects pro Bucket).

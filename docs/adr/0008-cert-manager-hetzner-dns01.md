@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Datum:** 2026-09-11
-- **Kontext:** `infra/cert-manager/`, App-`certificate.yaml`
+- **Kontext:** `apps/ops/cert-manager/`, App-`certificate.yaml`
 
 ## Kontext
 

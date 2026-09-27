@@ -11,9 +11,9 @@ Format angelehnt an [Michael Nygard](https://cognitect.com/blog/2011/11/15/docum
 | [0001](0001-record-architecture-decisions.md) | Architekturentscheidungen als ADRs festhalten | Accepted |
 | [0002](0002-gitops-argocd-app-of-apps.md) | GitOps mit Argo CD App-of-Apps | Accepted |
 | [0003](0003-plain-directory-kein-kustomize.md) | Plain Directory statt Kustomize (kein CMP) | Accepted |
-| [0004](0004-applicationset-infra.md) | ApplicationSet für Infrastruktur-Apps | Accepted |
+| [0004](0004-applicationset-infra.md) | ApplicationSet für Infrastruktur-Apps | Superseded by 0022 |
 | [0005](0005-target-revision-main.md) | `targetRevision: main` statt `HEAD` | Accepted |
-| [0006](0006-appproject-infrastruktur.md) | AppProject `infrastruktur` für Plattform-Apps | Accepted |
+| [0006](0006-appproject-infrastruktur.md) | AppProject `infrastruktur` für Plattform-Apps | Superseded by 0022 |
 | [0007](0007-sync-waves.md) | Sync Waves für Bootstrap-Reihenfolge | Accepted |
 | [0008](0008-cert-manager-hetzner-dns01.md) | TLS via cert-manager und Hetzner DNS-01 | Accepted |
 | [0009](0009-longhorn-nfs-backups.md) | Longhorn als Default-Storage und NFS-Backups | Accepted |

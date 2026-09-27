@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Datum:** 2026-09-14
-- **Kontext:** `apps/bookstack/`, BookStack ≥ v26.03
+- **Kontext:** `apps/dev/bookstack/`, BookStack ≥ v26.03
 
 ## Kontext
 

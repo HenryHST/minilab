@@ -4,68 +4,66 @@ GitOps-Manifeste für [Argo CD](https://argo-cd.readthedocs.io/) auf dem **nXk3*
 
 **Architekturentscheidungen:** [`docs/adr/`](docs/adr/) (ADRs zu GitOps, Plain YAML, ApplicationSet, TLS, Storage, IdP, Pangolin, Alerting, …).
 
-Ansible legt nur die Parent-Application `homelab` an (`argocd_applications` in Infra_LAB). Child-Applications, Sync Waves und AppProject `infrastruktur` (Anzeige: Infrastruktur) liegen hier unter [`apps/argocd-apps/`](apps/argocd-apps/).
-
-**Wichtig:** Die Parent-App `homelab` muss `targetRevision: main` nutzen (nicht `HEAD`) — sonst schlägt das Laden/Syncen mit `revision HEAD must be resolved` fehl.
+Ansible legt nur die Parent-Application `homelab` an (`argocd_applications` in Infra_LAB). Bootstrap, AppProjects und ApplicationSets liegen hier unter [`apps/argocd-apps/`](apps/argocd-apps/). Workloads unter [`apps/{infra,monitoring,ops,dev}/`](apps/) — siehe [ADR-0022](docs/adr/0022-apps-bucket-applicationsets.md).
 
 **Wichtig:** Die Parent-App `homelab` muss `targetRevision: main` nutzen (nicht `HEAD`) — sonst schlägt das Laden/Syncen u. a. bei Multi-Source-Apps und ApplicationSets mit `revision HEAD must be resolved` fehl.
 
 ## Struktur
 
 ```
-apps/argocd-apps/raw/       # AppProject infrastruktur + ApplicationSet infra (goTemplate — nicht via kustomize build)
-apps/argocd-apps/          # Bootstrap: Application-CRs (Plain YAML, kein kustomization.yaml — sonst CMP :8081)
-infra/<name>/              # Infrastruktur-Workloads (ApplicationSet „infra“)
-apps/<name>/               # User-Apps (Plain YAML, kein kustomization.yaml)
-  deployment.yaml
-  …
+apps/argocd-apps/           # Bootstrap Application gitops-bootstrap (Plain YAML)
+apps/argocd-apps/raw/       # AppProjects + 4 ApplicationSets (goTemplate — nicht via kustomize build)
+apps/infra/<name>/          # Storage / Timezone (ApplicationSet infra)
+apps/monitoring/<name>/     # Metrics / Logs / Status (ApplicationSet monitoring)
+apps/ops/<name>/            # Platform / IdP / Edge (ApplicationSet ops)
+apps/dev/<name>/            # User tooling (ApplicationSet dev)
 ```
 
-Infrastruktur-Apps unter `infra/*` (plus `pangolin-publish`) werden vom ApplicationSet [`infra`](apps/argocd-apps/raw/infra-applicationset.yaml) über einen expliziten List-Generator registriert (Pfad, Namespace, Sync-Wave pro Eintrag). AppProject `infrastruktur` und ApplicationSet liegen in `raw/` und werden von Application `infra-applicationset` (project `default`) bereitgestellt. User-Apps unter `apps/<name>/` weiterhin über Manifeste in `apps/argocd-apps/`.
+Vier ApplicationSets (`infra`, `monitoring`, `ops`, `dev`) registrieren Workloads über List-Generatoren (Pfad, Namespace, Sync-Wave, optional Helm). Bootstrap-Application **`gitops-bootstrap`** (project `default`) synct `raw/`. Application-Namen bleiben stabil (`unifipoller`, `grafana-loki`, …).
 
 ### Sync waves
 
 | Wave | Apps |
 |------|------|
-| -2 | AppProject `infrastruktur` (via Application `infra-applicationset` → `apps/argocd-apps/raw/`) |
-| 0 | Application `infra-applicationset` → ApplicationSet `infra` (`apps/argocd-apps/raw/`) |
-| 1 | ApplicationSet → `infra/longhorn`, `infra/system-upgrade-controller`, `infra/kube-prometheus-stack` |
-| 2 | unifipoller, authentik, termix, headlamp |
-| 3 | omni-tools, it-tools, pgweb, web, drawio, status, grafana-loki, alloy, vaultwarden, bookstack, pangolin-publish |
+| -2 | AppProjects `infra` / `monitoring` / `ops` / `dev` (via `gitops-bootstrap` → `raw/`) |
+| 0 | `gitops-bootstrap` → ApplicationSets; cert-manager, metrics-server, registry, newt, … |
+| 1 | longhorn, k8tz, kube-prometheus-stack, system-upgrade-controller, cert-manager-webhook |
+| 2 | unifipoller, authentik, termix, headlamp, hubble-ui |
+| 3 | Dev-Tools, grafana-loki, alloy, vaultwarden, bookstack, pangolin-publish, … |
 
-### AppProject `infrastruktur`
+### AppProjects
 
-ApplicationSet-Apps (`infra/*`, inkl. `pangolin-publish`) und `authentik` — alle anderen Apps nutzen `default`.
+Je Bucket ein AppProject mit Destination-Namespace-Allowlist (`infra`, `monitoring`, `ops`, `dev`). Kein monolithisches `infrastruktur` mehr.
 
 ## Apps
 
 | App | Pfad | Namespace | Host / Hinweis |
 |-----|------|-----------|----------------|
-| cert-manager | `infra/cert-manager/` | `certmanager` | Native Helm v1.21.1; `ClusterIssuer` via Helm `extraObjects`; webhook: App `cert-manager-webhook-hetzner` |
-| metrics-server | `infra/metrics-server/` | `kube-system` | Helm chart 3.14.0; k3s bundled metrics-server disabled; `--kubelet-insecure-tls` |
-| registry | `infra/registry/` | `kube-system` | Distribution `registry:3` — ClusterIP `kube-registry:5000`, PVC 50Gi Longhorn, weekly GC, `registry.stadthagen.dev` |
-| registry-ui | `infra/registry-ui/` | `registry-ui` | `registry-ui.stadthagen.dev` ([Joxit](https://github.com/Joxit/docker-registry-ui) Helm 1.1.4 / image 2.6.0; proxies `kube-registry:5000`; Authentik ForwardAuth aktiv) |
-| longhorn | `infra/longhorn/` | `longhorn-system` | `longhorn.stadthagen.dev` (Native Helm v1.12.1, default StorageClass, backups → NFS `192.168.0.25`) |
-| omni-tools | `apps/omni-tools/` | `omnitools` | `omni-tools.stadthagen.dev` |
-| it-tools | `apps/it-tools/` | `it-tools` | `it-tools.stadthagen.dev` |
-| pgweb | `apps/pgweb/` | `pgweb` | `pgweb.stadthagen.dev` (Port 8081) |
-| web | `apps/web/` | `homepage` | `web.stadthagen.dev` (gethomepage v2.1.2; widgets: Argo CD, Proxmox, Uptime Kuma, Longhorn, Kubernetes, UniFi — Secret `homepage`) |
-| drawio | `apps/drawio/` | `drawio` | `drawio.stadthagen.dev` (Port 8080) |
-| newt | `infra/newt/` | `newt` | Pangolin Newt tunnel agent (site k3s) |
-| pangolin-publish | `apps/pangolin-publish/` | `pangolin-publish` | PostSync Job: Pangolin Integration API upsert — `termix-ext` → Termix ClusterIP; `idp` → Authentik ClusterIP (site k3s) |
-| termix | `apps/termix/` | `termix` | `termix.stadthagen.dev` (internal Traefik) + public `termix-ext.stadthagen.dev` via Pangolin; OIDC Authentik — Secrets `termix-oauth` / `termix-ha` / `termix-db`; NetworkPolicy allows traefik + newt |
-| headlamp | `apps/headlamp/` | `kube-system` | `headlamp.stadthagen.dev` ([Headlamp](https://kubernetes-sigs.github.io/headlamp/) Helm 0.45.0; Plugin Manager: [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) 0.1.1, [gatekeeper](https://github.com/open-policy-agent/gatekeeper-headlamp-plugin) 0.2.0) |
-| status | `apps/status/` | `uptimekuma` | `status.stadthagen.dev` (Uptime Kuma 2.5.3, **SQLite** auf Local PV `/var/lib/uptimekuma` @ `pi4cl`, PSS `baseline` enforce / `restricted` audit; daily NFS backup + bootstrap restore → `192.168.0.25:/var/nfs/shared/infra01/uptimekuma-backups`) |
-| vaultwarden | `apps/vaultwarden/` | `vaultwarden` | `vaultwarden.stadthagen.dev` (Vaultwarden 1.37.2, Longhorn PVC 2Gi, Authentik SSO; daily NFS backup + bootstrap restore → `192.168.0.25:/var/nfs/shared/infra01/vaultwarden-backups`) |
-| bookstack | `apps/bookstack/` | `bookstack` | `book.stadthagen.dev` (BookStack via gabe565 Helm → `helm-manifest.yaml`, MariaDB hostPath @ `nxk3-w01`, Authentik OIDC, SMTP vorbereitet; daily NFS backup + bootstrap restore → `192.168.0.25:/var/nfs/shared/infra01/bookstack-backups`; Inhalte unter `docs/bookstack/`) |
-| kube-prometheus-stack | `infra/kube-prometheus-stack/` | `monitoring` | `grafana.stadthagen.dev`, `prometheus.stadthagen.dev`, `alert-manager.stadthagen.dev` (Helm chart 88.5.4: Prometheus Operator, Grafana, Alertmanager, node-exporter, kube-state-metrics; Longhorn PVC 5Gi / 9d retention; E-Mail alerts) |
-| grafana-loki | `infra/loki/` | `monitoring` | `loki.stadthagen.dev` (Helm chart 18.11.7, Longhorn PVC 2Gi) |
-| alloy | `infra/alloy/` | `alloy` | Syslog → Loki (`loki-gateway.monitoring.svc.cluster.local`) |
-| system-upgrade-controller | `infra/system-upgrade-controller/` | `system-upgrade` | Rancher SUC v0.20.1 (CRDs + Controller, vendored upstream). **Keine** Upgrade-`Plan`s — kein automatisches k3s-Upgrade, bis Plans ergänzt werden. |
+| cert-manager | `apps/ops/cert-manager/` | `certmanager` | Native Helm v1.21.1; `ClusterIssuer` via Helm `extraObjects`; webhook: App `cert-manager-webhook-hetzner` |
+| metrics-server | `apps/monitoring/metrics-server/` | `kube-system` | Helm chart 3.14.0; k3s bundled metrics-server disabled; `--kubelet-insecure-tls` |
+| registry | `apps/ops/registry/` | `kube-system` | Distribution `registry:3` — ClusterIP `kube-registry:5000`, PVC 50Gi Longhorn, weekly GC, `registry.stadthagen.dev` |
+| registry-ui | `apps/ops/registry-ui/` | `registry-ui` | `registry-ui.stadthagen.dev` ([Joxit](https://github.com/Joxit/docker-registry-ui) Helm 1.1.4 / image 2.6.0; proxies `kube-registry:5000`; Authentik ForwardAuth aktiv) |
+| longhorn | `apps/infra/longhorn/` | `longhorn-system` | `longhorn.stadthagen.dev` (Native Helm v1.12.1, default StorageClass, backups → NFS `192.168.0.25`) |
+| omni-tools | `apps/dev/omni-tools/` | `omnitools` | `omni-tools.stadthagen.dev` |
+| it-tools | `apps/dev/it-tools/` | `it-tools` | `it-tools.stadthagen.dev` |
+| pgweb | `apps/dev/pgweb/` | `pgweb` | `pgweb.stadthagen.dev` (Port 8081) |
+| web | `apps/dev/web/` | `homepage` | `web.stadthagen.dev` (gethomepage v2.1.2; widgets: Argo CD, Proxmox, Uptime Kuma, Longhorn, Kubernetes, UniFi — Secret `homepage`) |
+| drawio | `apps/dev/drawio/` | `drawio` | `drawio.stadthagen.dev` (Port 8080) |
+| newt | `apps/ops/newt/` | `newt` | Pangolin Newt tunnel agent (site k3s) |
+| pangolin-publish | `apps/ops/pangolin-publish/` | `pangolin-publish` | PostSync Job: Pangolin Integration API upsert — `termix-ext` → Termix ClusterIP; `idp` → Authentik ClusterIP (site k3s) |
+| termix | `apps/dev/termix/` | `termix` | `termix.stadthagen.dev` (internal Traefik) + public `termix-ext.stadthagen.dev` via Pangolin; OIDC Authentik — Secrets `termix-oauth` / `termix-ha` / `termix-db`; NetworkPolicy allows traefik + newt |
+| headlamp | `apps/ops/headlamp/` | `kube-system` | `headlamp.stadthagen.dev` ([Headlamp](https://kubernetes-sigs.github.io/headlamp/) Helm 0.45.0; Plugin Manager: [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) 0.1.1, [gatekeeper](https://github.com/open-policy-agent/gatekeeper-headlamp-plugin) 0.2.0) |
+| status | `apps/monitoring/status/` | `uptimekuma` | `status.stadthagen.dev` (Uptime Kuma 2.5.3, **SQLite** auf Local PV `/var/lib/uptimekuma` @ `pi4cl`, PSS `baseline` enforce / `restricted` audit; daily NFS backup + bootstrap restore → `192.168.0.25:/var/nfs/shared/infra01/uptimekuma-backups`) |
+| vaultwarden | `apps/dev/vaultwarden/` | `vaultwarden` | `vaultwarden.stadthagen.dev` (Vaultwarden 1.37.2, Longhorn PVC 2Gi, Authentik SSO; daily NFS backup + bootstrap restore → `192.168.0.25:/var/nfs/shared/infra01/vaultwarden-backups`) |
+| bookstack | `apps/dev/bookstack/` | `bookstack` | `book.stadthagen.dev` (BookStack via gabe565 Helm → `helm-manifest.yaml`, MariaDB hostPath @ `nxk3-w01`, Authentik OIDC, SMTP vorbereitet; daily NFS backup + bootstrap restore → `192.168.0.25:/var/nfs/shared/infra01/bookstack-backups`; Inhalte unter `docs/bookstack/`) |
+| kube-prometheus-stack | `apps/monitoring/kube-prometheus-stack/` | `monitoring` | `grafana.stadthagen.dev`, `prometheus.stadthagen.dev`, `alert-manager.stadthagen.dev` (Helm chart 88.5.4: Prometheus Operator, Grafana, Alertmanager, node-exporter, kube-state-metrics; Longhorn PVC 5Gi / 9d retention; E-Mail alerts) |
+| grafana-loki | `apps/monitoring/loki/` | `monitoring` | `loki.stadthagen.dev` (Helm chart 18.11.7, Longhorn PVC 2Gi) |
+| alloy | `apps/monitoring/alloy/` | `alloy` | Syslog → Loki (`loki-gateway.monitoring.svc.cluster.local`) |
+| system-upgrade-controller | `apps/ops/system-upgrade-controller/` | `system-upgrade` | Rancher SUC v0.20.1 (CRDs + Controller, vendored upstream). **Keine** Upgrade-`Plan`s — kein automatisches k3s-Upgrade, bis Plans ergänzt werden. |
 
 Longhorn: Replika-Daten lokal `/var/lib/longhorn` auf Worker mit Label `node.longhorn.io/create-default-disk=true` (nxk3-w01–w03). Backup-Target: `nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups?nfsOptions=nfsvers=3,nolock` (UniFi NAS benötigt NFSv3).
 
-Uptime Kuma (`status`): **SQLite** bewusst (kein MariaDB — siehe [`apps/status/README.md`](apps/status/README.md)). CronJob `kuma-backup-cron` (01:00 UTC) tar’t `/app/data` per `kubectl exec` nach NFS `192.168.0.25:/var/nfs/shared/infra01/uptimekuma-backups` (Retention 7). Manuell: `kubectl -n uptimekuma create job --from=cronjob/kuma-backup-cron kuma-backup-manual`. Deployment + Restore gepinnt auf Node `pi4cl` (Local PV). Namespace `uptimekuma`: PSS `baseline` enforce (ICMP/`NET_RAW`), `restricted` audit/warn. Bootstrap-Restore: ConfigMap `uptimekuma-restore` → `enabled=true` (bei vorhandener `kuma.db` zusätzlich `force=true`), Argo Sync; danach sofort `enabled=false` committen.
+Uptime Kuma (`status`): **SQLite** bewusst (kein MariaDB — siehe [`apps/monitoring/status/README.md`](apps/monitoring/status/README.md)). CronJob `kuma-backup-cron` (01:00 UTC) tar’t `/app/data` per `kubectl exec` nach NFS `192.168.0.25:/var/nfs/shared/infra01/uptimekuma-backups` (Retention 7). Manuell: `kubectl -n uptimekuma create job --from=cronjob/kuma-backup-cron kuma-backup-manual`. Deployment + Restore gepinnt auf Node `pi4cl` (Local PV). Namespace `uptimekuma`: PSS `baseline` enforce (ICMP/`NET_RAW`), `restricted` audit/warn. Bootstrap-Restore: ConfigMap `uptimekuma-restore` → `enabled=true` (bei vorhandener `kuma.db` zusätzlich `force=true`), Argo Sync; danach sofort `enabled=false` committen.
 
 Vaultwarden: CronJob `vaultwarden-backup-cron` (02:00 UTC) tar’t `/data` per `kubectl exec` nach NFS `192.168.0.25:/var/nfs/shared/infra01/vaultwarden-backups` (Retention 7). Manuell: `kubectl -n vaultwarden create job --from=cronjob/vaultwarden-backup-cron vaultwarden-backup-manual`. Bootstrap-Restore (Cluster-Neuaufsetzen): ConfigMap `vaultwarden-restore` → `enabled=true` (bei vorhandener `db.sqlite3` zusätzlich `force=true`), Argo Sync (PostSync-Job skaliert App auf 0, Worker entpackt Archiv auf PVC `vaultwarden-data`); danach sofort `enabled=false` committen. Secrets über SecretSpec: `VAULTWARDEN_OAUTH_CLIENT_SECRET`, `VAULTWARDEN_ADMIN_TOKEN`.
 
@@ -73,19 +71,19 @@ Termix: CronJob `termix-backup-cron` (03:00 UTC) `pg_dump` → NFS `192.168.0.25
 
 BookStack: CronJob `bookstack-backup-cron` (04:00 UTC) sichert MariaDB-Dump + `/config` nach NFS `192.168.0.25:/var/nfs/shared/infra01/bookstack-backups` (Retention 7). Manuell: `kubectl -n bookstack create job --from=cronjob/bookstack-backup-cron bookstack-backup-manual`. Bootstrap-Restore: ConfigMap `bookstack-restore` → `enabled=true` (bei vorhandener DB zusätzlich `force=true`), Argo Sync (PostSync-Job); danach sofort `enabled=false` committen. Secrets: `bookstack-app` / `bookstack-db` / `bookstack-oauth` / `bookstack-smtp`. NAS: `mkdir -p /var/nfs/shared/infra01/bookstack-backups`. Git-Inhalte & Import: [`docs/bookstack/`](docs/bookstack/).
 
-Grafana-Werte im kube-prometheus-stack basieren auf [JimsGarage GitOps/Grafana](https://github.com/JamesTurland/JimsGarage/tree/main/Kubernetes/GitOps/Grafana) und [mortennordbye/homelab](https://github.com/mortennordbye/homelab/tree/main/k8s/talos/infra/kube-prometheus-stack) (Helm via Kustomize, Traefik IngressRoute). Grafana Prometheus-Datasource zeigt auf `http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090`.
+Grafana-Werte im kube-prometheus-stack basieren auf [JimsGarage GitOps/Grafana](https://github.com/JamesTurland/JimsGarage/tree/main/Kubernetes/GitOps/Grafana) und [mortennordbye/homelab](https://github.com/mortennordbye/homelab/tree/main/k8s/talos/apps/monitoring/kube-prometheus-stack) (Helm via Kustomize, Traefik IngressRoute). Grafana Prometheus-Datasource zeigt auf `http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090`.
 
 Login: lokaler Admin **und** Authentik SSO (`oauth_auto_login: false`). Rollen über Authentik-Gruppen `Grafana Admins` → Admin, `Grafana Editors` → Editor, sonst Viewer. Provisionierte Dashboards: UniFi Poller, Argo CD (19993), Authentik (14837), Home Assistant Overview (16888), Proxmox Syslog.
 
-Externe Scrape-Jobs (Proxmox, Pangolin, Home Assistant, Unpoller, Authentik, Argo CD) liegen in `infra/kube-prometheus-stack/values.yaml` unter `prometheus.prometheusSpec.additionalScrapeConfigs`. Custom Alert-Rules: `homelab-alerts.yaml`. Alertmanager: E-Mail an `info@henrystadthagen.de` mit getrennten Routes für `critical` / `warning`.
+Externe Scrape-Jobs (Proxmox, Pangolin, Home Assistant, Unpoller, Authentik, Argo CD) liegen in `apps/monitoring/kube-prometheus-stack/values.yaml` unter `prometheus.prometheusSpec.additionalScrapeConfigs`. Custom Alert-Rules: `homelab-alerts.yaml`. Alertmanager: E-Mail an `info@henrystadthagen.de` mit getrennten Routes für `critical` / `warning`.
 
-**Baseline Alerting (V1+V2):** PrometheusRules (Workload, Proxmox, **Cilium**) + Loki Ruler (Proxmox syslog) → Alertmanager. Cilium scrape via `cilium-podmonitors.yaml` (Ports 9962/9963/9965; Cilium-Helm `prometheus.enabled` nötig). Design, Severity-Matrix, Testing und Runbook → [`infra/kube-prometheus-stack/ALERTING.md`](infra/kube-prometheus-stack/ALERTING.md). Tests: `infra/kube-prometheus-stack/tests/run-tests.sh`.
+**Baseline Alerting (V1+V2):** PrometheusRules (Workload, Proxmox, **Cilium**) + Loki Ruler (Proxmox syslog) → Alertmanager. Cilium scrape via `cilium-podmonitors.yaml` (Ports 9962/9963/9965; Cilium-Helm `prometheus.enabled` nötig). Design, Severity-Matrix, Testing und Runbook → [`apps/monitoring/kube-prometheus-stack/ALERTING.md`](apps/monitoring/kube-prometheus-stack/ALERTING.md). Tests: `apps/monitoring/kube-prometheus-stack/tests/run-tests.sh`.
 
-Das Helm-Chart wird über **native Argo-CD-Helm-Quelle** (Multi-Source via ApplicationSet `infra`) gerendert; Extras (Ingress, Certificates, Rules) liegen in `manifests/` als Plain YAML (kein Kustomize — sonst CMP `:8081`).
+Das Helm-Chart wird über **native Argo-CD-Helm-Quelle** (Multi-Source via ApplicationSets) gerendert; Extras (Ingress, Certificates, Rules) liegen in `manifests/` als Plain YAML (kein Kustomize — sonst CMP `:8081`).
 
-**Migration:** Secrets `grafana-oauth` und optional `grafana-hcloud` müssen im Namespace `monitoring` existieren (vorher `grafana`). Beispiel: `infra/kube-prometheus-stack/oauth-secret.example.yaml`.
+**Migration:** Secrets `grafana-oauth` und optional `grafana-hcloud` müssen im Namespace `monitoring` existieren (vorher `grafana`). Beispiel: `apps/monitoring/kube-prometheus-stack/oauth-secret.example.yaml`.
 
-**Migration standalone Application → ApplicationSet `infra`:** Wenn eine App denselben Namen behält (z. B. `longhorn`), kann die alte Application beim Prune in `Terminating` hängen, während das ApplicationSet sie neu anlegt — Fehler `no new finalizers can be added if the object is being deleted`. Workload-Ressourcen bleiben erhalten; nur die Application-CR muss weg:
+**Migration / orphan-delete (Finalizer):** Wenn eine App denselben Namen behält (z. B. `longhorn`), kann die alte Application beim Prune in `Terminating` hängen, während das ApplicationSet sie neu anlegt — Fehler `no new finalizers can be added if the object is being deleted`. Workload-Ressourcen bleiben erhalten; nur die Application-CR muss weg:
 
 ```bash
 kubectl patch application longhorn -n argocd --type merge -p '{"metadata":{"finalizers":null}}'
@@ -107,19 +105,12 @@ kubectl create token headlamp-admin -n kube-system
 
 ## Neue App hinzufügen
 
-**Infrastruktur (`infra/`):** Ordner `infra/<name>/` mit Plain YAML anlegen (kein `kustomization.yaml`) und Eintrag in [`apps/argocd-apps/raw/infra-applicationset.yaml`](apps/argocd-apps/raw/infra-applicationset.yaml) (`list` generator: `app`, `path`, `namespace`, `syncWave`) ergänzen. Helm-Apps: Native Helm via ApplicationSet; Git-Extras als Plain Directory in `manifests/`. Ausnahmen: `infra/argocd/` (Bootstrap, später self-managed) und `infra/kargo/` (noch manuell).
+1. Passenden Bucket wählen (`apps/infra|monitoring|ops|dev/<name>/`) und Plain YAML anlegen (kein `kustomization.yaml`) — **`metadata.namespace` in jeder namespaced Resource setzen**.
+2. Helm: Native Argo-Helm im ApplicationSet (values unter dem Bucket) **oder** Chart → `helm-manifest.yaml` committen (Regenerations-Befehl im Dateikopf).
+3. Listeneintrag in `apps/argocd-apps/raw/applicationset-<bucket>.yaml` (`app`, `namespace`, `syncWave`, optional Helm-Felder / `path` + `extras`).
+4. Nach `main` pushen; Parent `homelab` → `gitops-bootstrap` → ApplicationSet erzeugt die Application.
 
-**User-App (`apps/`):**
-
-1. Ordner `apps/<name>/` anlegen mit Plain YAML (`deployment.yaml`, `service.yaml`, `ingressroute.yaml`, …) — **`metadata.namespace` in jeder namespaced Resource setzen** (kein `kustomization.yaml`).
-2. Helm-Apps (`headlamp`, `termix`, `unifipoller`): Chart in `helm-manifest.yaml` rendern (`helm template …`) und neben Extras committen; Regenerations-Befehl steht im Dateikopf.
-3. ConfigMaps: statische `configmap.yaml` statt `configMapGenerator` (z. B. `web` → `configmap.yaml` + `config/*.yaml` als Quelle).
-4. Application-Manifest in `apps/argocd-apps/<name>.yaml` mit passender `sync-wave` (1/2/3) ergänzen.
-5. Nach `main` pushen; Parent `homelab` synct die Child-App automatisch.
-
-### Langfristig: `infra/argocd/` (homelab-Pattern)
-
-Das [Talos-Homelab](https://github.com/mortennordbye/homelab/tree/main/k8s/talos/infra/argocd) verwaltet Argo CD selbst über `infra/argocd/` (ApplicationSet, AppProjects, …). minilab bootstrapped das ApplicationSet vorerst aus `apps/argocd-apps/`; Ziel ist die vollständige Verlagerung nach `infra/argocd/`.
+Stubs ohne Deploy: Ordner anlegen, **nicht** in die ApplicationSet-Liste aufnehmen (`kargo`, `audiobookshelf`).
 
 ## TLS
 
@@ -140,23 +131,22 @@ Altes manuelles Kopieren von `stadthagen-tls` aus `traefik` ist nicht mehr nöti
 
 ## Troubleshooting (Argo CD)
 
-**`dial tcp …:8081: connect: no route to host` (CMP):** Der repo-server leitet **Kustomize**-Builds an den CMP-Sidecar `:8081` — der ist im Cluster nicht erreichbar. **Lösung:** Plain Directory (kein `kustomization.yaml`); Helm-Charts als `helm template` in `helm-manifest.yaml` committen oder Native Helm via ApplicationSet. Alle minilab-Apps sind migriert. Nach Fix: `kubectl -n argocd annotate applicationset infra argocd.argoproj.io/refresh=hard --overwrite && argocd app sync homelab`
+**`dial tcp …:8081: connect: no route to host` (CMP):** Der repo-server leitet **Kustomize**-Builds an den CMP-Sidecar `:8081` — der ist im Cluster nicht erreichbar. **Lösung:** Plain Directory (kein `kustomization.yaml`); Helm-Charts als `helm template` in `helm-manifest.yaml` committen oder Native Helm via ApplicationSet. Alle minilab-Apps sind migriert. Nach Fix: `kubectl -n argocd annotate applicationset infra monitoring ops dev argocd.argoproj.io/refresh=hard --overwrite && argocd app sync homelab`
 
-**`app is not allowed in project "infrastruktur"` / `AppProject "infrastruktur" not found`:** AppProject liegt in [`apps/argocd-apps/raw/appproject-infrastruktur.yaml`](apps/argocd-apps/raw/appproject-infrastruktur.yaml) und wird von Application `infra-applicationset` (project `default`, sync-wave -2 auf dem AppProject) bereitgestellt. Longhorn & Co. brauchen dieses Project (Multi-Source Helm + Git). Nach Merge:
+**`app is not allowed in project` / `AppProject not found`:** AppProjects liegen in `apps/argocd-apps/raw/appproject-*.yaml` und werden von Application `gitops-bootstrap` (project `default`, sync-wave -2) bereitgestellt:
 
 ```bash
-argocd app sync infra-applicationset
-# Sofort-Fix falls Project fehlt:
-kubectl apply -f https://raw.githubusercontent.com/HenryHST/minilab/main/apps/argocd-apps/raw/appproject-infrastruktur.yaml
+argocd app sync gitops-bootstrap
+kubectl apply -f https://raw.githubusercontent.com/HenryHST/minilab/main/apps/argocd-apps/raw/appproject-infra.yaml
 kubectl -n argocd annotate applicationset infra argocd.argoproj.io/refresh=hard --overwrite
 argocd app sync longhorn
 ```
 
-Alte Application `infrastruktur-project` / Pfad `bootstrap/` entfallen — ggf. orphan Application löschen: `argocd app delete infrastruktur-project --cascade=orphan` (oder Finalizer patchen).
+Altes AppProject `infrastruktur` / Application `infra-applicationset` orphan löschen falls noch vorhanden.
 
-**`MalformedYAMLError` in `infra-applicationset.yaml`:** goTemplate-Conditionals (`{{- if ... }}`) dürfen nicht inline im `template`-Block stehen — nur in `templatePatch` (mehrzeiliger String). Die Datei liegt in `apps/argocd-apps/raw/`.
+**`MalformedYAMLError` in `applicationset-*.yaml`:** goTemplate-Conditionals nur in `templatePatch` (mehrzeiliger String), nicht inline im `template`-Block.
 
-**ApplicationSet erzeugt kaputte Specs / leerer Namespace:** ApplicationSet `infra` aus `main` syncen. Das Template nutzt `dig "helmChart" "" .` — mit `missingkey=error` müssen optionale Felder über `dig` gelesen werden. Nach Fix: `kubectl -n argocd annotate applicationset infra argocd.argoproj.io/refresh=hard --overwrite && argocd app sync homelab`
+**ApplicationSet erzeugt kaputte Specs / leerer Namespace:** Templates nutzen `dig "helmChart" "" .`. Nach Fix: `kubectl -n argocd annotate applicationset infra monitoring ops dev argocd.argoproj.io/refresh=hard --overwrite && argocd app sync homelab`
 
 **`Unable to create .../.git/index.lock': File exists`:** Hängender Git-Checkout im repo-server Cache — repo-server neu starten:
 

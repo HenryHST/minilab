@@ -21,6 +21,6 @@ Kurzübersicht der User-Apps (Details und Sync Waves: Root-README im Git-Repo).
 | Kromgo | kromgo.stadthagen.dev | Prometheus-Badges (LAN); kein SSO |
 | ByteStash | bytestash.stadthagen.dev | Snippets, Authentik OIDC; LAN |
 
-Infrastruktur (Longhorn, cert-manager, Loki, …) liegt unter `infra/` und wird vom ApplicationSet `infra` verwaltet. Ops-Notiz HA: [`../../../home-assistant/ha02.md`](../../../home-assistant/ha02.md).
+Workloads liegen unter `apps/{infra,monitoring,ops,dev}/` und werden von vier ApplicationSets verwaltet (ADR-0022). Ops-Notiz HA: [`../../../home-assistant/ha02.md`](../../../home-assistant/ha02.md).
 
 Release: minilab **v0.8.0** · Plattform Infra_LAB **v1.6.0**.

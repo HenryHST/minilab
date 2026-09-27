@@ -2,24 +2,39 @@
 
 ## Prinzip
 
-Argo CD Parent-App `homelab` synct Child-Applications aus `apps/argocd-apps/`. Infrastruktur kommt über ApplicationSet `infra`.
+Argo CD Parent-App `homelab` synct Bootstrap aus `apps/argocd-apps/` (Application `gitops-bootstrap` + `raw/`). Workloads kommen über **vier ApplicationSets** (`infra`, `monitoring`, `ops`, `dev`) und liegen unter `apps/{infra,monitoring,ops,dev}/`.
 
 **Wichtig:** `targetRevision: main` (nicht `HEAD`).
+
+```mermaid
+flowchart TB
+  Parent["Application homelab"] --> Bootstrap["apps/argocd-apps/"]
+  Bootstrap --> Raw["raw/: AppProjects + 4 ApplicationSets"]
+  Raw --> ASInfra["ApplicationSet infra"]
+  Raw --> ASMon["ApplicationSet monitoring"]
+  Raw --> ASOps["ApplicationSet ops"]
+  Raw --> ASDev["ApplicationSet dev"]
+  ASInfra --> AppsInfra["apps/infra/*"]
+  ASMon --> AppsMon["apps/monitoring/*"]
+  ASOps --> AppsOps["apps/ops/*"]
+  ASDev --> AppsDev["apps/dev/*"]
+```
 
 ## Sync Waves (Kurz)
 
 | Wave | Inhalt |
 |------|--------|
-| -2 / 0 | AppProject + ApplicationSet Bootstrap |
-| 1 | Storage / Monitoring-Basis; **k8tz** (Timezone-Webhook) |
-| 2 | Authentik, Termix, Headlamp, … |
-| 3 | Tools, Vaultwarden, BookStack, Homepage, … |
+| -2 | AppProjects (`infra`, `monitoring`, `ops`, `dev`) |
+| 0 | Application `gitops-bootstrap` → ApplicationSets; frühe Ops (cert-manager, registry, newt, metrics-server) |
+| 1 | longhorn, k8tz, kube-prometheus-stack, system-upgrade-controller, cert-manager-webhook |
+| 2 | authentik, termix, headlamp, hubble-ui, unifipoller |
+| 3 | Dev-Tools, Loki/Alloy, vaultwarden, bookstack, pangolin-publish, … |
 
-## Neue User-App
+## Neue App
 
-1. Ordner `apps/<name>/` mit Plain YAML (kein `kustomization.yaml`)
-2. Helm: Chart rendern → `helm-manifest.yaml` committen
-3. Application in `apps/argocd-apps/<name>.yaml`
+1. Ordner `apps/<bucket>/<name>/` mit Plain YAML (kein `kustomization.yaml`)
+2. Helm: Native Argo-Helm im ApplicationSet **oder** Chart → `helm-manifest.yaml` committen
+3. Listeneintrag im passenden `apps/argocd-apps/raw/applicationset-<bucket>.yaml`
 4. Push auf `main` → Parent synct automatisch
 
-Siehe ADRs 0002–0007 und 0014 im Git-Repo.
+Siehe ADR-0022 und Root-README.

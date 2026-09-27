@@ -2,7 +2,7 @@
 
 ## Deploy
 
-Values: `infra/k8tz/values.yaml`. ApplicationSet-Eintrag in `apps/argocd-apps/raw/infra-applicationset.yaml`.
+Values: `apps/infra/k8tz/values.yaml`. ApplicationSet-Eintrag in `apps/argocd-apps/raw/applicationset-infra.yaml`.
 
 ```bash
 kubectl -n argocd get application k8tz

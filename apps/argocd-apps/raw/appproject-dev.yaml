@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: dev
+  namespace: argocd
+  annotations:
+    # Applied by Application gitops-bootstrap (path apps/argocd-apps/raw) before ApplicationSets.
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  description: Dev — user tooling and apps
+  sourceRepos:
+    - "*"
+  destinations:
+    - server: "*"
+      namespace: stirling-pdf
+    - server: "*"
+      namespace: bookstack
+    - server: "*"
+      namespace: it-tools
+    - server: "*"
+      namespace: termix
+    - server: "*"
+      namespace: pgweb
+    - server: "*"
+      namespace: vaultwarden
+    - server: "*"
+      namespace: drawio
+    - server: "*"
+      namespace: homepage
+    - server: "*"
+      namespace: omnitools
+    - server: "*"
+      namespace: searxng
+    - server: "*"
+      namespace: bytestash
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

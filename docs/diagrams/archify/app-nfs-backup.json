@@ -1,0 +1,96 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "App NFS Backup CronJobs",
+    "quality_profile": "showcase",
+    "animation": "trace",
+    "output": "docs/diagrams/archify/app-nfs-backup.html",
+    "views": [
+      {
+        "id": "daily-path",
+        "label": "Daily backup path",
+        "focus": ["schedule", "cron_auth", "cron_bs", "sources", "nfs"],
+        "note": "UTC schedules write app archives to infra01 NFS shares."
+      },
+      {
+        "id": "authentik-path",
+        "label": "Authentik dump + media",
+        "focus": ["cron_auth", "pg", "media", "nfs"],
+        "note": "pg_dump and /media land in one authentik-*.tar.gz."
+      },
+      {
+        "id": "bytestash-path",
+        "label": "ByteStash snippets",
+        "focus": ["cron_bs", "snippets", "nfs"],
+        "note": "kubectl exec tar of /data/snippets only."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "schedule", "label": "Schedule (UTC)" },
+    { "id": "jobs", "label": "CronJobs" },
+    { "id": "data", "label": "App Data" },
+    { "id": "storage", "label": "NFS infra01" }
+  ],
+  "phases": [
+    { "id": "trigger", "label": "Trigger", "fromCol": 0, "toCol": 1 },
+    { "id": "collect", "label": "Collect", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "retain", "label": "Retain", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "auth_group", "label": "Authentik 05:00", "lane": "jobs", "fromCol": 1, "toCol": 2, "variant": "emphasis" },
+    { "id": "bs_group", "label": "ByteStash 06:00", "lane": "jobs", "fromCol": 3, "toCol": 4, "variant": "dashed" }
+  ],
+  "mainPath": ["schedule", "cron_auth", "pg", "nfs", "retain"],
+  "nodes": [
+    { "id": "schedule", "lane": "schedule", "col": 0, "type": "external", "label": "Cron UTC", "sublabel": "01–06 staggered", "width": 128 },
+    { "id": "cron_auth", "lane": "jobs", "col": 1, "type": "backend", "label": "authentik-backup", "sublabel": "05:00", "tag": "Retention 7", "width": 136 },
+    { "id": "cron_bs", "lane": "jobs", "col": 3, "type": "backend", "label": "bytestash-backup", "sublabel": "06:00", "tag": "Retention 7", "width": 136 },
+    { "id": "pg", "lane": "data", "col": 2, "type": "database", "label": "PostgreSQL", "sublabel": "authentik DB", "width": 120 },
+    { "id": "media", "lane": "data", "col": 3, "type": "database", "label": "Media PVC", "sublabel": "/media", "width": 120 },
+    { "id": "snippets", "lane": "data", "col": 4, "type": "database", "label": "Snippets PVC", "sublabel": "/data/snippets", "width": 128 },
+    { "id": "nfs", "lane": "storage", "col": 4, "type": "cloud", "label": "NFS Shares", "sublabel": "*-backups", "width": 128 },
+    { "id": "retain", "lane": "storage", "col": 5, "type": "backend", "label": "Keep Last 7", "sublabel": "prune older", "width": 120 },
+    { "id": "sources", "lane": "data", "col": 1, "type": "messagebus", "label": "Other Apps", "sublabel": "kuma…bookstack", "width": 128 }
+  ],
+  "edges": [
+    { "id": "sched-auth", "from": "schedule", "to": "cron_auth", "label": "05:00", "variant": "emphasis" },
+    { "id": "sched-bs", "from": "schedule", "to": "cron_bs", "label": "06:00", "variant": "dashed", "role": "branch" },
+    { "id": "sched-others", "from": "schedule", "to": "sources", "label": "01–04", "variant": "dashed", "role": "branch" },
+    { "id": "auth-pg", "from": "cron_auth", "to": "pg", "label": "pg_dump", "variant": "emphasis" },
+    { "id": "auth-media", "from": "cron_auth", "to": "media", "label": "tar /media", "variant": "default" },
+    { "id": "pg-nfs", "from": "pg", "to": "nfs", "variant": "emphasis" },
+    { "id": "media-nfs", "from": "media", "to": "nfs", "variant": "default" },
+    { "id": "bs-snip", "from": "cron_bs", "to": "snippets", "label": "tar", "variant": "emphasis" },
+    { "id": "snip-nfs", "from": "snippets", "to": "nfs", "variant": "emphasis" },
+    { "id": "src-nfs", "from": "sources", "to": "nfs", "variant": "dashed" },
+    { "id": "nfs-retain", "from": "nfs", "to": "retain", "label": "prune", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Staggered UTC Window",
+      "items": [
+        "status → vaultwarden → termix → bookstack → authentik → bytestash",
+        "Each app writes its own *-backups share on infra01"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Authentik Combined Archive",
+      "items": [
+        "Outer authentik-*.tar.gz holds db.sql.gz + media.tar.gz",
+        "Secrets stay in SecretSpec — never in the archive"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "ByteStash Tar Path",
+      "items": [
+        "kubectl exec tar of /data/snippets only",
+        "Branding media sync for Authentik is a separate CronJob"
+      ]
+    }
+  ]
+}

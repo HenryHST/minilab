@@ -23,6 +23,13 @@ ansible-playbook site.yaml --tags secrets
 
 K8s: `bytestash/bytestash-oauth` (`client-secret`), `bytestash/bytestash-jwt` (`JWT_SECRET`).
 
+## Backup / Restore
+
+- NAS: `mkdir -p /var/nfs/shared/infra01/bytestash-backups`
+- CronJob `bytestash-backup-cron` (06:00 UTC) tar’t `/data/snippets` → NFS (Retention 7)
+- Manuell: `kubectl -n bytestash create job --from=cronjob/bytestash-backup-cron bytestash-backup-manual`
+- Bootstrap-Restore: ConfigMap `bytestash-restore` → `enabled=true` (bei vorhandenen Snippets zusätzlich `force=true`), Argo Sync; danach sofort `enabled=false` committen
+
 ## Verify
 
 ```bash
@@ -31,4 +38,4 @@ dig +short A bytestash.stadthagen.dev
 curl -kI https://bytestash.stadthagen.dev/
 ```
 
-ADR: [`docs/adr/0021-bytestash.md`](../../docs/adr/0021-bytestash.md). Upstream: [ByteStash](https://github.com/jordan-dalby/ByteStash).
+ADR: [`docs/adr/0021-bytestash.md`](../../docs/adr/0021-bytestash.md), [`docs/adr/0015-backup-restore-cronjobs.md`](../../docs/adr/0015-backup-restore-cronjobs.md). Upstream: [ByteStash](https://github.com/jordan-dalby/ByteStash).

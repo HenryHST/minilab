@@ -1,0 +1,94 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "App Bootstrap Restore",
+    "quality_profile": "showcase",
+    "animation": "trace",
+    "output": "docs/diagrams/archify/app-bootstrap-restore.html",
+    "views": [
+      {
+        "id": "gate",
+        "label": "ConfigMap gate",
+        "focus": ["cm", "argo", "job", "skip"],
+        "note": "PostSync Job no-ops unless enabled=true."
+      },
+      {
+        "id": "restore",
+        "label": "Scale down and restore",
+        "focus": ["job", "scale0", "nfs", "apply", "scaleup"],
+        "note": "force protects non-empty DB or PVC from silent overwrite."
+      },
+      {
+        "id": "cleanup",
+        "label": "Disable after success",
+        "focus": ["scaleup", "disable"],
+        "note": "Commit enabled=false immediately after a successful restore."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "gitops", "label": "GitOps Control" },
+    { "id": "hook", "label": "PostSync Hook" },
+    { "id": "data", "label": "Data Plane" },
+    { "id": "safety", "label": "Safety", "variant": "exception" }
+  ],
+  "phases": [
+    { "id": "arm", "label": "Arm", "fromCol": 0, "toCol": 1 },
+    { "id": "run", "label": "Restore", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "done", "label": "Close", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "toggle", "label": "Manual toggle", "lane": "gitops", "fromCol": 0, "toCol": 1, "variant": "emphasis" },
+    { "id": "guard", "label": "Overwrite guard", "lane": "safety", "fromCol": 2, "toCol": 3, "variant": "security" }
+  ],
+  "mainPath": ["cm", "argo", "job", "scale0", "nfs", "apply", "scaleup", "disable"],
+  "nodes": [
+    { "id": "cm", "lane": "gitops", "col": 0, "type": "frontend", "label": "*-restore CM", "sublabel": "enabled / force", "width": 128 },
+    { "id": "argo", "lane": "gitops", "col": 1, "type": "cloud", "label": "Argo Sync", "sublabel": "Application", "width": 120 },
+    { "id": "job", "lane": "hook", "col": 1, "type": "backend", "label": "bootstrap-restore", "sublabel": "PostSync Job", "width": 140 },
+    { "id": "scale0", "lane": "hook", "col": 2, "type": "backend", "label": "Scale to 0", "sublabel": "app workloads", "width": 120 },
+    { "id": "nfs", "lane": "data", "col": 3, "type": "cloud", "label": "NFS Archive", "sublabel": "latest or named", "width": 128 },
+    { "id": "apply", "lane": "data", "col": 4, "type": "database", "label": "Restore Data", "sublabel": "DB and/or PVC", "width": 128 },
+    { "id": "scaleup", "lane": "hook", "col": 5, "type": "backend", "label": "Scale Up", "sublabel": "replicas from CM", "width": 120 },
+    { "id": "disable", "lane": "gitops", "col": 5, "type": "security", "label": "enabled=false", "sublabel": "commit ASAP", "tag": "required", "width": 128 },
+    { "id": "skip", "lane": "safety", "col": 2, "type": "messagebus", "label": "Skip / Abort", "sublabel": "off or !force", "width": 128 }
+  ],
+  "edges": [
+    { "id": "cm-argo", "from": "cm", "to": "argo", "label": "commit", "variant": "emphasis" },
+    { "id": "argo-job", "from": "argo", "to": "job", "label": "PostSync", "variant": "emphasis" },
+    { "id": "job-skip", "from": "job", "to": "skip", "label": "enabled≠true", "variant": "security", "role": "error" },
+    { "id": "job-scale0", "from": "job", "to": "scale0", "variant": "emphasis" },
+    { "id": "scale0-nfs", "from": "scale0", "to": "nfs", "variant": "default" },
+    { "id": "nfs-apply", "from": "nfs", "to": "apply", "label": "extract / psql", "variant": "emphasis" },
+    { "id": "apply-scaleup", "from": "apply", "to": "scaleup", "variant": "emphasis" },
+    { "id": "scaleup-disable", "from": "scaleup", "to": "disable", "label": "operator", "variant": "security" },
+    { "id": "skip-guard", "from": "skip", "to": "apply", "label": "force=true only", "variant": "dashed", "role": "branch" }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Default Off",
+      "items": [
+        "enabled=false is the committed steady state",
+        "force=true required when DB or PVC already has data"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Same Pattern Per App",
+      "items": [
+        "Vaultwarden / BookStack / Authentik / ByteStash share the toggle model",
+        "Authentik restores Postgres then media via a short-lived worker Pod"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "After Success",
+      "items": [
+        "Scale replicas back from ConfigMap values",
+        "Commit enabled=false before the next accidental Sync"
+      ]
+    }
+  ]
+}

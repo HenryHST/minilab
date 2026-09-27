@@ -1,0 +1,291 @@
+# Bootstrap restore from NFS (cluster rebuild). Default is off — set ConfigMap enabled=true
+# (and force=true if DB/media already have data) then Argo Sync; set enabled=false after.
+#
+# Restores PostgreSQL dump + /media from combined archive authentik-*.tar.gz
+# (produced by authentik-backup-cron). Branding NFS sync remains separate.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentik-restore
+  namespace: authentik
+data:
+  enabled: "false"
+  archive: "latest"
+  force: "false"
+  serverReplicas: "1"
+  workerReplicas: "1"
+  worker.sh: |
+    #!/bin/sh
+    set -euo pipefail
+    HAS_MEDIA=0
+    if [ "$(ls -A /media 2>/dev/null | wc -l | tr -d ' ')" != "0" ]; then
+      HAS_MEDIA=1
+    fi
+    echo "media non-empty=${HAS_MEDIA}"
+    if [ "${HAS_MEDIA}" = "1" ] && [ "${RESTORE_FORCE}" != "true" ]; then
+      echo "media not empty and force!=true — abort" >&2
+      exit 1
+    fi
+    if [ ! -f /backup/.restore-work/media.tar.gz ]; then
+      echo "missing /backup/.restore-work/media.tar.gz" >&2
+      exit 1
+    fi
+    if [ "${HAS_MEDIA}" = "1" ] || [ "${RESTORE_FORCE}" = "true" ]; then
+      echo "Clearing /media..."
+      find /media -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+    fi
+    tar xzf /backup/.restore-work/media.tar.gz -C /media
+    ls -la /media
+    echo "Media restore OK"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: authentik-restore
+  namespace: authentik
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: authentik-restore
+  namespace: authentik
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale"]
+    verbs: ["get", "list", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "create", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: authentik-restore
+  namespace: authentik
+subjects:
+  - kind: ServiceAccount
+    name: authentik-restore
+    namespace: authentik
+roleRef:
+  kind: Role
+  name: authentik-restore
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: authentik-bootstrap-restore
+  namespace: authentik
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      serviceAccountName: authentik-restore
+      restartPolicy: Never
+      containers:
+        - name: restore
+          image: alpine/k8s:1.32.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PGHOST
+              value: authentik-postgresql
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              value: authentik
+            - name: PGDATABASE
+              value: authentik
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-credentials
+                  key: password
+            - name: RESTORE_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: authentik-restore
+                  key: enabled
+            - name: RESTORE_ARCHIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: authentik-restore
+                  key: archive
+            - name: RESTORE_FORCE
+              valueFrom:
+                configMapKeyRef:
+                  name: authentik-restore
+                  key: force
+            - name: SERVER_REPLICAS
+              valueFrom:
+                configMapKeyRef:
+                  name: authentik-restore
+                  key: serverReplicas
+            - name: WORKER_REPLICAS
+              valueFrom:
+                configMapKeyRef:
+                  name: authentik-restore
+                  key: workerReplicas
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+              apk add --no-cache postgresql17-client tar gzip >/dev/null
+
+              if [[ "${RESTORE_ENABLED}" != "true" ]]; then
+                echo "authentik-restore.enabled!=true — skip"
+                exit 0
+              fi
+
+              NS="authentik"
+              SERVER="authentik-server"
+              WORKER="authentik-worker"
+              MEDIA_WORKER="authentik-restore-media"
+
+              scale_up() {
+                kubectl -n "${NS}" scale deploy/"${SERVER}" --replicas="${SERVER_REPLICAS}" || true
+                kubectl -n "${NS}" scale deploy/"${WORKER}" --replicas="${WORKER_REPLICAS}" || true
+              }
+
+              echo "Scaling server+worker to 0..."
+              kubectl -n "${NS}" scale deploy/"${SERVER}" --replicas=0
+              kubectl -n "${NS}" scale deploy/"${WORKER}" --replicas=0
+              kubectl -n "${NS}" rollout status deploy/"${SERVER}" --timeout=120s || true
+              kubectl -n "${NS}" rollout status deploy/"${WORKER}" --timeout=120s || true
+              for i in $(seq 1 60); do
+                N="$(kubectl -n "${NS}" get pods -l 'app.kubernetes.io/name=authentik,app.kubernetes.io/component in (server,worker)' --field-selector=status.phase!=Succeeded,status.phase!=Failed -o name 2>/dev/null | wc -l | tr -d ' ')"
+                [[ "${N}" == "0" ]] && break
+                sleep 2
+              done
+
+              if [[ "${RESTORE_ARCHIVE}" == "latest" ]]; then
+                ARCHIVE="$(ls -1t /backup/authentik-*.tar.gz 2>/dev/null | head -n1 || true)"
+              else
+                ARCHIVE="/backup/${RESTORE_ARCHIVE}"
+              fi
+              if [[ -z "${ARCHIVE}" || ! -f "${ARCHIVE}" ]]; then
+                echo "No backup archive found (archive=${RESTORE_ARCHIVE})" >&2
+                scale_up
+                exit 1
+              fi
+
+              WORK="/tmp/restore-work"
+              rm -rf "${WORK}"
+              mkdir -p "${WORK}"
+              tar xzf "${ARCHIVE}" -C "${WORK}"
+              echo "Restoring from ${ARCHIVE}"
+
+              echo "Waiting for postgres..."
+              until pg_isready -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -q; do sleep 2; done
+
+              TABLES="$(psql -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -Atc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';")"
+              echo "public tables: ${TABLES}"
+              if [[ "${TABLES}" != "0" && "${RESTORE_FORCE}" != "true" ]]; then
+                echo "DB not empty and force!=true — abort" >&2
+                scale_up
+                exit 1
+              fi
+
+              if [[ "${TABLES}" != "0" ]]; then
+                echo "DROP SCHEMA public CASCADE..."
+                psql -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -v ON_ERROR_STOP=1 -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO authentik; GRANT ALL ON SCHEMA public TO public;"
+              fi
+
+              echo "Importing db.sql.gz..."
+              gunzip -c "${WORK}/db.sql.gz" | psql -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -v ON_ERROR_STOP=1
+
+              # Stage media.tar.gz on NFS (avoids ConfigMap 1MiB limit), then extract via worker
+              mkdir -p /backup/.restore-work
+              cp "${WORK}/media.tar.gz" /backup/.restore-work/media.tar.gz
+
+              kubectl -n "${NS}" delete pod "${MEDIA_WORKER}" --ignore-not-found --wait=true
+
+              cat <<EOF | kubectl apply -f -
+              apiVersion: v1
+              kind: Pod
+              metadata:
+                name: ${MEDIA_WORKER}
+                namespace: ${NS}
+                labels:
+                  app: authentik-restore-media
+              spec:
+                restartPolicy: Never
+                nodeSelector:
+                  worker: "true"
+                containers:
+                  - name: restore
+                    image: alpine:3.20
+                    imagePullPolicy: IfNotPresent
+                    env:
+                      - name: RESTORE_FORCE
+                        value: "${RESTORE_FORCE}"
+                    command: ["/bin/sh", "/scripts/worker.sh"]
+                    volumeMounts:
+                      - name: media
+                        mountPath: /media
+                      - name: backup
+                        mountPath: /backup
+                      - name: scripts
+                        mountPath: /scripts
+                volumes:
+                  - name: media
+                    persistentVolumeClaim:
+                      claimName: authentik-media
+                  - name: backup
+                    persistentVolumeClaim:
+                      claimName: authentik-backups
+                  - name: scripts
+                    configMap:
+                      name: authentik-restore
+                      defaultMode: 0755
+              EOF
+
+              echo "Waiting for media worker ${MEDIA_WORKER}..."
+              for i in $(seq 1 120); do
+                PHASE="$(kubectl -n "${NS}" get pod "${MEDIA_WORKER}" -o jsonpath='{.status.phase}' 2>/dev/null || true)"
+                case "${PHASE}" in
+                  Succeeded)
+                    kubectl -n "${NS}" logs "${MEDIA_WORKER}" || true
+                    break
+                    ;;
+                  Failed)
+                    kubectl -n "${NS}" logs "${MEDIA_WORKER}" || true
+                    scale_up
+                    kubectl -n "${NS}" delete pod "${MEDIA_WORKER}" --ignore-not-found
+                    rm -rf /backup/.restore-work
+                    exit 1
+                    ;;
+                esac
+                sleep 2
+              done
+              PHASE="$(kubectl -n "${NS}" get pod "${MEDIA_WORKER}" -o jsonpath='{.status.phase}' 2>/dev/null || true)"
+              if [[ "${PHASE}" != "Succeeded" ]]; then
+                echo "Media worker did not succeed (phase=${PHASE})" >&2
+                kubectl -n "${NS}" logs "${MEDIA_WORKER}" || true
+                scale_up
+                kubectl -n "${NS}" delete pod "${MEDIA_WORKER}" --ignore-not-found
+                rm -rf /backup/.restore-work
+                exit 1
+              fi
+              kubectl -n "${NS}" delete pod "${MEDIA_WORKER}" --ignore-not-found --wait=true
+              rm -rf /backup/.restore-work
+
+              echo "Scaling server=${SERVER_REPLICAS} worker=${WORKER_REPLICAS}..."
+              scale_up
+              kubectl -n "${NS}" rollout status deploy/"${SERVER}" --timeout=180s
+              kubectl -n "${NS}" rollout status deploy/"${WORKER}" --timeout=180s
+              echo "Done. Set authentik-restore.enabled=false in Git immediately."
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+      volumes:
+        - name: backup
+          persistentVolumeClaim:
+            claimName: authentik-backups

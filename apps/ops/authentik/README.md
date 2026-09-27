@@ -13,6 +13,17 @@ Manual: `kubectl -n authentik create job --from=cronjob/authentik-media-sync med
 
 Brand paths in Infra_LAB Terraform: `branding/{favicon,key_transparent,website-work}.*` (served as `/files/media/public/branding/...?token=`).
 
+**Note:** Branding sync ≠ full backup. Daily NFS backup (below) also covers uploads/icons on the media PVC; secrets stay in SecretSpec only.
+
+## Backup / Restore
+
+- NAS: `mkdir -p /var/nfs/shared/infra01/authentik-backups`
+- CronJob `authentik-backup-cron` (05:00 UTC): `pg_dump` (DB/User `authentik`) + tar `/media` → combined `authentik-*.tar.gz` (Retention 7)
+- Manuell: `kubectl -n authentik create job --from=cronjob/authentik-backup-cron authentik-backup-manual`
+- Bootstrap-Restore: ConfigMap `authentik-restore` → `enabled=true` (bei vorhandener DB/Media zusätzlich `force=true`), Argo Sync (skaliert server+worker auf 0, stellt DB + Media wieder her); danach sofort `enabled=false` committen
+
+Siehe [ADR-0015](../../docs/adr/0015-backup-restore-cronjobs.md).
+
 ## Helm (vendored + rendered)
 
 Avoids Argo CD `kustomize --enable-helm` / `helm pull` races (`charts/... already exists`).

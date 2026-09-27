@@ -1,0 +1,112 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backup-runner
+  namespace: bytestash
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: backup-runner-role
+  namespace: bytestash
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: backup-runner-rolebinding
+  namespace: bytestash
+subjects:
+  - kind: ServiceAccount
+    name: backup-runner
+    namespace: bytestash
+roleRef:
+  kind: Role
+  name: backup-runner-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# PV carries mountOptions (core Pod nfs volumes cannot); UniFi NAS needs NFSv3 + nolock.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: bytestash-backups-nfs
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=3
+    - nolock
+  nfs:
+    server: 192.168.0.25
+    path: /var/nfs/shared/infra01/bytestash-backups
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bytestash-backups
+  namespace: bytestash
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: bytestash-backups-nfs
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: bytestash-backup-cron
+  namespace: bytestash
+spec:
+  schedule: "0 6 * * *" # 06:00 UTC ≈ 08:00 CEST (after authentik)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          serviceAccountName: backup-runner
+          restartPolicy: Never
+          containers:
+            - name: trigger-backup
+              image: alpine/k8s:1.32.0
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  POD="$(kubectl -n bytestash get pod -l app=bytestash -o jsonpath='{.items[0].metadata.name}')"
+                  if [[ -z "${POD}" ]]; then
+                    echo "No bytestash pod found in namespace bytestash" >&2
+                    exit 1
+                  fi
+                  OUT="/backup/bytestash-$(date -u +%Y%m%d-%H%M%S).tar.gz"
+                  echo "Backing up pod/${POD} /data/snippets -> ${OUT}"
+                  kubectl -n bytestash exec "${POD}" -c bytestash -- tar czf - -C /data/snippets . > "${OUT}"
+                  ls -lh "${OUT}"
+                  # Retention: keep last 7 archives
+                  ls -1t /backup/bytestash-*.tar.gz 2>/dev/null | tail -n +8 | xargs -r rm -f
+                  echo "Done. Archives:"
+                  ls -1t /backup/bytestash-*.tar.gz 2>/dev/null || true
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+          volumes:
+            - name: backup
+              persistentVolumeClaim:
+                claimName: bytestash-backups

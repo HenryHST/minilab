@@ -19,6 +19,7 @@ Kurzübersicht der User-Apps (Details und Sync Waves: Root-README im Git-Repo).
 | Stirling PDF | (Ingress laut App) | Worker-Pin; Memory/Metaspace erhöht |
 | SearXNG | searxng.stadthagen.dev | Metasuche, LAN Traefik LB; kein SSO |
 | Kromgo | kromgo.stadthagen.dev | Prometheus-Badges (LAN); kein SSO |
+| ByteStash | bytestash.stadthagen.dev | Snippets, Authentik OIDC; LAN |
 
 Infrastruktur (Longhorn, cert-manager, Loki, …) liegt unter `infra/` und wird vom ApplicationSet `infra` verwaltet. Ops-Notiz HA: [`../../../home-assistant/ha02.md`](../../../home-assistant/ha02.md).
 

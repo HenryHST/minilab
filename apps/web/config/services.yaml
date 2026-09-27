@@ -60,6 +60,10 @@
         href: https://book.stadthagen.dev
         icon: bookstack.png
         description: Wissensdatenbank (OIDC)
+    - ByteStash:
+        href: https://bytestash.stadthagen.dev
+        icon: si-snippet-#4CAF50
+        description: code snippets (OIDC)
 - Monitoring:
     - Longhorn:
         href: https://longhorn.stadthagen.dev

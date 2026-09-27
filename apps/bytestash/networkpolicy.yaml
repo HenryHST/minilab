@@ -1,0 +1,30 @@
+# bytestash: Traefik ingress + same-ns. LAN only (no Newt).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bytestash-ingress
+  namespace: bytestash
+  labels:
+    app.kubernetes.io/name: bytestash
+    app.kubernetes.io/part-of: bytestash
+spec:
+  podSelector:
+    matchLabels:
+      app: bytestash
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: bytestash
+      ports:
+        - protocol: TCP
+          port: 5000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 5000

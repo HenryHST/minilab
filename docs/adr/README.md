@@ -28,6 +28,7 @@ Format angelehnt an [Michael Nygard](https://cognitect.com/blog/2011/11/15/docum
 | [0018](0018-searxng.md) | SearXNG als LAN-Metasearch | Accepted |
 | [0019](0019-kromgo.md) | Kromgo als LAN-Badge-Proxy | Accepted |
 | [0020](0020-k8tz.md) | k8tz für Cluster-Timezone Europe/Berlin | Accepted |
+| [0021](0021-bytestash.md) | ByteStash mit Authentik-OIDC | Accepted |
 
 ## Neues ADR anlegen
 

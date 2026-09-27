@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: bytestash-stadthagen-dev
+  namespace: bytestash
+spec:
+  secretName: bytestash-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - bytestash.stadthagen.dev

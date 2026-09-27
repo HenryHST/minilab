@@ -94,6 +94,10 @@ data:
             href: https://vaultwarden.stadthagen.dev
             icon: si-bitwarden-#175DDC
             description: password manager (SSO)
+        - ByteStash:
+            href: https://bytestash.stadthagen.dev
+            icon: si-snippet-#4CAF50
+            description: code snippets (OIDC)
     - Monitoring:
         - Longhorn:
             href: https://longhorn.stadthagen.dev

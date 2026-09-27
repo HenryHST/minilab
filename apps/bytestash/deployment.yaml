@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bytestash
+  namespace: bytestash
+  labels:
+    app: bytestash
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: bytestash
+  template:
+    metadata:
+      labels:
+        app: bytestash
+    spec:
+      containers:
+        - name: bytestash
+          image: ghcr.io/jordan-dalby/bytestash:1.5.12
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 5000
+          env:
+            - name: BASE_PATH
+              value: ""
+            - name: ALLOWED_HOSTS
+              value: "bytestash.stadthagen.dev"
+            - name: TOKEN_EXPIRY
+              value: "24h"
+            - name: ALLOW_NEW_ACCOUNTS
+              value: "false"
+            - name: DEBUG
+              value: "false"
+            - name: DISABLE_ACCOUNTS
+              value: "false"
+            - name: DISABLE_INTERNAL_ACCOUNTS
+              value: "true"
+            - name: ALLOW_PASSWORD_CHANGES
+              value: "false"
+            - name: ADMIN_USERNAMES
+              value: "henry"
+            - name: OIDC_ENABLED
+              value: "true"
+            - name: OIDC_DISPLAY_NAME
+              value: "Authentik"
+            - name: OIDC_ISSUER_URL
+              value: "https://idp.stadthagen.dev/application/o/bytestash/"
+            - name: OIDC_CLIENT_ID
+              value: "bytestash"
+            - name: OIDC_SCOPES
+              value: "openid profile email groups"
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: bytestash-oauth
+                  key: client-secret
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: bytestash-jwt
+                  key: JWT_SECRET
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data/snippets
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: bytestash-data

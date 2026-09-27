@@ -46,6 +46,7 @@ entries:
         - !KeyOf registry-ui-provider
       config:
         authentik_host: http://authentik-server.authentik.svc.cluster.local:80
+        authentik_host_browser: https://idp.stadthagen.dev
         authentik_host_insecure: true
         kubernetes_namespace: authentik
         kubernetes_replicas: 1

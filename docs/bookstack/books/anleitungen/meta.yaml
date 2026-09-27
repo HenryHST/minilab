@@ -1,0 +1,5 @@
+# Each NN-*.md becomes its own book under shelf Anleitungen (see IMPORT.md)
+mode: files_as_books
+shelf: Anleitungen
+description: Kurzanleitungen für Nicht-IT
+updated: "2026-09-25"

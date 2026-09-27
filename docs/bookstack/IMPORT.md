@@ -61,10 +61,38 @@ Ops-Doku (Admin): [`../home-assistant/ha02.md`](../home-assistant/ha02.md)
 
 Nach dem Import: Buch in BookStack **beobachten (Watch)**, damit Nutzer bei Seitenänderungen eine E-Mail bekommen. Git-seitige Mails: siehe [`books/home-assistant/BENACHRICHTIGUNGEN.md`](books/home-assistant/BENACHRICHTIGUNGEN.md).
 
-## 5. Optional: API-Import
+## 5. Automatischer Import (empfohlen)
 
-BookStack REST API (`/api/books`, `/api/chapters`, `/api/pages`) mit Token eines Admin-Users. Für den ersten Wurf reicht manueller Import; ein Script kann später ergänzt werden.
+GitHub Actions [`.github/workflows/bookstack-import.yml`](../../.github/workflows/bookstack-import.yml) synct `docs/bookstack/books/*/` per BookStack REST API. Script: [`scripts/bookstack-import/import_books.py`](../../scripts/bookstack-import/import_books.py). Pro Ordner: `meta.yaml` (`book`, `shelf`, optional `mode: files_as_books` für Anleitungen).
+
+### Einmalig: API-Token + Secrets
+
+1. BookStack → **Mein Konto → API Tokens** (User mit Create/Edit auf Bücher/Seiten).
+2. GitHub Secrets im Repo **minilab**:
+
+```bash
+gh secret set BOOKSTACK_URL -b 'https://book.stadthagen.dev' -R HenryHST/minilab
+gh secret set BOOKSTACK_TOKEN_ID -R HenryHST/minilab
+gh secret set BOOKSTACK_TOKEN_SECRET -R HenryHST/minilab
+```
+
+3. Workflow läuft auf **self-hosted** Runner (LAN zu `book.stadthagen.dev`).
+
+### Starten
+
+- Push auf `main` unter `docs/bookstack/books/**` / `scripts/bookstack-import/**`
+- Oder Actions → **BookStack import** → *Run workflow*
+
+Lokal:
+
+```bash
+export BOOKSTACK_URL=https://book.stadthagen.dev BOOKSTACK_TOKEN_ID=… BOOKSTACK_TOKEN_SECRET=…
+pip install -r scripts/bookstack-import/requirements.txt
+python3 scripts/bookstack-import/import_books.py --books-dir docs/bookstack/books --dry-run
+```
+
+Manueller Copy-Paste (Abschnitte 1–4) bleibt Fallback.
 
 ## 6. Theme Modules (optional)
 
-Siehe `apps/bookstack/README.md` und ADR-0017.
+Siehe `apps/dev/bookstack/README.md` und ADR-0017.

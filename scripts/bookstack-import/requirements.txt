@@ -1,0 +1,2 @@
+# Install PyYAML for meta.yaml parsing (stdlib fallback exists but is limited).
+PyYAML>=6.0.1

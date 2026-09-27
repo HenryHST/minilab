@@ -1,3 +1,8 @@
+## Unreleased
+
+### Changed
+- **ADR-0022:** Workloads under `apps/{infra,monitoring,ops,dev}/`; four ApplicationSets + AppProjects; bootstrap Application `gitops-bootstrap` (replaces flat Applications + single ApplicationSet `infra` / AppProject `infrastruktur`). Issue #72.
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -10,7 +15,7 @@ Hubble UI Exposure + Authentik ForwardAuth (ADR-0018). Begleit-Release Plattform
 
 ### Added
 
-- `apps/hubble-ui` — Certificate, IngressRoute, NetworkPolicy, ForwardAuth-Middleware für `hubble.stadthagen.dev` (kein zweites UI-Helm-Release)
+- `apps/ops/hubble-ui` — Certificate, IngressRoute, NetworkPolicy, ForwardAuth-Middleware für `hubble.stadthagen.dev` (kein zweites UI-Helm-Release)
 - Day-0 Blueprint `day0-hubble-ui` — Proxy Provider + Outpost `ak-outpost-hubble-ui`; App-Logo `branding/hubble-light-1.svg` (Authentik Media)
 
 ### Notes
@@ -20,12 +25,12 @@ Hubble UI Exposure + Authentik ForwardAuth (ADR-0018). Begleit-Release Plattform
 
 ## [0.9.0] - 2026-09-25
 
-Authentik cluster IdP (`apps/authentik`) inkl. Day-0 registry-ui Outpost-Blueprint; ForwardAuth wieder aktiv. Begleit-Release Plattform: [Infra_LAB v1.7.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.7.0).
+Authentik cluster IdP (`apps/ops/authentik`) inkl. Day-0 registry-ui Outpost-Blueprint; ForwardAuth wieder aktiv. Begleit-Release Plattform: [Infra_LAB v1.7.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.7.0).
 
 ### Added
 
-- `apps/authentik` — GitOps IdP auf `idp.stadthagen.dev` (Helm 2026.8, Longhorn PG, Media PVC + NFS sync CronJob, IngressRoute/TLS)
-- Day-0 Blueprints — Proxy Provider + Outpost `ak-outpost-registry-ui` via ConfigMap `authentik-blueprints-day0` / Helm `blueprints.configMaps` ([`BLUEPRINTS.md`](apps/authentik/BLUEPRINTS.md)); Ownership mit Infra_LAB ADR-0017
+- `apps/ops/authentik` — GitOps IdP auf `idp.stadthagen.dev` (Helm 2026.8, Longhorn PG, Media PVC + NFS sync CronJob, IngressRoute/TLS)
+- Day-0 Blueprints — Proxy Provider + Outpost `ak-outpost-registry-ui` via ConfigMap `authentik-blueprints-day0` / Helm `blueprints.configMaps` ([`BLUEPRINTS.md`](apps/ops/authentik/BLUEPRINTS.md)); Ownership mit Infra_LAB ADR-0017
 
 ### Changed
 
@@ -45,20 +50,20 @@ GitOps-Härtung (plain directory / ApplicationSet), BookStack-Wiki, Registry, Ba
 
 - `bookstack` — BookStack Wiki on `book.stadthagen.dev` (gabe565 Helm → committed `helm-manifest.yaml`, MariaDB, Authentik OIDC, SMTP prepared, NFS backup/restore); ADRs 0016/0017; Git content under `docs/bookstack/`
 - Architecture Decision Records under [`docs/adr/`](docs/adr/) (GitOps, Plain Directory, ApplicationSet, TLS, Longhorn, Authentik, Pangolin, Alerting, Helm strategy, backups, BookStack, …)
-- `registry` — full Distribution `registry:3` GitOps stack under `infra/registry/` (Deployment, ClusterIP, PVC, config, weekly GC CronJob, Traefik `registry.stadthagen.dev`, NetworkPolicy); digest-pinned image
+- `registry` — full Distribution `registry:3` GitOps stack under `apps/ops/registry/` (Deployment, ClusterIP, PVC, config, weekly GC CronJob, Traefik `registry.stadthagen.dev`, NetworkPolicy); digest-pinned image
 - `registry-ui` — Joxit docker-registry-ui (Helm 1.1.4 / image 2.6.0) via ApplicationSet `infra`; namespace `registry-ui`, host `registry-ui.stadthagen.dev`; proxies `kube-registry:5000`; Authentik ForwardAuth **enabled** (`middleware-authentik.yaml`)
-- Baseline Alerting (V1+V2) — PrometheusRules (`homelab-alerts.yaml`: workload, platform, Proxmox pve-exporter, Cilium) + PodMonitors für Cilium/Hubble + Loki Ruler LogQL rules (Proxmox syslog) → Alertmanager; critical/warning E-Mail routes; `promtool` tests under `infra/kube-prometheus-stack/tests/`; design/runbook in `ALERTING.md`
+- Baseline Alerting (V1+V2) — PrometheusRules (`homelab-alerts.yaml`: workload, platform, Proxmox pve-exporter, Cilium) + PodMonitors für Cilium/Hubble + Loki Ruler LogQL rules (Proxmox syslog) → Alertmanager; critical/warning E-Mail routes; `promtool` tests under `apps/monitoring/kube-prometheus-stack/tests/`; design/runbook in `ALERTING.md`
 - `pangolin-publish` — registered via ApplicationSet `infra` (replaces standalone Application CR)
 - `status` (Uptime Kuma) — Kubernetes startup, readiness, and liveness probes (`extra/healthcheck` + HTTP `/`)
 - `status` — Pod Security: `enforce: baseline` (ICMP/`NET_RAW`), `audit/warn: restricted`; Local PV/PVC replaces hostPath in pod specs
 - ApplicationSet `infra` — plain YAML for `registry`, `system-upgrade-controller`, `alloy` (no `kustomization.yaml`; avoids CMP `:8081`)
 - All user apps under `apps/` — plain directory (no `kustomization.yaml`); Helm apps use committed `helm-manifest.yaml` (`headlamp`, `termix`, `unifipoller`); `web` uses static `configmap.yaml`
-- ApplicationSet `infra` — auto-registers `infra/cert-manager`, `infra/newt`, `infra/metrics-server`, `infra/registry` (homelab-style; sync-wave 0)
+- ApplicationSet `infra` — auto-registers `apps/ops/cert-manager`, `apps/ops/newt`, `apps/monitoring/metrics-server`, `apps/ops/registry` (homelab-style; sync-wave 0)
 - BookStack-Bücher **Home Assistant** (Zigbee/Matter/Homematic/Bluetooth) und erweiterte Minilab-Kapitel; E-Mail bei HA-Buch-Änderungen
 
 ### Changed
 
-- `infra/registry` Service `kube-registry` from LoadBalancer → ClusterIP (expose via Traefik only); PVC auf **2Gi** `longhorn-loki-local` + Worker-Pin (Disk-Headroom)
+- `apps/ops/registry` Service `kube-registry` from LoadBalancer → ClusterIP (expose via Traefik only); PVC auf **2Gi** `longhorn-loki-local` + Worker-Pin (Disk-Headroom)
 - Longhorn storage over-provisioning **200%**
 - Renovate packageRules for `registry` / `alpine/k8s` (kube-registry) and Joxit chart/image (registry-ui)
 - AppProject `infrastruktur` moved to `apps/argocd-apps/raw/` (managed by Application `infra-applicationset`); removed Application `infrastruktur-project` and `bootstrap/` — fixes missing project for Longhorn / ApplicationSet apps; destinations use `server: "*"`
@@ -76,7 +81,7 @@ GitOps-Härtung (plain directory / ApplicationSet), BookStack-Wiki, Registry, Ba
 
 ### Migration notes
 
-- **registry**: Before first sync, remove any out-of-band `kube-registry` workload that shares `app: kube-registry` (see `infra/registry/README.md`). Service is no longer LoadBalancer — use `registry.stadthagen.dev` or ClusterDNS. Create DNS for `registry.stadthagen.dev`. Create Authentik Outpost `ak-outpost-registry-ui` or registry-ui ForwardAuth will fail.
+- **registry**: Before first sync, remove any out-of-band `kube-registry` workload that shares `app: kube-registry` (see `apps/ops/registry/README.md`). Service is no longer LoadBalancer — use `registry.stadthagen.dev` or ClusterDNS. Create DNS for `registry.stadthagen.dev`. Create Authentik Outpost `ak-outpost-registry-ui` or registry-ui ForwardAuth will fail.
 - After sync: old Applications `cert-manager`, `newt`, `metrics-server`, `pangolin-publish` are replaced by ApplicationSet-generated apps with the same names
 - Requires Argo CD ApplicationSet controller (bundled with argo-cd Helm chart)
 - If old `pangolin-publish` Application hangs in Terminating while ApplicationSet recreates it: `kubectl patch application pangolin-publish -n argocd --type merge -p '{"metadata":{"finalizers":null}}'` then refresh ApplicationSet `infra`

@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Datum:** 2026-09-27
-- **Kontext:** `apps/searxng/`, Issue [HenryHST/minilab#65](https://github.com/HenryHST/minilab/issues/65)
+- **Kontext:** `apps/dev/searxng/`, Issue [HenryHST/minilab#65](https://github.com/HenryHST/minilab/issues/65)
 
 ## Kontext
 
@@ -10,7 +10,7 @@ Homelab braucht eine datenschutzfreundliche Metasuche ohne Public Exposure und o
 
 ## Entscheidung
 
-- **Ownership:** GitOps in minilab (`apps/searxng` + Argo Application Wave 3).
+- **Ownership:** GitOps in minilab (`apps/dev/searxng` + Argo Application Wave 3).
 - **Host:** `searxng.stadthagen.dev` → Traefik LB `192.168.0.215` (LAN-only; kein Pangolin-Publish).
 - **Auth:** nur Traefik TLS (kein Authentik/ForwardAuth).
 - **Runtime:** ein Container, Image-Pin (kein `latest`); kein Valkey/Bot-Limiter in v1 (optional später).

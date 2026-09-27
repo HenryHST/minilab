@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Datum:** 2026-09-11
-- **Kontext:** `apps/status/`, Namespace `uptimekuma`
+- **Kontext:** `apps/monitoring/status/`, Namespace `uptimekuma`
 
 ## Kontext
 
@@ -17,7 +17,7 @@ Uptime Kuma v2 unterstützt SQLite, externes MariaDB und Embedded MariaDB. Homel
 | Replicas | 1, `Recreate` (single-writer) |
 | PSS | `enforce: baseline` (wegen `NET_RAW`), `audit`/`warn: restricted` |
 
-Backup/Restore: siehe [ADR-0015](0015-backup-restore-cronjobs.md) und [`apps/status/README.md`](../../apps/status/README.md).
+Backup/Restore: siehe [ADR-0015](0015-backup-restore-cronjobs.md) und [`apps/monitoring/status/README.md`](../../apps/monitoring/status/README.md).
 
 ## Konsequenzen
 

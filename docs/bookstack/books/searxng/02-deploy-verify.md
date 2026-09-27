@@ -13,7 +13,7 @@ Secret: `searxng/searxng-secret` → Key `secret` → Env `SEARXNG_SECRET`.
 
 ## Sync
 
-Argo Application `searxng` (path `apps/searxng`, automated, `CreateNamespace=true`).
+Argo Application `searxng` (path `apps/dev/searxng`, automated, `CreateNamespace=true`).
 
 ## DNS
 

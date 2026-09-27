@@ -1,0 +1,123 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: ops
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - app: cert-manager
+            namespace: certmanager
+            syncWave: "0"
+            helmRepo: https://charts.jetstack.io
+            helmChart: cert-manager
+            helmVersion: v1.21.1
+            helmReleaseName: cert-manager
+            helmValuesFile: apps/ops/cert-manager/values.yaml
+          - app: cert-manager-webhook-hetzner
+            namespace: certmanager
+            syncWave: "1"
+            helmRepo: https://charts.hetzner.cloud
+            helmChart: cert-manager-webhook-hetzner
+            helmVersion: "0.9.0"
+            helmReleaseName: cert-manager-webhook-hetzner
+            helmValuesFile: apps/ops/cert-manager/webhook-values.yaml
+          - app: registry
+            path: apps/ops/registry
+            namespace: kube-system
+            syncWave: "0"
+          - app: registry-ui
+            path: apps/ops/registry-ui/manifests
+            namespace: registry-ui
+            syncWave: "0"
+            helmRepo: https://helm.joxit.dev
+            helmChart: docker-registry-ui
+            helmVersion: "1.1.4"
+            helmReleaseName: registry-ui
+            helmValuesFile: apps/ops/registry-ui/values.yaml
+            extras: true
+          - app: newt
+            namespace: newt
+            syncWave: "0"
+            helmRepo: https://charts.fossorial.io
+            helmChart: newt
+            helmVersion: "1.5.0"
+            helmReleaseName: newt
+            helmValuesFile: apps/ops/newt/values.yaml
+          - app: system-upgrade-controller
+            path: apps/ops/system-upgrade-controller
+            namespace: system-upgrade
+            syncWave: "1"
+          - app: pangolin-publish
+            path: apps/ops/pangolin-publish
+            namespace: pangolin-publish
+            syncWave: "3"
+          - app: authentik
+            path: apps/ops/authentik
+            namespace: authentik
+            syncWave: "2"
+          - app: headlamp
+            path: apps/ops/headlamp
+            namespace: kube-system
+            syncWave: "2"
+          - app: hubble-ui
+            path: apps/ops/hubble-ui
+            namespace: kube-system
+            syncWave: "2"
+  template:
+    metadata:
+      name: "{{ .app }}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "{{ .syncWave }}"
+    spec:
+      project: ops
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{ .namespace }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
+        syncOptions:
+          - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true
+          - PruneLast=true
+          - ServerSideApply=true
+          - RespectIgnoreDifferences=true
+  templatePatch: |
+    {{- if dig "helmChart" "" . }}
+    spec:
+      sources:
+        - repoURL: {{ .helmRepo }}
+          chart: {{ .helmChart }}
+          targetRevision: {{ .helmVersion }}
+          helm:
+            releaseName: {{ dig "helmReleaseName" .app . }}
+            valueFiles:
+              - $values/{{ .helmValuesFile }}
+        - repoURL: https://github.com/HenryHST/minilab
+          targetRevision: main
+          ref: values
+        {{- if dig "extras" false . }}
+        - repoURL: https://github.com/HenryHST/minilab
+          targetRevision: main
+          path: {{ .path }}
+        {{- end }}
+    {{- else }}
+    spec:
+      source:
+        repoURL: https://github.com/HenryHST/minilab
+        targetRevision: main
+        path: {{ .path }}
+    {{- end }}

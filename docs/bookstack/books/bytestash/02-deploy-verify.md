@@ -9,7 +9,7 @@
 
 ## Sync
 
-Argo Application `bytestash` (path `apps/bytestash`).
+Argo Application `bytestash` (path `apps/dev/bytestash`).
 
 ## Checks
 

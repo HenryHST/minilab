@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Datum:** 2026-09-11
-- **Kontext:** `infra/longhorn/`
+- **Kontext:** `apps/infra/longhorn/`
 
 ## Kontext
 

@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Datum:** 2026-09-11
-- **Kontext:** `infra/kube-prometheus-stack/`, `infra/loki/`
+- **Kontext:** `apps/monitoring/kube-prometheus-stack/`, `apps/monitoring/loki/`
 
 ## Kontext
 
@@ -16,7 +16,7 @@ Homelab braucht frühzeitige Signale zu Workload-, Plattform-, Proxmox- und CNI-
 - Proxmox (pve-exporter) und Cilium/Hubble sind Teil der Baseline.
 - Grafana: Datasource Alertmanager, `handleGrafanaManagedAlerts: false`.
 
-Ausführliches Design, Matrix und Runbook: [`infra/kube-prometheus-stack/ALERTING.md`](../../infra/kube-prometheus-stack/ALERTING.md). Tests: `infra/kube-prometheus-stack/tests/`.
+Ausführliches Design, Matrix und Runbook: [`apps/monitoring/kube-prometheus-stack/ALERTING.md`](../../apps/monitoring/kube-prometheus-stack/ALERTING.md). Tests: `apps/monitoring/kube-prometheus-stack/tests/`.
 
 ## Konsequenzen
 

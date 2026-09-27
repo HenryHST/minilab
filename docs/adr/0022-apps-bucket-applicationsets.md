@@ -51,16 +51,16 @@ Helm-Strategie unverändert ([ADR-0014](0014-helm-strategie.md)).
 
 ## Migration (orphan-safe)
 
-Reihenfolge laut ADR-0004-Warnung (Finalizer-Konflikte):
 
-1. Alte Application-CRs: `kubectl delete application <name> -n argocd --cascade=orphan` (Workload bleibt).
-2. Bootstrap synct neue ApplicationSets → erzeugen Applications gleicher Namen → übernehmen bestehende Ressourcen.
-3. Altes ApplicationSet `infra` + Einzel-YAMLs und AppProject `infrastruktur` aus Git entfernen (bereits in diesem Change).
-4. Bei hängendem Finalizer:
+Reihenfolge laut ADR-0004-Warnung (Finalizer-Konflikte). **Parent `homelab` Autosync/Prune vor dem Merge pausieren**, sonst prune't der Parent entfernte Einzel-YAMLs.
 
-```bash
-kubectl -n argocd patch application <name> --type merge -p '{"metadata":{"finalizers":null}}'
-```
+1. Parent-Autosync entfernen.
+2. ApplicationSet auf `spec.syncPolicy.applicationsSync: create-only` setzen (oder Finalizer entfernen und ApplicationSet löschen), damit gelöschte Apps nicht sofort neu angelegt und geprune't werden.
+3. Pro Application: Finalizer entfernen, dann Application-CR löschen (Workload bleibt).
+4. Merge → `gitops-bootstrap` + neue Sets/AppProjects.
+5. ApplicationSets erzeugen Apps gleicher Namen → Sync adoptiert Ressourcen.
+
+**Lektion:** ApplicationSet-Templates überschreiben manuelle `syncPolicy`-Patches an Child-Apps.
 
 ## Konsequenzen
 

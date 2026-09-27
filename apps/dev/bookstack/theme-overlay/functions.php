@@ -5,7 +5,7 @@ use BookStack\Theming\ThemeEvents;
 use BookStack\Theming\ThemeViews;
 
 /**
- * Inject PDF font CSS for dompdf exports (Noto Sans from storage/fonts/dompdf).
+ * Inject PDF font CSS for dompdf exports (Noto Sans / Sans Mono / Serif from storage/fonts/dompdf).
  * Synced onto the custom theme by theme-modules-sync Job.
  */
 Theme::listen(ThemeEvents::THEME_REGISTER_VIEWS, function (ThemeViews $themeViews) {

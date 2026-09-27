@@ -8,7 +8,7 @@ data:
     use BookStack\Theming\ThemeViews;
 
     /**
-     * Inject PDF font CSS for dompdf exports (Noto Sans from storage/fonts/dompdf).
+     * Inject PDF font CSS for dompdf exports (Noto Sans / Sans Mono / Serif from storage/fonts/dompdf).
      * Synced onto the custom theme by theme-modules-sync Job.
      */
     Theme::listen(ThemeEvents::THEME_REGISTER_VIEWS, function (ThemeViews $themeViews) {
@@ -20,8 +20,17 @@ data:
     .export-format-pdf.export-engine-dompdf * {
         font-family: 'Noto Sans', 'DejaVu Sans', sans-serif;
     }
+    .export-format-pdf.export-engine-dompdf code,
+    .export-format-pdf.export-engine-dompdf pre,
+    .export-format-pdf.export-engine-dompdf kbd,
+    .export-format-pdf.export-engine-dompdf samp {
+        font-family: 'Noto Sans Mono', 'DejaVu Sans Mono', monospace;
+    }
     </style>
 kind: ConfigMap
 metadata:
   name: bookstack-theme-overlay
   namespace: bookstack
+  labels:
+    app.kubernetes.io/name: bookstack
+    app.kubernetes.io/component: theme-overlay

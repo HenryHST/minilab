@@ -11,7 +11,7 @@ Wiki / Wissensdatenbank unter **https://book.stadthagen.dev** (intern, Traefik).
 | DB | MariaDB 11.4 (`mariadb.yaml`, hostPath `/var/lib/bookstack-mariadb` @ `nxk3-w01`) |
 | Auth | Authentik OIDC (`AUTH_METHOD=oidc`) |
 | Theme | `APP_THEME=custom` — Modules/Fonts via Argo PostSync Job |
-| PDF | `EXPORT_PAGE_SIZE=a4`, dompdf + Noto Sans (GitOps) |
+| PDF | `EXPORT_PAGE_SIZE=a4`, dompdf + Noto Sans / Sans Mono / Serif (GitOps) |
 | SMTP | `mail.henrystadthagen.de:465`, Secret `bookstack-smtp` (Passwort = SecretSpec `AUTHENTIK_EMAIL_PASSWORD`) |
 | Backup | CronJob 04:00 UTC → NFS `…/bookstack-backups` (DB + `/config`, Retention 7) |
 
@@ -43,16 +43,18 @@ Argo **PostSync**-Job [`theme-modules-sync.yaml`](theme-modules-sync.yaml) insta
 | Pfad | Inhalt |
 |------|--------|
 | [`hacks/`](hacks/) | Modul-ZIPs (siehe [`hacks/SOURCES.md`](hacks/SOURCES.md)) |
-| [`fonts/dompdf/`](fonts/dompdf/) | Noto Sans TTFs (siehe [`fonts/SOURCES.md`](fonts/SOURCES.md)) |
+| [`fonts/dompdf/`](fonts/dompdf/) | Noto Sans / Sans Mono / Serif TTFs (siehe [`fonts/SOURCES.md`](fonts/SOURCES.md)) |
 | [`theme-overlay/`](theme-overlay/) | `functions.php` + PDF-Font-CSS für dompdf |
 
-ConfigMaps (`hack-cm-*.yaml`, `font-cm-*.yaml`, `theme-overlay-cm.yaml`) tragen die Binaries; der Job mountet sie und `kubectl cp`/`install-module` in den BookStack-Pod.
+ConfigMaps (`hack-cm-*.yaml`, `font-cm-*.yaml`, `theme-overlay-cm.yaml`) tragen die Binaries; der Job mountet Fonts als **projected volume** und `kubectl cp`/`install-module` in den BookStack-Pod.
 
-**Font-ConfigMaps** (~570 KiB TTFs): client-side `kubectl apply` scheitert an der `last-applied-configuration`-Annotation (>256 KiB). Stattdessen:
+**Font-ConfigMaps** (eine CM pro TTF, ≤1 MiB): client-side `kubectl apply` scheitert an der `last-applied-configuration`-Annotation (>256 KiB). Stattdessen:
 
 ```bash
-kubectl apply --server-side --force-conflicts -f font-cm-notosans.yaml -f font-cm-notosans-bold.yaml
+kubectl apply --server-side --force-conflicts -f font-cm-*.yaml
 ```
+
+TTFs, die als ConfigMap die 1‑MiB-Grenze sprengen (`NotoSans-{Light,Medium,Regular,SemiBold}`, `NotoSerif-Thin`), bleiben nur im Repo — Details in [`fonts/SOURCES.md`](fonts/SOURCES.md).
 
 Nach PVC-Wipe: Argo Sync (Job läuft erneut). Manuell: Job löschen und Application syncen, oder:
 
@@ -75,8 +77,11 @@ Routen: `/books/{slug}/export/offline-zip` (auch chapter/page). Menü: **Offline
 
 - `EXPORT_PAGE_SIZE=a4` ([Doku](https://www.bookstackapp.com/docs/admin/pdf-rendering/#export-page-size))
 - Engine: Standard **dompdf**
-- Fonts: `NotoSans.ttf` / `NotoSans-Bold.ttf` → PVC `/config/www/fonts/dompdf/` + ephemeral `/app/www/storage/fonts/dompdf/` (PostSync Job; `postStart` im Deployment kopiert PVC→storage nach Restart)
-- CSS (Theme-Root): `pdf-fonts-head.blade.php` + `functions.php` (`renderBefore` base-body-start)
+- Fonts (PostSync Job → PVC `/config/www/fonts/dompdf/` + ephemeral `/app/www/storage/fonts/dompdf/`):
+  - Body: hinted `NotoSans.ttf` / `NotoSans-Bold.ttf`
+  - Code: `NotoSansMono-*.ttf`
+  - Serif: `NotoSerif-{Regular,Bold,Italic,Light,Medium}.ttf`
+- CSS (Theme-Root): `pdf-fonts-head.blade.php` + `functions.php` (`renderBefore` base-body-start) — Sans für Fließtext, Sans Mono für `code`/`pre`
 
 ## Helm neu rendern
 

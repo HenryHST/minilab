@@ -58,12 +58,40 @@ spec:
         - name: hack-mermaid
           configMap:
             name: bookstack-hack-mermaid-viewer
-        - name: font-regular
-          configMap:
-            name: bookstack-font-notosans
-        - name: font-bold
-          configMap:
-            name: bookstack-font-notosans-bold
+        # One projected volume: unique TTF keys from each font ConfigMap (≤1 MiB each).
+        - name: fonts
+          projected:
+            sources:
+              - configMap:
+                  name: bookstack-font-notosans
+              - configMap:
+                  name: bookstack-font-notosans-bold
+              - configMap:
+                  name: bookstack-font-notosansmono-black
+              - configMap:
+                  name: bookstack-font-notosansmono-bold
+              - configMap:
+                  name: bookstack-font-notosansmono-extrabold
+              - configMap:
+                  name: bookstack-font-notosansmono-extralight
+              - configMap:
+                  name: bookstack-font-notosansmono-medium
+              - configMap:
+                  name: bookstack-font-notosansmono-regular
+              - configMap:
+                  name: bookstack-font-notosansmono-semibold
+              - configMap:
+                  name: bookstack-font-notosansmono-thin
+              - configMap:
+                  name: bookstack-font-notoserif-bold
+              - configMap:
+                  name: bookstack-font-notoserif-italic
+              - configMap:
+                  name: bookstack-font-notoserif-light
+              - configMap:
+                  name: bookstack-font-notoserif-medium
+              - configMap:
+                  name: bookstack-font-notoserif-regular
         - name: theme-overlay
           configMap:
             name: bookstack-theme-overlay
@@ -78,11 +106,8 @@ spec:
             - name: hack-mermaid
               mountPath: /hacks/mermaid
               readOnly: true
-            - name: font-regular
-              mountPath: /fonts/regular
-              readOnly: true
-            - name: font-bold
-              mountPath: /fonts/bold
+            - name: fonts
+              mountPath: /fonts
               readOnly: true
             - name: theme-overlay
               mountPath: /overlay
@@ -128,10 +153,13 @@ spec:
 
               echo "Sync dompdf fonts..."
               kubectl -n "$NS" exec "$POD" -- mkdir -p /app/www/storage/fonts/dompdf /config/www/fonts/dompdf
-              kcp /fonts/regular/NotoSans.ttf "$NS/$POD:/app/www/storage/fonts/dompdf/NotoSans.ttf"
-              kcp /fonts/bold/NotoSans-Bold.ttf "$NS/$POD:/app/www/storage/fonts/dompdf/NotoSans-Bold.ttf"
-              kcp /fonts/regular/NotoSans.ttf "$NS/$POD:/config/www/fonts/dompdf/NotoSans.ttf"
-              kcp /fonts/bold/NotoSans-Bold.ttf "$NS/$POD:/config/www/fonts/dompdf/NotoSans-Bold.ttf"
+              shopt -s nullglob
+              for ttf in /fonts/*.ttf; do
+                base="$(basename "$ttf")"
+                echo "  $base"
+                kcp "$ttf" "$NS/$POD:/app/www/storage/fonts/dompdf/${base}"
+                kcp "$ttf" "$NS/$POD:/config/www/fonts/dompdf/${base}"
+              done
               # php-fpm runs as abc (PUID 911); dompdf must write .ufm next to TTFs
               kubectl -n "$NS" exec "$POD" -- sh -c 'chown -R abc:abc /app/www/storage/fonts/dompdf /config/www/fonts/dompdf && chmod 775 /app/www/storage/fonts/dompdf /config/www/fonts/dompdf && chmod 664 /app/www/storage/fonts/dompdf/*.ttf /config/www/fonts/dompdf/*.ttf'
 

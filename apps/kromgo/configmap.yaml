@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kromgo-config
+  namespace: kromgo
+data:
+  config.yaml: |
+    prometheus: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+    defaults:
+      badge:
+        style: flat
+    badges:
+      - id: cluster_cpu
+        title: CPU
+        query: 'round(cluster:node_cpu:ratio_rate5m * 100, 0.1)'
+        valueExpr: string(result) + "%"
+        icon: mdi:cpu-64-bit
+      - id: cluster_memory
+        title: Memory
+        query: 'round((1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes)) * 100, 0.1)'
+        valueExpr: string(result) + "%"
+        icon: mdi:memory
+      - id: pod_count
+        title: Pods
+        query: 'count(kube_pod_info)'
+        valueExpr: string(int(result))
+        icon: si:kubernetes

@@ -111,6 +111,10 @@ data:
             href: https://prometheus.stadthagen.dev
             icon: si-prometheus-#E6522C
             description: metrics & scrape targets
+        - Kromgo:
+            href: https://kromgo.stadthagen.dev
+            icon: si-prometheus-#E6522C
+            description: metric badges (LAN)
         - Alertmanager:
             href: https://alert-manager.stadthagen.dev
             icon: si-prometheus-#E6522C

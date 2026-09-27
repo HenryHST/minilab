@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kromgo-stadthagen-dev
+  namespace: kromgo
+spec:
+  secretName: kromgo-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - kromgo.stadthagen.dev

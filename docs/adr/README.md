@@ -26,6 +26,7 @@ Format angelehnt an [Michael Nygard](https://cognitect.com/blog/2011/11/15/docum
 | [0016](0016-bookstack-wissensdatenbank.md) | BookStack als zentrale Wissensdatenbank | Accepted |
 | [0017](0017-bookstack-theme-modules.md) | BookStack Theme Modules statt Plugins | Accepted |
 | [0018](0018-searxng.md) | SearXNG als LAN-Metasearch | Accepted |
+| [0019](0019-kromgo.md) | Kromgo als LAN-Badge-Proxy | Accepted |
 
 ## Neues ADR anlegen
 

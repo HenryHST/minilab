@@ -23,6 +23,7 @@ spec:
   backoffLimit: 1
   template:
     spec:
+      serviceAccountName: backup-runner
       restartPolicy: Never
       containers:
         - name: restore-gate

@@ -9,7 +9,8 @@ Document management with OCR (deu+eng), Authentik OIDC, Gotenberg + Tika, HPScan
 | Redis | `redis://redis.redis.svc.cluster.local:6379/0` (`apps/infra/redis`) |
 | LAN | https://paperless.stadthagen.dev |
 | Ext | https://paperless-ext.stadthagen.dev (pangolin-publish `enabled: false` until flipped) |
-| OCR workers | Deployment `paperless-worker` + HPA 1–3 (podAffinity to web for RWO media) |
+| OCR workers | Deployment `paperless-worker` + HPA 1–3 (pinned to `nxk3-w01` with web; hostPath media) |
+| Storage | hostPath/local on `nxk3-w01` (Postgres/data/media/export); HPScan NFS consume |
 
 ## Secrets (before first sync)
 

@@ -35,6 +35,8 @@ spec:
     spec:
       securityContext:
         fsGroup: 1000
+      nodeSelector:
+        kubernetes.io/hostname: nxk3-w01
       initContainers:
         - name: wait-for-db
           image: busybox:1.37

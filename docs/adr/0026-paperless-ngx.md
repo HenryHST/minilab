@@ -10,9 +10,7 @@ Dokumentenarchiv mit OCR, HPScan-Import und Authentik-Login soll auf nXk3 laufen
 
 ## Entscheidung
 
-- **Ownership:** ApplicationSet `dev` / NS `paperless`, sync wave `3`; Redis ApplicationSet `infra` / NS `redis`, wave `1` ([ADR-0022](0022-apps-bucket-applicationsets.md), [ADR-0014](0014-helm-strategie.md) plain manifests).
-- **Stack:** `paperless-ngx:3.0.0`, Postgres `18`, Gotenberg `8.34`, Tika `3.2.2.0`, Redis `7-alpine`.
-- **OCR:** `deu+eng`; Worker-Deployment + HPA 1–3 (podAffinity an Web wegen RWO Longhorn media/data).
+- **Storage:** hostPath/local PVs on `nxk3-w01` for Postgres/data/media/export (Longhorn derzeit ohne freie Disk — gleiches Muster wie Termix); HPScan consume weiterhin NFS.
 - **Consume:** NFS PV von un10 HPScan-Export; Tag `inbox` via PostSync-Job.
 - **Auth:** Authentik OIDC (LAN + Ext-Redirects wie Termix); SMTP `mail.henrystadthagen.de:465`.
 - **Exposure:** LAN `paperless.stadthagen.dev`; Ext `paperless-ext` in pangolin-publish mit **`enabled: false`** vorbereitet.

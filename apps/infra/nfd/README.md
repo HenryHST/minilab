@@ -2,7 +2,7 @@
 
 Detects hardware and software features on each node and publishes them as Kubernetes labels (`feature.node.kubernetes.io/*`).
 
-- Chart: [node-feature-discovery 0.19.0](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/deployment/helm.html) (`oci://registry.k8s.io/nfd/charts`)
+- Chart: [node-feature-discovery 0.19.0](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/deployment/helm.html) (`registry.k8s.io/nfd/charts`)
 - Argo: ApplicationSet `infra` → app `nfd`, sync wave `1`, namespace `node-feature-discovery`
 - Metrics: `prometheus.enable: true` → PodMonitors (scraped by kube-prometheus-stack)
 

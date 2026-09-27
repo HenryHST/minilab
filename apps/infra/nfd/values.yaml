@@ -1,0 +1,11 @@
+# Node Feature Discovery — Helm chart values.
+# Chart: oci://registry.k8s.io/nfd/charts/node-feature-discovery  version pinned in ApplicationSet.
+# Docs: https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/deployment/helm.html
+
+prometheus:
+  enable: true
+
+# Label control-plane nodes too (k3s NoSchedule).
+worker:
+  tolerations:
+    - operator: Exists

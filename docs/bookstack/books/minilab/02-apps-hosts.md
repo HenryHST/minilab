@@ -20,6 +20,7 @@ Kurzübersicht der User-Apps (Details und Sync Waves: Root-README im Git-Repo).
 | SearXNG | searxng.stadthagen.dev | Metasuche, LAN Traefik LB; kein SSO |
 | Kromgo | kromgo.stadthagen.dev | Prometheus-Badges (LAN); kein SSO |
 | ByteStash | bytestash.stadthagen.dev | Snippets, Authentik OIDC; LAN |
+| Karakeep | karakeep.stadthagen.dev (+ karakeep-ext) | Bookmarks, Authentik OIDC; Pangolin Ext |
 
 Workloads liegen unter `apps/{infra,monitoring,ops,dev}/` und werden von vier ApplicationSets verwaltet (ADR-0022). Ops-Notiz HA: [`../../../home-assistant/ha02.md`](../../../home-assistant/ha02.md).
 

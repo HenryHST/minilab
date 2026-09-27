@@ -1,0 +1,112 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backup-runner
+  namespace: karakeep
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: backup-runner-role
+  namespace: karakeep
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: backup-runner-rolebinding
+  namespace: karakeep
+subjects:
+  - kind: ServiceAccount
+    name: backup-runner
+    namespace: karakeep
+roleRef:
+  kind: Role
+  name: backup-runner-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# PV carries mountOptions (core Pod nfs volumes cannot); UniFi NAS needs NFSv3 + nolock.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: karakeep-backups-nfs
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=3
+    - nolock
+  nfs:
+    server: 192.168.0.25
+    path: /var/nfs/shared/infra01/karakeep-backups
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: karakeep-backups
+  namespace: karakeep
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: karakeep-backups-nfs
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: karakeep-backup-cron
+  namespace: karakeep
+spec:
+  schedule: "0 7 * * *" # 07:00 UTC ≈ 09:00 CEST (after bytestash)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          serviceAccountName: backup-runner
+          restartPolicy: Never
+          containers:
+            - name: trigger-backup
+              image: alpine/k8s:1.32.0
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  POD="$(kubectl -n karakeep get pod -l app.kubernetes.io/component=karakeep,app.kubernetes.io/name=karakeep -o jsonpath='{.items[0].metadata.name}')"
+                  if [[ -z "${POD}" ]]; then
+                    echo "No karakeep pod found in namespace karakeep" >&2
+                    exit 1
+                  fi
+                  OUT="/backup/karakeep-$(date -u +%Y%m%d-%H%M%S).tar.gz"
+                  echo "Backing up pod/${POD} /data -> ${OUT}"
+                  kubectl -n karakeep exec "${POD}" -c karakeep -- tar czf - -C /data . > "${OUT}"
+                  ls -lh "${OUT}"
+                  # Retention: keep last 7 archives
+                  ls -1t /backup/karakeep-*.tar.gz 2>/dev/null | tail -n +8 | xargs -r rm -f
+                  echo "Done. Archives:"
+                  ls -1t /backup/karakeep-*.tar.gz 2>/dev/null || true
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+          volumes:
+            - name: backup
+              persistentVolumeClaim:
+                claimName: karakeep-backups

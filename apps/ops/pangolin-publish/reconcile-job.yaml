@@ -32,6 +32,20 @@ data:
           "method": "http"
         }
       },
+      "karakeep": {
+        "enabled": true,
+        "name": "karakeep-ext.stadthagen.dev",
+        "niceId": "karakeep-ext",
+        "subdomain": "karakeep-ext",
+        "ssl": true,
+        "sso": false,
+        "dns": true,
+        "target": {
+          "ip": "karakeep.karakeep.svc.cluster.local",
+          "port": 3000,
+          "method": "http"
+        }
+      },
       "idp": {
         "enabled": true,
         "name": "idp.stadthagen.dev",

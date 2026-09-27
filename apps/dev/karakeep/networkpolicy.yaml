@@ -1,0 +1,40 @@
+# Ingress-only: allow Traefik (LAN host) + Newt (Pangolin publish) + in-namespace.
+# Egress unrestricted (OIDC, Meili, Chrome).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: karakeep-ingress
+  namespace: karakeep
+  labels:
+    app.kubernetes.io/name: karakeep
+    app.kubernetes.io/part-of: karakeep
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: karakeep
+      app.kubernetes.io/instance: karakeep
+      app.kubernetes.io/component: karakeep
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: karakeep
+      ports:
+        - protocol: TCP
+          port: 3000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 3000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: newt
+      ports:
+        - protocol: TCP
+          port: 3000

@@ -15,6 +15,7 @@ User-facing tooling and apps.
 | omni-tools | 3 | omnitools |
 | searxng | 3 | searxng |
 | bytestash | 3 | bytestash |
+| karakeep | 3 | karakeep |
 
 Stub (not in ApplicationSet): `audiobookshelf/`.
 

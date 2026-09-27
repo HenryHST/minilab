@@ -29,6 +29,8 @@ Format angelehnt an [Michael Nygard](https://cognitect.com/blog/2011/11/15/docum
 | [0019](0019-kromgo.md) | Kromgo als LAN-Badge-Proxy | Accepted |
 | [0020](0020-k8tz.md) | k8tz für Cluster-Timezone Europe/Berlin | Accepted |
 | [0021](0021-bytestash.md) | ByteStash mit Authentik-OIDC | Accepted |
+| [0022](0022-apps-bucket-applicationsets.md) | Vier ApplicationSets nach App-Buckets | Accepted |
+| [0023](0023-karakeep.md) | Karakeep mit Authentik-OIDC und Pangolin-Ext | Accepted |
 
 ## Neues ADR anlegen
 

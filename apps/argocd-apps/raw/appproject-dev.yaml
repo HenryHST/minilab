@@ -33,6 +33,8 @@ spec:
       namespace: searxng
     - server: "*"
       namespace: bytestash
+    - server: "*"
+      namespace: karakeep
   clusterResourceWhitelist:
     - group: "*"
       kind: "*"

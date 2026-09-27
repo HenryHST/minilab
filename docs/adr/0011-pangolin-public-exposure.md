@@ -11,7 +11,7 @@ Nur ausgewählte Dienste sollen aus dem Internet erreichbar sein. Pangolin (Newt
 ## Entscheidung
 
 - **Newt**-Agent im Cluster (Site `k3s`) als Tunnel zur Pangolin-Site.
-- **pangolin-publish** (PostSync Job) upsertet öffentliche Ressourcen (`termix-ext`, `idp`, …) und zugehörige Hetzner-A-Records.
+- **pangolin-publish** (PostSync Job) upsertet öffentliche Ressourcen (`termix-ext`, `karakeep-ext`, `idp`, …) und zugehörige Hetzner-A-Records.
 - Interne Traefik-Hosts (`*.stadthagen.dev` → Traefik LB) bleiben für LAN/VPN unverändert.
 - Ownership-Trennung: Terraform verwaltet Host/Compose und LAN-Sites; GitOps nur k3s-Publish-Hosts — **kein Dual-Write** derselben DNS-/Resource-Einträge.
 - Auth an der App bzw. Authentik; Pangolin `sso: false` für diese Ressourcen. TLS terminiert am Pangolin-Edge.

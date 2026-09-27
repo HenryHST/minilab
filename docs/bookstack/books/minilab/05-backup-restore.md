@@ -15,6 +15,7 @@
 | bookstack | 04:00 | MariaDB dump + `/config` |
 | **authentik** | **05:00** | `pg_dump` + `/media` |
 | **bytestash** | **06:00** | tar `/data/snippets` |
+| **karakeep** | **07:00** | tar `/data` |
 
 ```mermaid
 flowchart LR
@@ -33,5 +34,6 @@ ConfigMap `<app>-restore` → `enabled=true` (bei vorhandenen Daten `force=true`
 | BookStack | `bookstack-backups` | `apps/dev/bookstack/README.md` |
 | Authentik | `authentik-backups` | `apps/ops/authentik/README.md` |
 | ByteStash | `bytestash-backups` | `apps/dev/bytestash/Readme.md` |
+| Karakeep | `karakeep-backups` | `apps/dev/karakeep/Readme.md` |
 
 ADR: 0015, 0009.

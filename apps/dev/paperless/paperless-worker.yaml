@@ -40,6 +40,8 @@ spec:
             - |
               until (echo >/dev/tcp/paperless-postgres/5432) >/dev/null 2>&1; do echo waiting-for-postgres; sleep 3; done
               until (echo >/dev/tcp/redis.redis.svc.cluster.local/6379) >/dev/null 2>&1; do echo waiting-for-redis; sleep 3; done
+              mkdir -p /tmp/paperless /usr/src/paperless/data /usr/src/paperless/media
+              chown -R paperless:paperless /tmp/paperless || true
               cd /usr/src/paperless/src
               export HOME=/usr/src/paperless
               exec s6-setuidgid paperless /usr/local/bin/celery \

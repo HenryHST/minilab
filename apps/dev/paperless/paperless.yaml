@@ -144,19 +144,30 @@ spec:
             # Extra OCR capacity comes from paperless-worker HPA
             - name: PAPERLESS_TASK_WORKERS
               value: "1"
+          # NFS consume chown + migrations can take >2m on first/cold start.
+          # Host header required — Django rejects probes that use the pod IP.
           readinessProbe:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 30
+              httpHeaders:
+                - name: Host
+                  value: paperless.stadthagen.dev
+            initialDelaySeconds: 120
             periodSeconds: 10
-            failureThreshold: 12
+            failureThreshold: 36
+            timeoutSeconds: 5
           livenessProbe:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 60
-            periodSeconds: 20
+              httpHeaders:
+                - name: Host
+                  value: paperless.stadthagen.dev
+            initialDelaySeconds: 300
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 5
           resources:
             requests:
               cpu: 100m

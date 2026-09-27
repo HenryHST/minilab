@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
         - name: gotenberg
-          image: gotenberg/gotenberg:8.34
+          image: gotenberg/gotenberg:8.37.0
           imagePullPolicy: IfNotPresent
           args:
             - gotenberg

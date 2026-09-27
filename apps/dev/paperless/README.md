@@ -5,7 +5,7 @@ Document management with OCR (deu+eng), Authentik OIDC, Gotenberg + Tika, HPScan
 | | |
 |--|--|
 | Argo | ApplicationSet `dev`, wave `3`, NS `paperless` |
-| Images | `paperless-ngx:3.0.0`, `postgres:18`, `gotenberg:8.34`, `tika:3.2.2.0` |
+| Images | `paperless-ngx:3.2.1`, `postgres:18`, `gotenberg:8.37.0`, `tika:3.3.0.0` |
 | Redis | `redis://redis.redis.svc.cluster.local:6379/0` (`apps/infra/redis`) |
 | LAN | https://paperless.stadthagen.dev |
 | Ext | https://paperless-ext.stadthagen.dev (pangolin-publish `enabled: false` until flipped) |

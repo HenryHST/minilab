@@ -30,7 +30,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
         - name: worker
-          image: ghcr.io/paperless-ngx/paperless-ngx:3.0.0
+          image: ghcr.io/paperless-ngx/paperless-ngx:3.2.1
           imagePullPolicy: IfNotPresent
           # Bypass s6 multi-service boot — `args: [worker]` exits with "worker: not found"
           # after init and kills the container. Run Celery directly (same as svc-worker).

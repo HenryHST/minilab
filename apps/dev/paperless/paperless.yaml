@@ -53,7 +53,7 @@ spec:
             - until nc -z redis.redis.svc.cluster.local 6379; do echo waiting-for-redis; sleep 3; done
       containers:
         - name: paperless
-          image: ghcr.io/paperless-ngx/paperless-ngx:3.0.0
+          image: ghcr.io/paperless-ngx/paperless-ngx:3.2.1
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

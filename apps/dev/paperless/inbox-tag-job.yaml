@@ -13,6 +13,8 @@ spec:
   backoffLimit: 3
   template:
     spec:
+      # Reuse backup-runner RBAC (pods get/list + pods/exec)
+      serviceAccountName: backup-runner
       restartPolicy: OnFailure
       containers:
         - name: inbox-tag

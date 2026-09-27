@@ -36,6 +36,10 @@
         href: https://it-tools.stadthagen.dev
         icon: si-docker-#2496ED
         description: it-tools
+    - SearXNG:
+        href: https://searxng.stadthagen.dev
+        icon: si-searxng-#3050FF
+        description: metasearch (LAN)
     - pgweb:
         href: https://pgweb.stadthagen.dev
         icon: si-postgresql-#4169E1

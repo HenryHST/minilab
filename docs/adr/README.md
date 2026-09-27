@@ -25,6 +25,7 @@ Format angelehnt an [Michael Nygard](https://cognitect.com/blog/2011/11/15/docum
 | [0015](0015-backup-restore-cronjobs.md) | App-Backups per CronJob auf NFS | Accepted |
 | [0016](0016-bookstack-wissensdatenbank.md) | BookStack als zentrale Wissensdatenbank | Accepted |
 | [0017](0017-bookstack-theme-modules.md) | BookStack Theme Modules statt Plugins | Accepted |
+| [0018](0018-searxng.md) | SearXNG als LAN-Metasearch | Accepted |
 
 ## Neues ADR anlegen
 

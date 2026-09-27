@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: searxng-stadthagen-dev
+  namespace: searxng
+spec:
+  secretName: searxng-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - searxng.stadthagen.dev

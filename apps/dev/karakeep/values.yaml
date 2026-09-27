@@ -154,7 +154,7 @@ meilisearch:
     MEILI_ENV: production
   persistence:
     enabled: true
-    size: 2Gi
+    size: 5Gi
     storageClass: longhorn
   # skip helm test pod noise in Argo
   tests:

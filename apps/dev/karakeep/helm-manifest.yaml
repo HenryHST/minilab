@@ -50,7 +50,7 @@ spec:
     - "ReadWriteOnce"
   resources:
     requests:
-      storage: "2Gi"
+      storage: "5Gi"
   storageClassName: "longhorn"
 ---
 # Source: karakeep/charts/meilisearch/templates/service.yaml

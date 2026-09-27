@@ -129,6 +129,17 @@ spec:
                   key: PAPERLESS_SOCIALACCOUNT_PROVIDERS
             - name: PAPERLESS_ACCOUNT_DEFAULT_HTTP_PROTOCOL
               value: https
+            # Map Authentik groups claim → Django (paperless_admins / paperless_users)
+            - name: PAPERLESS_SOCIAL_ACCOUNT_SYNC_GROUPS
+              value: "true"
+            - name: PAPERLESS_SOCIAL_ACCOUNT_SYNC_GROUPS_CLAIM
+              value: groups
+            - name: PAPERLESS_SOCIAL_ACCOUNT_SYNC_STAFF_GROUP
+              value: paperless_admins
+            - name: PAPERLESS_SOCIAL_ACCOUNT_SYNC_SUPERUSER_GROUP
+              value: paperless_admins
+            - name: PAPERLESS_SOCIAL_ACCOUNT_DEFAULT_GROUPS
+              value: paperless_users
             - name: PAPERLESS_TIKA_ENABLED
               value: "1"
             - name: PAPERLESS_TIKA_ENDPOINT

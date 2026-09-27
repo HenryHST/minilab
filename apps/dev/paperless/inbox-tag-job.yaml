@@ -40,9 +40,28 @@ spec:
               kubectl -n paperless exec "${POD}" -c paperless -- \
                 python3 manage.py shell -c "
               from documents.models import Tag
+              from django.contrib.auth.models import Group, Permission
               t, created = Tag.objects.get_or_create(name='inbox')
               if not t.is_inbox_tag:
                   t.is_inbox_tag = True
                   t.save(update_fields=['is_inbox_tag'])
               print('inbox tag ok', 'created=' + str(created))
+              # OIDC groups (Authentik paperless_admins / paperless_users)
+              admins, _ = Group.objects.get_or_create(name='paperless_admins')
+              users, _ = Group.objects.get_or_create(name='paperless_users')
+              doc_apps = ('documents', 'paperless', 'paperless_mail', 'auth', 'guardian')
+              perms = Permission.objects.filter(content_type__app_label__in=doc_apps)
+              admins.permissions.set(perms)
+              # Users: view/add/change documents + view ui settings (no delete-all / admin)
+              user_codenames = (
+                  'view_document', 'add_document', 'change_document', 'delete_document',
+                  'view_tag', 'add_tag', 'change_tag',
+                  'view_correspondent', 'add_correspondent', 'change_correspondent',
+                  'view_documenttype', 'add_documenttype', 'change_documenttype',
+                  'view_storagepath', 'view_savedview', 'add_savedview', 'change_savedview',
+                  'view_uisettings', 'change_uisettings',
+                  'view_note', 'add_note', 'change_note', 'delete_note',
+              )
+              users.permissions.set(Permission.objects.filter(codename__in=user_codenames))
+              print('oidc groups ok', 'admins_perms', admins.permissions.count(), 'users_perms', users.permissions.count())
               "

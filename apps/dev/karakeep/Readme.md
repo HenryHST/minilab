@@ -8,7 +8,7 @@ Upstream: [karakeep-app/karakeep](https://github.com/karakeep-app/karakeep) · C
 
 - Helm: vendored `charts/karakeep/` → committed `helm-manifest.yaml` (ADR-0014)
 - Regenerate: `helm template karakeep ./charts/karakeep -f values.yaml --namespace karakeep > helm-manifest.yaml` (strip meilisearch test Pod)
-- Components: Karakeep STS + Chrome + Meilisearch
+- Components: Karakeep STS + Chrome (`zenika/alpine-chrome`, not gcr.io) + Meilisearch
 - PVC: Longhorn `data-karakeep-0` (20Gi) → `/data`; Meili 5Gi
 - TLS: cert-manager → `karakeep-tls`
 - DNS LAN: Hetzner A `karakeep` → `192.168.0.215` (not pangolin-publish)

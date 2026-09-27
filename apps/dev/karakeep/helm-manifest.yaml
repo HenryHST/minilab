@@ -184,7 +184,7 @@ spec:
           - --hide-scrollbars
           - --disable-gpu
           - --disable-dev-shm-usage
-          image: gcr.io/zenika-hub/alpine-chrome:124
+          image: zenika/alpine-chrome:124
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3

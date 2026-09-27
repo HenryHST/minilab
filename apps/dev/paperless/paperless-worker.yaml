@@ -32,7 +32,18 @@ spec:
         - name: worker
           image: ghcr.io/paperless-ngx/paperless-ngx:3.0.0
           imagePullPolicy: IfNotPresent
-          args: ["worker"]
+          # Bypass s6 multi-service boot — `args: [worker]` exits with "worker: not found"
+          # after init and kills the container. Run Celery directly (same as svc-worker).
+          command:
+            - /usr/bin/bash
+            - -ce
+            - |
+              until nc -z paperless-postgres 5432; do echo waiting-for-postgres; sleep 3; done
+              until nc -z redis.redis.svc.cluster.local 6379; do echo waiting-for-redis; sleep 3; done
+              cd /usr/src/paperless/src
+              export HOME=/usr/src/paperless
+              exec s6-setuidgid paperless /usr/local/bin/celery \
+                --app paperless worker --loglevel INFO --without-mingle --without-gossip
           env:
             - name: PAPERLESS_DBHOST
               value: paperless-postgres

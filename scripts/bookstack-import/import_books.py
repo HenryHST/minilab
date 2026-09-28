@@ -2,12 +2,14 @@
 """Idempotent BookStack import from docs/bookstack/books/*/meta.yaml + NN-*.md pages.
 
 Env:
-  BOOKSTACK_URL            e.g. https://book.stadthagen.dev
+  BOOKSTACK_URL            e.g. https://book.stadthagen.dev or http://bookstack.bookstack.svc
   BOOKSTACK_TOKEN_ID       API token id
   BOOKSTACK_TOKEN_SECRET   API token secret
+  FORCE_IMPORT             if "1"/"true", ignore version gate
 
 Usage:
   ./import_books.py [--books-dir PATH] [--dry-run] [--only SLUG]
+                    [--state-file PATH] [--state-prefix ID] [--force]
 """
 
 from __future__ import annotations
@@ -69,6 +71,32 @@ def page_title(md: str, fallback: str) -> str:
     if m:
         return m.group(1).strip()
     return fallback
+
+
+def load_state(path: Path | None) -> dict[str, str]:
+    if path is None or not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        die(f"cannot read state file {path}: {e}")
+    if not isinstance(data, dict):
+        die(f"state file {path} must be a JSON object")
+    return {str(k): str(v) for k, v in data.items()}
+
+
+def save_state(path: Path | None, state: dict[str, str]) -> None:
+    if path is None:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def state_key(prefix: str, slug: str) -> str:
+    slug = slug.strip("/")
+    if prefix:
+        return f"{prefix}/{slug}"
+    return slug
 
 
 class BookStackClient:
@@ -281,11 +309,27 @@ def main() -> None:
     )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--only", action="append", default=[], help="Only import these directory slugs")
+    parser.add_argument(
+        "--state-file",
+        type=Path,
+        default=None,
+        help="JSON map of state keys → book_version (skip unchanged)",
+    )
+    parser.add_argument(
+        "--state-prefix",
+        default="",
+        help="Prefix for state keys (source id), e.g. infra-lab-platform",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Ignore version gate (or set FORCE_IMPORT=1)",
+    )
     args = parser.parse_args()
 
+    force = args.force or os.environ.get("FORCE_IMPORT", "").lower() in ("1", "true", "yes")
+
     root = Path(__file__).resolve()
-    # scripts/bookstack-import/import_books.py → repo root is parents[2]
-    # docs/bookstack/scripts/ would be parents[3] — support both layouts via --books-dir / cwd
     candidates = [
         args.books_dir,
         Path.cwd() / "docs/bookstack/books",
@@ -302,7 +346,15 @@ def main() -> None:
     if not args.dry_run and (not url or not token_id or not token_secret):
         die("Set BOOKSTACK_URL, BOOKSTACK_TOKEN_ID, BOOKSTACK_TOKEN_SECRET")
 
-    client = BookStackClient(url or "https://example.invalid", token_id or "x", token_secret or "y", dry_run=args.dry_run)
+    client = BookStackClient(
+        url or "https://example.invalid",
+        token_id or "x",
+        token_secret or "y",
+        dry_run=args.dry_run,
+    )
+
+    state = load_state(args.state_file)
+    state_dirty = False
 
     shelves = client.list_all("/api/shelves") if not args.dry_run else []
     books = client.list_all("/api/books") if not args.dry_run else []
@@ -319,15 +371,30 @@ def main() -> None:
         if meta_path.is_file():
             meta = load_yaml(meta_path.read_text(encoding="utf-8"))
         else:
-            # Fallback: directory name as book on shelf Plattform
             meta = {"book": book_dir.name.replace("-", " ").title(), "shelf": "Plattform"}
             print(f"WARN: {meta_path} missing — using defaults {meta}", file=sys.stderr)
+
+        version = str(meta.get("book_version") or "").strip()
+        key = state_key(args.state_prefix, book_dir.name)
+        if not force and version and state.get(key) == version:
+            print(f"SKIP {book_dir.name} (book_version={version} unchanged, key={key})")
+            continue
 
         mode = str(meta.get("mode") or "book")
         if mode == "files_as_books":
             import_files_as_books(client, shelves, books, book_dir, meta)
         else:
             import_standard_book(client, shelves, books, book_dir, meta)
+
+        if version:
+            state[key] = version
+            state_dirty = True
+            print(f"STATE {key}={version}")
+
+    if state_dirty and not args.dry_run:
+        save_state(args.state_file, state)
+    elif state_dirty and args.dry_run:
+        print(f"DRY-RUN would write state → {args.state_file}")
 
     print("OK: import finished")
 

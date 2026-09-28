@@ -25,6 +25,7 @@ Vor dem ersten Sync SecretSpecs / Ansible anlegen — Vorlage: [`secret.example.
 | `bookstack-db` | `MARIADB_PASSWORD`, `MARIADB_ROOT_PASSWORD` |
 | `bookstack-oauth` | `client-secret` (Authentik Provider) |
 | `bookstack-smtp` | `password` — Ansible/SecretSpec `AUTHENTIK_EMAIL_PASSWORD` (gleicher SMTP wie Authentik; nicht aus Git) |
+| `bookstack-import` | `BOOKSTACK_TOKEN_ID` / `BOOKSTACK_TOKEN_SECRET` — SecretSpec `BOOKSTACK_API_TOKEN_*` (docs-import; Job legt User/Rolle/Token an) |
 
 ## Authentik
 
@@ -92,11 +93,24 @@ helm template bookstack ./charts/bookstack -f values.yaml --namespace bookstack 
 - Manuelles Backup: `kubectl -n bookstack create job --from=cronjob/bookstack-backup-cron bookstack-backup-manual`
 - Bootstrap-Restore: ConfigMap `bookstack-restore` → `enabled=true` (bei vorhandener DB zusätzlich `force=true`), Argo Sync; danach sofort `enabled=false` committen
 
-## Phase-2-Inhalte (Git)
+## Docs-Import (Git → BookStack)
 
-Strukturierte Bücher, Vorlagen und Import-Anleitung: [`docs/bookstack/`](../../docs/bookstack/).
+Strukturierte Bücher & Checkliste: [`docs/bookstack/`](../../docs/bookstack/). **Kein GitHub Actions** — Sync nur im Cluster.
 
-**Auto-Import:** Workflow [BookStack import](../../.github/workflows/bookstack-import.yml) — siehe [`docs/bookstack/IMPORT.md`](../../docs/bookstack/IMPORT.md) § Automatischer Import (API-Token + GH Secrets `BOOKSTACK_*`).
+| Manifest | Zweck |
+|----------|--------|
+| [`docs-import-configmap.yaml`](docs-import-configmap.yaml) | Sources (`infra-lab-platform`, `minilab-docs`, …), Runner, Importer, `gitops-bootstrap` |
+| [`docs-import-cronjob.yaml`](docs-import-cronjob.yaml) | SA/RBAC, State-CM, CronJob (alle 6 h), PostSync-Job |
+
+**Voraussetzung:** Infra_LAB SecretSpec `BOOKSTACK_API_TOKEN_ID` / `BOOKSTACK_API_TOKEN_SECRET` → `--tags secrets` → Secret `bookstack-import`. Beim Lauf: Upsert Rolle **GitOps Import**, User `gitops-import@localhost`, Token `docs-import`, danach Markdown-Import (SemVer-Gate in CM `bookstack-import-state`).
+
+```bash
+# manuell
+kubectl -n bookstack create job --from=cronjob/bookstack-docs-import docs-import-manual
+kubectl -n bookstack logs -f job/docs-import-manual
+```
+
+Ohne Secret: Job skippt mit Exit 0. Details: [`docs/bookstack/IMPORT.md`](../../docs/bookstack/IMPORT.md) und Infra_LAB [`IMPORT.md`](https://github.com/HenryHST/Infra_LAB/blob/main/docs/bookstack/IMPORT.md).
 
 ### E-Mail bei Buch-Änderungen (Home Assistant)
 

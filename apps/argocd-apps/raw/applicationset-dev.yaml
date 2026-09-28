@@ -90,7 +90,19 @@ spec:
           - ServerSideApply=true
           - RespectIgnoreDifferences=true
   templatePatch: |
-    {{- if dig "helmChart" "" . }}
+    {{- if eq .app "bookstack" }}
+    spec:
+      ignoreDifferences:
+        - group: ""
+          kind: ConfigMap
+          name: bookstack-import-state
+          jsonPointers:
+            - /data
+      source:
+        repoURL: https://github.com/HenryHST/minilab
+        targetRevision: main
+        path: {{ .path }}
+    {{- else if dig "helmChart" "" . }}
     spec:
       sources:
         - repoURL: {{ .helmRepo }}

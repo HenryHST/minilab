@@ -1,0 +1,232 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bookstack-docs-import
+  namespace: bookstack
+  labels:
+    app.kubernetes.io/name: bookstack
+    app.kubernetes.io/component: docs-import
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: bookstack-docs-import
+  namespace: bookstack
+  labels:
+    app.kubernetes.io/name: bookstack
+    app.kubernetes.io/component: docs-import
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["bookstack-import-state"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bookstack-docs-import
+  namespace: bookstack
+  labels:
+    app.kubernetes.io/name: bookstack
+    app.kubernetes.io/component: docs-import
+subjects:
+  - kind: ServiceAccount
+    name: bookstack-docs-import
+    namespace: bookstack
+roleRef:
+  kind: Role
+  name: bookstack-docs-import
+  apiGroup: rbac.authorization.k8s.io
+---
+# Initial empty state; CronJob updates /data (Argo ignoreDifferences on Application).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bookstack-import-state
+  namespace: bookstack
+  labels:
+    app.kubernetes.io/name: bookstack
+    app.kubernetes.io/component: docs-import
+data:
+  state.json: "{}"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: bookstack-docs-import
+  namespace: bookstack
+  labels:
+    app.kubernetes.io/name: bookstack
+    app.kubernetes.io/component: docs-import
+spec:
+  schedule: "15 */6 * * *" # every 6h at :15 UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: bookstack
+            app.kubernetes.io/component: docs-import
+        spec:
+          serviceAccountName: bookstack-docs-import
+          restartPolicy: Never
+          containers:
+            - name: import
+              image: alpine/k8s:1.32.0
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: BOOKSTACK_URL
+                  value: http://bookstack.bookstack.svc
+                - name: BOOKSTACK_TOKEN_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: bookstack-import
+                      key: BOOKSTACK_TOKEN_ID
+                      optional: true
+                - name: BOOKSTACK_TOKEN_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: bookstack-import
+                      key: BOOKSTACK_TOKEN_SECRET
+                      optional: true
+                - name: SOURCES_FILE
+                  value: /config/sources.yaml
+                - name: STATE_CM
+                  value: bookstack-import-state
+                - name: STATE_NS
+                  value: bookstack
+                - name: WORK_DIR
+                  value: /work
+              command:
+                - /bin/sh
+                - -ceu
+                - |
+                  if [ -z "${BOOKSTACK_TOKEN_ID:-}" ] || [ -z "${BOOKSTACK_TOKEN_SECRET:-}" ]; then
+                    echo "SKIP: Secret bookstack-import not set (BOOKSTACK_API_TOKEN_* via SecretSpec)"
+                    exit 0
+                  fi
+                  apk add --no-cache git python3 py3-pip >/dev/null
+                  pip3 install --break-system-packages --quiet 'PyYAML>=6.0.1'
+                  chmod +x /config/gitops-bootstrap.sh /config/docs-import-run.sh
+                  /config/gitops-bootstrap.sh
+                  exec /config/docs-import-run.sh
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                  readOnly: true
+                - name: state
+                  mountPath: /state
+                  readOnly: true
+                - name: work
+                  mountPath: /work
+          volumes:
+            - name: config
+              configMap:
+                name: bookstack-import-sources
+                defaultMode: 0555
+            - name: state
+              configMap:
+                name: bookstack-import-state
+                optional: true
+            - name: work
+              emptyDir: {}
+---
+# One-shot after Argo sync: upsert gitops-import + import docs.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: bookstack-docs-import-bootstrap
+  namespace: bookstack
+  labels:
+    app.kubernetes.io/name: bookstack
+    app.kubernetes.io/component: docs-import
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bookstack
+        app.kubernetes.io/component: docs-import
+    spec:
+      serviceAccountName: bookstack-docs-import
+      restartPolicy: Never
+      containers:
+        - name: import
+          image: alpine/k8s:1.32.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: BOOKSTACK_URL
+              value: http://bookstack.bookstack.svc
+            - name: BOOKSTACK_TOKEN_ID
+              valueFrom:
+                secretKeyRef:
+                  name: bookstack-import
+                  key: BOOKSTACK_TOKEN_ID
+                  optional: true
+            - name: BOOKSTACK_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: bookstack-import
+                  key: BOOKSTACK_TOKEN_SECRET
+                  optional: true
+            - name: SOURCES_FILE
+              value: /config/sources.yaml
+            - name: STATE_CM
+              value: bookstack-import-state
+            - name: STATE_NS
+              value: bookstack
+            - name: WORK_DIR
+              value: /work
+          command:
+            - /bin/sh
+            - -ceu
+            - |
+              if [ -z "${BOOKSTACK_TOKEN_ID:-}" ] || [ -z "${BOOKSTACK_TOKEN_SECRET:-}" ]; then
+                echo "SKIP: Secret bookstack-import not set (BOOKSTACK_API_TOKEN_* via SecretSpec)"
+                exit 0
+              fi
+              apk add --no-cache git python3 py3-pip >/dev/null
+              pip3 install --break-system-packages --quiet 'PyYAML>=6.0.1'
+              chmod +x /config/gitops-bootstrap.sh /config/docs-import-run.sh
+              /config/gitops-bootstrap.sh
+              exec /config/docs-import-run.sh
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: state
+              mountPath: /state
+              readOnly: true
+            - name: work
+              mountPath: /work
+      volumes:
+        - name: config
+          configMap:
+            name: bookstack-import-sources
+            defaultMode: 0555
+        - name: state
+          configMap:
+            name: bookstack-import-state
+            optional: true
+        - name: work
+          emptyDir: {}

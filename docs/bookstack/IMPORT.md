@@ -63,25 +63,21 @@ Nach dem Import: Buch in BookStack **beobachten (Watch)**, damit Nutzer bei Seit
 
 ## 5. Automatischer Import (empfohlen)
 
-GitHub Actions [`.github/workflows/bookstack-import.yml`](../../.github/workflows/bookstack-import.yml) synct `docs/bookstack/books/*/` per BookStack REST API. Script: [`scripts/bookstack-import/import_books.py`](../../scripts/bookstack-import/import_books.py). Pro Ordner: `meta.yaml` (`book`, `shelf`, optional `mode: files_as_books` für Anleitungen).
+Cluster-CronJob / PostSync in [`apps/dev/bookstack/`](../../apps/dev/bookstack/) synct Git-Sources (Infra_LAB + minilab) per REST Upsert + SemVer-Gate. Script: [`scripts/bookstack-import/import_books.py`](../../scripts/bookstack-import/import_books.py). Pro Ordner: `meta.yaml` (`book`, `shelf`, optional `mode: files_as_books`).
 
-### Einmalig: API-Token + Secrets
+### Einmalig: SecretSpec (Infra_LAB) — User/Rolle/Token auto
 
-1. BookStack → **Mein Konto → API Tokens** (User mit Create/Edit auf Bücher/Seiten).
-2. GitHub Secrets im Repo **minilab**:
+1. `secretspec set BOOKSTACK_API_TOKEN_ID` / `BOOKSTACK_API_TOKEN_SECRET` (je ≥16 Zeichen).
+2. `ansible-playbook site.yaml --tags secrets` → Secret `bookstack/bookstack-import`.
+3. PostSync/CronJob legt Rolle **GitOps Import**, User `gitops-import@localhost` und Token `docs-import` automatisch an (kein UI).
 
-```bash
-gh secret set BOOKSTACK_URL -b 'https://book.stadthagen.dev' -R HenryHST/minilab
-gh secret set BOOKSTACK_TOKEN_ID -R HenryHST/minilab
-gh secret set BOOKSTACK_TOKEN_SECRET -R HenryHST/minilab
-```
-
-3. Workflow läuft auf **self-hosted** Runner (LAN zu `book.stadthagen.dev`).
+Details: Infra_LAB [`docs/bookstack/IMPORT.md`](https://github.com/HenryHST/Infra_LAB/blob/main/docs/bookstack/IMPORT.md).
 
 ### Starten
 
-- Push auf `main` unter `docs/bookstack/books/**` / `scripts/bookstack-import/**`
-- Oder Actions → **BookStack import** → *Run workflow*
+- CronJob `bookstack-docs-import` (alle 6 h) + PostSync `bookstack-docs-import-bootstrap`
+- Manuell: `kubectl -n bookstack create job --from=cronjob/bookstack-docs-import docs-import-manual`
+- Sources: ConfigMap `bookstack-import-sources` (`docs-import-configmap.yaml`)
 
 Lokal:
 

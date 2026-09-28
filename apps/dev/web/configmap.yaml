@@ -20,7 +20,7 @@ data:
       - minilab:
         - icon: si-github-#FFFFFF
           href: https://github.com/HenryHST/minilab
-    
+
     - Developer:
         - Github:
             - abbr: GH
@@ -77,7 +77,7 @@ data:
         - SearXNG:
             href: https://searxng.stadthagen.dev
             icon: si-searxng-#3050FF
-            description: metasearch (LAN)
+            description: Suchmaschine (LAN)
         - pgweb:
             href: https://pgweb.stadthagen.dev
             icon: si-postgresql-#4169E1
@@ -85,7 +85,7 @@ data:
         - Draw.io:
             href: https://drawio.stadthagen.dev
             icon: si-diagramsdotnet-#F08705
-            description: diagram editor
+            description: Diagram editor
         - Termix:
             href: https://termix.stadthagen.dev
             icon: si-gnubash-#4EAA25
@@ -93,11 +93,19 @@ data:
         - Vaultwarden:
             href: https://vaultwarden.stadthagen.dev
             icon: si-bitwarden-#175DDC
-            description: password manager (SSO)
+            description: Password Manager (SSO)
+        - BookStack:
+            href: https://book.stadthagen.dev
+            icon: bookstack.png
+            description: Bedienungshandbuch
         - ByteStash:
             href: https://bytestash.stadthagen.dev
             icon: si-snippet-#4CAF50
             description: code snippets (OIDC)
+        - Paperless:
+            href: https://paperless.stadthagen.dev
+            icon: https://www.svgrepo.com/show/518457/paperless.svg
+            description: Dokumente / OCR
     - Monitoring:
         - Longhorn:
             href: https://longhorn.stadthagen.dev
@@ -111,6 +119,10 @@ data:
             href: https://headlamp.stadthagen.dev
             icon: si-docker-#2496ED
             description: dashboards
+        - Hubble UI:
+            href: https://hubble.stadthagen.dev
+            icon: si-cilium-#F8C21A
+            description: Cilium flow visualization (SSO)
         - Prometheus:
             href: https://prometheus.stadthagen.dev
             icon: si-prometheus-#E6522C
@@ -144,20 +156,20 @@ data:
     language: de
     hideVersion: true
     hideErrors: true
-    
+
     providers:
       longhorn:
         url: http://longhorn-frontend.longhorn-system.svc.cluster.local
-    
+
     background:
       image: https://images.unsplash.com/photo-1637825891028-564f672aa42c
       blur: md
       brightness: 60
       opacity: 60
-    
+
     cardBlur: sm
     useEqualHeights: true
-    
+
     layout:
       nXk3:
         header: true
@@ -176,7 +188,7 @@ data:
         memory: true
         disk: /
         refresh: 3000
-    
+
     - datetime:
         text_size: xl
         locale: de
@@ -184,31 +196,31 @@ data:
             timeStyle: long
             dateStyle: long
             hourCycle: h23
-    
+
     - kubernetes:
         cluster:
-          show: true
+          show: false
           cpu: true
           memory: true
           showLabel: true
           label: nXk3
         nodes:
-          show: true
+          show: false
           cpu: true
           memory: true
           showLabel: true
-    
+
     - longhorn:
         expanded: true
         total: true
         labels: true
-        nodes: true
-    
+        nodes: false
+
     - unifi_console:
         url: "{{HOMEPAGE_VAR_UNIFI_URL}}"
         username: "{{HOMEPAGE_VAR_UNIFI_USER}}"
         password: "{{HOMEPAGE_VAR_UNIFI_PASS}}"
-    
+
     # OpenWeatherMap requires OPENWEATHERMAP_API_KEY — see secret.env.example
     # - openweathermap:
     #     latitude: 49.86014928642

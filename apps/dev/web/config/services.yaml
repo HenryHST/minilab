@@ -66,8 +66,8 @@
         description: code snippets (OIDC)
     - Paperless:
         href: https://paperless.stadthagen.dev
-        icon: si-files-#17541
-        description: Dokumente / OCR 
+        icon: https://www.svgrepo.com/show/518457/paperless.svg
+        description: Dokumente / OCR
 - Monitoring:
     - Longhorn:
         href: https://longhorn.stadthagen.dev

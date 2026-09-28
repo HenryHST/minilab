@@ -62,7 +62,7 @@
         description: Bedienungshandbuch
     - ByteStash:
         href: https://bytestash.stadthagen.dev
-        icon: si-snippet-#4CAF50
+        icon: bytestash.png
         description: code snippets (OIDC)
     - Paperless:
         href: https://paperless.stadthagen.dev

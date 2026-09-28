@@ -122,10 +122,13 @@ spec:
                     exit 0
                   fi
                   apk add --no-cache git python3 py3-pip >/dev/null
-                  pip3 install --break-system-packages --quiet 'PyYAML>=6.0.1'
-                  chmod +x /config/gitops-bootstrap.sh /config/docs-import-run.sh
-                  /config/gitops-bootstrap.sh
-                  exec /config/docs-import-run.sh
+                  pip3 install --break-system-packages --root-user-action=ignore --quiet 'PyYAML>=6.0.1'
+                  # #region agent log
+                  echo "DBG hypA: skip chmod on RO ConfigMap; invoke via sh"
+                  ls -la /config/gitops-bootstrap.sh /config/docs-import-run.sh || true
+                  # #endregion
+                  sh /config/gitops-bootstrap.sh
+                  exec sh /config/docs-import-run.sh
               volumeMounts:
                 - name: config
                   mountPath: /config
@@ -206,10 +209,13 @@ spec:
                 exit 0
               fi
               apk add --no-cache git python3 py3-pip >/dev/null
-              pip3 install --break-system-packages --quiet 'PyYAML>=6.0.1'
-              chmod +x /config/gitops-bootstrap.sh /config/docs-import-run.sh
-              /config/gitops-bootstrap.sh
-              exec /config/docs-import-run.sh
+              pip3 install --break-system-packages --root-user-action=ignore --quiet 'PyYAML>=6.0.1'
+              # #region agent log
+              echo "DBG hypA: skip chmod on RO ConfigMap; invoke via sh"
+              ls -la /config/gitops-bootstrap.sh /config/docs-import-run.sh || true
+              # #endregion
+              sh /config/gitops-bootstrap.sh
+              exec sh /config/docs-import-run.sh
           volumeMounts:
             - name: config
               mountPath: /config

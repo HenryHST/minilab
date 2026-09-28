@@ -1,0 +1,118 @@
+# Idempotent IMAP MailAccount + MailRule (tag inbox) — PostSync after secrets exist.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: paperless-mail-inbox
+  namespace: paperless
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "6"
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 3
+  template:
+    spec:
+      serviceAccountName: backup-runner
+      restartPolicy: OnFailure
+      containers:
+        - name: mail-inbox
+          image: alpine/k8s:1.32.0
+          env:
+            - name: IMAP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-imap
+                  key: password
+                  optional: true
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+              if [[ -z "${IMAP_PASSWORD:-}" ]]; then
+                echo "paperless-imap secret missing or empty — skip mail inbox bootstrap"
+                exit 0
+              fi
+              for i in $(seq 1 60); do
+                POD="$(kubectl -n paperless get pod -l app=paperless -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+                READY="$(kubectl -n paperless get pod -l app=paperless -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null || true)"
+                if [[ -n "${POD}" && "${READY}" == "true" ]]; then
+                  break
+                fi
+                sleep 5
+              done
+              POD="$(kubectl -n paperless get pod -l app=paperless -o jsonpath='{.items[0].metadata.name}')"
+              if [[ -z "${POD}" ]]; then
+                echo "paperless pod not ready" >&2
+                exit 1
+              fi
+              # Pass password via env into the paperless container (no shell interpolation of secrets in logs)
+              kubectl -n paperless exec "${POD}" -c paperless -- \
+                env IMAP_PASSWORD="${IMAP_PASSWORD}" \
+                python3 manage.py shell -c "
+              import os
+              from documents.models import Tag
+              from paperless_mail.models import MailAccount, MailRule
+
+              pw = os.environ.get('IMAP_PASSWORD') or ''
+              if not pw:
+                  print('IMAP_PASSWORD empty — skip')
+                  raise SystemExit(0)
+
+              tag, _ = Tag.objects.get_or_create(name='inbox')
+              if not tag.is_inbox_tag:
+                  tag.is_inbox_tag = True
+                  tag.save(update_fields=['is_inbox_tag'])
+
+              acct, created = MailAccount.objects.get_or_create(
+                  name='paperless@stadthagen.dev',
+                  defaults={
+                      'imap_server': 'mail.henrystadthagen.de',
+                      'imap_port': 993,
+                      'imap_security': MailAccount.ImapSecurity.SSL,
+                      'username': 'paperless@stadthagen.dev',
+                      'password': pw,
+                      'account_type': MailAccount.MailAccountType.IMAP,
+                      'character_set': 'UTF-8',
+                  },
+              )
+              acct.imap_server = 'mail.henrystadthagen.de'
+              acct.imap_port = 993
+              acct.imap_security = MailAccount.ImapSecurity.SSL
+              acct.username = 'paperless@stadthagen.dev'
+              acct.password = pw
+              acct.account_type = MailAccount.MailAccountType.IMAP
+              acct.character_set = 'UTF-8'
+              acct.save()
+              print('mail account ok', 'created=' + str(created))
+
+              rule, rcreated = MailRule.objects.get_or_create(
+                  name='INBOX → inbox',
+                  defaults={
+                      'account': acct,
+                      'folder': 'INBOX',
+                      'enabled': True,
+                      'order': 0,
+                      'maximum_age': 30,
+                      'attachment_type': MailRule.AttachmentProcessing.ATTACHMENTS_ONLY,
+                      'consumption_scope': MailRule.ConsumptionScope.ATTACHMENTS_ONLY,
+                      'action': MailRule.MailAction.MARK_READ,
+                      'assign_title_from': MailRule.TitleSource.FROM_SUBJECT,
+                      'assign_correspondent_from': MailRule.CorrespondentSource.FROM_NOTHING,
+                  },
+              )
+              rule.account = acct
+              rule.folder = 'INBOX'
+              rule.enabled = True
+              rule.order = 0
+              rule.maximum_age = 30
+              rule.attachment_type = MailRule.AttachmentProcessing.ATTACHMENTS_ONLY
+              rule.consumption_scope = MailRule.ConsumptionScope.ATTACHMENTS_ONLY
+              rule.action = MailRule.MailAction.MARK_READ
+              rule.assign_title_from = MailRule.TitleSource.FROM_SUBJECT
+              rule.assign_correspondent_from = MailRule.CorrespondentSource.FROM_NOTHING
+              rule.save()
+              rule.assign_tags.set([tag])
+              print('mail rule ok', 'created=' + str(rcreated), 'tags', list(rule.assign_tags.values_list('name', flat=True)))
+              "

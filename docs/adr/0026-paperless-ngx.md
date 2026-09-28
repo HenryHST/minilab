@@ -11,14 +11,15 @@ Dokumentenarchiv mit OCR, HPScan-Import und Authentik-Login soll auf nXk3 laufen
 ## Entscheidung
 
 - **Storage:** hostPath/local PVs on `nxk3-w01` for Postgres/data/media/export (Longhorn derzeit ohne freie Disk — gleiches Muster wie Termix); HPScan consume weiterhin NFS.
-- **Consume:** NFS PV von un10 HPScan-Export; Tag `inbox` via PostSync-Job.
-- **Auth:** Authentik OIDC (LAN + Ext-Redirects wie Termix); SMTP `mail.henrystadthagen.de:465`.
+- **Consume:** NFS PV von un10 HPScan-Export; Tag `inbox` via PostSync-Job; IMAP-Inbox `paperless@stadthagen.dev` (`mail.henrystadthagen.de:993`, Secret `paperless-imap`, PostSync `mail-inbox-job`).
+- **Auth:** Authentik OIDC (LAN + Ext-Redirects wie Termix); SMTP outbound `mail.henrystadthagen.de:465` (`auto@…`).
 - **Exposure:** LAN `paperless.stadthagen.dev`; Ext `paperless-ext` in pangolin-publish mit **`enabled: false`** vorbereitet.
 - **Backup:** ADR-0015 CronJob (`pg_dump` + data/media tar → NFS).
 
 ```mermaid
 flowchart LR
   HPScan[un10 HPScan NFS] -->|consume| Web[paperless web]
+  Mail[paperless@ IMAP] -->|attachments| Web
   Web --> PG[(postgres 18)]
   Web --> Redis[redis infra]
   Worker[paperless-worker HPA] --> PG
@@ -30,6 +31,6 @@ flowchart LR
 
 ## Konsequenzen
 
-- Secrets müssen vor Sync gesetzt sein (`PAPERLESS_*` + OAuth pin in Terraform).
+- Secrets müssen vor Sync gesetzt sein (`PAPERLESS_*` inkl. optional `PAPERLESS_IMAP_PASSWORD` + OAuth pin in Terraform).
 - un10 NFS-ACL muss k3s-Nodes erlauben.
 - Ext-Traffic erst nach Flip von `enabled: true` in pangolin-publish.

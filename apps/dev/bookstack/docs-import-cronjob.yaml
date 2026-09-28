@@ -105,6 +105,12 @@ spec:
                       name: bookstack-import
                       key: BOOKSTACK_TOKEN_SECRET
                       optional: true
+                - name: GIT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: bookstack-import
+                      key: GIT_TOKEN
+                      optional: true
                 - name: SOURCES_FILE
                   value: /config/sources.yaml
                 - name: STATE_CM
@@ -125,6 +131,7 @@ spec:
                   pip3 install --break-system-packages --root-user-action=ignore --quiet 'PyYAML>=6.0.1'
                   # #region agent log
                   echo "DBG hypA: skip chmod on RO ConfigMap; invoke via sh"
+                  if [ -n "${GIT_TOKEN:-}" ]; then echo "DBG hypE: GIT_TOKEN set=yes"; else echo "DBG hypE: GIT_TOKEN set=no"; fi
                   ls -la /config/gitops-bootstrap.sh /config/docs-import-run.sh || true
                   # #endregion
                   sh /config/gitops-bootstrap.sh
@@ -192,6 +199,12 @@ spec:
                   name: bookstack-import
                   key: BOOKSTACK_TOKEN_SECRET
                   optional: true
+            - name: GIT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: bookstack-import
+                  key: GIT_TOKEN
+                  optional: true
             - name: SOURCES_FILE
               value: /config/sources.yaml
             - name: STATE_CM
@@ -212,6 +225,7 @@ spec:
               pip3 install --break-system-packages --root-user-action=ignore --quiet 'PyYAML>=6.0.1'
               # #region agent log
               echo "DBG hypA: skip chmod on RO ConfigMap; invoke via sh"
+              if [ -n "${GIT_TOKEN:-}" ]; then echo "DBG hypE: GIT_TOKEN set=yes"; else echo "DBG hypE: GIT_TOKEN set=no"; fi
               ls -la /config/gitops-bootstrap.sh /config/docs-import-run.sh || true
               # #endregion
               sh /config/gitops-bootstrap.sh

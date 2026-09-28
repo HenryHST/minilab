@@ -82,14 +82,56 @@ data:
     state_ns = os.environ["STATE_NS"]
     force = os.environ.get("FORCE_IMPORT", "").lower() in ("1", "true", "yes")
     state_path = work / "state" / "state.json"
+    git_token = (os.environ.get("GIT_TOKEN") or "").strip()
 
     cfg = yaml.safe_load(sources_file.read_text(encoding="utf-8")) or {}
     sources = cfg.get("sources") or []
 
 
     def run(cmd, **kw):
-        print("+", " ".join(str(c) for c in cmd), flush=True)
+        # Never print credentials embedded in clone URLs
+        safe = []
+        for c in cmd:
+            s = str(c)
+            if "://" in s and "@" in s.split("://", 1)[-1].split("/", 1)[0]:
+                scheme, rest = s.split("://", 1)
+                safe.append(f"{scheme}://***@{rest.split('@', 1)[-1]}")
+            else:
+                safe.append(s)
+        print("+", " ".join(safe), flush=True)
         subprocess.check_call(cmd, **kw)
+
+
+    def auth_url(url: str) -> str:
+        """Inject x-access-token for https://github.com when GIT_TOKEN is set."""
+        if not git_token:
+            return url
+        prefix = "https://github.com/"
+        if url.startswith(prefix):
+            return f"https://x-access-token:{git_token}@github.com/" + url[len(prefix) :]
+        return url
+
+
+    def git_clone(url: str, ref: str, depth: str, dest: Path) -> None:
+        # #region agent log
+        host = "github.com" if "github.com" in url else "other"
+        print(
+            f"DBG hypE: clone host={host} has_git_token={bool(git_token)} auth_injected={bool(git_token and url.startswith('https://github.com/'))}",
+            flush=True,
+        )
+        # #endregion
+        run(
+            [
+                "git",
+                "clone",
+                "--depth",
+                depth,
+                "--branch",
+                ref,
+                auth_url(url),
+                str(dest),
+            ]
+        )
 
 
     def resolve_script() -> Path:
@@ -113,17 +155,11 @@ data:
             dest = work / "clones" / src["id"]
             if not dest.exists():
                 git = src.get("git") or {}
-                run(
-                    [
-                        "git",
-                        "clone",
-                        "--depth",
-                        str(git.get("depth") or 1),
-                        "--branch",
-                        git.get("ref") or "main",
-                        git["url"],
-                        str(dest),
-                    ]
+                git_clone(
+                    git["url"],
+                    git.get("ref") or "main",
+                    str(git.get("depth") or 1),
+                    dest,
                 )
             break
 
@@ -160,7 +196,7 @@ data:
             depth = str(git.get("depth") or 1)
             dest = work / "clones" / sid
             if not dest.exists():
-                run(["git", "clone", "--depth", depth, "--branch", ref, url, str(dest)])
+                git_clone(url, ref, depth, dest)
             else:
                 print(f"Reuse clone {dest}", flush=True)
             sub = src.get("books_subdir") or "docs/bookstack/books"

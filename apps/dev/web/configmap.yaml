@@ -40,7 +40,7 @@ data:
     - nXk3:
         - Argo CD:
             href: https://argocd.stadthagen.dev
-            icon: argocd.png
+            icon: argo-cd.png
             description: GitOps
             widget:
               type: argocd

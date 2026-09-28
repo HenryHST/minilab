@@ -39,7 +39,7 @@
     - SearXNG:
         href: https://searxng.stadthagen.dev
         icon: si-searxng-#3050FF
-        description: metasearch (LAN)
+        description: Suchmaschine (LAN)
     - pgweb:
         href: https://pgweb.stadthagen.dev
         icon: si-postgresql-#4169E1
@@ -47,7 +47,7 @@
     - Draw.io:
         href: https://drawio.stadthagen.dev
         icon: si-diagramsdotnet-#F08705
-        description: diagram editor
+        description: Diagram editor
     - Termix:
         href: https://termix.stadthagen.dev
         icon: si-gnubash-#4EAA25
@@ -55,11 +55,11 @@
     - Vaultwarden:
         href: https://vaultwarden.stadthagen.dev
         icon: si-bitwarden-#175DDC
-        description: password manager (SSO)
+        description: Password Manager (SSO)
     - BookStack:
         href: https://book.stadthagen.dev
         icon: bookstack.png
-        description: Wissensdatenbank (OIDC)
+        description: Bedienungshandbuch
     - ByteStash:
         href: https://bytestash.stadthagen.dev
         icon: si-snippet-#4CAF50
@@ -67,7 +67,7 @@
     - Paperless:
         href: https://paperless.stadthagen.dev
         icon: si-files-#17541
-        description: documents OCR (OIDC)
+        description: Dokumente / OCR 
 - Monitoring:
     - Longhorn:
         href: https://longhorn.stadthagen.dev

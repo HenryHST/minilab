@@ -113,13 +113,6 @@ data:
 
 
     def git_clone(url: str, ref: str, depth: str, dest: Path) -> None:
-        # #region agent log
-        host = "github.com" if "github.com" in url else "other"
-        print(
-            f"DBG hypE: clone host={host} has_git_token={bool(git_token)} auth_injected={bool(git_token and url.startswith('https://github.com/'))}",
-            flush=True,
-        )
-        # #endregion
         run(
             [
                 "git",

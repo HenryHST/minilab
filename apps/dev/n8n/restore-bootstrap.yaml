@@ -1,0 +1,177 @@
+# Bootstrap restore from NFS. Default off — set ConfigMap enabled=true then Argo Sync.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: n8n-restore
+  namespace: n8n
+data:
+  enabled: "false"
+  archive: "latest"
+  force: "false"
+  replicas: "1"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: n8n-restore
+  namespace: n8n
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: n8n-restore
+  namespace: n8n
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale"]
+    verbs: ["get", "list", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: n8n-restore
+  namespace: n8n
+subjects:
+  - kind: ServiceAccount
+    name: n8n-restore
+    namespace: n8n
+roleRef:
+  kind: Role
+  name: n8n-restore
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: n8n-bootstrap-restore
+  namespace: n8n
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      serviceAccountName: n8n-restore
+      restartPolicy: Never
+      containers:
+        - name: restore
+          image: alpine/k8s:1.32.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PGHOST
+              value: n8n-postgres
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              value: n8n
+            - name: PGDATABASE
+              value: n8n
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-db
+                  key: POSTGRES_PASSWORD
+            - name: RESTORE_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: n8n-restore
+                  key: enabled
+            - name: RESTORE_ARCHIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: n8n-restore
+                  key: archive
+            - name: RESTORE_FORCE
+              valueFrom:
+                configMapKeyRef:
+                  name: n8n-restore
+                  key: force
+            - name: N8N_REPLICAS
+              valueFrom:
+                configMapKeyRef:
+                  name: n8n-restore
+                  key: replicas
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+              apk add --no-cache postgresql16-client >/dev/null
+
+              if [[ "${RESTORE_ENABLED}" != "true" ]]; then
+                echo "n8n-restore.enabled!=true — skip"
+                exit 0
+              fi
+
+              DEPLOY="n8n"
+              NS="n8n"
+              echo "Scaling ${DEPLOY} to 0..."
+              if kubectl -n "${NS}" get deploy "${DEPLOY}" >/dev/null 2>&1; then
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas=0
+                kubectl -n "${NS}" rollout status deploy/"${DEPLOY}" --timeout=120s || true
+              fi
+
+              echo "Waiting for postgres..."
+              until pg_isready -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -q; do sleep 2; done
+
+              TABLES="$(psql -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -Atc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';")"
+              echo "public tables: ${TABLES}"
+
+              if [[ "${TABLES}" != "0" && "${RESTORE_FORCE}" != "true" ]]; then
+                echo "DB not empty and force!=true — abort" >&2
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${N8N_REPLICAS}" || true
+                exit 1
+              fi
+
+              if [[ "${RESTORE_ARCHIVE}" == "latest" ]]; then
+                ARCHIVE="$(ls -1t /backup/n8n-*.tar.gz 2>/dev/null | head -n1 || true)"
+              else
+                ARCHIVE="/backup/${RESTORE_ARCHIVE}"
+              fi
+              if [[ -z "${ARCHIVE}" || ! -f "${ARCHIVE}" ]]; then
+                echo "No backup archive under /backup (archive=${RESTORE_ARCHIVE})" >&2
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${N8N_REPLICAS}" || true
+                exit 1
+              fi
+              echo "Restoring from ${ARCHIVE}"
+              WORK="/tmp/n8n-restore"
+              rm -rf "${WORK}"
+              mkdir -p "${WORK}"
+              tar xzf "${ARCHIVE}" -C "${WORK}"
+              INNER="$(find "${WORK}" -mindepth 1 -maxdepth 1 -type d | head -n1)"
+              SQL="$(find "${INNER}" -name 'n8n.sql.gz' | head -n1)"
+              DATA="$(find "${INNER}" -name 'n8n-data.tar.gz' | head -n1 || true)"
+
+              if [[ "${TABLES}" != "0" ]]; then
+                echo "DROP SCHEMA public CASCADE..."
+                psql -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -v ON_ERROR_STOP=1 \
+                  -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO n8n; GRANT ALL ON SCHEMA public TO public;"
+              fi
+              gunzip -c "${SQL}" | psql -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -v ON_ERROR_STOP=1
+              echo "DB Restore OK"
+
+              echo "Scaling ${DEPLOY} to ${N8N_REPLICAS}..."
+              kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${N8N_REPLICAS}"
+              kubectl -n "${NS}" rollout status deploy/"${DEPLOY}" --timeout=300s
+
+              if [[ -n "${DATA}" && -f "${DATA}" ]]; then
+                N8N_POD="$(kubectl -n "${NS}" get pod -l app.kubernetes.io/name=n8n,app.kubernetes.io/type=master -o jsonpath='{.items[0].metadata.name}')"
+                echo "Restoring data into ${N8N_POD}"
+                kubectl -n "${NS}" exec -i "${N8N_POD}" -c n8n -- tar xzf - -C /home/node < "${DATA}"
+              fi
+              echo "Done. Set n8n-restore.enabled=false in Git immediately."
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+      volumes:
+        - name: backup
+          persistentVolumeClaim:
+            claimName: n8n-backups

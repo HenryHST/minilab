@@ -1,0 +1,37 @@
+# Pin n8n data next to Postgres — Longhorn attach currently unreliable for new volumes.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: n8n-data-hostpath
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - nxk3-w01
+  hostPath:
+    path: /var/lib/n8n-data
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: n8n-data
+  namespace: n8n
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  volumeName: n8n-data-hostpath
+  resources:
+    requests:
+      storage: 5Gi

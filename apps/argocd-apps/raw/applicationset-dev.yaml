@@ -67,6 +67,10 @@ spec:
             path: apps/dev/audiobookshelf
             namespace: audiobookshelf
             syncWave: "3"
+          - app: n8n
+            path: apps/dev/n8n
+            namespace: n8n
+            syncWave: "3"
   template:
     metadata:
       name: "{{ .app }}"

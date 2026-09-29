@@ -1,0 +1,105 @@
+# 8gears n8n chart 2.1.1 — image tag overridden below (2.41.3). Regenerate:
+#   helm template n8n oci://8gears.container-registry.com/library/n8n --version 2.1.1 \
+#     -f values.yaml -n n8n > helm-manifest.yaml
+
+fullnameOverride: n8n
+
+image:
+  repository: n8nio/n8n
+  pullPolicy: IfNotPresent
+  tag: "2.41.3"
+
+ingress:
+  enabled: false
+
+main:
+  config:
+    n8n:
+      host: n8n.stadthagen.dev
+      port: "5678"
+      protocol: https
+      editor_base_url: https://n8n.stadthagen.dev
+      proxy_hops: "1"
+      user_management:
+        disabled: false
+    webhook:
+      url: https://n8n.stadthagen.dev/
+    db:
+      type: postgresdb
+      postgresdb:
+        host: n8n-postgres
+        port: "5432"
+        database: n8n
+        user: n8n
+    generic:
+      timezone: Europe/Berlin
+    n8n_email_mode: smtp
+    n8n_smtp_host: mail.henrystadthagen.de
+    n8n_smtp_port: "465"
+    n8n_smtp_user: auto@henrystadthagen.de
+    n8n_smtp_sender: auto@henrystadthagen.de
+    n8n_smtp_ssl: "true"
+
+  extraEnv:
+    N8N_PORT:
+      value: "5678"
+    N8N_ENCRYPTION_KEY:
+      valueFrom:
+        secretKeyRef:
+          name: n8n-app
+          key: N8N_ENCRYPTION_KEY
+    DB_POSTGRESDB_PASSWORD:
+      valueFrom:
+        secretKeyRef:
+          name: n8n-db
+          key: POSTGRES_PASSWORD
+    N8N_SMTP_PASS:
+      valueFrom:
+        secretKeyRef:
+          name: n8n-smtp
+          key: password
+
+  # hostPath /var/lib/n8n-data on nxk3-w01 must be chown 1000:1000 (see README)
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    fsGroupChangePolicy: OnRootMismatch
+
+  persistence:
+    enabled: true
+    type: existing
+    existingClaim: n8n-data
+
+  replicaCount: 1
+  deploymentStrategy:
+    type: Recreate
+
+  service:
+    enabled: true
+    type: ClusterIP
+    port: 5678
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+
+  nodeSelector:
+    kubernetes.io/hostname: nxk3-w01
+
+worker:
+  enabled: false
+
+webhook:
+  enabled: false
+
+valkey:
+  enabled: false
+
+sandbox:
+  enabled: false
+  deploy: false

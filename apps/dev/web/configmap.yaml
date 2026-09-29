@@ -110,6 +110,10 @@ data:
             href: https://audiobookshelf.stadthagen.dev
             icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/audiobookshelf.svg
             description: Hörbücher / Podcasts (OIDC)
+        - n8n:
+            href: https://n8n.stadthagen.dev
+            icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/n8n.svg
+            description: Workflows (ForwardAuth)
     - Monitoring:
         - Longhorn:
             href: https://longhorn.stadthagen.dev

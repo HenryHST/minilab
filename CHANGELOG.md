@@ -6,11 +6,13 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- **n8n (#87)** — Wave-3 App `apps/dev/n8n`: 8gears Helm → `helm-manifest.yaml`, Postgres, Traefik ForwardAuth (`ak-outpost-n8n`), Webhook-Bypass, SMTP, NFS Backup/Restore; ADR-0028; Homepage Tools; BookStack-Buch `n8n`
 - **Audiobookshelf E-Mail** — PostSync Job `audiobookshelf-email` (Wave 7) setzt BookStack-SMTP (`mail.henrystadthagen.de:465`) per `PATCH /api/emails/settings`; Secret `audiobookshelf-smtp` in Infra_LAB (#86)
 
 ### Changed
 
 - BookStack-Buch `audiobookshelf` v1.1.0 — SMTP/OIDC/Init PostSync-Waves dokumentiert; ADR-0027 + App-README
+- ADR-0015 — n8n Backup-Zeile (03:30 UTC)
 
 ## [0.11.0] - 2026-09-27
 

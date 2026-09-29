@@ -40,6 +40,7 @@ data:
           slug: hubble-ui
           provider: !KeyOf hubble-ui-provider
           meta_launch_url: https://hubble.stadthagen.dev
+          meta_icon: branding/hubble-light-1.svg
           open_in_new_tab: true
 
       - model: authentik_outposts.outpost
@@ -53,6 +54,85 @@ data:
           service_connection: !Find [authentik_outposts.kubernetesserviceconnection, [name, Local Kubernetes Cluster]]
           providers:
             - !KeyOf hubble-ui-provider
+          config:
+            authentik_host: http://authentik-server.authentik.svc.cluster.local:80
+            authentik_host_browser: https://idp.stadthagen.dev
+            authentik_host_insecure: true
+            kubernetes_namespace: authentik
+            kubernetes_replicas: 1
+            kubernetes_service_type: ClusterIP
+            object_naming_template: ak-outpost-%(name)s
+  day0-n8n.yaml: |
+    # yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
+    # Day-0: ForwardAuth for n8n.stadthagen.dev (Community n8n — no native OIDC)
+    # Owner: minilab blueprints — NOT managed by Infra_LAB terraform/authentik OAuth
+    # Service name must stay ak-outpost-n8n (Traefik middleware).
+    # Access groups n8n_admins / n8n_users are created by Terraform; bindings here.
+    version: 1
+    metadata:
+      name: day0-n8n
+      labels:
+        blueprints.goauthentik.io/description: Day-0 Proxy Provider + Outpost for n8n ForwardAuth
+    entries:
+      - model: authentik_providers_proxy.proxyprovider
+        id: n8n-provider
+        state: present
+        identifiers:
+          name: n8n
+        attrs:
+          name: n8n
+          external_host: https://n8n.stadthagen.dev
+          mode: forward_single
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
+
+      - model: authentik_core.application
+        id: n8n-app
+        state: present
+        identifiers:
+          slug: n8n
+        attrs:
+          name: n8n
+          slug: n8n
+          provider: !KeyOf n8n-provider
+          meta_launch_url: https://n8n.stadthagen.dev
+          meta_icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/n8n.svg
+          meta_description: Workflow-Automatisierung und Service-Integrationen.
+          open_in_new_tab: true
+
+      - model: authentik_policies.policybinding
+        id: n8n-bind-admins
+        state: present
+        identifiers:
+          order: 0
+          target: !KeyOf n8n-app
+        attrs:
+          order: 0
+          target: !KeyOf n8n-app
+          group: !Find [authentik_core.group, [name, n8n_admins]]
+
+      - model: authentik_policies.policybinding
+        id: n8n-bind-users
+        state: present
+        identifiers:
+          order: 1
+          target: !KeyOf n8n-app
+        attrs:
+          order: 1
+          target: !KeyOf n8n-app
+          group: !Find [authentik_core.group, [name, n8n_users]]
+
+      - model: authentik_outposts.outpost
+        id: n8n-outpost
+        state: present
+        identifiers:
+          name: n8n
+        attrs:
+          name: n8n
+          type: proxy
+          service_connection: !Find [authentik_outposts.kubernetesserviceconnection, [name, Local Kubernetes Cluster]]
+          providers:
+            - !KeyOf n8n-provider
           config:
             authentik_host: http://authentik-server.authentik.svc.cluster.local:80
             authentik_host_browser: https://idp.stadthagen.dev

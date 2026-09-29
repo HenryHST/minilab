@@ -1,0 +1,122 @@
+# n8n: Traefik ingress; egress DNS + Postgres + SMTP + Authentik outpost (ForwardAuth path is Traefik→outpost)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: n8n-ingress
+  namespace: n8n
+  labels:
+    app.kubernetes.io/name: n8n
+    app.kubernetes.io/part-of: n8n
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: n8n
+      app.kubernetes.io/instance: n8n
+      app.kubernetes.io/type: master
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: n8n
+      ports:
+        - protocol: TCP
+          port: 5678
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 5678
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: n8n-egress
+  namespace: n8n
+  labels:
+    app.kubernetes.io/name: n8n
+    app.kubernetes.io/part-of: n8n
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: n8n
+      app.kubernetes.io/instance: n8n
+      app.kubernetes.io/type: master
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - podSelector:
+            matchLabels:
+              app: n8n-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # SMTP mail.henrystadthagen.de:465 (+ general HTTPS for nodes/APIs)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 465
+        - protocol: TCP
+          port: 587
+    # LAN SMTP host
+    - to:
+        - ipBlock:
+            cidr: 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 465
+        - protocol: TCP
+          port: 587
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: n8n-postgres-ingress
+  namespace: n8n
+  labels:
+    app: n8n-postgres
+spec:
+  podSelector:
+    matchLabels:
+      app: n8n-postgres
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: n8n
+      ports:
+        - protocol: TCP
+          port: 5432
+    - from:
+        - podSelector:
+            matchLabels:
+              app: n8n-backup
+      ports:
+        - protocol: TCP
+          port: 5432

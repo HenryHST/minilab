@@ -39,6 +39,8 @@ spec:
       namespace: paperless
     - server: "*"
       namespace: audiobookshelf
+    - server: "*"
+      namespace: n8n
   clusterResourceWhitelist:
     - group: "*"
       kind: "*"

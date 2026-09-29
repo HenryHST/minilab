@@ -7,6 +7,7 @@ Source of truth for **runtime** Day-0 objects that must exist before Terraform r
 |------------|---------|--------|
 | `day0-registry-ui.yaml` | Proxy Provider + App + Outpost `ak-outpost-registry-ui` | **Blueprint (this repo)** |
 | `day0-hubble-ui.yaml` | Proxy Provider + App + Outpost `ak-outpost-hubble-ui` | **Blueprint (this repo)** |
+| `day0-n8n.yaml` | Proxy Provider + App + Outpost `ak-outpost-n8n` + group bindings | **Blueprint (this repo)** |
 
 Do **not** manage the same objects in `Infra_LAB/terraform/authentik`.
 

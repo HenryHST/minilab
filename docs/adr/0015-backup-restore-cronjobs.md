@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Datum:** 2026-09-11 (ergänzt 2026-09-27)
-- **Kontext:** status, vaultwarden, termix, bookstack, authentik, bytestash
+- **Kontext:** status, vaultwarden, termix, bookstack, authentik, bytestash, n8n
 
 ## Kontext
 
@@ -25,6 +25,7 @@ Longhorn-Volume-Backups decken nicht alle App-Semantiken ab (SQLite-Dateien, `pg
 | bookstack | 04:00 | MariaDB + `/config` |
 | **authentik** | **05:00** | `pg_dump` + `/media` |
 | **bytestash** | **06:00** | tar `/data/snippets` |
+| **n8n** | **03:30** | `pg_dump` + tar `.n8n` |
 
 ```mermaid
 flowchart LR

@@ -1,0 +1,128 @@
+# PV carries mountOptions (core Pod nfs volumes cannot); UniFi NAS needs NFSv3 + nolock.
+# Shared PVC also used by restore-bootstrap.yaml.
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backup-runner
+  namespace: n8n
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: backup-runner-role
+  namespace: n8n
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: backup-runner-rolebinding
+  namespace: n8n
+subjects:
+  - kind: ServiceAccount
+    name: backup-runner
+    namespace: n8n
+roleRef:
+  kind: Role
+  name: backup-runner-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: n8n-backups-nfs
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=3
+    - nolock
+  nfs:
+    server: 192.168.0.25
+    path: /var/nfs/shared/infra01/n8n-backups
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: n8n-backups
+  namespace: n8n
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: n8n-backups-nfs
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: n8n-backup-cron
+  namespace: n8n
+spec:
+  schedule: "30 3 * * *" # 03:30 UTC (after termix 03:00)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          serviceAccountName: backup-runner
+          restartPolicy: Never
+          containers:
+            - name: backup
+              image: alpine/k8s:1.32.0
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: n8n-db
+                      key: POSTGRES_PASSWORD
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  apk add --no-cache postgresql16-client >/dev/null
+                  STAMP="$(date -u +%Y%m%d-%H%M%S)"
+                  OUT_DIR="/backup/n8n-${STAMP}"
+                  mkdir -p "${OUT_DIR}"
+                  echo "pg_dump n8n@n8n-postgres"
+                  until pg_isready -h n8n-postgres -U n8n -d n8n -q; do sleep 2; done
+                  pg_dump -h n8n-postgres -U n8n -d n8n --no-owner --no-acl | gzip -c > "${OUT_DIR}/n8n.sql.gz"
+                  N8N_POD="$(kubectl -n n8n get pod -l app.kubernetes.io/name=n8n,app.kubernetes.io/type=master -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+                  if [[ -n "${N8N_POD}" ]]; then
+                    echo "tar n8n data from ${N8N_POD}"
+                    kubectl -n n8n exec "${N8N_POD}" -c n8n -- \
+                      tar czf - -C /home/node .n8n > "${OUT_DIR}/n8n-data.tar.gz" || \
+                      echo "WARN: data tar failed (empty PVC?)"
+                  else
+                    echo "WARN: no n8n pod — skipping data tar"
+                  fi
+                  tar czf "/backup/n8n-${STAMP}.tar.gz" -C /backup "n8n-${STAMP}"
+                  rm -rf "${OUT_DIR}"
+                  ls -lh "/backup/n8n-${STAMP}.tar.gz"
+                  ls -1t /backup/n8n-*.tar.gz 2>/dev/null | tail -n +8 | xargs -r rm -f
+                  echo "Done."
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+          volumes:
+            - name: backup
+              persistentVolumeClaim:
+                claimName: n8n-backups

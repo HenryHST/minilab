@@ -34,6 +34,7 @@ Format angelehnt an [Michael Nygard](https://cognitect.com/blog/2011/11/15/docum
 | [0024](0024-error-pages.md) | Traefik Error-Pages (Maintenance) | Accepted |
 | [0025](0025-nfd.md) | Node Feature Discovery (NFD) | Accepted |
 | [0026](0026-paperless-ngx.md) | Paperless-ngx mit Redis in infra | Accepted |
+| [0027](0027-audiobookshelf.md) | Audiobookshelf (LAN, NFS, Authentik OIDC) | Accepted |
 
 ## Neues ADR anlegen
 

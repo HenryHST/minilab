@@ -37,6 +37,8 @@ spec:
       namespace: karakeep
     - server: "*"
       namespace: paperless
+    - server: "*"
+      namespace: audiobookshelf
   clusterResourceWhitelist:
     - group: "*"
       kind: "*"

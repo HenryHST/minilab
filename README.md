@@ -114,7 +114,7 @@ kubectl create token headlamp-admin -n kube-system
 3. Listeneintrag in `apps/argocd-apps/raw/applicationset-<bucket>.yaml` (`app`, `namespace`, `syncWave`, optional Helm-Felder / `path` + `extras`).
 4. Nach `main` pushen; Parent `homelab` → `gitops-bootstrap` → ApplicationSet erzeugt die Application.
 
-Stubs ohne Deploy: Ordner anlegen, **nicht** in die ApplicationSet-Liste aufnehmen (`kargo`, `audiobookshelf`).
+Stubs ohne Deploy: Ordner anlegen, **nicht** in die ApplicationSet-Liste aufnehmen (`kargo`).
 
 ## TLS
 

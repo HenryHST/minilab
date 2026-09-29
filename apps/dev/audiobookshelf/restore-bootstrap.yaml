@@ -1,0 +1,213 @@
+# Bootstrap restore from NFS (cluster rebuild). Default off — set enabled=true then sync; set false after.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: audiobookshelf-restore
+  namespace: audiobookshelf
+data:
+  enabled: "false"
+  archive: "latest"
+  force: "false"
+  replicas: "1"
+  worker.sh: |
+    #!/bin/sh
+    set -euo pipefail
+    HAS_CFG=0
+    if [ -f /config/absdatabase.sqlite ] || [ -f /config/users.db ] || ls /config/*.sqlite >/dev/null 2>&1; then
+      HAS_CFG=1
+    fi
+    echo "config sqlite present=${HAS_CFG}"
+    if [ "${HAS_CFG}" = "1" ] && [ "${RESTORE_FORCE}" != "true" ]; then
+      echo "config not empty and force!=true — abort" >&2
+      exit 1
+    fi
+    if [ "${RESTORE_ARCHIVE}" = "latest" ]; then
+      ARCHIVE="$(ls -1t /backup/audiobookshelf-*.tar.gz 2>/dev/null | head -n1 || true)"
+    else
+      ARCHIVE="/backup/${RESTORE_ARCHIVE}"
+    fi
+    if [ -z "${ARCHIVE}" ] || [ ! -f "${ARCHIVE}" ]; then
+      echo "No backup archive found (archive=${RESTORE_ARCHIVE})" >&2
+      exit 1
+    fi
+    echo "Restoring from ${ARCHIVE}"
+    if [ "${HAS_CFG}" = "1" ] || [ "${RESTORE_FORCE}" = "true" ]; then
+      echo "Clearing /config..."
+      find /config -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+    fi
+    tar xzf "${ARCHIVE}" -C /config
+    ls -la /config
+    echo "Restore OK"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: audiobookshelf-restore
+  namespace: audiobookshelf
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: audiobookshelf-restore
+  namespace: audiobookshelf
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale"]
+    verbs: ["get", "list", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "create", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: audiobookshelf-restore
+  namespace: audiobookshelf
+subjects:
+  - kind: ServiceAccount
+    name: audiobookshelf-restore
+    namespace: audiobookshelf
+roleRef:
+  kind: Role
+  name: audiobookshelf-restore
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: audiobookshelf-bootstrap-restore
+  namespace: audiobookshelf
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      serviceAccountName: audiobookshelf-restore
+      restartPolicy: Never
+      containers:
+        - name: restore
+          image: alpine/k8s:1.32.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: RESTORE_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: audiobookshelf-restore
+                  key: enabled
+            - name: RESTORE_ARCHIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: audiobookshelf-restore
+                  key: archive
+            - name: RESTORE_FORCE
+              valueFrom:
+                configMapKeyRef:
+                  name: audiobookshelf-restore
+                  key: force
+            - name: ABS_REPLICAS
+              valueFrom:
+                configMapKeyRef:
+                  name: audiobookshelf-restore
+                  key: replicas
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+              if [[ "${RESTORE_ENABLED}" != "true" ]]; then
+                echo "audiobookshelf-restore.enabled!=true — skip"
+                exit 0
+              fi
+              DEPLOY="audiobookshelf"
+              NS="audiobookshelf"
+              WORKER="audiobookshelf-restore-worker"
+              echo "Scaling ${DEPLOY} to 0..."
+              if kubectl -n "${NS}" get deploy "${DEPLOY}" >/dev/null 2>&1; then
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas=0
+                kubectl -n "${NS}" rollout status deploy/"${DEPLOY}" --timeout=120s || true
+                for i in $(seq 1 60); do
+                  N="$(kubectl -n "${NS}" get pods -l app=audiobookshelf --field-selector=status.phase!=Succeeded,status.phase!=Failed -o name 2>/dev/null | wc -l | tr -d ' ')"
+                  [[ "${N}" == "0" ]] && break
+                  sleep 2
+                done
+              fi
+              kubectl -n "${NS}" delete pod "${WORKER}" --ignore-not-found --wait=true
+              cat <<EOF | kubectl apply -f -
+              apiVersion: v1
+              kind: Pod
+              metadata:
+                name: ${WORKER}
+                namespace: ${NS}
+                labels:
+                  app: audiobookshelf-restore-worker
+              spec:
+                restartPolicy: Never
+                securityContext:
+                  fsGroup: 988
+                containers:
+                  - name: restore
+                    image: alpine:3.20
+                    imagePullPolicy: IfNotPresent
+                    env:
+                      - name: RESTORE_ARCHIVE
+                        value: "${RESTORE_ARCHIVE}"
+                      - name: RESTORE_FORCE
+                        value: "${RESTORE_FORCE}"
+                    command: ["/bin/sh", "/scripts/worker.sh"]
+                    volumeMounts:
+                      - name: config
+                        mountPath: /config
+                      - name: backup
+                        mountPath: /backup
+                      - name: scripts
+                        mountPath: /scripts
+                volumes:
+                  - name: config
+                    persistentVolumeClaim:
+                      claimName: audiobookshelf-config
+                  - name: backup
+                    persistentVolumeClaim:
+                      claimName: audiobookshelf-backups
+                  - name: scripts
+                    configMap:
+                      name: audiobookshelf-restore
+                      defaultMode: 0755
+              EOF
+              echo "Waiting for worker ${WORKER}..."
+              for i in $(seq 1 120); do
+                PHASE="$(kubectl -n "${NS}" get pod "${WORKER}" -o jsonpath='{.status.phase}' 2>/dev/null || true)"
+                case "${PHASE}" in
+                  Succeeded)
+                    kubectl -n "${NS}" logs "${WORKER}" || true
+                    break
+                    ;;
+                  Failed)
+                    kubectl -n "${NS}" logs "${WORKER}" || true
+                    kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${ABS_REPLICAS}" || true
+                    kubectl -n "${NS}" delete pod "${WORKER}" --ignore-not-found
+                    exit 1
+                    ;;
+                esac
+                sleep 2
+              done
+              PHASE="$(kubectl -n "${NS}" get pod "${WORKER}" -o jsonpath='{.status.phase}' 2>/dev/null || true)"
+              if [[ "${PHASE}" != "Succeeded" ]]; then
+                echo "Worker did not succeed (phase=${PHASE})" >&2
+                kubectl -n "${NS}" logs "${WORKER}" || true
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${ABS_REPLICAS}" || true
+                kubectl -n "${NS}" delete pod "${WORKER}" --ignore-not-found
+                exit 1
+              fi
+              kubectl -n "${NS}" delete pod "${WORKER}" --ignore-not-found --wait=true
+              echo "Scaling ${DEPLOY} to ${ABS_REPLICAS}..."
+              if kubectl -n "${NS}" get deploy "${DEPLOY}" >/dev/null 2>&1; then
+                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${ABS_REPLICAS}"
+                kubectl -n "${NS}" rollout status deploy/"${DEPLOY}" --timeout=180s || true
+              fi
+              echo "Restore bootstrap finished — set audiobookshelf-restore.enabled=false"

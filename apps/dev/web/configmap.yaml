@@ -106,6 +106,10 @@ data:
             href: https://paperless.stadthagen.dev
             icon: https://www.svgrepo.com/show/518457/paperless.svg
             description: Dokumente / OCR
+        - Audiobookshelf:
+            href: https://audiobookshelf.stadthagen.dev
+            icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/audiobookshelf.svg
+            description: Hörbücher / Podcasts (OIDC)
     - Monitoring:
         - Longhorn:
             href: https://longhorn.stadthagen.dev

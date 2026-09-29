@@ -22,7 +22,7 @@ Vier Buckets unter `apps/`:
 | `apps/ops/` | cert-manager, registry, newt, authentik, headlamp, hubble-ui, pangolin-publish, … |
 | `apps/dev/` | bookstack, termix, vaultwarden, searxng, bytestash, … |
 
-Root-`infra/` entfällt. Stubs (`kargo`, `audiobookshelf`) liegen im Bucket, sind aber **nicht** in ApplicationSet-Listen, bis deployfertig.
+Root-`infra/` entfällt. Stubs (`kargo`) liegen im Bucket, sind aber **nicht** in ApplicationSet-Listen, bis deployfertig.
 
 ### Argo-Wiring
 

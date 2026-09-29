@@ -16,7 +16,7 @@ User-facing tooling and apps.
 | searxng | 3 | searxng |
 | bytestash | 3 | bytestash |
 | karakeep | 3 | karakeep |
-
-Stub (not in ApplicationSet): `audiobookshelf/`.
+| paperless | 3 | paperless |
+| audiobookshelf | 3 | audiobookshelf |
 
 Managed by ApplicationSet `dev` / AppProject `dev`. See [ADR-0022](../../docs/adr/0022-apps-bucket-applicationsets.md).

@@ -50,7 +50,7 @@ PostSync Job `audiobookshelf-oidc` (Wave 6) konfiguriert OpenID per `PATCH /api/
 
 Authentik Redirects: `/auth/openid/callback`, `/auth/openid/mobile-redirect`, `/login`.
 
-Zugang: Authentik-Gruppen `audiobookshelf_admins` (Henry) / `audiobookshelf_users` (Marion) steuern IdP-Zugang; Abs-Admin-Rechte ggf. einmalig in der Abs-UI setzen.
+Zugang: Authentik-Gruppen `audiobookshelf_admins` (Henry) / `audiobookshelf_users` (Marion) steuern IdP-Zugang; Abs-Admin-Rechte ggf. einmalig in der Abs-UI setzen. Authentik-Scope „Audiobookshelf Email Scope“ setzt `email_verified=true` (Abs Match-by-email / Auto-register).
 
 ## Backup / Restore
 

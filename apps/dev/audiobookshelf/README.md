@@ -45,6 +45,7 @@ PostSync Job `audiobookshelf-oidc` (Wave 6) konfiguriert OpenID per `PATCH /api/
 - Client ID `audiobookshelf`, Secret aus `audiobookshelf-oauth`
 - Methoden: `local` + `openid` (Local = Break-Glass)
 - Auto-register, Match by email, Button „Authentik“; Group Claim leer (Abs erwartet `admin`/`user`/`guest`, nicht Authentik-Gruppennamen)
+- `authOpenIDSubfolderForRedirectURLs` muss `""` sein (sonst sendet Abs `…/undefined/auth/openid/callback` → Authentik redirect_uri mismatch)
 - Bei Änderung: `rollout restart` Deployment
 
 Authentik Redirects: `/auth/openid/callback`, `/auth/openid/mobile-redirect`, `/login`.

@@ -167,6 +167,8 @@ spec:
                   "authOpenIDMatchExistingBy": "email",
                   "authOpenIDGroupClaim": None,
                   "authOpenIDAdvancedPermsClaim": None,
+                  # Must be "" (not omitted/null): undefined builds …/undefined/auth/openid/callback
+                  "authOpenIDSubfolderForRedirectURLs": "",
                   "authOpenIDMobileRedirectURIs": ["audiobookshelf://oauth"],
               }
               for required in ("authOpenIDAuthorizationURL", "authOpenIDTokenURL",
@@ -180,7 +182,20 @@ spec:
                   log("fail", reason="auth_patch_failed", http_code=code, body=str(result)[:400])
                   sys.exit(1)
               updated = bool(result.get("updated"))
-              log("auth_patched", updated=updated)
+              log("auth_patched", updated=updated,
+                  expected_redirect="https://audiobookshelf.stadthagen.dev/auth/openid/callback")
+
+              # Confirm subfolder persisted as empty string (Abs preserves "" for this key only)
+              code_as, asettings = http_json("GET", f"{base}/api/auth-settings", token=token)
+              sub = asettings.get("authOpenIDSubfolderForRedirectURLs") if code_as == 200 else None
+              log("subfolder_check", http_code=code_as, subfolder=sub,
+                  subfolder_type=type(sub).__name__ if sub is not None or (code_as == 200 and "authOpenIDSubfolderForRedirectURLs" in asettings) else "missing",
+                  has_key=("authOpenIDSubfolderForRedirectURLs" in asettings) if isinstance(asettings, dict) else False)
+              if code_as == 200 and asettings.get("authOpenIDSubfolderForRedirectURLs") not in ("",):
+                  # Empty string is required; null/missing still yields /undefined/... callback
+                  log("fail", reason="subfolder_not_empty_string",
+                      value=asettings.get("authOpenIDSubfolderForRedirectURLs"))
+                  sys.exit(1)
 
               code, after = http_json("GET", f"{base}/status")
               methods = after.get("authMethods") if code == 200 else []

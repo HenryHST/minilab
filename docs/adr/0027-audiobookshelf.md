@@ -22,6 +22,7 @@ Hörbücher und Podcasts sollen auf nXk3 laufen (LAN-only), mit SSO über Authen
 - **Homepage:** Link unter Tools in `apps/dev/web` (services.yaml + configmap.yaml).
 - **Initial setup:** PostSync Job `audiobookshelf-init` → `POST /init` mit Secret `audiobookshelf-root` (SecretSpec `AUDIOBOOKSHELF_ROOT_PASSWORD`), idempotent bei `isInit=true`. Kein Env-Bootstrap in Image 2.37.0.
 - **OIDC:** PostSync Job `audiobookshelf-oidc` → Root-Login + Discovery + `PATCH /api/auth-settings` (local+openid, Auto-register, Match email); Restart bei Update. Group Claim leer (Abs-Rollen ≠ Authentik-Gruppen).
+- **E-Mail:** PostSync Job `audiobookshelf-email` (Wave 7) → `PATCH /api/emails/settings` mit BookStack-SMTP (`mail.henrystadthagen.de:465`, `auto@henrystadthagen.de`, Secret `audiobookshelf-smtp` ← `AUTHENTIK_EMAIL_PASSWORD`). Kein Env-Override.
 
 ```mermaid
 flowchart LR
@@ -30,6 +31,7 @@ flowchart LR
   Svc --> Pod[audiobookshelf]
   NFSLib[NFS_audiobookshelf] --> Pod
   Pod -->|"OIDC"| IdP[Authentik]
+  Pod -->|"SMTP"| Mail[mail_henrystadthagen_de]
   Pod -->|"daily_tar"| NFSBak[NFS_audiobookshelf_backups]
 ```
 
@@ -37,5 +39,5 @@ flowchart LR
 
 - NFS-Verzeichnisse müssen vor dem ersten Sync existieren.
 - Terraform `audiobookshelf_oauth_client_secret` und SecretSpec `AUDIOBOOKSHELF_OAUTH_CLIENT_SECRET` müssen identisch sein; `--tags secrets` vor Argo-Sync.
-- Abs OpenID einmalig in der UI setzen (kein Env-Override).
+- OIDC und SMTP werden per PostSync-API gesetzt (kein Env-Override in Image 2.37.0).
 - Kein Ext-/Pangolin in v1 — nur LAN-DNS.

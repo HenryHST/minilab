@@ -1,0 +1,162 @@
+# Idempotent SMTP bootstrap via PATCH /api/emails/settings (Abs has no MAIL_* env).
+# Same relay as BookStack: mail.henrystadthagen.de:465 / auto@henrystadthagen.de.
+# Requires audiobookshelf-root + audiobookshelf-smtp; skips if either missing.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: audiobookshelf-email
+  namespace: audiobookshelf
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "7"
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app: audiobookshelf-email
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: email
+          image: alpine/k8s:1.32.0
+          env:
+            - name: ABS_URL
+              value: http://audiobookshelf.audiobookshelf.svc.cluster.local
+            - name: SMTP_HOST
+              value: mail.henrystadthagen.de
+            - name: SMTP_PORT
+              value: "465"
+            - name: SMTP_USER
+              value: auto@henrystadthagen.de
+            - name: SMTP_FROM
+              value: auto@henrystadthagen.de
+            - name: ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: audiobookshelf-root
+                  key: username
+                  optional: true
+            - name: ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: audiobookshelf-root
+                  key: password
+                  optional: true
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: audiobookshelf-smtp
+                  key: password
+                  optional: true
+          command:
+            - python3
+            - -c
+            - |
+              import json, os, sys, time, urllib.error, urllib.request
+
+              def log(event, **data):
+                  print(json.dumps({"event": event, **data}, ensure_ascii=False), flush=True)
+
+              def http_json(method, url, body=None, token=None, timeout=30):
+                  data = None if body is None else json.dumps(body).encode()
+                  headers = {"Content-Type": "application/json", "Accept": "application/json"}
+                  if token:
+                      headers["Authorization"] = f"Bearer {token}"
+                  req = urllib.request.Request(url, data=data, method=method, headers=headers)
+                  try:
+                      with urllib.request.urlopen(req, timeout=timeout) as resp:
+                          raw = resp.read().decode()
+                          return resp.status, (json.loads(raw) if raw else {})
+                  except urllib.error.HTTPError as exc:
+                      raw = (exc.read().decode() if exc.fp else "")[:800]
+                      try:
+                          parsed = json.loads(raw) if raw else {}
+                      except Exception:
+                          parsed = {"raw": raw}
+                      return exc.code, parsed
+
+              base = os.environ.get("ABS_URL", "").rstrip("/")
+              user = (os.environ.get("ROOT_USER") or "root").strip() or "root"
+              password = os.environ.get("ROOT_PASSWORD") or ""
+              smtp_pass = os.environ.get("SMTP_PASSWORD") or ""
+              host = (os.environ.get("SMTP_HOST") or "").strip()
+              port = int(os.environ.get("SMTP_PORT") or "465")
+              smtp_user = (os.environ.get("SMTP_USER") or "").strip()
+              from_addr = (os.environ.get("SMTP_FROM") or "").strip()
+
+              if not password:
+                  log("skip", reason="audiobookshelf-root secret missing or empty")
+                  sys.exit(0)
+              if not smtp_pass:
+                  log("skip", reason="audiobookshelf-smtp password missing or empty")
+                  sys.exit(0)
+              if not host or not smtp_user or not from_addr:
+                  log("fail", reason="smtp_env_incomplete")
+                  sys.exit(1)
+
+              status = None
+              for i in range(1, 61):
+                  code, status = http_json("GET", f"{base}/status")
+                  if code == 200 and status.get("isInit") is True:
+                      log("status_ok", attempt=i, isInit=True)
+                      break
+                  log("status_wait", attempt=i, http_code=code,
+                      isInit=status.get("isInit") if isinstance(status, dict) else None)
+                  time.sleep(5)
+              else:
+                  log("fail", reason="not_initialized")
+                  sys.exit(1)
+
+              code, login = http_json("POST", f"{base}/login", {"username": user, "password": password})
+              if code != 200:
+                  log("fail", reason="login_failed", http_code=code)
+                  sys.exit(1)
+              token = ((login.get("user") or {}).get("accessToken")
+                       or (login.get("user") or {}).get("token")
+                       or login.get("token"))
+              if not token:
+                  log("fail", reason="no_token_in_login_response", keys=list(login.keys()))
+                  sys.exit(1)
+              log("login_ok", username=user)
+
+              payload = {
+                  "host": host,
+                  "port": port,
+                  "secure": True,
+                  "rejectUnauthorized": True,
+                  "user": smtp_user,
+                  "pass": smtp_pass,
+                  "fromAddress": from_addr,
+              }
+              code, result = http_json("PATCH", f"{base}/api/emails/settings", payload, token=token)
+              if code != 200:
+                  log("fail", reason="email_patch_failed", http_code=code, body=str(result)[:400])
+                  sys.exit(1)
+
+              settings = result.get("settings") if isinstance(result, dict) else None
+              if not isinstance(settings, dict):
+                  settings = result if isinstance(result, dict) else {}
+              log("email_patched",
+                  host=settings.get("host"),
+                  port=settings.get("port"),
+                  secure=settings.get("secure"),
+                  user=settings.get("user"),
+                  fromAddress=settings.get("fromAddress"))
+
+              code_g, got = http_json("GET", f"{base}/api/emails/settings", token=token)
+              if code_g != 200:
+                  log("fail", reason="email_get_failed", http_code=code_g)
+                  sys.exit(1)
+              check = got.get("settings") if isinstance(got.get("settings"), dict) else got
+              if (check.get("host") != host or int(check.get("port") or 0) != port
+                      or check.get("user") != smtp_user
+                      or check.get("fromAddress") != from_addr):
+                  log("fail", reason="email_verify_mismatch", settings={
+                      k: check.get(k) for k in ("host", "port", "user", "fromAddress", "secure")
+                  })
+                  sys.exit(1)
+              log("verify_ok", host=host, port=port, fromAddress=from_addr)
+              sys.exit(0)

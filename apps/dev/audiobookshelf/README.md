@@ -37,18 +37,19 @@ Creates Secrets `audiobookshelf-oauth` (`client-secret`) and `audiobookshelf-roo
 
 PostSync Job `audiobookshelf-init` calls Abs `POST /init` when `/status` has `isInit=false` (paths stay `/config` + `/metadata`). Skip if Secret fehlt oder Server schon initialisiert. Kein Env-Bootstrap in Image `2.37.0` (`INIT_USER_*` erst upstream neuer).
 
-## OIDC (first boot)
+## OIDC
 
-Abs speichert OpenID in `/config` (kein Env). Nach erstem Login als Root-Admin:
+PostSync Job `audiobookshelf-oidc` (Wave 6) konfiguriert OpenID per `PATCH /api/auth-settings` nach Root-Login:
 
-1. Settings → Authentication → OpenID
-2. Issuer: `https://idp.stadthagen.dev/application/o/audiobookshelf/` (auto-populate)
-3. Client ID: `audiobookshelf`
-4. Client Secret: aus Secret / SecretSpec
-5. Button text: Authentik; Auto-register; Match existing by email; Group claim: `groups`
-6. Redirect URI in Authentik: `https://audiobookshelf.stadthagen.dev/auth/openid/callback`
+- Issuer Discovery: `https://idp.stadthagen.dev/application/o/audiobookshelf/`
+- Client ID `audiobookshelf`, Secret aus `audiobookshelf-oauth`
+- Methoden: `local` + `openid` (Local = Break-Glass)
+- Auto-register, Match by email, Button „Authentik“; Group Claim leer (Abs erwartet `admin`/`user`/`guest`, nicht Authentik-Gruppennamen)
+- Bei Änderung: `rollout restart` Deployment
 
-Zugang: Authentik-Gruppen `audiobookshelf_admins` (Henry) / `audiobookshelf_users` (Marion). Abs-Admin-Rechte ggf. einmalig in Abs UI setzen.
+Authentik Redirects: `/auth/openid/callback`, `/auth/openid/mobile-redirect`, `/login`.
+
+Zugang: Authentik-Gruppen `audiobookshelf_admins` (Henry) / `audiobookshelf_users` (Marion) steuern IdP-Zugang; Abs-Admin-Rechte ggf. einmalig in der Abs-UI setzen.
 
 ## Backup / Restore
 

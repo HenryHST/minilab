@@ -1,0 +1,211 @@
+# SA + Role for OIDC PostSync job (rollout restart after auth-settings patch).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: audiobookshelf-oidc
+  namespace: audiobookshelf
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: audiobookshelf-oidc
+  namespace: audiobookshelf
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: audiobookshelf-oidc
+  namespace: audiobookshelf
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: audiobookshelf-oidc
+subjects:
+  - kind: ServiceAccount
+    name: audiobookshelf-oidc
+    namespace: audiobookshelf
+---
+# Idempotent OpenID bootstrap via PATCH /api/auth-settings (Abs has no OIDC env).
+# Requires audiobookshelf-root + audiobookshelf-oauth; skips if either missing.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: audiobookshelf-oidc
+  namespace: audiobookshelf
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "6"
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app: audiobookshelf-oidc
+    spec:
+      serviceAccountName: audiobookshelf-oidc
+      restartPolicy: OnFailure
+      containers:
+        - name: oidc
+          image: alpine/k8s:1.32.0
+          env:
+            - name: ABS_URL
+              value: http://audiobookshelf.audiobookshelf.svc.cluster.local
+            - name: OIDC_ISSUER
+              value: https://idp.stadthagen.dev/application/o/audiobookshelf/
+            - name: OIDC_CLIENT_ID
+              value: audiobookshelf
+            - name: ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: audiobookshelf-root
+                  key: username
+                  optional: true
+            - name: ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: audiobookshelf-root
+                  key: password
+                  optional: true
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: audiobookshelf-oauth
+                  key: client-secret
+                  optional: true
+          command:
+            - python3
+            - -c
+            - |
+              import json, os, subprocess, sys, time, urllib.error, urllib.request
+
+              def log(event, **data):
+                  print(json.dumps({"event": event, **data}, ensure_ascii=False), flush=True)
+
+              def http_json(method, url, body=None, token=None, timeout=30):
+                  data = None if body is None else json.dumps(body).encode()
+                  headers = {"Content-Type": "application/json", "Accept": "application/json"}
+                  if token:
+                      headers["Authorization"] = f"Bearer {token}"
+                  req = urllib.request.Request(url, data=data, method=method, headers=headers)
+                  try:
+                      with urllib.request.urlopen(req, timeout=timeout) as resp:
+                          raw = resp.read().decode()
+                          return resp.status, (json.loads(raw) if raw else {})
+                  except urllib.error.HTTPError as exc:
+                      raw = (exc.read().decode() if exc.fp else "")[:800]
+                      try:
+                          parsed = json.loads(raw) if raw else {}
+                      except Exception:
+                          parsed = {"raw": raw}
+                      return exc.code, parsed
+
+              base = os.environ.get("ABS_URL", "").rstrip("/")
+              issuer = os.environ.get("OIDC_ISSUER", "").rstrip("/") + "/"
+              client_id = (os.environ.get("OIDC_CLIENT_ID") or "audiobookshelf").strip()
+              client_secret = os.environ.get("OIDC_CLIENT_SECRET") or ""
+              user = (os.environ.get("ROOT_USER") or "root").strip() or "root"
+              password = os.environ.get("ROOT_PASSWORD") or ""
+
+              if not password:
+                  log("skip", reason="audiobookshelf-root secret missing or empty")
+                  sys.exit(0)
+              if not client_secret:
+                  log("skip", reason="audiobookshelf-oauth client-secret missing or empty")
+                  sys.exit(0)
+
+              status = None
+              for i in range(1, 61):
+                  code, status = http_json("GET", f"{base}/status")
+                  if code == 200 and status.get("isInit") is True:
+                      log("status_ok", attempt=i, isInit=True, authMethods=status.get("authMethods"))
+                      break
+                  log("status_wait", attempt=i, http_code=code, isInit=status.get("isInit") if isinstance(status, dict) else None)
+                  time.sleep(5)
+              else:
+                  log("fail", reason="not_initialized")
+                  sys.exit(1)
+
+              code, login = http_json("POST", f"{base}/login", {"username": user, "password": password})
+              if code != 200:
+                  log("fail", reason="login_failed", http_code=code)
+                  sys.exit(1)
+              token = ((login.get("user") or {}).get("accessToken")
+                       or (login.get("user") or {}).get("token")
+                       or login.get("token"))
+              if not token:
+                  log("fail", reason="no_token_in_login_response", keys=list(login.keys()))
+                  sys.exit(1)
+              log("login_ok", username=user)
+
+              disc_url = issuer.rstrip("/") + "/.well-known/openid-configuration"
+              code, disc = http_json("GET", disc_url, timeout=20)
+              if code != 200:
+                  log("fail", reason="discovery_failed", http_code=code, url=disc_url)
+                  sys.exit(1)
+              log("discovery_ok", issuer=disc.get("issuer"))
+
+              payload = {
+                  "authActiveAuthMethods": ["local", "openid"],
+                  "authOpenIDIssuerURL": disc.get("issuer") or issuer.rstrip("/"),
+                  "authOpenIDAuthorizationURL": disc.get("authorization_endpoint"),
+                  "authOpenIDTokenURL": disc.get("token_endpoint"),
+                  "authOpenIDUserInfoURL": disc.get("userinfo_endpoint"),
+                  "authOpenIDJwksURL": disc.get("jwks_uri"),
+                  "authOpenIDLogoutURL": disc.get("end_session_endpoint"),
+                  "authOpenIDClientID": client_id,
+                  "authOpenIDClientSecret": client_secret,
+                  "authOpenIDTokenSigningAlgorithm": "RS256",
+                  "authOpenIDButtonText": "Authentik",
+                  "authOpenIDAutoLaunch": False,
+                  "authOpenIDAutoRegister": True,
+                  "authOpenIDMatchExistingBy": "email",
+                  "authOpenIDGroupClaim": None,
+                  "authOpenIDAdvancedPermsClaim": None,
+                  "authOpenIDMobileRedirectURIs": ["audiobookshelf://oauth"],
+              }
+              for required in ("authOpenIDAuthorizationURL", "authOpenIDTokenURL",
+                               "authOpenIDUserInfoURL", "authOpenIDJwksURL"):
+                  if not payload[required]:
+                      log("fail", reason="discovery_incomplete", missing=required)
+                      sys.exit(1)
+
+              code, result = http_json("PATCH", f"{base}/api/auth-settings", payload, token=token)
+              if code != 200:
+                  log("fail", reason="auth_patch_failed", http_code=code, body=str(result)[:400])
+                  sys.exit(1)
+              updated = bool(result.get("updated"))
+              log("auth_patched", updated=updated)
+
+              code, after = http_json("GET", f"{base}/status")
+              methods = after.get("authMethods") if code == 200 else []
+              need_restart = updated or ("openid" not in (methods or []))
+              if need_restart:
+                  subprocess.check_call([
+                      "kubectl", "-n", "audiobookshelf", "rollout", "restart",
+                      "deployment/audiobookshelf",
+                  ])
+                  log("restart_triggered")
+                  subprocess.check_call([
+                      "kubectl", "-n", "audiobookshelf", "rollout", "status",
+                      "deployment/audiobookshelf", "--timeout=180s",
+                  ])
+                  log("restart_ok")
+              else:
+                  log("restart_skip")
+
+              for i in range(1, 37):
+                  code, final = http_json("GET", f"{base}/status")
+                  methods = final.get("authMethods") if code == 200 else []
+                  if code == 200 and "openid" in (methods or []):
+                      log("verify_ok", authMethods=methods)
+                      sys.exit(0)
+                  log("verify_wait", attempt=i, authMethods=methods)
+                  time.sleep(5)
+              log("fail", reason="openid_not_active")
+              sys.exit(1)

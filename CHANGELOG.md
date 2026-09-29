@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Audiobookshelf E-Mail** — PostSync Job `audiobookshelf-email` (Wave 7) setzt BookStack-SMTP (`mail.henrystadthagen.de:465`) per `PATCH /api/emails/settings`; Secret `audiobookshelf-smtp` in Infra_LAB (#86)
+
+### Changed
+
+- BookStack-Buch `audiobookshelf` v1.1.0 — SMTP/OIDC/Init PostSync-Waves dokumentiert; ADR-0027 + App-README
+
 ## [0.11.0] - 2026-09-27
 
 Apps-Buckets (#72), Authentik/ByteStash NFS Backup/Restore, Wave-3 Apps (ByteStash/SearXNG/Kromgo/k8tz). Begleit-Release Plattform: [Infra_LAB v1.9.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.9.0).

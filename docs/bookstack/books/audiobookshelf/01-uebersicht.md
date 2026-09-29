@@ -9,6 +9,7 @@ flowchart LR
   Svc --> Pod[audiobookshelf]
   NFSLib[NFS_audiobookshelf] --> Pod
   Pod -->|"OIDC"| IdP[Authentik]
+  Pod -->|"SMTP"| Mail[mail_henrystadthagen_de]
   Pod -->|"daily_tar"| NFSBak[NFS_audiobookshelf_backups]
 ```
 
@@ -19,5 +20,7 @@ flowchart LR
 | LAN | https://audiobookshelf.stadthagen.dev |
 | Ext | — (v1 LAN-only) |
 | DNS | Hetzner A `audiobookshelf` → `192.168.0.215` |
+| Auth | Authentik OIDC (PostSync Job Wave 6) |
+| E-Mail | BookStack-SMTP `mail.henrystadthagen.de:465` (PostSync Job Wave 7) |
 
 ADR: [0027-audiobookshelf](../../../adr/0027-audiobookshelf.md).

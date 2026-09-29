@@ -5,4 +5,6 @@
 - Backup-Muster: [ADR-0015](../../../adr/0015-backup-restore-cronjobs.md)
 - Upstream: [Audiobookshelf Installation](https://audiobookshelf.org/docs/category/installation)
 - Issue: [HenryHST/minilab#86](https://github.com/HenryHST/minilab/issues/86)
-- Secrets (Infra_LAB): `ansible/playbooks/k3s_cluster/secrets/README.md` — Abschnitt Audiobookshelf OIDC
+- Secrets (Infra_LAB): `ansible/playbooks/k3s_cluster/secrets/README.md` — Abschnitte Audiobookshelf OIDC / root / SMTP
+- SMTP-Parität: BookStack `MAIL_*` (`mail.henrystadthagen.de:465`, `auto@henrystadthagen.de`, `AUTHENTIK_EMAIL_PASSWORD`)
+- Manifests: `init-job.yaml` (Wave 5), `oidc-job.yaml` (Wave 6), `email-job.yaml` (Wave 7)

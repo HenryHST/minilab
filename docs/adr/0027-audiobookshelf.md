@@ -20,6 +20,7 @@ Hörbücher und Podcasts sollen auf nXk3 laufen (LAN-only), mit SSO über Authen
   - `…/audiobookshelf-backups` → Backup-Ziel
 - **Backup:** CronJob tar’t nur `/config` (+ Metadata-Index nach ADR-0015); Libraries bleiben auf NFS und werden nicht täglich voll gesichert. Retention 7; Restore via ConfigMap `audiobookshelf-restore`.
 - **Homepage:** Link unter Tools in `apps/dev/web` (services.yaml + configmap.yaml).
+- **Initial setup:** PostSync Job `audiobookshelf-init` → `POST /init` mit Secret `audiobookshelf-root` (SecretSpec `AUDIOBOOKSHELF_ROOT_PASSWORD`), idempotent bei `isInit=true`. Kein Env-Bootstrap in Image 2.37.0.
 
 ```mermaid
 flowchart LR

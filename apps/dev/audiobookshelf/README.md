@@ -27,10 +27,15 @@ Hörbuch-/Podcast-Server auf nXk3 (LAN). Issue [HenryHST/minilab#86](https://git
 ```bash
 # ansible/playbooks/k3s_cluster/
 secretspec set AUDIOBOOKSHELF_OAUTH_CLIENT_SECRET   # same value as terraform audiobookshelf_oauth_client_secret
+secretspec set AUDIOBOOKSHELF_ROOT_PASSWORD         # openssl rand -base64 32 — PostSync POST /init
 ansible-playbook site.yaml --tags secrets -i inventory/cluster/hosts.yaml
 ```
 
-Creates Secret `audiobookshelf/audiobookshelf-oauth` (`client-secret`).
+Creates Secrets `audiobookshelf-oauth` (`client-secret`) and `audiobookshelf-root` (`username`/`password`).
+
+## Initial setup
+
+PostSync Job `audiobookshelf-init` calls Abs `POST /init` when `/status` has `isInit=false` (paths stay `/config` + `/metadata`). Skip if Secret fehlt oder Server schon initialisiert. Kein Env-Bootstrap in Image `2.37.0` (`INIT_USER_*` erst upstream neuer).
 
 ## OIDC (first boot)
 

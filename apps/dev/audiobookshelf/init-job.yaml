@@ -1,0 +1,102 @@
+# Idempotent root bootstrap via POST /init (Abs has no INIT_USER_* in 2.37.0).
+# Skips when Secret missing or status.isInit already true.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: audiobookshelf-init
+  namespace: audiobookshelf
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app: audiobookshelf-init
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: init
+          image: python:3.12-alpine
+          env:
+            - name: ABS_URL
+              value: http://audiobookshelf.audiobookshelf.svc.cluster.local
+            - name: ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: audiobookshelf-root
+                  key: username
+                  optional: true
+            - name: ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: audiobookshelf-root
+                  key: password
+                  optional: true
+          command:
+            - python3
+            - -c
+            - |
+              import json, os, sys, time, urllib.error, urllib.request
+
+              def log(event, **data):
+                  print(json.dumps({"event": event, **data}, ensure_ascii=False), flush=True)
+
+              base = os.environ.get("ABS_URL", "").rstrip("/")
+              user = (os.environ.get("ROOT_USER") or "root").strip() or "root"
+              password = os.environ.get("ROOT_PASSWORD") or ""
+
+              if not password:
+                  log("skip", reason="audiobookshelf-root secret missing or empty")
+                  sys.exit(0)
+
+              def get_status():
+                  req = urllib.request.Request(f"{base}/status", method="GET")
+                  with urllib.request.urlopen(req, timeout=10) as resp:
+                      return json.loads(resp.read().decode())
+
+              status = None
+              for i in range(1, 61):
+                  try:
+                      status = get_status()
+                      log("status_ok", attempt=i, isInit=status.get("isInit"),
+                          ConfigPath=status.get("ConfigPath"), MetadataPath=status.get("MetadataPath"))
+                      break
+                  except Exception as exc:
+                      log("status_wait", attempt=i, error=type(exc).__name__)
+                      time.sleep(5)
+              else:
+                  log("fail", reason="status_unreachable")
+                  sys.exit(1)
+
+              if status.get("isInit") is True:
+                  log("already_init")
+                  sys.exit(0)
+
+              body = json.dumps({"newRoot": {"username": user, "password": password}}).encode()
+              req = urllib.request.Request(
+                  f"{base}/init",
+                  data=body,
+                  method="POST",
+                  headers={"Content-Type": "application/json"},
+              )
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as resp:
+                      code = resp.status
+                      raw = resp.read().decode()[:500]
+              except urllib.error.HTTPError as exc:
+                  code = exc.code
+                  raw = (exc.read().decode() if exc.fp else "")[:500]
+                  log("init_http_error", http_code=code, body=raw)
+                  sys.exit(1)
+
+              log("init_ok", http_code=code, username=user)
+              time.sleep(1)
+              after = get_status()
+              log("verify", isInit=after.get("isInit"))
+              if after.get("isInit") is not True:
+                  log("fail", reason="still_not_init")
+                  sys.exit(1)

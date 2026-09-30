@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Longhorn",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "volume",
+        "label": "Volume",
+        "focus": ["app", "pvc", "longhorn", "disks"],
+        "note": "Die App bekommt ein PVC. Longhorn legt drei Replikate auf die Worker-Disks."
+      }
+    ]
+  },
+  "components": [
+    { "id": "app", "type": "backend", "label": "App", "sublabel": "Stateful", "pos": [40, 260], "size": [120, 60] },
+    { "id": "pvc", "type": "database", "label": "PVC", "sublabel": "Klasse longhorn", "pos": [240, 260], "size": [150, 60] },
+    { "id": "longhorn", "type": "cloud", "label": "Longhorn", "sublabel": "3 Replikate", "pos": [470, 260], "size": [150, 60] },
+    { "id": "disks", "type": "external", "label": "Worker-Disks", "sublabel": "w01 bis w03", "pos": [700, 260], "size": [150, 60] },
+    { "id": "nfs", "type": "cloud", "label": "NFS-Backup", "sublabel": "UniFi NAS", "pos": [700, 80], "size": [150, 60] },
+    { "id": "termix", "type": "backend", "label": "Termix", "sublabel": "Snapshot", "pos": [240, 80], "size": [140, 60] }
+  ],
+  "connections": [
+    { "id": "app-pvc", "from": "app", "to": "pvc", "label": "mount", "variant": "emphasis" },
+    { "id": "pvc-longhorn", "from": "pvc", "to": "longhorn", "variant": "emphasis" },
+    { "id": "longhorn-disks", "from": "longhorn", "to": "disks", "label": "Replikate", "variant": "emphasis", "labelDy": 20 },
+    { "id": "longhorn-nfs", "from": "longhorn", "to": "nfs", "label": "Backup", "variant": "dashed" },
+    { "id": "termix-longhorn", "from": "termix", "to": "longhorn", "label": "Snapshot", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Klasse", "items": ["Default-StorageClass longhorn", "Drei Replikate auf w01 bis w03"] },
+    { "dot": "emerald", "title": "Termix", "items": ["1Gi Volume", "Snapshot alle 6 Stunden"] },
+    { "dot": "rose", "title": "NAS", "items": ["Backup-Target per NFSv3", "App-Dumps bleiben getrennt"] }
+  ]
+}

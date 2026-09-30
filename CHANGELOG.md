@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - **BookStack Authentik** — Buch `authentik` v1.0.0: Architektur, Deploy, Brand Stadthagen Home, Onboarding-Vorlage für die nächste OIDC- oder ForwardAuth-App; Archify `authentik-architektur` und `authentik-oidc-onboarding`.
+- **BookStack Longhorn** — Buch `longhorn` v1.0.0: Architektur, Deploy, Snapshots und NFS-Backup, Onboarding-Vorlage für das nächste Volume; Archify `longhorn-architektur` und `longhorn-volume-onboarding`.
 - **CloudNativePG (#70)** — Wave-1 Helm-App `apps/infra/cloudnative-pg`: Operator 1.28.0 (Chart 0.27.0) in `cnpg-system`, ServiceAccount `postgres-cloud-sa`, PodMonitor, NetworkPolicy; ADR-0030; BookStack-Buch `cloudnative-pg`.
 - **Termix auf CloudNativePG** — Cluster `termix` (1 Instanz, PG 16, 1Gi Longhorn), Microservice-Import, Service `termix-rw`; Backup/Restore `PGHOST=termix-rw`; BookStack `cloudnative-pg` v1.1.0.
 - **BookStack Termix** — Buch `termix` v1.0.0 (Übersicht, Architektur, Deploy, Migrationsvorlage, Quellen); Archify `termix-architektur` und `termix-db-migration`.

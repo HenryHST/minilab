@@ -1,0 +1,44 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Nächstes Volume auf Longhorn",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "anlegen",
+        "label": "Anlegen",
+        "focus": ["size", "probe", "bound", "volume"],
+        "note": "Probe-PVC muss Bound sein, bevor die App umgestellt wird."
+      },
+      {
+        "id": "abbruch",
+        "label": "Abbruch",
+        "focus": ["probe", "stop"],
+        "note": "Pending heißt: kein weiteres Volume anlegen."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "flow", "label": "Anlegen" },
+    { "id": "abort", "label": "Abbruch", "variant": "exception" }
+  ],
+  "mainPath": ["size", "probe", "bound", "volume"],
+  "nodes": [
+    { "id": "size", "lane": "flow", "col": 0, "type": "cloud", "label": "Größe", "sublabel": "drei Replikate" },
+    { "id": "probe", "lane": "flow", "col": 1, "type": "database", "label": "Probe-PVC", "sublabel": "Klasse longhorn" },
+    { "id": "bound", "lane": "flow", "col": 2, "type": "backend", "label": "Bound", "sublabel": "planbarer Platz" },
+    { "id": "volume", "lane": "flow", "col": 3, "type": "cloud", "label": "App-Volume", "sublabel": "echtes PVC" },
+    { "id": "stop", "lane": "abort", "col": 1, "type": "security", "label": "Stop", "sublabel": "PVC Pending" }
+  ],
+  "edges": [
+    { "from": "size", "to": "probe", "variant": "emphasis" },
+    { "from": "probe", "to": "bound", "variant": "emphasis" },
+    { "from": "bound", "to": "volume", "variant": "emphasis" },
+    { "from": "probe", "to": "stop", "label": "Pending", "variant": "security", "role": "error" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Weiter", "items": ["Bound heißt: die App darf die Klasse nutzen"] },
+    { "dot": "rose", "title": "Abbruch", "items": ["Pending: Probe löschen, App nicht umstellen"] }
+  ]
+}

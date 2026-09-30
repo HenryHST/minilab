@@ -4,9 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-09-30
+
+Mosquitto MQTT (#90) mit LDAP, Prometheus-$SYS-Exporter, Smoke-Probe und BookStack/Archify. Begleit-Release Plattform: [Infra_LAB v1.10.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.10.0).
+
 ### Added
 
 - **Mosquitto (#90)** — Wave-1 App `apps/infra/mosquitto`: go-auth LDAP → Authentik Outpost, LB `192.168.0.218` (1883/8883/9001), Certificate `mqtt-pro.stadthagen.dev`, Grafana MQTT datasource/dashboard; ADR-0029; BookStack-Buch `mosquitto`
+- **Mosquitto metrics & probe** — `sys_interval 10`, `sapcc/mosquitto-exporter` + ServiceMonitor, Grafana Prometheus-Dashboard **Mosquitto Broker ($SYS)**, `mqtt-tools` + CronJob `mqtt-smoke`; BookStack v1.1.0 + Archify `mosquitto-architektur`
 - **n8n (#87)** — Wave-3 App `apps/dev/n8n`: 8gears Helm → `helm-manifest.yaml`, Postgres, Traefik ForwardAuth (`ak-outpost-n8n`), Webhook-Bypass, SMTP, NFS Backup/Restore; ADR-0028; Homepage Tools; BookStack-Buch `n8n`
 - **Audiobookshelf E-Mail** — PostSync Job `audiobookshelf-email` (Wave 7) setzt BookStack-SMTP (`mail.henrystadthagen.de:465`) per `PATCH /api/emails/settings`; Secret `audiobookshelf-smtp` in Infra_LAB (#86)
 

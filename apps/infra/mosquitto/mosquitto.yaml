@@ -34,6 +34,8 @@ data:
     log_type notice
     allow_anonymous false
     per_listener_settings false
+    # Publish $SYS/# for sapcc/mosquitto-exporter (Prometheus)
+    sys_interval 10
 
     listener 1883
     protocol mqtt

@@ -1,0 +1,287 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Mosquitto MQTT (ADR-0029)",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "clients",
+        "label": "LAN Clients",
+        "focus": [
+          "clients",
+          "lb",
+          "broker"
+        ],
+        "note": "LAN \u00fcber Cilium LB .218 \u2192 Mosquitto."
+      },
+      {
+        "id": "auth",
+        "label": "LDAP Auth",
+        "focus": [
+          "broker",
+          "ldap",
+          "authentik"
+        ],
+        "note": "go-auth LDAP \u2192 Authentik Outpost; Gruppen mqtt_users / mqtt_admins."
+      },
+      {
+        "id": "observe",
+        "label": "Observability",
+        "focus": [
+          "broker",
+          "exporter",
+          "prom",
+          "grafana"
+        ],
+        "note": "$SYS Exporter \u2192 Prometheus; Grafana MQTT-DS f\u00fcr Topics."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "clients",
+      "type": "external",
+      "label": "LAN Clients",
+      "sublabel": "HA / IoT",
+      "pos": [
+        40,
+        180
+      ],
+      "size": [
+        130,
+        64
+      ]
+    },
+    {
+      "id": "lb",
+      "type": "cloud",
+      "label": "Cilium LB",
+      "sublabel": "192.168.0.218",
+      "tag": "1883/8883/9001",
+      "pos": [
+        230,
+        180
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "broker",
+      "type": "messagebus",
+      "label": "Mosquitto",
+      "sublabel": "go-auth LDAP",
+      "tag": "sys_interval 10",
+      "pos": [
+        450,
+        180
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "grafana",
+      "type": "frontend",
+      "label": "Grafana",
+      "sublabel": "MQTT + $SYS",
+      "pos": [
+        700,
+        180
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "ldap",
+      "type": "security",
+      "label": "LDAP Outpost",
+      "sublabel": ":389",
+      "pos": [
+        450,
+        20
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "authentik",
+      "type": "security",
+      "label": "Authentik",
+      "sublabel": "mqtt_* groups",
+      "pos": [
+        700,
+        20
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "probe",
+      "type": "backend",
+      "label": "mqtt-smoke",
+      "sublabel": "CronJob 15m",
+      "tag": "mqtt-probe",
+      "pos": [
+        230,
+        340
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "exporter",
+      "type": "backend",
+      "label": "Exporter",
+      "sublabel": "sapcc :9234",
+      "tag": "mqtt-exporter",
+      "pos": [
+        450,
+        340
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "prom",
+      "type": "database",
+      "label": "Prometheus",
+      "sublabel": "ServiceMonitor",
+      "pos": [
+        700,
+        340
+      ],
+      "size": [
+        140,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "ns mosquitto",
+      "wraps": [
+        "broker",
+        "exporter",
+        "probe"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "clients-lb",
+      "from": "clients",
+      "to": "lb",
+      "variant": "emphasis"
+    },
+    {
+      "id": "lb-broker",
+      "from": "lb",
+      "to": "broker",
+      "label": "Service",
+      "variant": "emphasis",
+      "labelDy": -32
+    },
+    {
+      "id": "broker-grafana",
+      "from": "broker",
+      "to": "grafana",
+      "label": "MQTT DS",
+      "variant": "dashed",
+      "labelDy": -32
+    },
+    {
+      "id": "broker-ldap",
+      "from": "broker",
+      "to": "ldap",
+      "label": "bind",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDx": -40
+    },
+    {
+      "id": "ldap-ak",
+      "from": "ldap",
+      "to": "authentik",
+      "label": "groups",
+      "variant": "security",
+      "labelDy": -32
+    },
+    {
+      "id": "exporter-broker",
+      "from": "exporter",
+      "to": "broker",
+      "label": "$SYS/#",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDx": 48
+    },
+    {
+      "id": "exporter-prom",
+      "from": "exporter",
+      "to": "prom",
+      "label": "/metrics",
+      "labelDy": 32
+    },
+    {
+      "id": "prom-grafana",
+      "from": "prom",
+      "to": "grafana",
+      "label": "Prom",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDx": 40
+    },
+    {
+      "id": "probe-broker",
+      "from": "probe",
+      "to": "broker",
+      "label": "pub",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDx": -48
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Exposure",
+      "items": [
+        "LB 192.168.0.218 \u00b7 mqtt-pro.stadthagen.dev",
+        "Ports 1883 / 8883 / 9001 \u00b7 PVC 1Gi Longhorn"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Auth",
+      "items": [
+        "mqtt_users \u00b7 mqtt_admins (superuser/$SYS)",
+        "Service accounts grafana / exporter / probe"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Observability",
+      "items": [
+        "Exporter \u2192 Prometheus \u2192 Mosquitto Broker ($SYS)",
+        "Topic live-view: Mosquitto MQTT dashboard"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+# Periodic MQTT publish smoke test (LDAP user mqtt-probe).
+# Failures surface as CronJob Job failures (auth/network).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mqtt-smoke
+  namespace: mosquitto
+  labels:
+    app: mqtt-smoke
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 120
+      template:
+        metadata:
+          labels:
+            app: mqtt-smoke
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: smoke
+              image: eclipse-mosquitto:2
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: MQTT_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: mosquitto-probe
+                      key: username
+                - name: MQTT_PASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: mosquitto-probe
+                      key: password
+                - name: MQTT_HOST
+                  value: mqtt.mosquitto.svc.cluster.local
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  TOPIC="test/smoke/$(date -u +%Y%m%dT%H%M%SZ)"
+                  mosquitto_pub -h "$MQTT_HOST" -p 1883 \
+                    -u "$MQTT_USER" -P "$MQTT_PASS" \
+                    -t "$TOPIC" -m ok -q 0
+                  echo "mqtt-smoke: published to $TOPIC"
+              resources:
+                requests:
+                  cpu: 5m
+                  memory: 16Mi
+                limits:
+                  memory: 32Mi

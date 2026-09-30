@@ -1,0 +1,46 @@
+# Interactive MQTT clients (mosquitto_pub / mosquitto_sub) for kubectl exec.
+# Credentials: Secret mosquitto-probe (Authentik user mqtt-probe in mqtt_users).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mqtt-tools
+  namespace: mosquitto
+  labels:
+    app: mqtt-tools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mqtt-tools
+  template:
+    metadata:
+      labels:
+        app: mqtt-tools
+    spec:
+      containers:
+        - name: tools
+          image: eclipse-mosquitto:2
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - sleep infinity
+          env:
+            - name: MQTT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mosquitto-probe
+                  key: username
+            - name: MQTT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: mosquitto-probe
+                  key: password
+            - name: MQTT_HOST
+              value: mqtt.mosquitto.svc.cluster.local
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              memory: 32Mi

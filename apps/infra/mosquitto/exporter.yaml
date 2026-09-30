@@ -1,0 +1,98 @@
+# sapcc/mosquitto-exporter — scrapes Mosquitto $SYS/# → Prometheus :9234/metrics.
+# Needs mqtt-exporter LDAP user in mqtt_admins (superuser → $SYS) and sys_interval on the broker.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mosquitto-exporter
+  namespace: mosquitto
+  labels:
+    app: mosquitto-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mosquitto-exporter
+  template:
+    metadata:
+      labels:
+        app: mosquitto-exporter
+    spec:
+      # sapcc/mosquitto-exporter:latest is linux/amd64 only (no multi-arch manifest)
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      containers:
+        - name: exporter
+          image: sapcc/mosquitto-exporter:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: BROKER_ENDPOINT
+              value: tcp://mqtt.mosquitto.svc.cluster.local:1883
+            - name: BIND_ADDRESS
+              value: "0.0.0.0:9234"
+            - name: MQTT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mosquitto-exporter
+                  key: username
+            - name: MQTT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: mosquitto-exporter
+                  key: password
+          ports:
+            - name: metrics
+              containerPort: 9234
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mosquitto-exporter
+  namespace: mosquitto
+  labels:
+    app: mosquitto-exporter
+spec:
+  ports:
+    - name: metrics
+      port: 9234
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    app: mosquitto-exporter
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mosquitto-exporter
+  namespace: mosquitto
+  labels:
+    app: mosquitto-exporter
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: mosquitto-exporter
+  namespaceSelector:
+    matchNames:
+      - mosquitto
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s

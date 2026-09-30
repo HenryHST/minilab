@@ -3,12 +3,11 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: termix
+  name: termix-instances
   namespace: termix
   labels:
     release: kube-prometheus-stack
     app.kubernetes.io/name: termix
-    cnpg.io/cluster: termix
 spec:
   selector:
     matchLabels:

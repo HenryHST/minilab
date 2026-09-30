@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **Termix ServiceAccount** — Argo hat `automountServiceAccountToken` ignoriert und dadurch `false` behalten. Nach dem Resource-Rollout fehlte dem Instanz-Pod das API-Token. Der Ignore ist entfernt. Der Instanz-PodMonitor heißt `termix-instances`, damit der Operator ihn nicht löscht.
 - **Termix Argo-Vergleich** — `GUACD_TUNNEL_HOST` nur noch einmal (`127.0.0.1`, Sidecar). Chart und `extraEnv` hatten den Key doppelt gesetzt; Server-Side Apply konnte das Deployment nicht diffen.
 
 ### Changed

@@ -29,4 +29,4 @@ kubectl -n cnpg-system get pods,networkpolicy
 4. Service `termix-rw` hat Port 5432.
 5. Ein manueller Job aus `termix-backup-cron` schreibt `termix-*.sql.gz` und nennt `termix-rw` im Log.
 6. `kubectl -n termix get scheduledbackup termix-snapshot` existiert. Ein `Backup` daraus wird `completed`.
-7. PodMonitor `termix` trägt `release: kube-prometheus-stack`.
+7. PodMonitor `termix-instances` trägt `release: kube-prometheus-stack`. Der Operator löscht einen Monitor, der wie der Cluster heißt, sobald `enablePodMonitor` aus ist.

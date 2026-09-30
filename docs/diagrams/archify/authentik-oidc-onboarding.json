@@ -1,0 +1,48 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Nächste App an Authentik",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "anlegen",
+        "label": "Anlegen",
+        "focus": ["app", "redirect", "group", "secret", "sync", "login"],
+        "note": "Application, Redirect, Gruppe, Secret, Sync, Login."
+      },
+      {
+        "id": "abbruch",
+        "label": "Abbruch",
+        "focus": ["redirect", "stop"],
+        "note": "Redirect passt nicht zur öffentlichen URL."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "flow", "label": "Anlegen" },
+    { "id": "abort", "label": "Abbruch", "variant": "exception" }
+  ],
+  "mainPath": ["app", "redirect", "group", "secret", "sync", "login"],
+  "nodes": [
+    { "id": "app", "lane": "flow", "col": 0, "type": "backend", "label": "Application", "sublabel": "OpenTofu" },
+    { "id": "redirect", "lane": "flow", "col": 1, "type": "security", "label": "Redirect", "sublabel": "strict" },
+    { "id": "group", "lane": "flow", "col": 2, "type": "security", "label": "Gruppe", "sublabel": "Binding" },
+    { "id": "secret", "lane": "flow", "col": 3, "type": "security", "label": "Secret", "sublabel": "SecretSpec" },
+    { "id": "sync", "lane": "flow", "col": 4, "type": "cloud", "label": "Sync", "sublabel": "Argo" },
+    { "id": "login", "lane": "flow", "col": 5, "type": "frontend", "label": "Login", "sublabel": "Callback" },
+    { "id": "stop", "lane": "abort", "col": 1, "type": "security", "label": "Stop", "sublabel": "URL weicht ab" }
+  ],
+  "edges": [
+    { "from": "app", "to": "redirect", "variant": "emphasis" },
+    { "from": "redirect", "to": "group", "variant": "emphasis" },
+    { "from": "group", "to": "secret", "variant": "emphasis" },
+    { "from": "secret", "to": "sync", "variant": "emphasis" },
+    { "from": "sync", "to": "login", "variant": "emphasis" },
+    { "from": "redirect", "to": "stop", "label": "falsch", "variant": "security", "role": "error" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "OIDC", "items": ["Redirect muss zur App-URL passen", "Secret bleibt außerhalb von Git"] },
+    { "dot": "rose", "title": "Abbruch", "items": ["Weicht der Redirect ab, nicht veröffentlichen"] }
+  ]
+}

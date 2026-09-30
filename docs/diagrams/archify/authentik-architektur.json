@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Authentik",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "login",
+        "label": "Login",
+        "focus": ["browser", "pangolin", "authentik", "termix"],
+        "note": "Browser erreicht das IdP über Pangolin. Termix spricht OIDC."
+      }
+    ]
+  },
+  "components": [
+    { "id": "browser", "type": "external", "label": "Browser", "sublabel": "Benutzer", "pos": [40, 300], "size": [120, 60] },
+    { "id": "pangolin", "type": "cloud", "label": "Pangolin", "sublabel": "idp.stadthagen.dev", "pos": [240, 300], "size": [160, 60] },
+    { "id": "brand", "type": "cloud", "label": "Brand-Medien", "sublabel": "NFS branding", "pos": [40, 80], "size": [150, 60] },
+    { "id": "authentik", "type": "security", "label": "Authentik", "sublabel": "IdP", "pos": [480, 300], "size": [140, 64] },
+    { "id": "tofu", "type": "backend", "label": "OpenTofu", "sublabel": "Apps und Brand", "pos": [480, 80], "size": [140, 60] },
+    { "id": "termix", "type": "backend", "label": "Termix", "sublabel": "OIDC", "pos": [720, 180], "size": [140, 60] },
+    { "id": "registry", "type": "backend", "label": "registry-ui", "sublabel": "ForwardAuth", "pos": [720, 400], "size": [150, 60] }
+  ],
+  "connections": [
+    { "id": "browser-pangolin", "from": "browser", "to": "pangolin", "label": "HTTPS", "variant": "emphasis" },
+    { "id": "pangolin-authentik", "from": "pangolin", "to": "authentik", "label": "ClusterIP", "variant": "emphasis", "labelAt": [400, 286] },
+    { "id": "authentik-termix", "from": "authentik", "to": "termix", "label": "OIDC", "variant": "emphasis" },
+    { "id": "authentik-registry", "from": "authentik", "to": "registry", "label": "Outpost", "variant": "dashed" },
+    { "id": "brand-authentik", "from": "brand", "to": "authentik", "label": "Logo" },
+    { "id": "tofu-authentik", "from": "tofu", "to": "authentik", "label": "Apply", "labelDy": 24 }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Einstieg", "items": ["Pangolin veröffentlicht idp.stadthagen.dev"] },
+    { "dot": "emerald", "title": "Apps", "items": ["Termix nutzt OIDC", "registry-ui nutzt ForwardAuth"] },
+    { "dot": "rose", "title": "Brand", "items": ["Stadthagen Home", "Medien vom NFS, nicht das Backup"] }
+  ]
+}

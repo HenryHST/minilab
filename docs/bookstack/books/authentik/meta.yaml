@@ -1,0 +1,5 @@
+book: authentik
+book_version: "1.0.0"
+updated: "2026-09-30"
+description: Authentik — zentrales IdP, Brand Stadthagen Home, Vorlage für die nächste OIDC-App
+shelf: Plattform

@@ -1,6 +1,6 @@
 # Authentik / SSO
 
-Authentik ist das zentrale IdP (`https://idp.stadthagen.dev`).
+Authentik ist das zentrale IdP (`https://idp.stadthagen.dev`). Brand, Deploy und die Vorlage für die nächste App stehen im Buch **Authentik**.
 
 ## Bootstrap-Admin (Anmelde-Passwort)
 

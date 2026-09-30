@@ -133,8 +133,11 @@ spec:
                   -subj "/CN=mqtt-pro.stadthagen.dev"
                 echo "tls-bootstrap: generated self-signed placeholder (await mqtt-pro-tls)"
               fi
+              # Mosquitto runs as uid 1883; openssl writes root-owned files that
+              # fsGroup alone does not make group-readable for the app container.
+              chown 1883:1883 /mosquitto/certs/tls.crt /mosquitto/certs/tls.key
               chmod 644 /mosquitto/certs/tls.crt
-              chmod 640 /mosquitto/certs/tls.key
+              chmod 600 /mosquitto/certs/tls.key
 
               cp /config-src/mosquitto.conf /config/mosquitto.conf
               BIND_LINE=$(grep -E '^auth_opt_ldap_bind_password ' /ldap-secret/00-bind.conf | head -n1)
@@ -165,6 +168,9 @@ spec:
               readOnly: true
       containers:
         - name: mosquitto
+          securityContext:
+            runAsUser: 1883
+            runAsGroup: 1883
           image: iegomez/mosquitto-go-auth:3.0.0-mosquitto_2.0.18
           imagePullPolicy: IfNotPresent
           args:

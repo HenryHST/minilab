@@ -111,6 +111,35 @@ spec:
     spec:
       securityContext:
         fsGroup: 1883
+      initContainers:
+        # cert-manager Secret mqtt-pro-tls may lag (DNS-01); bootstrap so 1883 can start for Grafana.
+        - name: tls-bootstrap
+          image: alpine/openssl:3.3.2
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              if [ -s /tls-secret/tls.crt ] && [ -s /tls-secret/tls.key ]; then
+                cp /tls-secret/tls.crt /tls-secret/tls.key /mosquitto/certs/
+                echo "tls-bootstrap: using cert-manager secret mqtt-pro-tls"
+              else
+                openssl req -x509 -nodes -newkey rsa:2048 \
+                  -keyout /mosquitto/certs/tls.key \
+                  -out /mosquitto/certs/tls.crt \
+                  -days 30 \
+                  -subj "/CN=mqtt-pro.stadthagen.dev"
+                echo "tls-bootstrap: generated self-signed placeholder (await mqtt-pro-tls)"
+              fi
+              chmod 644 /mosquitto/certs/tls.crt
+              chmod 640 /mosquitto/certs/tls.key
+          volumeMounts:
+            - name: tls
+              mountPath: /mosquitto/certs
+            - name: tls-secret
+              mountPath: /tls-secret
+              readOnly: true
       containers:
         - name: mosquitto
           image: iegomez/mosquitto-go-auth:3.0.0-mosquitto_2.0.18
@@ -163,8 +192,11 @@ spec:
           secret:
             secretName: mosquitto-ldap
         - name: tls
+          emptyDir: {}
+        - name: tls-secret
           secret:
             secretName: mqtt-pro-tls
+            optional: true
         - name: data
           persistentVolumeClaim:
             claimName: mosquitto-data

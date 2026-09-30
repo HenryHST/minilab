@@ -10,6 +10,8 @@ Eclipse Mosquitto MQTT broker with Authentik LDAP auth (mosquitto-go-auth). LAN 
 | Ports | `1883` MQTT, `8883` MQTTS, `9001` WebSockets (TLS) |
 | Auth | LDAP → `ak-outpost-ldap-stadthagen-outpost:389`; groups `mqtt_users` / `mqtt_admins` |
 | Data | Longhorn PVC `mosquitto-data` 1 Gi RWO (`replicas: 1`, Strategy `Recreate`) |
+| TLS | Certificate `mqtt-pro-tls` (LE); until Ready, init `tls-bootstrap` uses a self-signed placeholder so the pod can start |
+
 
 ## Secrets (before sync)
 

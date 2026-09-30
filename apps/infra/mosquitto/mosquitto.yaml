@@ -59,7 +59,7 @@ data:
     auth_opt_ldap_user_dn ou=users,dc=ldap,dc=stadthagen,dc=dev
     auth_opt_ldap_group_dn ou=groups,dc=ldap,dc=stadthagen,dc=dev
     auth_opt_ldap_bind_dn cn=ldapservice,ou=users,dc=ldap,dc=stadthagen,dc=dev
-    include_dir /mosquitto/ldap-secret
+    # auth_opt_ldap_bind_password injected by init config-bootstrap (include_dir breaks plugin opts)
     auth_opt_ldap_user_filter (&(cn=%s)(|(memberOf=cn=mqtt_users,ou=groups,dc=ldap,dc=stadthagen,dc=dev)(memberOf=cn=mqtt_admins,ou=groups,dc=ldap,dc=stadthagen,dc=dev)))
     auth_opt_ldap_superuser_filter (&(cn=%s)(memberOf=cn=mqtt_admins,ou=groups,dc=ldap,dc=stadthagen,dc=dev))
 ---
@@ -113,6 +113,7 @@ spec:
         fsGroup: 1883
       initContainers:
         # cert-manager Secret mqtt-pro-tls may lag (DNS-01); bootstrap so 1883 can start for Grafana.
+        # Also inject LDAP bind password into mosquitto.conf (include_dir + auth_opt_ is rejected by Mosquitto).
         - name: tls-bootstrap
           image: alpine/openssl:3.3.2
           imagePullPolicy: IfNotPresent
@@ -134,11 +135,33 @@ spec:
               fi
               chmod 644 /mosquitto/certs/tls.crt
               chmod 640 /mosquitto/certs/tls.key
+
+              cp /config-src/mosquitto.conf /config/mosquitto.conf
+              BIND_LINE=$(grep -E '^auth_opt_ldap_bind_password ' /ldap-secret/00-bind.conf | head -n1)
+              if [ -z "${BIND_LINE}" ]; then
+                echo "tls-bootstrap: missing auth_opt_ldap_bind_password in mosquitto-ldap secret" >&2
+                exit 1
+              fi
+              # Insert bind password immediately after auth_plugin line (same conf file as plugin).
+              awk -v line="$BIND_LINE" '
+                { print }
+                /^auth_plugin / { print line }
+              ' /config/mosquitto.conf > /config/mosquitto.conf.tmp
+              mv /config/mosquitto.conf.tmp /config/mosquitto.conf
+              echo "tls-bootstrap: rendered mosquitto.conf with LDAP bind password"
           volumeMounts:
             - name: tls
               mountPath: /mosquitto/certs
             - name: tls-secret
               mountPath: /tls-secret
+              readOnly: true
+            - name: config-src
+              mountPath: /config-src
+              readOnly: true
+            - name: config
+              mountPath: /config
+            - name: ldap-secret
+              mountPath: /ldap-secret
               readOnly: true
       containers:
         - name: mosquitto
@@ -176,18 +199,17 @@ spec:
               mountPath: /etc/mosquitto/mosquitto.conf
               subPath: mosquitto.conf
               readOnly: true
-            - name: ldap-secret
-              mountPath: /mosquitto/ldap-secret
-              readOnly: true
             - name: tls
               mountPath: /mosquitto/certs
               readOnly: true
             - name: data
               mountPath: /mosquitto/data
       volumes:
-        - name: config
+        - name: config-src
           configMap:
             name: mosquitto-config
+        - name: config
+          emptyDir: {}
         - name: ldap-secret
           secret:
             secretName: mosquitto-ldap

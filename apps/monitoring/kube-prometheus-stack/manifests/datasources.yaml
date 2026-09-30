@@ -48,3 +48,18 @@ data:
         jsonData: {}
         secureJsonData:
           apiToken: ${HCLOUD_API_TOKEN}
+
+      - name: MQTT
+        type: grafana-mqtt-datasource
+        uid: mqtt
+        access: proxy
+        editable: false
+        jsonData:
+          uri: tcp://mqtt.mosquitto.svc.cluster.local:1883
+          username: ${MQTT_USERNAME}
+          clientID: grafana-mqtt
+          tlsAuth: false
+          tlsAuthWithCACert: false
+          tlsSkipVerify: false
+        secureJsonData:
+          password: ${MQTT_PASSWORD}

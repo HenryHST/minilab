@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mqtt-pro-stadthagen-dev
+  namespace: mosquitto
+spec:
+  secretName: mqtt-pro-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - mqtt-pro.stadthagen.dev

@@ -41,6 +41,10 @@ spec:
             path: apps/infra/redis
             namespace: redis
             syncWave: "1"
+          - app: mosquitto
+            path: apps/infra/mosquitto
+            namespace: mosquitto
+            syncWave: "1"
           - app: error-pages
             path: apps/infra/error-pages/manifests
             namespace: error-pages

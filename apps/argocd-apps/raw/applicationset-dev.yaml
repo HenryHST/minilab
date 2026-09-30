@@ -110,6 +110,18 @@ spec:
         repoURL: https://github.com/HenryHST/minilab
         targetRevision: main
         path: {{ .path }}
+    {{- else if eq .app "termix" }}
+    spec:
+      ignoreDifferences:
+        - group: ""
+          kind: ServiceAccount
+          name: termix
+          jsonPointers:
+            - /automountServiceAccountToken
+      source:
+        repoURL: https://github.com/HenryHST/minilab
+        targetRevision: main
+        path: {{ .path }}
     {{- else if dig "helmChart" "" . }}
     spec:
       sources:

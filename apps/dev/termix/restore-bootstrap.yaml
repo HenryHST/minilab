@@ -62,7 +62,9 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
             - name: PGHOST
-              value: termix-postgres
+              value: termix-rw
+            - name: PGSSLMODE
+              value: require
             - name: PGPORT
               value: "5432"
             - name: PGUSER

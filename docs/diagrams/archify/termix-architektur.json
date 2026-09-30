@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Termix nach dem Cutover",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "request",
+        "label": "Login",
+        "focus": ["user", "traefik", "termix", "authentik"],
+        "note": "Browser über Traefik, OIDC bei Authentik."
+      },
+      {
+        "id": "data",
+        "label": "Datenbank",
+        "focus": ["termix", "cnpg", "operator"],
+        "note": "DATABASE_URL auf termix-rw, Operator-Status auf Port 8000."
+      },
+      {
+        "id": "backup",
+        "label": "Backup",
+        "focus": ["backup", "cnpg", "nfs"],
+        "note": "pg_dump nach NFS, PGHOST termix-rw."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "Browser",
+      "sublabel": "LAN",
+      "pos": [40, 220],
+      "size": [130, 64]
+    },
+    {
+      "id": "traefik",
+      "type": "cloud",
+      "label": "Traefik",
+      "sublabel": "websecure",
+      "tag": "termix.stadthagen.dev",
+      "pos": [240, 220],
+      "size": [150, 64]
+    },
+    {
+      "id": "termix",
+      "type": "backend",
+      "label": "Termix",
+      "sublabel": "2 Replicas",
+      "tag": "release-2.8.0",
+      "pos": [460, 220],
+      "size": [150, 64]
+    },
+    {
+      "id": "cnpg",
+      "type": "database",
+      "label": "termix-rw",
+      "sublabel": "CNPG PG 16",
+      "tag": "1Gi Longhorn",
+      "pos": [680, 220],
+      "size": [150, 64]
+    },
+    {
+      "id": "authentik",
+      "type": "security",
+      "label": "Authentik",
+      "sublabel": "OIDC",
+      "tag": "Termix Admins",
+      "pos": [460, 40],
+      "size": [150, 64]
+    },
+    {
+      "id": "operator",
+      "type": "cloud",
+      "label": "CNPG Operator",
+      "sublabel": "cnpg-system",
+      "tag": "HTTPS :8000",
+      "pos": [680, 40],
+      "size": [150, 64]
+    },
+    {
+      "id": "guacd",
+      "type": "backend",
+      "label": "guacd",
+      "sublabel": "Sidecar",
+      "tag": "127.0.0.1",
+      "pos": [460, 400],
+      "size": [150, 64]
+    },
+    {
+      "id": "backup",
+      "type": "backend",
+      "label": "Backup",
+      "sublabel": "Cron 03:00 UTC",
+      "pos": [680, 400],
+      "size": [150, 64]
+    },
+    {
+      "id": "nfs",
+      "type": "cloud",
+      "label": "NFS",
+      "sublabel": "termix-backups",
+      "pos": [900, 400],
+      "size": [140, 64]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "ns termix",
+      "wraps": ["termix", "guacd", "cnpg", "backup"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "user-traefik",
+      "from": "user",
+      "to": "traefik",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "traefik-termix",
+      "from": "traefik",
+      "to": "termix",
+      "label": "IngressRoute",
+      "variant": "emphasis"
+    },
+    {
+      "id": "termix-cnpg",
+      "from": "termix",
+      "to": "cnpg",
+      "label": "DATABASE_URL",
+      "variant": "emphasis"
+    },
+    {
+      "id": "authentik-termix",
+      "from": "authentik",
+      "to": "termix",
+      "label": "OIDC",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [535, 160]
+    },
+    {
+      "id": "operator-cnpg",
+      "from": "operator",
+      "to": "cnpg",
+      "label": "Status :8000",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [755, 160]
+    },
+    {
+      "id": "termix-guacd",
+      "from": "termix",
+      "to": "guacd",
+      "label": "Tunnel",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [535, 340]
+    },
+    {
+      "id": "backup-cnpg",
+      "from": "backup",
+      "to": "cnpg",
+      "label": "pg_dump",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "backup-nfs",
+      "from": "backup",
+      "to": "nfs",
+      "label": "sql.gz"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Zugriff",
+      "items": [
+        "https://termix.stadthagen.dev über Traefik",
+        "OIDC-Gruppe Termix Admins, Registrierung aus"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Postgres",
+      "items": [
+        "Service termix-rw, sslmode=require",
+        "Node-pg zusätzlich uselibpqcompat=true"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Rückfallebene",
+      "items": [
+        "hostPath /var/lib/termix-postgres auf nxk3-w01",
+        "Erst löschen, wenn ein Dump vom Cluster liegt"
+      ]
+    }
+  ]
+}

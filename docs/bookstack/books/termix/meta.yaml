@@ -1,0 +1,5 @@
+book: termix
+book_version: "1.0.0"
+updated: "2026-09-30"
+description: Termix — SSH/RDP-Konsole, Authentik-OIDC, Postgres auf CloudNativePG
+shelf: Plattform

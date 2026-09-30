@@ -6,7 +6,10 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **CloudNativePG (#70)** — Wave-1 Helm-App `apps/infra/cloudnative-pg`: Operator 1.28.0 (Chart 0.27.0) in `cnpg-system`, ServiceAccount `postgres-cloud-sa`, PodMonitor, NetworkPolicy; ADR-0030; BookStack-Buch `cloudnative-pg`. Kein Cluster-CR, keine Postgres-Migration.
+- **CloudNativePG (#70)** — Wave-1 Helm-App `apps/infra/cloudnative-pg`: Operator 1.28.0 (Chart 0.27.0) in `cnpg-system`, ServiceAccount `postgres-cloud-sa`, PodMonitor, NetworkPolicy; ADR-0030; BookStack-Buch `cloudnative-pg`.
+- **Termix auf CloudNativePG** — Cluster `termix` (1 Instanz, PG 16, 1Gi Longhorn), Microservice-Import, Service `termix-rw`; Backup/Restore `PGHOST=termix-rw`; BookStack `cloudnative-pg` v1.1.0.
+- **BookStack Termix** — Buch `termix` v1.0.0 (Übersicht, Architektur, Deploy, Migrationsvorlage, Quellen); Archify `termix-architektur` und `termix-db-migration`.
+- **BookStack CloudNativePG** — Buch `cloudnative-pg` v1.3.0: Architektur, Deploy, Onboarding-Vorlage für die nächste Datenbank; Archify `cnpg-architektur` und `cnpg-onboarding`.
 
 ## [0.12.0] - 2026-09-30
 

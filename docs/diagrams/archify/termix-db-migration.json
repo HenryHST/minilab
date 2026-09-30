@@ -1,0 +1,120 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Postgres-Migration auf CloudNativePG",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "freeze-import",
+        "label": "Pause und Import",
+        "focus": ["freeze", "import", "compare"],
+        "note": "App steht, Quelle bleibt an, Kopie einmalig."
+      },
+      {
+        "id": "cutover",
+        "label": "Cutover",
+        "focus": ["compare", "cutover", "verify", "dump"],
+        "note": "URL umstellen, App starten, Dump sichern."
+      },
+      {
+        "id": "abort",
+        "label": "Abbruch",
+        "focus": ["import", "abort_pvc", "compare", "abort_rows"],
+        "note": "Pending-PVC oder abweichende Zeilenzahl: alte DB behalten."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "change", "label": "Ablauf" },
+    { "id": "abort", "label": "Abbruch", "variant": "exception" }
+  ],
+  "mainPath": ["freeze", "import", "compare", "cutover", "verify", "dump"],
+  "nodes": [
+    {
+      "id": "freeze",
+      "lane": "change",
+      "col": 0,
+      "type": "backend",
+      "label": "Schreibpause",
+      "sublabel": "Replicas 0"
+    },
+    {
+      "id": "import",
+      "lane": "change",
+      "col": 1,
+      "type": "database",
+      "label": "Import",
+      "sublabel": "microservice",
+      "tag": "Quelle bleibt"
+    },
+    {
+      "id": "compare",
+      "lane": "change",
+      "col": 2,
+      "type": "security",
+      "label": "Zeilenzahl",
+      "sublabel": "public-Tabellen"
+    },
+    {
+      "id": "cutover",
+      "lane": "change",
+      "col": 3,
+      "type": "backend",
+      "label": "Cutover",
+      "sublabel": "URL und PGHOST"
+    },
+    {
+      "id": "verify",
+      "lane": "change",
+      "col": 4,
+      "type": "frontend",
+      "label": "Prüfen",
+      "sublabel": "Login und Daten"
+    },
+    {
+      "id": "dump",
+      "lane": "change",
+      "col": 5,
+      "type": "cloud",
+      "label": "Dump",
+      "sublabel": "vom neuen Service"
+    },
+    {
+      "id": "abort_pvc",
+      "lane": "abort",
+      "col": 1,
+      "type": "security",
+      "label": "PVC Pending",
+      "sublabel": "alte DB lassen"
+    },
+    {
+      "id": "abort_rows",
+      "lane": "abort",
+      "col": 2,
+      "width": 128,
+      "type": "security",
+      "label": "Abweichung",
+      "sublabel": "kein Cutover"
+    }
+  ],
+  "edges": [
+    { "from": "freeze", "to": "import", "variant": "emphasis", "route": "auto" },
+    { "from": "import", "to": "compare", "variant": "emphasis", "route": "auto" },
+    { "from": "compare", "to": "cutover", "label": "gleich", "variant": "emphasis", "route": "auto" },
+    { "from": "cutover", "to": "verify", "variant": "emphasis", "route": "auto" },
+    { "from": "verify", "to": "dump", "label": "App steht", "variant": "emphasis", "route": "auto" },
+    { "from": "import", "to": "abort_pvc", "label": "Pending", "variant": "security", "role": "error", "route": "auto" },
+    { "from": "compare", "to": "abort_rows", "label": "ungleich", "variant": "security", "role": "error", "route": "auto" }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Stopp",
+      "items": [
+        "PVC Pending oder abweichende Zeilenzahl: alte DB behalten",
+        "Dieselben Schritte gelten für die nächste App"
+      ]
+    }
+  ]
+}

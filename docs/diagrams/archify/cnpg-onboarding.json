@@ -1,0 +1,110 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Nächste Datenbank auf CloudNativePG",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "prepare",
+        "label": "Vorbereiten",
+        "focus": ["ready", "secret", "probe"],
+        "note": "Operator steht, Secret und Speicher sind geprüft."
+      },
+      {
+        "id": "open",
+        "label": "Öffnen",
+        "focus": ["cluster", "healthy", "url"],
+        "note": "Cluster wird healthy, danach zeigt die App auf -rw."
+      },
+      {
+        "id": "stop",
+        "label": "Abbruch",
+        "focus": ["probe", "abort_pvc"],
+        "note": "Pending-PVC: keine App umstellen."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "flow", "label": "Onboarding" },
+    { "id": "abort", "label": "Abbruch", "variant": "exception" }
+  ],
+  "mainPath": ["ready", "secret", "probe", "cluster", "healthy", "url"],
+  "nodes": [
+    {
+      "id": "ready",
+      "lane": "flow",
+      "col": 0,
+      "type": "cloud",
+      "label": "Operator",
+      "sublabel": "Pod Ready"
+    },
+    {
+      "id": "secret",
+      "lane": "flow",
+      "col": 1,
+      "type": "security",
+      "label": "Secret",
+      "sublabel": "username password"
+    },
+    {
+      "id": "probe",
+      "lane": "flow",
+      "col": 2,
+      "type": "cloud",
+      "label": "PVC-Probe",
+      "sublabel": "Zielgröße"
+    },
+    {
+      "id": "cluster",
+      "lane": "flow",
+      "col": 3,
+      "type": "database",
+      "label": "Cluster-CR",
+      "sublabel": "App-Namespace"
+    },
+    {
+      "id": "healthy",
+      "lane": "flow",
+      "col": 4,
+      "type": "backend",
+      "label": "Healthy",
+      "sublabel": "eine Instanz"
+    },
+    {
+      "id": "url",
+      "lane": "flow",
+      "col": 5,
+      "type": "frontend",
+      "label": "App-URL",
+      "sublabel": "Service -rw"
+    },
+    {
+      "id": "abort_pvc",
+      "lane": "abort",
+      "col": 2,
+      "width": 120,
+      "type": "security",
+      "label": "PVC Pending",
+      "sublabel": "nicht umstellen"
+    }
+  ],
+  "edges": [
+    { "from": "ready", "to": "secret", "variant": "emphasis", "route": "auto" },
+    { "from": "secret", "to": "probe", "variant": "emphasis", "route": "auto" },
+    { "from": "probe", "to": "cluster", "label": "Bound", "variant": "emphasis", "route": "auto" },
+    { "from": "cluster", "to": "healthy", "variant": "emphasis", "route": "auto" },
+    { "from": "healthy", "to": "url", "variant": "emphasis", "route": "auto" },
+    { "from": "probe", "to": "abort_pvc", "label": "Pending", "variant": "security", "role": "error", "route": "auto" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Vorlage",
+      "items": [
+        "Operator einmalig, diese sechs Schritte pro App",
+        "Import einer bestehenden DB steht im Buch Termix"
+      ]
+    }
+  ]
+}

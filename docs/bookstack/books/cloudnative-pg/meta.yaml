@@ -1,5 +1,5 @@
 book: cloudnative-pg
-book_version: "1.0.0"
+book_version: "1.3.0"
 updated: "2026-09-30"
-description: CloudNativePG Operator — Namespace cnpg-system, kein Cluster-CR in v1
+description: CloudNativePG — Operator in cnpg-system, Onboarding weiterer Datenbanken
 shelf: Plattform

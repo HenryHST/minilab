@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "CloudNativePG auf nXk3",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "install",
+        "label": "Operator",
+        "focus": ["argo", "operator", "apiserver"],
+        "note": "Argo installiert den Operator, die API ruft das Webhook auf."
+      },
+      {
+        "id": "cluster",
+        "label": "Cluster",
+        "focus": ["operator", "cluster", "app", "longhorn"],
+        "note": "Der Cluster liegt im App-Namespace, das Volume auf Longhorn."
+      },
+      {
+        "id": "metrics",
+        "label": "Metriken",
+        "focus": ["prometheus", "operator"],
+        "note": "Prometheus scrapt Port 8080 nur aus dem Namespace monitoring."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "argo",
+      "type": "cloud",
+      "label": "Argo CD",
+      "sublabel": "Wave 1",
+      "tag": "Chart 0.27.0",
+      "pos": [40, 220],
+      "size": [140, 64]
+    },
+    {
+      "id": "operator",
+      "type": "backend",
+      "label": "Operator",
+      "sublabel": "cnpg-system",
+      "tag": "1.28.0",
+      "pos": [260, 220],
+      "size": [150, 64]
+    },
+    {
+      "id": "cluster",
+      "type": "database",
+      "label": "Cluster",
+      "sublabel": "App-Namespace",
+      "tag": "Service -rw",
+      "pos": [490, 220],
+      "size": [150, 64]
+    },
+    {
+      "id": "app",
+      "type": "backend",
+      "label": "App",
+      "sublabel": "DATABASE_URL",
+      "pos": [720, 220],
+      "size": [140, 64]
+    },
+    {
+      "id": "apiserver",
+      "type": "security",
+      "label": "API-Server",
+      "sublabel": "Webhook",
+      "tag": ":9443",
+      "pos": [260, 40],
+      "size": [150, 64]
+    },
+    {
+      "id": "prometheus",
+      "type": "database",
+      "label": "Prometheus",
+      "sublabel": "monitoring",
+      "tag": ":8080",
+      "pos": [490, 40],
+      "size": [150, 64]
+    },
+    {
+      "id": "longhorn",
+      "type": "cloud",
+      "label": "Longhorn",
+      "sublabel": "StorageClass",
+      "pos": [490, 400],
+      "size": [150, 64]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "ns cnpg-system",
+      "wraps": ["operator"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "argo-operator",
+      "from": "argo",
+      "to": "operator",
+      "label": "Helm",
+      "variant": "emphasis"
+    },
+    {
+      "id": "operator-cluster",
+      "from": "operator",
+      "to": "cluster",
+      "label": "Status :8000",
+      "variant": "emphasis"
+    },
+    {
+      "id": "cluster-app",
+      "from": "cluster",
+      "to": "app",
+      "label": "5432 TLS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "api-operator",
+      "from": "apiserver",
+      "to": "operator",
+      "label": "Webhook",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [300, 120]
+    },
+    {
+      "id": "prom-operator",
+      "from": "prometheus",
+      "to": "operator",
+      "label": "PodMonitor",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [560, 200]
+    },
+    {
+      "id": "longhorn-cluster",
+      "from": "longhorn",
+      "to": "cluster",
+      "label": "PVC",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelAt": [565, 350]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Einmalig",
+      "items": [
+        "Operator nur in cnpg-system, ServiceAccount postgres-cloud-sa",
+        "Webhook :9443, Metriken :8080 nur aus monitoring"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Pro Datenbank",
+      "items": [
+        "Cluster-CR im Namespace der App, nicht im Operator",
+        "Service <name>-rw, Volume auf Longhorn"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Pflicht-Egress",
+      "items": [
+        "Operator zu Instanz HTTPS :8000, sonst kein healthy",
+        "DNS sowie API :443 und :6443"
+      ]
+    }
+  ]
+}

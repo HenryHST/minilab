@@ -1,6 +1,6 @@
 # CloudNativePG
 
-PostgreSQL operator (CloudNativePG). This app installs **only the operator** in `cnpg-system`. No `Cluster` CRs and no migration of existing Postgres (`n8n`, `paperless`, `termix`, Authentik).
+PostgreSQL operator (CloudNativePG) in `cnpg-system`. The first `Cluster` is Termix (`apps/dev/termix/cnpg-cluster.yaml`, Service `termix-rw`). `n8n`, `paperless`, and Authentik are unchanged.
 
 | | |
 |--|--|
@@ -20,8 +20,8 @@ kubectl get crd clusters.postgresql.cnpg.io
 
 Expect the operator pod Ready and ServiceAccount `postgres-cloud-sa`.
 
-## Later
+## Termix
 
-Database import (not this change): [CNPG database import](https://cloudnative-pg.io/docs/current/database_import). Instance TLS via cert-manager belongs on the first `Cluster`, not on the operator webhook.
+Import and cutover: [ADR-0030](../../../docs/adr/0030-cloudnative-pg.md). Operator egress includes TCP 8000 so instance status checks succeed. Further imports: [CNPG database import](https://cloudnative-pg.io/docs/current/database_import).
 
 ADR: [`docs/adr/0030-cloudnative-pg.md`](../../../docs/adr/0030-cloudnative-pg.md).

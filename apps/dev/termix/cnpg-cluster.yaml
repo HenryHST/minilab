@@ -1,0 +1,42 @@
+# Termix Postgres on CloudNativePG. One-shot import from the hostPath StatefulSet
+# (Service termix-postgres). After cutover the app uses Service termix-rw.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: termix
+  namespace: termix
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+  labels:
+    app.kubernetes.io/name: termix
+    app.kubernetes.io/part-of: termix
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:16
+  bootstrap:
+    initdb:
+      database: termix
+      owner: termix
+      secret:
+        name: termix-db
+      import:
+        type: microservice
+        databases:
+          - termix
+        source:
+          externalCluster: termix-source
+  storage:
+    size: 1Gi
+    storageClass: longhorn
+  monitoring:
+    enablePodMonitor: true
+  externalClusters:
+    - name: termix-source
+      connectionParameters:
+        host: termix-postgres.termix.svc.cluster.local
+        user: termix
+        dbname: termix
+        sslmode: disable
+      password:
+        name: termix-db
+        key: password

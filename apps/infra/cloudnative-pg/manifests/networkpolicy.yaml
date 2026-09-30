@@ -1,5 +1,6 @@
 # Operator webhook must accept kube-apiserver (any source). Metrics only from monitoring.
-# Egress: DNS plus Kubernetes API (in-cluster :443 and node :6443).
+# Egress: DNS, Kubernetes API (in-cluster :443 and node :6443), and instance
+# status HTTPS :8000 (Cluster pods in app namespaces).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -36,3 +37,5 @@ spec:
           port: 443
         - protocol: TCP
           port: 6443
+        - protocol: TCP
+          port: 8000

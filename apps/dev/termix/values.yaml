@@ -59,8 +59,6 @@ env:
   GUACD_RECORDING_BACKEND_PATH: /app/data/session_recordings/guacamole
 
 extraEnv:
-  - name: GUACD_TUNNEL_HOST
-    value: "127.0.0.1"
   - name: OIDC_CLIENT_SECRET
     valueFrom:
       secretKeyRef:

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Termix Argo-Vergleich** — `GUACD_TUNNEL_HOST` nur noch einmal (`127.0.0.1`, Sidecar). Chart und `extraEnv` hatten den Key doppelt gesetzt; Server-Side Apply konnte das Deployment nicht diffen.
+
 ### Added
 
 - **CloudNativePG (#70)** — Wave-1 Helm-App `apps/infra/cloudnative-pg`: Operator 1.28.0 (Chart 0.27.0) in `cnpg-system`, ServiceAccount `postgres-cloud-sa`, PodMonitor, NetworkPolicy; ADR-0030; BookStack-Buch `cloudnative-pg`.

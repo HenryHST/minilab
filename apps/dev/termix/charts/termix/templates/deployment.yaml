@@ -55,7 +55,11 @@ spec:
               value: {{ .Values.guacd.host | quote }}
             {{- end }}
             - name: GUACD_TUNNEL_HOST
+              {{- if .Values.guacd.enabled }}
+              value: "127.0.0.1"
+              {{- else }}
               value: {{ include "termix.fullname" . | quote }}
+              {{- end }}
             {{- if ne .Values.database.dialect "sqlite" }}
             - name: DATABASE_DIALECT
               value: {{ .Values.database.dialect | quote }}

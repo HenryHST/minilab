@@ -137,7 +137,7 @@ spec:
             - name: GUACD_HOST
               value: "127.0.0.1"
             - name: GUACD_TUNNEL_HOST
-              value: "termix"
+              value: "127.0.0.1"
             - name: DATABASE_DIALECT
               value: "postgres"
             - name: DATABASE_URL
@@ -145,8 +145,6 @@ spec:
                 secretKeyRef:
                   name: termix-ha
                   key: DATABASE_URL
-            - name: GUACD_TUNNEL_HOST
-              value: 127.0.0.1
             - name: OIDC_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:

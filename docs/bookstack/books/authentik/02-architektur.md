@@ -1,6 +1,6 @@
 ---
 title: Architektur
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Architektur
@@ -9,12 +9,12 @@ book_version: "1.0.0"
 
 - GitOps-App `apps/ops/authentik`. Chart `2026.8.3` von `https://charts.goauthentik.io`, gerendert nach `helm-manifest.yaml`.
 - ApplicationSet `ops`, Wave 2, Namespace `authentik`.
-- Ingress `idp.stadthagen.dev`. Von außen erreicht Pangolin den Dienst ([ADR-0011](../../../adr/0011-pangolin-public-exposure.md)).
+- Ingress `idp.stadthagen.dev` im Cluster. Von außen erreicht Pangolin denselben Host über Newt und `pangolin-publish` (Kapitel **Externe Ressourcen mit Pangolin**, [ADR-0011](../../../adr/0011-pangolin-public-exposure.md)).
 - Server und Worker laufen im Namespace. Die Datenbank ist die vom Chart mitgebrachte Postgres-Instanz. Backup und Restore liegen daneben, nicht im Chart.
 
 ## Steuerung
 
-OpenTofu in Infra_LAB `terraform/authentik` hält Applications, Provider, Gruppen, Flows und die Brand. Der Apply läuft mit `--tags authentik-bootstrap`. Client-Secrets kommen aus SecretSpecs und stehen nicht im Git.
+Applications, Provider, Gruppen, Flows und die Brand liegen in OpenTofu (Kapitel **OpenTofu**). Client-Secrets kommen aus SecretSpecs und stehen nicht im Git.
 
 Eine App behält einen lokalen Admin-Login, wo das schon so entschieden ist. Grafana lässt `oauth_auto_login` aus. Fällt das IdP aus, bleibt dieser Weg nutzbar.
 

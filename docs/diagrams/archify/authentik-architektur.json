@@ -3,19 +3,20 @@
   "diagram_type": "architecture",
   "meta": {
     "title": "Authentik",
+    "output": "authentik-architektur.html",
     "quality_profile": "showcase",
     "views": [
       {
         "id": "login",
         "label": "Login",
         "focus": ["browser", "pangolin", "authentik", "termix"],
-        "note": "Browser erreicht das IdP über Pangolin. Termix spricht OIDC."
+        "note": "Browser erreicht das IdP über Pangolin-Publish. Termix spricht OIDC."
       }
     ]
   },
   "components": [
     { "id": "browser", "type": "external", "label": "Browser", "sublabel": "Benutzer", "pos": [40, 300], "size": [120, 60] },
-    { "id": "pangolin", "type": "cloud", "label": "Pangolin", "sublabel": "idp.stadthagen.dev", "pos": [240, 300], "size": [160, 60] },
+    { "id": "pangolin", "type": "cloud", "label": "Pangolin", "sublabel": "publish idp", "pos": [240, 300], "size": [160, 60] },
     { "id": "brand", "type": "cloud", "label": "Brand-Medien", "sublabel": "NFS branding", "pos": [40, 80], "size": [150, 60] },
     { "id": "authentik", "type": "security", "label": "Authentik", "sublabel": "IdP", "pos": [480, 300], "size": [140, 64] },
     { "id": "tofu", "type": "backend", "label": "OpenTofu", "sublabel": "Apps und Brand", "pos": [480, 80], "size": [140, 60] },
@@ -24,15 +25,15 @@
   ],
   "connections": [
     { "id": "browser-pangolin", "from": "browser", "to": "pangolin", "label": "HTTPS", "variant": "emphasis" },
-    { "id": "pangolin-authentik", "from": "pangolin", "to": "authentik", "label": "ClusterIP", "variant": "emphasis", "labelAt": [400, 286] },
+    { "id": "pangolin-authentik", "from": "pangolin", "to": "authentik", "label": "Newt HTTP", "variant": "emphasis", "labelAt": [400, 286] },
     { "id": "authentik-termix", "from": "authentik", "to": "termix", "label": "OIDC", "variant": "emphasis" },
     { "id": "authentik-registry", "from": "authentik", "to": "registry", "label": "Outpost", "variant": "dashed" },
     { "id": "brand-authentik", "from": "brand", "to": "authentik", "label": "Logo" },
     { "id": "tofu-authentik", "from": "tofu", "to": "authentik", "label": "Apply", "labelDy": 24 }
   ],
   "cards": [
-    { "dot": "cyan", "title": "Einstieg", "items": ["Pangolin veröffentlicht idp.stadthagen.dev"] },
+    { "dot": "cyan", "title": "Einstieg", "items": ["pangolin-publish legt Ressource idp an", "Host idp.stadthagen.dev, sso aus"] },
     { "dot": "emerald", "title": "Apps", "items": ["Termix nutzt OIDC", "registry-ui nutzt ForwardAuth"] },
-    { "dot": "rose", "title": "Brand", "items": ["Stadthagen Home", "Medien vom NFS, nicht das Backup"] }
+    { "dot": "rose", "title": "Steuerung", "items": ["OpenTofu für Apps und Brand", "Medien vom NFS, nicht das Backup"] }
   ]
 }

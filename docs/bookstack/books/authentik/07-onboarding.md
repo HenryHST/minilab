@@ -1,11 +1,11 @@
 ---
 title: Onboarding
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Onboarding
 
-Neue Apps bekommen kein eigenes IdP. Sie folgen einer der beiden Spalten. Termix ist die ausgefüllte OIDC-Spalte. registry-ui ist die ausgefüllte ForwardAuth-Spalte.
+Neue Apps bekommen kein eigenes IdP. Sie folgen einer der beiden Spalten. Termix ist die ausgefüllte OIDC-Spalte. registry-ui ist die ausgefüllte ForwardAuth-Spalte. OpenTofu-Details: Kapitel **OpenTofu**. Öffentlichkeit: Kapitel **Externe Ressourcen mit Pangolin**.
 
 ![OIDC-Onboarding](https://raw.githubusercontent.com/HenryHST/minilab/main/docs/diagrams/archify/exports/authentik-oidc-onboarding.png)
 
@@ -35,6 +35,7 @@ flowchart LR
 | Geheimnis | SecretSpec `TERMIX_OAUTH_CLIENT_SECRET` | keines in der App; der Outpost trägt sein Token |
 | App-Manifest | `OIDC_*` in `apps/dev/termix/values.yaml` | `apps/ops/registry-ui/manifests/middleware-authentik.yaml` |
 | Outpost | keiner | Service `ak-outpost-registry-ui.authentik.svc:9000` |
+| Öffentlichkeit | optional `termix-ext` in `pangolin-publish` | meist nur LAN |
 
 Scopes bei Termix: `openid`, `email`, `profile`. Der Gruppen-Claim kommt aus dem Profile-Mapping, nicht aus einem eigenen Scope.
 
@@ -46,8 +47,9 @@ Scopes bei Termix: `openid`, `email`, `profile`. Der Gruppen-Claim kommt aus dem
 4. **Secret.** Client-Secret nur in der SecretSpec. Ansible `--tags secrets` schreibt es ins Cluster. Nicht ins Git.
 5. **Sync.** OpenTofu `--tags authentik-bootstrap`, danach die App in Argo. Issuer ist `https://idp.stadthagen.dev/application/o/<slug>/`.
 6. **Login.** Die App zeigt den externen Login und kehrt auf den Redirect zurück. Ein Benutzer in der Admin-Gruppe sieht die Admin-Fläche.
+7. **Öffentlich?** Nur wenn nötig: Eintrag in `apps/ops/pangolin-publish` `resources.json`, Sync der App `pangolin-publish`. Redirects und ggf. `*_external_url` in OpenTofu auf den öffentlichen Host setzen. Sonst bleibt die App hinter Traefik im LAN.
 
-Weicht der Redirect von der öffentlichen URL ab, die Application nicht veröffentlichen.
+Weicht der Redirect von der URL ab, die der Browser wirklich trifft, die Application nicht veröffentlichen.
 
 ## Schritte, ForwardAuth
 
@@ -56,7 +58,8 @@ Weicht der Redirect von der öffentlichen URL ab, die Application nicht veröffe
 3. **Middleware** in der App: `forwardAuth.address` auf `http://ak-outpost-<name>.authentik.svc.cluster.local:9000/outpost.goauthentik.io/auth/traefik`, `trustForwardHeader: true`, Response-Header `X-authentik-username`, `X-authentik-groups`, `X-authentik-email`, `X-authentik-name`, `X-authentik-uid`.
 4. **IngressRoute** der App hängt die Middleware ein.
 5. **Login.** Der Browser landet bei Authentik und danach auf dem Host. Ohne fertigen Outpost antwortet die App mit einem Auth-Fehler. Das ist der erwartete Zustand, bis Schritt 2 fertig ist.
+6. **Öffentlich?** Wie bei OIDC nur mit Eintrag in `resources.json`. Die Middleware und der Outpost bleiben dieselben.
 
 ## Abgrenzung
 
-BookStack, Grafana, Headlamp und Vaultwarden sind weitere OIDC-Apps. Ihre Redirects und Gruppen stehen in den jeweiligen OpenTofu-Dateien, nicht hier. Dieses Kapitel ist die Vorlage, nicht das Verzeichnis.
+BookStack, Grafana, Headlamp und Vaultwarden sind weitere OIDC-Apps. Ihre Redirects und Gruppen stehen in den jeweiligen OpenTofu-Dateien, nicht hier. Dieses Kapitel ist die Vorlage, nicht das Verzeichnis. Das IdP selbst ist über die Ressource `idp` schon öffentlich; das gehört nicht in jede App.

@@ -1,6 +1,6 @@
 ---
 title: Übersicht
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Übersicht
@@ -30,5 +30,7 @@ flowchart LR
 | Host | `idp.stadthagen.dev` |
 | Chart | authentik `2026.8.3`, gerendert nach `helm-manifest.yaml` |
 | Brand | Stadthagen Home |
+| Konfiguration | OpenTofu in Infra_LAB `terraform/authentik` |
+| Öffentlichkeit | `pangolin-publish`, Ressource `idp` |
 
-ADR: [0010-authentik-idp](../../../adr/0010-authentik-idp.md). Nächste App: Kapitel **Onboarding**. Erscheinungsbild: Kapitel **Brand**.
+ADR: [0010-authentik-idp](../../../adr/0010-authentik-idp.md). Nächste App: Kapitel **Onboarding**. Erscheinungsbild: Kapitel **Brand**. Applications und Gruppen: Kapitel **OpenTofu**. Internet über Pangolin: Kapitel **Externe Ressourcen mit Pangolin**.

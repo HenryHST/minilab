@@ -1,0 +1,5 @@
+book: cloudnative-pg
+book_version: "1.0.0"
+updated: "2026-09-30"
+description: CloudNativePG Operator — Namespace cnpg-system, kein Cluster-CR in v1
+shelf: Plattform

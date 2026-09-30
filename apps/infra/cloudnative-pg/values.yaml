@@ -1,0 +1,27 @@
+# CloudNativePG operator 1.28.0 — chart 0.27.0
+# https://cloudnative-pg.io/docs/current/installation_upgrade/
+# No Cluster CRs in this release (operator only).
+
+serviceAccount:
+  create: true
+  name: postgres-cloud-sa
+
+rbac:
+  create: true
+
+config:
+  clusterWide: true
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+
+monitoring:
+  podMonitorEnabled: true
+  podMonitorAdditionalLabels:
+    release: kube-prometheus-stack
+  grafanaDashboard:
+    create: false

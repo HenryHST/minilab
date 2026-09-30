@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **CloudNativePG (#70)** — Wave-1 Helm-App `apps/infra/cloudnative-pg`: Operator 1.28.0 (Chart 0.27.0) in `cnpg-system`, ServiceAccount `postgres-cloud-sa`, PodMonitor, NetworkPolicy; ADR-0030; BookStack-Buch `cloudnative-pg`. Kein Cluster-CR, keine Postgres-Migration.
+
 ## [0.12.0] - 2026-09-30
 
 Mosquitto MQTT (#90) mit LDAP, Prometheus-$SYS-Exporter, Smoke-Probe und BookStack/Archify. Begleit-Release Plattform: [Infra_LAB v1.10.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.10.0).

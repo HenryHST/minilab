@@ -45,6 +45,16 @@ spec:
             path: apps/infra/mosquitto
             namespace: mosquitto
             syncWave: "1"
+          - app: cloudnative-pg
+            path: apps/infra/cloudnative-pg/manifests
+            namespace: cnpg-system
+            syncWave: "1"
+            helmRepo: https://cloudnative-pg.github.io/charts
+            helmChart: cloudnative-pg
+            helmVersion: "0.27.0"
+            helmReleaseName: cloudnative-pg
+            helmValuesFile: apps/infra/cloudnative-pg/values.yaml
+            extras: true
           - app: error-pages
             path: apps/infra/error-pages/manifests
             namespace: error-pages

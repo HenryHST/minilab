@@ -1,6 +1,6 @@
 ---
 title: Architektur
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Architektur
@@ -22,7 +22,9 @@ book_version: "1.0.0"
 | Instanzen | 1 |
 | Storage | 1Gi, StorageClass `longhorn` |
 | Services | `termix-rw`, `termix-ro`, `termix-r` |
-| PodMonitor | `monitoring.enablePodMonitor: true` |
+| PodMonitor | Manifest `podmonitor.yaml`, Label `release: kube-prometheus-stack` |
+| Ressourcen | Request 100m / 512Mi, Limit 1Gi |
+| Snapshot | `ScheduledBackup` `termix-snapshot`, alle 6 Stunden, Klasse `longhorn` |
 
 Die App liest nur `DATABASE_URL` aus Secret `termix-ha`.
 
@@ -43,6 +45,8 @@ postgresql://termix:{password}@termix-rw.termix.svc.cluster.local:5432/termix?ss
 `sslmode=require` erzwingt TLS. Node-`pg` behandelt `require` sonst als Zertifikatsprüfung und scheitert an der Operator-CA. `uselibpqcompat=true` lässt die Verschlüsselung zu, ohne die CA zu prüfen.
 
 ## Backup
+
+Zuerst der Volume-Snapshot (`termix-snapshot`, alle 6 Stunden, online, Klasse `longhorn`). Das ist der Restore-Punkt im Cluster. Daneben bleibt der logische Dump.
 
 CronJob `termix-backup-cron`, 03:00 UTC, Image `postgres:16-alpine`.
 

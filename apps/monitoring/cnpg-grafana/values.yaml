@@ -1,0 +1,3 @@
+# Chart cluster 0.0.5 from https://cloudnative-pg.github.io/grafana-dashboards
+# Defaults already set grafana_dashboard=1, which the Grafana sidecar watches.
+# Operator chart 0.27.0 accepts monitoring.grafanaDashboard.create but does not render it.

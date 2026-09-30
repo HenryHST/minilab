@@ -1,6 +1,6 @@
 ---
 title: Architektur
-book_version: "1.3.0"
+book_version: "1.4.0"
 ---
 
 # Architektur
@@ -12,7 +12,7 @@ book_version: "1.3.0"
 - ServiceAccount `postgres-cloud-sa`. ClusterRole und Binding kommen aus dem Chart. Kein zusätzliches User-ClusterRole. `rbac.aggregateClusterRoles` bleibt aus.
 - Requests 50m CPU / 128Mi, Limit 256Mi.
 - Webhook-Zertifikate bleiben im Chart (`cnpg-webhook-service:443` → Pod `:9443`). cert-manager für `Cluster.spec.certificates` ist nicht eingerichtet.
-- Kein Grafana-Dashboard aus dem Chart (`monitoring.grafanaDashboard.create: false`).
+- Grafana-Dashboard kommt nicht aus Chart 0.27.0. Application `cnpg-grafana` (Chart `cluster` 0.0.5) legt ConfigMap `cnpg-grafana-dashboard` in `monitoring` ab, Label `grafana_dashboard=1`.
 
 ## NetworkPolicy
 
@@ -36,4 +36,28 @@ Das ServiceAccount des Clusters heißt wie der Cluster. Kollidiert der Name mit 
 
 ## Metriken
 
-PodMonitor mit Label `release: kube-prometheus-stack`, Port `metrics` (8080). Dieselbe Label-Pflicht gilt für PodMonitore der Cluster (`monitoring.enablePodMonitor: true`).
+PodMonitor des Operators: Label `release: kube-prometheus-stack`, Port `metrics` (8080).
+
+`monitoring.enablePodMonitor: false` am Cluster. Das Feld ist veraltet und setzt das Release-Label nicht. Jede Datenbank bringt einen eigenen PodMonitor mit (Termix: `apps/dev/termix/podmonitor.yaml`, Port `metrics` 9187). PrometheusRule `cnpg-alerts` in `monitoring` feuert, wenn `cnpg_collector_up` 5 Minuten 0 ist oder der letzte erfolgreiche Backup-Zeitstempel älter als 8 Stunden ist.
+
+## Backup
+
+Volume-Snapshots, kein WAL-Archiv. Ohne Object Store gibt es kein Point-in-Time-Recovery zwischen den Snapshots.
+
+| | |
+|--|--|
+| Klasse | `VolumeSnapshotClass` `longhorn`, Driver `driver.longhorn.io`, `type: snap` |
+| Controller | `snapshot-controller` v8.6.0 in `longhorn-system` (Longhorn-App, Extras) |
+| Cluster | `spec.backup.volumeSnapshot.className: longhorn`, online, `snapshotOwnerReference: backup` |
+| Plan | `ScheduledBackup`, Cron mit Sekunden, alle 6 Stunden (`0 15 */6 * * *`), `method: volumeSnapshot` |
+| Zweite Kopie | `pg_dump` der App, unverändert |
+
+Restore ist ein neuer `Cluster` mit `bootstrap.recovery.volumeSnapshots`, nicht das Einspielen des SQL-Dumps. Der Dump bleibt die Kopie außerhalb des Clusters.
+
+```mermaid
+flowchart LR
+  Plan[ScheduledBackup] --> Backup
+  Backup --> Snap[VolumeSnapshot]
+  Snap --> Longhorn
+  Primary[Primary] --> Dump[pg_dump NFS]
+```

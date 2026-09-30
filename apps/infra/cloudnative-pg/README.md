@@ -7,7 +7,9 @@ PostgreSQL operator (CloudNativePG) in `cnpg-system`. The first `Cluster` is Ter
 | Argo | ApplicationSet `infra`, sync wave `1`, namespace `cnpg-system` |
 | Chart | `cloudnative-pg` 0.27.0 (operator 1.28.0) from `https://cloudnative-pg.github.io/charts` |
 | ServiceAccount | `postgres-cloud-sa` (ClusterRole/Binding from the chart) |
-| Metrics | PodMonitor port `metrics` (8080), label `release: kube-prometheus-stack` |
+| Metrics | Operator PodMonitor port `metrics` (8080), label `release: kube-prometheus-stack` |
+| Dashboard | Application `cnpg-grafana`, chart `cluster` 0.0.5, namespace `monitoring` |
+| Snapshots | `VolumeSnapshotClass` `longhorn`; controller ships with the Longhorn app |
 | Webhook | Chart-managed certs on `cnpg-webhook-service:443` → pod `:9443` |
 
 ## Verify
@@ -23,5 +25,7 @@ Expect the operator pod Ready and ServiceAccount `postgres-cloud-sa`.
 ## Termix
 
 Import and cutover: [ADR-0030](../../../docs/adr/0030-cloudnative-pg.md). Operator egress includes TCP 8000 so instance status checks succeed. Further imports: [CNPG database import](https://cloudnative-pg.io/docs/current/database_import).
+
+After the VolumeSnapshot CRDs first appear, restart the operator once. It only discovers that CRD at startup; until then a `ScheduledBackup` with `method: volumeSnapshot` is rejected.
 
 ADR: [`docs/adr/0030-cloudnative-pg.md`](../../../docs/adr/0030-cloudnative-pg.md).

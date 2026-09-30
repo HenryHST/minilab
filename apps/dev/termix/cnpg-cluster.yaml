@@ -1,5 +1,7 @@
-# Termix Postgres on CloudNativePG. One-shot import from the hostPath StatefulSet
-# (Service termix-postgres). After cutover the app uses Service termix-rw.
+# Termix Postgres on CloudNativePG. The one-shot import from termix-postgres is done
+# and removed: a recreated volume must not dial that Service again.
+# Recovery point is a Longhorn VolumeSnapshot (ScheduledBackup termix-snapshot).
+# The pg_dump CronJob remains the off-cluster copy.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -19,24 +21,21 @@ spec:
       owner: termix
       secret:
         name: termix-db
-      import:
-        type: microservice
-        databases:
-          - termix
-        source:
-          externalCluster: termix-source
   storage:
     size: 1Gi
     storageClass: longhorn
+  # Deprecated field. false stops the operator-owned PodMonitor; podmonitor.yaml replaces it.
   monitoring:
-    enablePodMonitor: true
-  externalClusters:
-    - name: termix-source
-      connectionParameters:
-        host: termix-postgres.termix.svc.cluster.local
-        user: termix
-        dbname: termix
-        sslmode: disable
-      password:
-        name: termix-db
-        key: password
+    enablePodMonitor: false
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+  backup:
+    target: primary
+    volumeSnapshot:
+      className: longhorn
+      online: true
+      snapshotOwnerReference: backup

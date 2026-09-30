@@ -1,6 +1,6 @@
 ---
 title: Deploy und Verify
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Deploy und Verify
@@ -28,3 +28,5 @@ kubectl -n cnpg-system get pods,networkpolicy
 3. `kubectl -n termix get cluster termix` meldet `Cluster in healthy state` und `READY 1`.
 4. Service `termix-rw` hat Port 5432.
 5. Ein manueller Job aus `termix-backup-cron` schreibt `termix-*.sql.gz` und nennt `termix-rw` im Log.
+6. `kubectl -n termix get scheduledbackup termix-snapshot` existiert. Ein `Backup` daraus wird `completed`.
+7. PodMonitor `termix` trägt `release: kube-prometheus-stack`.

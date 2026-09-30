@@ -1,0 +1,18 @@
+# Replaces the deprecated Cluster field monitoring.enablePodMonitor.
+# The operator-owned PodMonitor had no Prometheus release label.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: termix
+  namespace: termix
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/name: termix
+    cnpg.io/cluster: termix
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: termix
+      cnpg.io/podRole: instance
+  podMetricsEndpoints:
+    - port: metrics

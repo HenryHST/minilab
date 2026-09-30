@@ -1,6 +1,6 @@
 ---
 title: Übersicht
-book_version: "1.3.0"
+book_version: "1.4.0"
 ---
 
 # Übersicht
@@ -18,6 +18,7 @@ flowchart LR
   Prom[Prometheus] -->|PodMonitor :8080| Operator
   Operator -->|Status :8000| Cluster
   Longhorn --> Cluster
+  Cluster -->|Snapshot 6h| Longhorn
   Cluster -->|5432 TLS| App
 ```
 

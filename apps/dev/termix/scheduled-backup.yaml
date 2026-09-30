@@ -1,0 +1,19 @@
+# Six-field cron (seconds first). Every 6 hours, :15. RPO is that interval.
+# This is a consistent Longhorn snapshot, not WAL PITR. pg_dump at 03:00 UTC stays.
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: termix-snapshot
+  namespace: termix
+  labels:
+    app.kubernetes.io/name: termix
+    app.kubernetes.io/part-of: termix
+spec:
+  schedule: "0 15 */6 * * *"
+  immediate: true
+  method: volumeSnapshot
+  backupOwnerReference: cluster
+  cluster:
+    name: termix
+  target: primary
+  online: true

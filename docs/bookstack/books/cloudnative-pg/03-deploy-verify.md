@@ -1,6 +1,6 @@
 ---
 title: Deploy und Verify
-book_version: "1.3.0"
+book_version: "1.4.0"
 ---
 
 # Deploy und Verify
@@ -10,6 +10,7 @@ book_version: "1.3.0"
 1. ApplicationSet `infra` enthält `cloudnative-pg` (Wave 1, `extras: true`, Chart `0.27.0`).
 2. AppProject `infra` erlaubt Destination `cnpg-system`.
 3. Prometheus wählt PodMonitore mit `release: kube-prometheus-stack`.
+4. `VolumeSnapshotClass` `longhorn` und Deployment `snapshot-controller` in `longhorn-system` sind da.
 
 ## Sync
 
@@ -26,5 +27,8 @@ kubectl get crd clusters.postgresql.cnpg.io
 3. PodMonitor `cloudnative-pg` trägt `release: kube-prometheus-stack`.
 4. Prometheus-Target für `cnpg-system/cloudnative-pg` ist `up` auf Port 8080.
 5. NetworkPolicies `cloudnative-pg` und `cloudnative-pg-instance-status` sind vorhanden.
+6. ConfigMap `cnpg-grafana-dashboard` im Namespace `monitoring` trägt `grafana_dashboard=1`.
+7. `kubectl get volumesnapshotclass longhorn` zeigt Driver `driver.longhorn.io`.
+8. `kubectl -n longhorn-system get deploy snapshot-controller` ist Ready. Danach den Operator einmal neu starten. Er erkennt die VolumeSnapshot-CRD nur beim Start. Ohne Neustart lehnt er `method: volumeSnapshot` ab.
 
 Upstream-E2E läuft im Homelab nicht.

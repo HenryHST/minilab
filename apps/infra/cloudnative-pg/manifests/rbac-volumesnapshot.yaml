@@ -1,0 +1,26 @@
+# Chart 0.27.0 does not grant snapshot.storage.k8s.io. Volume snapshot backups need it.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloudnative-pg-volumesnapshot
+  labels:
+    app.kubernetes.io/name: cloudnative-pg
+rules:
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshots"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloudnative-pg-volumesnapshot
+  labels:
+    app.kubernetes.io/name: cloudnative-pg
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloudnative-pg-volumesnapshot
+subjects:
+  - kind: ServiceAccount
+    name: postgres-cloud-sa
+    namespace: cnpg-system

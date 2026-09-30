@@ -7,7 +7,7 @@ metadata:
     # Applied by Application gitops-bootstrap (path apps/argocd-apps/raw) before ApplicationSets.
     argocd.argoproj.io/sync-wave: "-2"
 spec:
-  description: Monitoring — metrics, logs, status
+  description: Monitoring — metrics, logs, status, CloudNativePG Grafana dashboard
   sourceRepos:
     - "*"
   destinations:

@@ -1,6 +1,6 @@
 ---
 title: Quellen
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Quellen

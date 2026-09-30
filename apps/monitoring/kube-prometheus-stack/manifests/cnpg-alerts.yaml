@@ -1,0 +1,38 @@
+# CloudNativePG instance and snapshot-backup alerts.
+# cnpg_collector_up comes from the instance PodMonitor (port metrics).
+# Last-backup age covers a failed or missed ScheduledBackup. There is no WAL archive.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cnpg-alerts
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: cnpg.availability
+      rules:
+        - alert: CloudNativePGClusterNotReady
+          expr: cnpg_collector_up == 0
+          for: 5m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'CloudNativePG {{ $labels.namespace }}/{{ $labels.pod }} collector is down'
+            description: |
+              The instance exporter `cnpg_collector_up` has been 0 for 5 minutes.
+              Check: kubectl -n {{ $labels.namespace }} get cluster,pods
+
+        - alert: CloudNativePGBackupStale
+          expr: |
+            (time() - cnpg_collector_last_available_backup_timestamp) > 8 * 3600
+            and cnpg_collector_last_available_backup_timestamp > 0
+          for: 15m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'CloudNativePG {{ $labels.namespace }}/{{ $labels.pod }} has no successful backup for 8h'
+            description: |
+              The last successful backup is older than the 6-hour snapshot schedule.
+              Check: kubectl -n {{ $labels.namespace }} get backup,scheduledbackup

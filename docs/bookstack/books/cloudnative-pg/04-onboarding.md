@@ -1,6 +1,6 @@
 ---
 title: Onboarding
-book_version: "1.3.0"
+book_version: "1.4.0"
 ---
 
 # Onboarding
@@ -27,7 +27,7 @@ flowchart LR
 
 Diese Schritte sind erledigt. Sie gehören nicht in jede App.
 
-1. Values `apps/infra/cloudnative-pg/values.yaml`: ServiceAccount `postgres-cloud-sa`, `clusterWide: true`, PodMonitor-Label `release: kube-prometheus-stack`, kein Grafana-Dashboard.
+1. Values `apps/infra/cloudnative-pg/values.yaml`: ServiceAccount `postgres-cloud-sa`, `clusterWide: true`, PodMonitor-Label `release: kube-prometheus-stack`. Dashboard: Application `cnpg-grafana`, nicht das Operator-Chart. Snapshot-RBAC: `manifests/rbac-volumesnapshot.yaml`.
 2. NetworkPolicies unter `apps/infra/cloudnative-pg/manifests/`. Ingress 9443 offen, Ingress 8080 nur aus `monitoring`, Egress DNS, API 443/6443 und Instanz-Status 8000.
 3. ApplicationSet `infra`: `path: apps/infra/cloudnative-pg/manifests`, `namespace: cnpg-system`, `syncWave: "1"`, `helmChart: cloudnative-pg`, `helmVersion: "0.27.0"`, `helmReleaseName: cloudnative-pg`, `extras: true`.
 4. AppProject `infra`: Destination-Namespace `cnpg-system`.
@@ -42,14 +42,16 @@ Diese Schritte sind erledigt. Sie gehören nicht in jede App.
 | Instanzen | 1 |
 | Image | `ghcr.io/cloudnative-pg/postgresql:16` |
 | Volume | 1Gi, StorageClass `longhorn` |
+| Requests | 100m CPU, 512Mi, Limit 1Gi |
 | Secret | `termix-db` mit `username` und `password` |
 | App-Schlüssel | `DATABASE_URL` in `termix-ha` |
-| Bestehende DB | ja, Import `microservice` von `termix-postgres` |
+| Backup | `ScheduledBackup` `termix-snapshot`, Klasse `longhorn`, plus `pg_dump` |
+| Bestehende DB | Import war einmalig und ist aus dem Spec entfernt |
 
 1. **Operator Ready.** Ohne healthy Operator kein Cluster anlegen.
 2. **Secret.** Keys `username` und `password`. Ein abweichender Key der alten Datenbank (`POSTGRES_PASSWORD`) darf daneben stehen, solange die Quelle läuft.
 3. **PVC-Probe.** Ein Wegwerf-PVC in Zielgröße und StorageClass. `Pending` heißt Abbruch: Probe löschen, App nicht umstellen.
-4. **Cluster-CR** im App-Ordner, Namespace der App. `monitoring.enablePodMonitor: true`. Bei Import: `bootstrap.initdb.import.type: microservice`, Quelle ohne TLS mit `sslmode: disable`. Der Import läuft nur beim ersten Bootstrap.
+4. **Cluster-CR** im App-Ordner, Namespace der App. PodMonitor als eigenes Manifest mit Label `release: kube-prometheus-stack`, nicht `monitoring.enablePodMonitor`. `spec.backup.volumeSnapshot.className: longhorn` und ein `ScheduledBackup` mit `method: volumeSnapshot`. Bei Import: `bootstrap.initdb.import.type: microservice`, Quelle ohne TLS mit `sslmode: disable`. Den Import-Block und `externalClusters` nach dem Cutover entfernen. Der Import läuft nur beim ersten Bootstrap.
 5. **Healthy.** `kubectl -n <ns> get cluster <name>` zeigt `Cluster in healthy state`. Timeout auf Port 8000 ist die Operator-Policy, kein Datenfehler. Fehlendes ServiceAccount-Token: Namenskollision mit einem Konto ohne Automount.
 6. **App-URL.** `postgresql://<user>:<password>@<name>-rw.<ns>.svc.cluster.local:5432/<db>?sslmode=require`. Node-`pg` zusätzlich `uselibpqcompat=true`, sonst scheitert `require` an der Operator-CA. Backup und Restore: `PGHOST=<name>-rw`, `PGSSLMODE=require`.
 7. **Prüfen.** App-Logs `postgres database ready`, Login, ein fachlicher Datensatz, ein `pg_dump` gegen `<name>-rw`. hostPath der Quelle erst danach löschen.

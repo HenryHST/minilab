@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file.
 
 - **Termix Argo-Vergleich** — `GUACD_TUNNEL_HOST` nur noch einmal (`127.0.0.1`, Sidecar). Chart und `extraEnv` hatten den Key doppelt gesetzt; Server-Side Apply konnte das Deployment nicht diffen.
 
+### Changed
+
+- **CloudNativePG Backup und Monitoring** — Volume-Snapshots für Termix (`ScheduledBackup` alle 6 Stunden, Klasse `longhorn`, snapshot-controller v8.6.0). Import-Block entfernt, Instanz-Requests gesetzt, PodMonitor und Alerts `cnpg-alerts`, Grafana über Application `cnpg-grafana`. BookStack `cloudnative-pg` v1.4.0, `termix` v1.1.0. Kein WAL-Archiv; `pg_dump` bleibt.
+
 ### Added
 
 - **CloudNativePG (#70)** — Wave-1 Helm-App `apps/infra/cloudnative-pg`: Operator 1.28.0 (Chart 0.27.0) in `cnpg-system`, ServiceAccount `postgres-cloud-sa`, PodMonitor, NetworkPolicy; ADR-0030; BookStack-Buch `cloudnative-pg`.

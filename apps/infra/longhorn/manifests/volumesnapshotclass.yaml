@@ -1,0 +1,10 @@
+# CSI snapshot class for CloudNativePG volumeSnapshot backups.
+# type snap stays on the Longhorn volume. The NFS backup target is a different path.
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: longhorn
+driver: driver.longhorn.io
+deletionPolicy: Delete
+parameters:
+  type: snap

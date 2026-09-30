@@ -97,6 +97,7 @@ grafana:
     storageClassName: longhorn
   plugins:
     - apricote-hcloud-datasource
+    - grafana-mqtt-datasource
   dashboardProviders:
     dashboardproviders.yaml:
       apiVersion: 1
@@ -221,6 +222,16 @@ grafana:
       secretKeyRef:
         name: grafana-hcloud
         key: token
+        optional: true
+    MQTT_USERNAME:
+      secretKeyRef:
+        name: grafana-mqtt
+        key: username
+        optional: true
+    MQTT_PASSWORD:
+      secretKeyRef:
+        name: grafana-mqtt
+        key: password
         optional: true
   extraSecretMounts:
     - name: auth-generic-oauth-secret-mount

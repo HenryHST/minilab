@@ -1,0 +1,213 @@
+# Mosquitto MQTT broker — LDAP auth via Authentik Outpost; LAN LB 192.168.0.218.
+# Image: iegomez/mosquitto-go-auth (eclipse-mosquitto + go-auth plugin).
+# Cilium L2 pool: 215 Traefik, 216 Authentik LDAP, 217 Alloy → 218 Mosquitto.
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mosquitto-data
+  namespace: mosquitto
+  labels:
+    app: mosquitto
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mosquitto-config
+  namespace: mosquitto
+  labels:
+    app: mosquitto
+data:
+  mosquitto.conf: |
+    persistence true
+    persistence_location /mosquitto/data/
+    log_dest stdout
+    log_type error
+    log_type warning
+    log_type notice
+    allow_anonymous false
+    per_listener_settings false
+
+    listener 1883
+    protocol mqtt
+
+    listener 8883
+    protocol mqtt
+    certfile /mosquitto/certs/tls.crt
+    keyfile /mosquitto/certs/tls.key
+    require_certificate false
+
+    listener 9001
+    protocol websockets
+    certfile /mosquitto/certs/tls.crt
+    keyfile /mosquitto/certs/tls.key
+    require_certificate false
+
+    auth_plugin /mosquitto/go-auth.so
+    auth_opt_backends ldap
+    auth_opt_log_level info
+    auth_opt_log_dest stdout
+
+    auth_opt_ldap_url ldap://ak-outpost-ldap-stadthagen-outpost.authentik.svc.cluster.local:389
+    auth_opt_ldap_user_dn ou=users,dc=ldap,dc=stadthagen,dc=dev
+    auth_opt_ldap_group_dn ou=groups,dc=ldap,dc=stadthagen,dc=dev
+    auth_opt_ldap_bind_dn cn=ldapservice,ou=users,dc=ldap,dc=stadthagen,dc=dev
+    include_dir /mosquitto/ldap-secret
+    auth_opt_ldap_user_filter (&(cn=%s)(|(memberOf=cn=mqtt_users,ou=groups,dc=ldap,dc=stadthagen,dc=dev)(memberOf=cn=mqtt_admins,ou=groups,dc=ldap,dc=stadthagen,dc=dev)))
+    auth_opt_ldap_superuser_filter (&(cn=%s)(memberOf=cn=mqtt_admins,ou=groups,dc=ldap,dc=stadthagen,dc=dev))
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mqtt
+  namespace: mosquitto
+  labels:
+    app: mosquitto
+spec:
+  type: LoadBalancer
+  # Cilium L2 pool 215–218: Traefik/LDAP/Alloy → 218 free for Mosquitto
+  loadBalancerIP: 192.168.0.218
+  ports:
+    - name: mqtt
+      port: 1883
+      targetPort: mqtt
+      protocol: TCP
+    - name: mqtts
+      port: 8883
+      targetPort: mqtts
+      protocol: TCP
+    - name: websocket
+      port: 9001
+      targetPort: websocket
+      protocol: TCP
+  selector:
+    app: mosquitto
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mosquitto
+  namespace: mosquitto
+  labels:
+    app: mosquitto
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mosquitto
+  template:
+    metadata:
+      labels:
+        app: mosquitto
+    spec:
+      securityContext:
+        fsGroup: 1883
+      containers:
+        - name: mosquitto
+          image: iegomez/mosquitto-go-auth:3.0.0-mosquitto_2.0.18
+          imagePullPolicy: IfNotPresent
+          args:
+            - /usr/sbin/mosquitto
+            - -c
+            - /etc/mosquitto/mosquitto.conf
+          ports:
+            - name: mqtt
+              containerPort: 1883
+            - name: mqtts
+              containerPort: 8883
+            - name: websocket
+              containerPort: 9001
+          readinessProbe:
+            tcpSocket:
+              port: mqtt
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: mqtt
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/mosquitto/mosquitto.conf
+              subPath: mosquitto.conf
+              readOnly: true
+            - name: ldap-secret
+              mountPath: /mosquitto/ldap-secret
+              readOnly: true
+            - name: tls
+              mountPath: /mosquitto/certs
+              readOnly: true
+            - name: data
+              mountPath: /mosquitto/data
+      volumes:
+        - name: config
+          configMap:
+            name: mosquitto-config
+        - name: ldap-secret
+          secret:
+            secretName: mosquitto-ldap
+        - name: tls
+          secret:
+            secretName: mqtt-pro-tls
+        - name: data
+          persistentVolumeClaim:
+            claimName: mosquitto-data
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mosquitto
+  namespace: mosquitto
+  labels:
+    app: mosquitto
+spec:
+  podSelector:
+    matchLabels:
+      app: mosquitto
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # LAN clients via Cilium LB .218 + in-cluster (Grafana, etc.)
+    - ports:
+        - protocol: TCP
+          port: 1883
+        - protocol: TCP
+          port: 8883
+        - protocol: TCP
+          port: 9001
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: authentik
+      ports:
+        - protocol: TCP
+          port: 389
+        - protocol: TCP
+          port: 636

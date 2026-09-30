@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-mqtt
+  labels:
+    grafana_dashboard: "1"
+data:
+  mqtt-overview.json: |
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "links": [],
+      "panels": [
+        {
+          "datasource": { "type": "grafana-mqtt-datasource", "uid": "mqtt" },
+          "description": "Subscribe to # (or a narrower topic) via the MQTT datasource.",
+          "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+          "id": 1,
+          "options": {
+            "content": "## Mosquitto MQTT\n\nBroker: `mqtt.mosquitto.svc.cluster.local:1883` (in-cluster).\nLAN: `mqtt-pro.stadthagen.dev` — ports **1883** / **8883** / **9001**.\nAuth: Authentik LDAP groups `mqtt_users` / `mqtt_admins`.\n\nUse Explore → MQTT datasource with topic `#` or `home/#`.",
+            "mode": "markdown"
+          },
+          "title": "Overview",
+          "type": "text"
+        },
+        {
+          "datasource": { "type": "grafana-mqtt-datasource", "uid": "mqtt" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": { "type": "linear" },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": { "group": "A", "mode": "none" },
+                "thresholdsStyle": { "mode": "off" }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "red", "value": 80 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 12, "w": 24, "x": 0, "y": 4 },
+          "id": 2,
+          "options": {
+            "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "single", "sort": "none" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "grafana-mqtt-datasource", "uid": "mqtt" },
+              "queryText": "#",
+              "refId": "A"
+            }
+          ],
+          "title": "MQTT topics (#)",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "10s",
+      "schemaVersion": 39,
+      "tags": ["mqtt", "mosquitto"],
+      "templating": { "list": [] },
+      "time": { "from": "now-15m", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Mosquitto MQTT",
+      "uid": "mosquitto-mqtt",
+      "version": 1
+    }

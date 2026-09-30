@@ -1,4 +1,4 @@
-# Cilium L2 pool: 192.168.0.215–218 (215 Traefik, 216 Authentik LDAP → 217 Alloy syslog).
+# Cilium L2 pool: 192.168.0.215–218 (215 Traefik, 216 Authentik LDAP, 217 Alloy syslog, 218 Mosquitto).
 apiVersion: v1
 kind: Service
 metadata:

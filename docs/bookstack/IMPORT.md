@@ -4,7 +4,7 @@ Nach erfolgreichem Deploy von `bookstack` und Authentik-OIDC-Login als Admin:
 
 ## 1. Shelves & Bücher anlegen
 
-1. Shelf **Plattform** → Buch **Minilab**
+1. Shelf **Plattform** → Buch **Minilab** (weitere Plattform-Bücher inkl. `cheat-sheets` kommen per Auto-Import aus `books/*/`)
 2. Shelf **Anleitungen** → Bücher:
    - **Erste Schritte am Homelab**
    - **Zugang & Passwörter**

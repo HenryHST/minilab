@@ -11,6 +11,17 @@ image:
 controller:
   strategy: Recreate
   replicas: 1
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+
+# Wait until MariaDB accepts TCP before LSIO migrate (avoids empty schema / HTTP 500).
+initContainers:
+  wait-for-db:
+    image: busybox:1.37
+    command:
+      - sh
+      - -c
+      - until nc -z bookstack-mariadb 3306; do echo waiting-for-mariadb; sleep 3; done
 
 env:
   TZ: Europe/Berlin

@@ -63,6 +63,8 @@ metadata:
     app.kubernetes.io/name: bookstack
     app.kubernetes.io/version: version-v26.05.5
     helm.sh/chart: bookstack-0.20.0
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   revisionHistoryLimit: 3
   replicas: 1
@@ -85,6 +87,13 @@ spec:
         fsGroup: 911
       dnsPolicy: ClusterFirst
       enableServiceLinks: true
+      initContainers:
+        - command:
+          - sh
+          - -c
+          - until nc -z bookstack-mariadb 3306; do echo waiting-for-mariadb; sleep 3; done
+          image: busybox:1.37
+          name: wait-for-db
       containers:
         - name: bookstack
           image: lscr.io/linuxserver/bookstack:version-v26.05.5
@@ -174,20 +183,6 @@ spec:
             - name: http
               containerPort: 80
               protocol: TCP
-          lifecycle:
-            postStart:
-              exec:
-                command:
-                  - /bin/sh
-                  - -c
-                  - |
-                    mkdir -p /app/www/storage/fonts/dompdf
-                    if [ -f /config/www/fonts/dompdf/NotoSans.ttf ]; then
-                      cp -f /config/www/fonts/dompdf/NotoSans.ttf /config/www/fonts/dompdf/NotoSans-Bold.ttf /app/www/storage/fonts/dompdf/ || true
-                      chown -R abc:abc /app/www/storage/fonts/dompdf || true
-                      chmod 775 /app/www/storage/fonts/dompdf || true
-                      chmod 664 /app/www/storage/fonts/dompdf/*.ttf || true
-                    fi
           volumeMounts:
             - name: config
               mountPath: /config

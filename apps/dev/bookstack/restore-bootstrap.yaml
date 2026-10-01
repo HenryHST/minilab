@@ -118,6 +118,9 @@ spec:
                 sleep 2
               done
 
+              echo "Waiting for MariaDB..."
+              until mysqladmin ping -h bookstack-mariadb -ubookstack --silent; do sleep 2; done
+
               if [[ "${RESTORE_ARCHIVE}" == "latest" ]]; then
                 ARCHIVE="$(ls -1t /backup/bookstack-*.tar.gz 2>/dev/null | head -n1 || true)"
               else
@@ -135,7 +138,7 @@ spec:
               tar xzf "${ARCHIVE}" -C "${WORK}"
               echo "Restoring from ${ARCHIVE}"
 
-              TABLES="$(mysql -h bookstack-mariadb -u bookstack -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='bookstack';" || echo 0)"
+              TABLES="$(mysql -h bookstack-mariadb -u bookstack -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='bookstack';")"
               echo "bookstack tables: ${TABLES}"
               if [[ "${TABLES}" != "0" && "${RESTORE_FORCE}" != "true" ]]; then
                 echo "DB not empty and force!=true — abort" >&2

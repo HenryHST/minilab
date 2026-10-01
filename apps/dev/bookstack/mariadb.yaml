@@ -5,6 +5,8 @@ metadata:
   namespace: bookstack
   labels:
     app: bookstack-mariadb
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   type: ClusterIP
   ports:
@@ -21,6 +23,8 @@ metadata:
   namespace: bookstack
   labels:
     app: bookstack-mariadb
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   serviceName: bookstack-mariadb
   replicas: 1

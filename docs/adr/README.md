@@ -37,6 +37,8 @@ Format angelehnt an [Michael Nygard](https://cognitect.com/blog/2011/11/15/docum
 | [0027](0027-audiobookshelf.md) | Audiobookshelf (LAN, NFS, Authentik OIDC) | Accepted |
 | [0028](0028-n8n.md) | n8n (Community, ForwardAuth) | Accepted |
 | [0029](0029-mosquitto.md) | Mosquitto (LDAP, LAN LoadBalancer) | Accepted |
+| [0030](0030-cloudnative-pg.md) | CloudNativePG operator | Accepted |
+| [0031](0031-trivy-operator.md) | Trivy Operator (Helm, Vulnerability/Config Audit) | Accepted |
 
 ## Neues ADR anlegen
 

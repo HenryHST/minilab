@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Trivy Operator (ADR-0031)",
+    "quality_profile": "showcase",
+    "output": "docs/diagrams/archify/trivy-architektur.html",
+    "views": [
+      {
+        "id": "gitops",
+        "label": "GitOps",
+        "focus": ["argo", "chart", "operator"],
+        "note": "ApplicationSet ops Wave 1 → Aqua Helm Chart → Operator in trivy-system."
+      },
+      {
+        "id": "scan",
+        "label": "Scanning",
+        "focus": ["operator", "workloads", "reports"],
+        "note": "Operator scanned Workloads; schreibt VulnerabilityReport / ConfigAuditReport."
+      },
+      {
+        "id": "observe",
+        "label": "Metrics",
+        "focus": ["operator", "servicemonitor", "prom"],
+        "note": "ServiceMonitor (release: kube-prometheus-stack) → Prometheus."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "argo",
+      "type": "cloud",
+      "label": "Argo CD",
+      "sublabel": "ApplicationSet ops",
+      "tag": "wave 1",
+      "pos": [40, 80],
+      "size": [150, 64]
+    },
+    {
+      "id": "chart",
+      "type": "backend",
+      "label": "Helm Chart",
+      "sublabel": "trivy-operator 0.32.1",
+      "tag": "aqua charts",
+      "pos": [240, 80],
+      "size": [160, 64]
+    },
+    {
+      "id": "operator",
+      "type": "security",
+      "label": "Trivy Operator",
+      "sublabel": "ignoreUnfixed",
+      "tag": "trivy-system",
+      "pos": [460, 80],
+      "size": [160, 64]
+    },
+    {
+      "id": "workloads",
+      "type": "backend",
+      "label": "Workloads",
+      "sublabel": "all NS except kube-system",
+      "pos": [460, 280],
+      "size": [160, 64]
+    },
+    {
+      "id": "reports",
+      "type": "database",
+      "label": "Reports CRDs",
+      "sublabel": "Vuln / ConfigAudit",
+      "pos": [700, 180],
+      "size": [150, 64]
+    },
+    {
+      "id": "servicemonitor",
+      "type": "backend",
+      "label": "ServiceMonitor",
+      "sublabel": "kube-prometheus-stack",
+      "pos": [700, 80],
+      "size": [160, 64]
+    },
+    {
+      "id": "prom",
+      "type": "database",
+      "label": "Prometheus",
+      "sublabel": "monitoring",
+      "pos": [920, 80],
+      "size": [140, 64]
+    },
+    {
+      "id": "ci",
+      "type": "external",
+      "label": "CI Trivy",
+      "sublabel": "Infra_LAB Actions",
+      "tag": "merge gate",
+      "pos": [40, 260],
+      "size": [150, 64]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "ns trivy-system",
+      "wraps": ["operator"]
+    },
+    {
+      "kind": "region",
+      "label": "cluster reports",
+      "wraps": ["reports"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "argo-chart",
+      "from": "argo",
+      "to": "chart",
+      "label": "sync",
+      "variant": "emphasis"
+    },
+    {
+      "id": "chart-op",
+      "from": "chart",
+      "to": "operator",
+      "label": "deploy",
+      "variant": "emphasis"
+    },
+    {
+      "id": "op-workloads",
+      "from": "operator",
+      "to": "workloads",
+      "label": "scan",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24,
+      "labelDx": -36
+    },
+    {
+      "id": "op-reports",
+      "from": "operator",
+      "to": "reports",
+      "label": "CRDs",
+      "variant": "dashed",
+      "labelDy": 40
+    },
+    {
+      "id": "workloads-reports",
+      "from": "workloads",
+      "to": "reports",
+      "label": "findings"
+    },
+    {
+      "id": "op-sm",
+      "from": "operator",
+      "to": "servicemonitor",
+      "label": "/metrics"
+    },
+    {
+      "id": "sm-prom",
+      "from": "servicemonitor",
+      "to": "prom",
+      "label": "scrape",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ci-note",
+      "from": "ci",
+      "to": "operator",
+      "label": "parallel, not cluster",
+      "variant": "dashed",
+      "labelDy": -28
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "GitOps",
+      "items": [
+        "ApplicationSet ops · Wave 1 · ns trivy-system",
+        "Chart aqua/trivy-operator 0.32.1"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Policy",
+      "items": [
+        "ignoreUnfixed · exclude kube-system,trivy-system",
+        "CI Trivy remains the merge gate (Infra_LAB)"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Observability",
+      "items": [
+        "ServiceMonitor release: kube-prometheus-stack",
+        "CRDs: VulnerabilityReport, ConfigAuditReport, …"
+      ]
+    }
+  ]
+}

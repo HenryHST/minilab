@@ -5,7 +5,7 @@ Eclipse Mosquitto MQTT broker with Authentik LDAP auth (go-auth). LAN LoadBalanc
 | | |
 |--|--|
 | Argo | ApplicationSet `infra`, sync wave `1`, namespace `mosquitto` |
-| Image | `ghcr.io/henryhst/mosquitto-custom:1.1.0` (Mosquitto 2.1.2; [mosquitto-custom](https://github.com/HenryHST/mosquitto-custom)) |
+| Image | `ghcr.io/henryhst/mosquitto-custom:1.1.1` (Mosquitto 2.1.2 glibc; [mosquitto-custom](https://github.com/HenryHST/mosquitto-custom); **amd64** `nodeSelector`) |
 | Conf | `/mosquitto/config/mosquitto.conf` (Image-Default; bind pw via init `tls-bootstrap`) |
 | Host | `mqtt-pro.stadthagen.dev` → LB `192.168.0.218` (manual Hetzner A) |
 | Ports | `1883` MQTT, `8883` MQTTS, `9001` WebSockets (TLS) |

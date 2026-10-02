@@ -1,5 +1,5 @@
 # Mosquitto MQTT broker — LDAP auth via Authentik Outpost; LAN LB 192.168.0.218.
-# Image: ghcr.io/henryhst/mosquitto-custom (eclipse-mosquitto 2.1.2 + vendored go-auth).
+# Image: ghcr.io/henryhst/mosquitto-custom (Mosquitto 2.1.2 glibc + vendored go-auth).
 # Cilium L2 pool: 215 Traefik, 216 Authentik LDAP, 217 Alloy → 218 Mosquitto.
 
 apiVersion: v1
@@ -113,6 +113,9 @@ spec:
     spec:
       securityContext:
         fsGroup: 1883
+      # Standalone image v1.1.1 is linux/amd64 (arm64 multi-arch follow-up)
+      nodeSelector:
+        kubernetes.io/arch: amd64
       initContainers:
         # cert-manager Secret mqtt-pro-tls may lag (DNS-01); bootstrap so 1883 can start for Grafana.
         # Also inject LDAP bind password into mosquitto.conf (include_dir + auth_opt_ is rejected by Mosquitto).
@@ -173,7 +176,7 @@ spec:
           securityContext:
             runAsUser: 1883
             runAsGroup: 1883
-          image: ghcr.io/henryhst/mosquitto-custom:1.1.0
+          image: ghcr.io/henryhst/mosquitto-custom:1.1.1
           imagePullPolicy: IfNotPresent
           args:
             - /usr/sbin/mosquitto

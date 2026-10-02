@@ -7,7 +7,7 @@ book_version: "1.2.0"
 
 ## Broker
 
-- Image `ghcr.io/henryhst/mosquitto-custom:1.1.0` (Mosquitto 2.1.2-alpine + vendored go-auth LDAP-Plugin).
+- Image `ghcr.io/henryhst/mosquitto-custom:1.1.1` (Mosquitto 2.1.2 Debian/glibc + vendored go-auth LDAP-Plugin; amd64 nodeSelector).
 - Conf `/mosquitto/config/mosquitto.conf` (bind password inject im init `tls-bootstrap`).
 - `replicas: 1`, Strategy `Recreate`, PVC `mosquitto-data` 1 Gi Longhorn RWO.
 - `sys_interval 10` — publiziert `$SYS/#` für den Exporter.

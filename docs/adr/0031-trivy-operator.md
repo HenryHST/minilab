@@ -15,6 +15,8 @@ Image- und Config-Schwachstellen sollen im laufenden Cluster sichtbar sein (CRDs
 - **Scan-Scope:** `targetNamespaces` leer (alle); `excludeNamespaces: kube-system,trivy-system`.
 - **Policy:** `trivy.ignoreUnfixed: true` — gleiche Richtung wie Infra_LAB CI (`ignore-unfixed`).
 - **Metrics:** Chart-`serviceMonitor.enabled` mit Label `release: kube-prometheus-stack`.
+- **Ressourcen:** Operator memory limit **512Mi** (sonst OOM beim Start vieler Controller).
+- **k8tz:** Namespace `trivy-system` in `ignoredNamespaces` — sonst doppelte `k8tz`-InitContainer an Scan-Jobs.
 - **Secrets / private Registry:** in v1 keines; öffentliche Image-Pulls. Private Registry später (imagePullSecret / Operator-Addon).
 - **Docs:** BookStack-Buch `trivy-operator` v1.0.0; Archify `trivy-architektur`.
 

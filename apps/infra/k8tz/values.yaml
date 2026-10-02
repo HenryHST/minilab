@@ -11,5 +11,6 @@ webhook:
   ignoredNamespaces:
     - kube-system
     - k8tz
+    - trivy-system
   certManager:
     enabled: false

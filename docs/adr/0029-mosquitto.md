@@ -11,7 +11,7 @@ Ein MQTT-Broker soll auf nXk3 laufen (LAN). MQTT unterstützt kein OIDC — Auth
 ## Entscheidung
 
 - **Ownership:** ApplicationSet `infra`, Wave 1, Pfad `apps/infra/mosquitto` ([ADR-0022](0022-apps-bucket-applicationsets.md), [ADR-0003](0003-plain-directory-kein-kustomize.md)).
-- **Image:** `ghcr.io/henryhst/mosquitto-custom:1.1.0` (Mosquitto **2.1.2-alpine** + vendored go-auth LDAP-Plugin; [HenryHST/mosquitto-custom](https://github.com/HenryHST/mosquitto-custom)). Conf-Pfad `/mosquitto/config/mosquitto.conf`.
+- **Image:** `ghcr.io/henryhst/mosquitto-custom:1.1.1` (Mosquitto **2.1.2** Debian/glibc + vendored go-auth LDAP-Plugin; [HenryHST/mosquitto-custom](https://github.com/HenryHST/mosquitto-custom)). Conf-Pfad `/mosquitto/config/mosquitto.conf`. Broker `nodeSelector: kubernetes.io/arch=amd64` (standalone image amd64-only until arm64 rebuild).
 - **Replicas:** 1, Strategy `Recreate` (1 Gi RWO Longhorn; kein Mosquitto-Cluster in v1).
 - **Exposure:** Service type LoadBalancer, `loadBalancerIP: 192.168.0.218`, Ports `1883` / `8883` / `9001`.
 - **DNS:** Manueller Hetzner A `mqtt-pro` → `192.168.0.218` (kein TF `dns_records`, kein pangolin-publish in v1).

@@ -27,6 +27,14 @@ spec:
             helmVersion: "0.9.0"
             helmReleaseName: cert-manager-webhook-hetzner
             helmValuesFile: apps/ops/cert-manager/webhook-values.yaml
+          - app: trivy-operator
+            namespace: trivy-system
+            syncWave: "1"
+            helmRepo: https://aquasecurity.github.io/helm-charts/
+            helmChart: trivy-operator
+            helmVersion: "0.32.1"
+            helmReleaseName: trivy-operator
+            helmValuesFile: apps/ops/trivy-operator/values.yaml
           - app: registry
             path: apps/ops/registry
             namespace: kube-system

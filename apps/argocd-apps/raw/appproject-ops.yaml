@@ -25,6 +25,8 @@ spec:
       namespace: system-upgrade
     - server: "*"
       namespace: pangolin-publish
+    - server: "*"
+      namespace: trivy-system
   clusterResourceWhitelist:
     - group: "*"
       kind: "*"

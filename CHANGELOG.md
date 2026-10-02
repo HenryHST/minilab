@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Trivy Operator** — Wave-1 Helm-App `apps/ops/trivy-operator` (Chart 0.32.1) in `trivy-system`; `ignoreUnfixed`, Exclude `kube-system`/`trivy-system`, ServiceMonitor; ADR-0031; Archify `trivy-architektur`; BookStack `trivy-operator` v1.0.0.
+
 ### Changed
 
 - **Mosquitto image** — Broker auf `ghcr.io/henryhst/mosquitto-custom:1.1.1` (Mosquitto 2.1.2 glibc + go-auth; amd64 pin); Conf-Pfad `/mosquitto/config/mosquitto.conf`. BookStack `mosquitto` v1.2.0; ADR-0029.

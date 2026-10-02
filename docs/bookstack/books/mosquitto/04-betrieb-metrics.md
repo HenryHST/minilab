@@ -1,6 +1,6 @@
 ---
 title: Betrieb & Metrics
-book_version: "1.1.0"
+book_version: "1.2.0"
 ---
 
 # Betrieb & Metrics

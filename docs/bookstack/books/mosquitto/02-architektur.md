@@ -1,13 +1,14 @@
 ---
 title: Architektur
-book_version: "1.1.0"
+book_version: "1.2.0"
 ---
 
 # Architektur
 
 ## Broker
 
-- Image `iegomez/mosquitto-go-auth` (Mosquitto 2 + LDAP-Plugin).
+- Image `ghcr.io/henryhst/mosquitto-custom:1.1.0` (Mosquitto 2.1.2-alpine + vendored go-auth LDAP-Plugin).
+- Conf `/mosquitto/config/mosquitto.conf` (bind password inject im init `tls-bootstrap`).
 - `replicas: 1`, Strategy `Recreate`, PVC `mosquitto-data` 1 Gi Longhorn RWO.
 - `sys_interval 10` — publiziert `$SYS/#` für den Exporter.
 - NetworkPolicy: Ingress nur auf 1883/8883/9001.

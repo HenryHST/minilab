@@ -1,5 +1,5 @@
 # Mosquitto MQTT broker — LDAP auth via Authentik Outpost; LAN LB 192.168.0.218.
-# Image: iegomez/mosquitto-go-auth (eclipse-mosquitto + go-auth plugin).
+# Image: ghcr.io/henryhst/mosquitto-custom (eclipse-mosquitto 2.1.2 + vendored go-auth).
 # Cilium L2 pool: 215 Traefik, 216 Authentik LDAP, 217 Alloy → 218 Mosquitto.
 
 apiVersion: v1
@@ -173,12 +173,12 @@ spec:
           securityContext:
             runAsUser: 1883
             runAsGroup: 1883
-          image: iegomez/mosquitto-go-auth:3.0.0-mosquitto_2.0.18
+          image: ghcr.io/henryhst/mosquitto-custom:1.1.0
           imagePullPolicy: IfNotPresent
           args:
             - /usr/sbin/mosquitto
             - -c
-            - /etc/mosquitto/mosquitto.conf
+            - /mosquitto/config/mosquitto.conf
           ports:
             - name: mqtt
               containerPort: 1883
@@ -204,7 +204,7 @@ spec:
               memory: 256Mi
           volumeMounts:
             - name: config
-              mountPath: /etc/mosquitto/mosquitto.conf
+              mountPath: /mosquitto/config/mosquitto.conf
               subPath: mosquitto.conf
               readOnly: true
             - name: tls

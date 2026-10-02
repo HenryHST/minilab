@@ -11,12 +11,12 @@ Ein MQTT-Broker soll auf nXk3 laufen (LAN). MQTT unterstützt kein OIDC — Auth
 ## Entscheidung
 
 - **Ownership:** ApplicationSet `infra`, Wave 1, Pfad `apps/infra/mosquitto` ([ADR-0022](0022-apps-bucket-applicationsets.md), [ADR-0003](0003-plain-directory-kein-kustomize.md)).
-- **Image:** `iegomez/mosquitto-go-auth:3.0.0-mosquitto_2.0.18` (Mosquitto 2.0.x + go-auth LDAP-Plugin).
+- **Image:** `ghcr.io/henryhst/mosquitto-custom:1.1.0` (Mosquitto **2.1.2-alpine** + vendored go-auth LDAP-Plugin; [HenryHST/mosquitto-custom](https://github.com/HenryHST/mosquitto-custom)). Conf-Pfad `/mosquitto/config/mosquitto.conf`.
 - **Replicas:** 1, Strategy `Recreate` (1 Gi RWO Longhorn; kein Mosquitto-Cluster in v1).
 - **Exposure:** Service type LoadBalancer, `loadBalancerIP: 192.168.0.218`, Ports `1883` / `8883` / `9001`.
 - **DNS:** Manueller Hetzner A `mqtt-pro` → `192.168.0.218` (kein TF `dns_records`, kein pangolin-publish in v1).
 - **TLS:** Certificate `mqtt-pro-stadthagen-dev` / Secret `mqtt-pro-tls`, Issuer `letsencrypt-prod`, dnsName `mqtt-pro.stadthagen.dev`.
-- **Auth:** mosquitto-go-auth LDAP → `ak-outpost-ldap-stadthagen-outpost.authentik.svc.cluster.local:389`, Base DN `dc=ldap,dc=stadthagen,dc=dev`. Bind als `ldapservice`; User-Filter erfordert Gruppe `mqtt_users` oder `mqtt_admins`. Kein OAuth-Client, kein ForwardAuth.
+- **Auth:** go-auth LDAP (`/mosquitto/go-auth.so`) → `ak-outpost-ldap-stadthagen-outpost.authentik.svc.cluster.local:389`, Base DN `dc=ldap,dc=stadthagen,dc=dev`. Bind als `ldapservice`; User-Filter erfordert Gruppe `mqtt_users` oder `mqtt_admins`. Kein OAuth-Client, kein ForwardAuth.
 - **Secrets:** SecretSpec `MOSQUITTO_LDAP_BIND_PASSWORD` (= `ldapservice_password`) → `mosquitto-ldap`; `MOSQUITTO_GRAFANA_PASSWORD` → `grafana-mqtt` (User `mqtt-grafana`); `MOSQUITTO_EXPORTER_PASSWORD` → `mosquitto-exporter` (User `mqtt-exporter` in `mqtt_admins`); `MOSQUITTO_PROBE_PASSWORD` → `mosquitto-probe` (User `mqtt-probe` in `mqtt_users`).
 - **$SYS / Metrics:** `sys_interval 10`; Deployment `sapcc/mosquitto-exporter` (amd64-only → `nodeSelector kubernetes.io/arch=amd64`; subscribe `$SYS/#`, `:9234/metrics`) + `ServiceMonitor` (`release: kube-prometheus-stack`); Grafana Dashboard **Mosquitto Broker ($SYS)** (Prometheus `broker_*` metrics). Separate from MQTT-topic Datasource dashboard.
 - **Smoke:** Deployment `mqtt-tools` (`eclipse-mosquitto:2`) + CronJob `mqtt-smoke` (alle 15 min).

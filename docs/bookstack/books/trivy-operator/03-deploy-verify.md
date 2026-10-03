@@ -1,6 +1,6 @@
 ---
 title: Deploy und Verify
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Deploy und Verify
@@ -15,10 +15,10 @@ book_version: "1.0.0"
 
 ```bash
 kubectl -n argocd get application trivy-operator
-kubectl -n trivy-system get deploy,pods,servicemonitor
+kubectl -n trivy-system get deploy,sts,svc,servicemonitor,pods
 kubectl -n trivy-system logs deploy/trivy-operator --tail=50
 kubectl get vulnerabilityreports -A | head
 kubectl get configauditreports -A | head
 ```
 
-Erwartung: Deployment Ready, ServiceMonitor vorhanden, erste Reports nach kurzer Zeit.
+Erwartung: Operator Deployment Ready, Trivy-Server StatefulSet Ready, Service ClusterIP (nicht headless), ServiceMonitor vorhanden, erste Reports nach kurzer Zeit. In Grafana: Folder Trivy → Trivy Operator Dashboard.

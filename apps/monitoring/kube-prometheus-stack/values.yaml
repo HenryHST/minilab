@@ -150,6 +150,14 @@ grafana:
           editable: true
           options:
             path: /var/lib/grafana/dashboards/proxmox
+        - name: trivy
+          orgId: 1
+          folder: Trivy
+          type: file
+          disableDeletion: false
+          editable: false
+          options:
+            path: /var/lib/grafana/dashboards/trivy
   dashboards:
     unpoller:
       client-dpi:
@@ -192,6 +200,11 @@ grafana:
       servers-load-balancers:
         gnetId: 20257
         datasource: Hetzner Cloud
+    trivy:
+      trivy-operator-dashboard:
+        gnetId: 17813
+        revision: 2
+        datasource: Prometheus
   grafana.ini:
     server:
       root_url: https://grafana.stadthagen.dev

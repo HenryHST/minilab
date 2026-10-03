@@ -1,6 +1,6 @@
 ---
 title: Architektur
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Architektur
@@ -18,6 +18,7 @@ book_version: "1.0.0"
 
 - Alle Namespaces, außer `kube-system` und `trivy-system` (`excludeNamespaces`).
 - `trivy.ignoreUnfixed: true` — nur Findings mit Fix (wie Infra_LAB CI-Richtung).
+- `operator.builtInTrivyServer: true` — Scan-Jobs nutzen den in-cluster Trivy-Server.
 
 ## Reports (CRDs)
 
@@ -25,4 +26,5 @@ Typische Arten: `VulnerabilityReport`, `ConfigAuditReport`, `ExposedSecretReport
 
 ## Observability
 
-ServiceMonitor mit Label `release: kube-prometheus-stack` → Scraping durch kube-prometheus-stack.
+- ServiceMonitor mit Label `release: kube-prometheus-stack` (`service.headless: false`).
+- Grafana-Folder **Trivy**, Dashboard gnetId **17813**.

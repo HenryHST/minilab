@@ -5,7 +5,7 @@ Interaktive HTML-Diagramme und BookStack-Exports für die Plattform-Bücher.
 | ID | Typ | HTML | Export | BookStack-Kapitel |
 |--|--|--|--|--|
 | `mosquitto-architektur` | architecture | [mosquitto-architektur.html](archify/mosquitto-architektur.html) | `archify/exports/mosquitto-architektur.png` | Mosquitto — Übersicht |
-| `trivy-architektur` | architecture | [trivy-architektur.html](archify/trivy-architektur.html) | `archify/exports/trivy-architektur.png` | Trivy Operator — Übersicht |
+| `trivy-architektur` | architecture | [trivy-architektur.html](archify/trivy-architektur.html) | `archify/exports/trivy-architektur.png` | Trivy Operator — Overview (#91: Server + Grafana) |
 
 ## Archify
 

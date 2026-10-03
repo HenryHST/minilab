@@ -1,6 +1,11 @@
 # Trivy Operator — Aqua Security vulnerability & config auditor for nXk3.
 # Chart 0.32.1 (app ~0.30.1): https://aquasecurity.github.io/trivy-operator/
 # Align ignoreUnfixed with Infra_LAB CI (.github/workflows/trivy-scan.yml).
+# Issue #91: builtInTrivyServer, ClusterIP Service, Grafana dashboard via kube-prometheus-stack.
+
+global:
+  image:
+    registry: ""
 
 excludeNamespaces: "kube-system,trivy-system"
 
@@ -8,6 +13,13 @@ serviceMonitor:
   enabled: true
   labels:
     release: kube-prometheus-stack
+
+service:
+  # ClusterIP so Prometheus can scrape via ServiceMonitor (Aqua Grafana tutorial).
+  headless: false
+
+operator:
+  builtInTrivyServer: true
 
 trivy:
   ignoreUnfixed: true

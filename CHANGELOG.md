@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **Trivy Operator (#91)** — `operator.builtInTrivyServer`, `service.headless: false`, Grafana Dashboard gnetId 17813 (Folder Trivy); Private-Registry-Doku + `secret.example.yaml`; BookStack `trivy-operator` v1.1.0; ADR-0031 ergänzt.
+
 ### Added
 
 - **Trivy Operator** — Wave-1 Helm-App `apps/ops/trivy-operator` (Chart 0.32.1) in `trivy-system`; `ignoreUnfixed`, Exclude `kube-system`/`trivy-system`, ServiceMonitor; ADR-0031; Archify `trivy-architektur`; BookStack `trivy-operator` v1.0.0.

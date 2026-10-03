@@ -1,5 +1,5 @@
 book: trivy-operator
-book_version: "1.0.0"
-updated: "2026-10-02"
-description: Trivy Operator — Cluster Vulnerability/Config Audit, Helm Wave 1, ServiceMonitor
+book_version: "1.1.0"
+updated: "2026-10-03"
+description: Trivy Operator — built-in Server, ServiceMonitor, Grafana 17813, private registry
 shelf: Plattform

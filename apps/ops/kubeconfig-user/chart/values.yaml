@@ -29,7 +29,7 @@ clusterName: nXk3
 kubeconfigJob:
   enabled: true
   secretName: kubeconfig-user-kubeconfig
-  image: registry.k8s.io/kubectl:v1.37.0
+  image: registry.k8s.io/kubectl:v1.37.1
   imagePullPolicy: IfNotPresent
   serviceAccountName: kubeconfig-user-job
   backoffLimit: 6

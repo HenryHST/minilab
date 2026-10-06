@@ -20,5 +20,5 @@ kubeconfigJob:
   enabled: true
   secretName: kubeconfig-user-kubeconfig
   # alpine/k8s includes /bin/sh + kubectl (registry.k8s.io/kubectl is distroless — no shell)
-  image: docker.io/alpine/k8s:1.37.0
+  image: docker.io/alpine/k8s:1.37.1
   shell: /bin/sh

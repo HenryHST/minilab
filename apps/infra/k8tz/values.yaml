@@ -16,3 +16,12 @@ webhook:
     - kubeconfig-user
   certManager:
     enabled: false
+
+# Bootstrap initContainer must declare requests so Kyverno require-requests-limits (Audit) stays clean.
+initContainerResources:
+  requests:
+    cpu: 10m
+    memory: 16Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi

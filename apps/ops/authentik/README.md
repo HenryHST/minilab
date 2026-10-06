@@ -2,6 +2,10 @@
 
 GitOps install for `idp.stadthagen.dev`. Day-0 blueprints: [BLUEPRINTS.md](BLUEPRINTS.md).
 
+## Database (CloudNativePG)
+
+Postgres is Cluster `authentik-pg` (Service `authentik-pg-rw`, PG17, Longhorn 8Gi). Helm subchart is off (`postgresql.enabled: false`). Cutover notes: [09-cnpg-migration](../../docs/bookstack/books/authentik/09-cnpg-migration.md), [ADR-0033](../../docs/adr/0033-authentik-cnpg.md).
+
 ## Brand media (logos / background)
 
 NFS source: `192.168.0.25:/var/nfs/shared/infra01/media/public/branding/` → PVC `authentik-media` at `/media/public/branding/`.
@@ -18,11 +22,13 @@ Brand paths in Infra_LAB Terraform: `branding/{favicon,key_transparent,website-w
 ## Backup / Restore
 
 - NAS: `mkdir -p /var/nfs/shared/infra01/authentik-backups`
-- CronJob `authentik-backup-cron` (05:00 UTC): `pg_dump` (DB/User `authentik`) + tar `/media` → combined `authentik-*.tar.gz` (Retention 7)
+- CronJob `authentik-backup-cron` (05:00 UTC): `pg_dump` gegen `authentik-pg-rw` (DB/User `authentik`, `PGSSLMODE=require`) + tar `/media` → combined `authentik-*.tar.gz` (Retention 7)
 - Manuell: `kubectl -n authentik create job --from=cronjob/authentik-backup-cron authentik-backup-manual`
 - Bootstrap-Restore: ConfigMap `authentik-restore` → `enabled=true` (bei vorhandener DB/Media zusätzlich `force=true`), Argo Sync (skaliert server+worker auf 0, stellt DB + Media wieder her); danach sofort `enabled=false` committen
 
 Siehe [ADR-0015](../../docs/adr/0015-backup-restore-cronjobs.md).
+
+**Rollback-Hinweis:** PVC `data-authentik-postgresql-0` (Bitnami) bleibt Bound, bis bewusst gelöscht. Nach Haltbarkeit entsorgen.
 
 ## Helm (vendored + rendered)
 

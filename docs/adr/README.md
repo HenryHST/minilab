@@ -40,6 +40,7 @@ Format angelehnt an [Michael Nygard](https://cognitect.com/blog/2011/11/15/docum
 | [0030](0030-cloudnative-pg.md) | CloudNativePG operator | Accepted |
 | [0031](0031-trivy-operator.md) | Trivy Operator (Helm, Vulnerability/Config Audit) | Accepted |
 | [0032](0032-kyverno-admission-audit.md) | Kyverno Admission (Audit ClusterPolicies) | Accepted |
+| [0033](0033-authentik-cnpg.md) | Authentik Postgres auf CloudNativePG | Accepted |
 
 ## Neues ADR anlegen
 

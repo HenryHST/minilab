@@ -1,0 +1,41 @@
+# Authentik Postgres on CloudNativePG. Import from Bitnami is done and removed:
+# a recreated volume must not dial authentik-postgresql again.
+# Recovery: Longhorn VolumeSnapshot (ScheduledBackup authentik-pg-snapshot)
+# plus pg_dump CronJob to NFS.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: authentik-pg
+  namespace: authentik
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+  labels:
+    app.kubernetes.io/name: authentik
+    app.kubernetes.io/part-of: authentik
+    app.kubernetes.io/component: postgresql
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:17
+  bootstrap:
+    initdb:
+      database: authentik
+      owner: authentik
+      secret:
+        name: authentik-credentials
+  storage:
+    size: 8Gi
+    storageClass: longhorn
+  monitoring:
+    enablePodMonitor: false
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+  backup:
+    target: primary
+    volumeSnapshot:
+      className: longhorn
+      online: true
+      snapshotOwnerReference: backup

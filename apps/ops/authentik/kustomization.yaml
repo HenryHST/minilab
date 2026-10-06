@@ -10,6 +10,9 @@ resources:
   - media-pvc.yaml
   - media-sync-cronjob.yaml
   - media-sync-bootstrap-job.yaml
+  - cnpg-cluster.yaml
+  - scheduled-backup.yaml
+  - podmonitor.yaml
   - backup-cronjob.yaml
   - restore-bootstrap.yaml
   - certificate.yaml

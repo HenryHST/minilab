@@ -15,6 +15,7 @@ book_version: "1.1.0"
 - ForwardAuth-Beispiel: [`apps/ops/registry-ui/manifests/middleware-authentik.yaml`](../../../../apps/ops/registry-ui/manifests/middleware-authentik.yaml)
 - ADR-0010: [`docs/adr/0010-authentik-idp.md`](../../../adr/0010-authentik-idp.md)
 - ADR-0011: [`docs/adr/0011-pangolin-public-exposure.md`](../../../adr/0011-pangolin-public-exposure.md)
-- Backup: [`docs/adr/0015-backup-restore-cronjobs.md`](../../../adr/0015-backup-restore-cronjobs.md)
+- ADR-0015: [`docs/adr/0015-backup-restore-cronjobs.md`](../../../adr/0015-backup-restore-cronjobs.md)
+- ADR-0033 / CNPG: [`docs/adr/0033-authentik-cnpg.md`](../../../adr/0033-authentik-cnpg.md), [09-cnpg-migration](09-cnpg-migration.md)
 - Architektur: [`docs/diagrams/archify/authentik-architektur.html`](../../../diagrams/archify/authentik-architektur.html)
 - Onboarding: [`docs/diagrams/archify/authentik-oidc-onboarding.html`](../../../diagrams/archify/authentik-oidc-onboarding.html)

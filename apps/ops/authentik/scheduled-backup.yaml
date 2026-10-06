@@ -1,0 +1,19 @@
+# Six-field cron (seconds first). Every 6 hours, :15. RPO is that interval.
+# Longhorn VolumeSnapshot — not WAL PITR. pg_dump CronJob stays the off-cluster copy.
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: authentik-pg-snapshot
+  namespace: authentik
+  labels:
+    app.kubernetes.io/name: authentik
+    app.kubernetes.io/part-of: authentik
+spec:
+  schedule: "0 15 */6 * * *"
+  immediate: true
+  method: volumeSnapshot
+  backupOwnerReference: cluster
+  cluster:
+    name: authentik-pg
+  target: primary
+  online: true

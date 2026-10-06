@@ -13,6 +13,7 @@ authentik:
   web:
     base_url: "https://idp.stadthagen.dev"
   postgresql:
+    host: authentik-pg-rw
     name: authentik
     user: authentik
   email:
@@ -90,22 +91,6 @@ worker:
         - name: media
           mountPath: /media
 
+# Postgres on CloudNativePG Cluster authentik-pg (Service authentik-pg-rw).
 postgresql:
-  enabled: true
-  auth:
-    username: authentik
-    database: authentik
-    existingSecret: authentik-credentials
-    secretKeys:
-      adminPasswordKey: password
-  primary:
-    nodeSelector:
-      worker: "true"
-    persistence:
-      enabled: true
-      storageClass: longhorn
-      size: 8Gi
-    resources:
-      requests:
-        cpu: 50m
-        memory: 256Mi
+  enabled: false

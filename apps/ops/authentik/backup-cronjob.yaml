@@ -87,13 +87,15 @@ spec:
               image: alpine/k8s:1.32.0
               env:
                 - name: PGHOST
-                  value: authentik-postgresql
+                  value: authentik-pg-rw
                 - name: PGPORT
                   value: "5432"
                 - name: PGUSER
                   value: authentik
                 - name: PGDATABASE
                   value: authentik
+                - name: PGSSLMODE
+                  value: require
                 - name: PGPASSWORD
                   valueFrom:
                     secretKeyRef:

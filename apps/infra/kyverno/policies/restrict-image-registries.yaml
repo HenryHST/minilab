@@ -1,0 +1,60 @@
+# Audit: container images should come from known registries or Docker Hub (short / org paths).
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-image-registries
+  annotations:
+    policies.kyverno.io/title: Restrict image registries
+    policies.kyverno.io/category: Supply Chain
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Allow ghcr.io, registry.k8s.io, docker.io, quay.io, registry.stadthagen.dev,
+      and Docker Hub-style names without a registry host.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: approved-registries
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kyverno
+                - argocd
+                - longhorn-system
+                - traefik
+                - cnpg-system
+                - certmanager
+                - node-feature-discovery
+                - k8tz
+                - trivy-system
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  policy.stadthagen.dev/exempt: "true"
+          - resources:
+              selector:
+                matchLabels:
+                  policy.stadthagen.dev/exempt: "true"
+      validate:
+        message: >-
+          Image registry not in allowlist (ghcr.io, registry.k8s.io, docker.io,
+          quay.io, registry.stadthagen.dev, or Docker Hub path) — Audit only.
+        foreach:
+          - list: "request.object.spec.[initContainers, ephemeralContainers, containers][]"
+            deny:
+              conditions:
+                all:
+                  # Deny only when image has an explicit registry host that is not allowlisted
+                  - key: "{{ regex_match('^([a-z0-9.-]+\\.[a-z0-9.-]+)/', '{{ element.image }}') }}"
+                    operator: Equals
+                    value: true
+                  - key: "{{ regex_match('^(ghcr\\.io/|registry\\.k8s\\.io/|docker\\.io/|index\\.docker\\.io/|quay\\.io/|registry\\.stadthagen\\.dev/)', '{{ element.image }}') }}"
+                    operator: Equals
+                    value: false

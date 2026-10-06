@@ -1,0 +1,96 @@
+# Audit: privileged / hostNetwork / hostPID are discouraged outside exempt namespaces.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-non-root-or-no-privileged
+  annotations:
+    policies.kyverno.io/title: Disallow privileged and host namespaces
+    policies.kyverno.io/category: Pod Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Audits privileged containers and hostNetwork/hostPID (except exempt namespaces).
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: no-privileged
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kyverno
+                - argocd
+                - longhorn-system
+                - traefik
+                - cnpg-system
+                - certmanager
+                - node-feature-discovery
+                - k8tz
+                - trivy-system
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  policy.stadthagen.dev/exempt: "true"
+          - resources:
+              selector:
+                matchLabels:
+                  policy.stadthagen.dev/exempt: "true"
+      validate:
+        message: >-
+          privileged=true is not allowed (Audit). Opt-out label:
+          policy.stadthagen.dev/exempt=true
+        pattern:
+          spec:
+            =(securityContext):
+              =(privileged): "false"
+            =(ephemeralContainers):
+              - =(securityContext):
+                  =(privileged): "false"
+            =(initContainers):
+              - =(securityContext):
+                  =(privileged): "false"
+            containers:
+              - =(securityContext):
+                  =(privileged): "false"
+    - name: no-host-namespaces
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kyverno
+                - argocd
+                - longhorn-system
+                - traefik
+                - cnpg-system
+                - certmanager
+                - node-feature-discovery
+                - k8tz
+                - trivy-system
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  policy.stadthagen.dev/exempt: "true"
+          - resources:
+              selector:
+                matchLabels:
+                  policy.stadthagen.dev/exempt: "true"
+      validate:
+        message: >-
+          hostNetwork/hostPID/hostIPC should stay false (Audit).
+        pattern:
+          spec:
+            =(hostNetwork): "false"
+            =(hostPID): "false"
+            =(hostIPC): "false"

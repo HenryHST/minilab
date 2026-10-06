@@ -1,0 +1,71 @@
+# Audit: Pods that mount PVCs should prefer Proxmox workers (worker=true).
+# Longhorn runs only on Proxmox-labeled workers; Pi agents should not schedule Longhorn volumes.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: prefer-proxmox-workers-for-longhorn-pods
+  annotations:
+    policies.kyverno.io/title: Prefer Proxmox workers for PVC pods
+    policies.kyverno.io/category: Storage
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Pods with persistentVolumeClaim volumes should target nodes with worker=true
+      (Proxmox Longhorn workers). Audit only — no mutation in v1.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: pvc-pods-prefer-worker-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kyverno
+                - argocd
+                - longhorn-system
+                - traefik
+                - cnpg-system
+                - certmanager
+                - node-feature-discovery
+                - k8tz
+                - trivy-system
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  policy.stadthagen.dev/exempt: "true"
+          - resources:
+              selector:
+                matchLabels:
+                  policy.stadthagen.dev/exempt: "true"
+      preconditions:
+        all:
+          - key: "{{ request.object.spec.volumes[] | length(@) }}"
+            operator: GreaterThanOrEquals
+            value: 1
+          - key: "{{ request.object.spec.volumes[?persistentVolumeClaim] | length(@) }}"
+            operator: GreaterThanOrEquals
+            value: 1
+      validate:
+        message: >-
+          Pods mounting PVCs should set nodeSelector worker=true (or equivalent affinity)
+          so Longhorn volumes land on Proxmox workers (Audit).
+        anyPattern:
+          - spec:
+              nodeSelector:
+                worker: "true"
+          - spec:
+              affinity:
+                nodeAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    nodeSelectorTerms:
+                      - matchExpressions:
+                          - key: worker
+                            operator: In
+                            values:
+                              - "true"

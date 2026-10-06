@@ -11,6 +11,16 @@ spec:
   generators:
     - list:
         elements:
+          - app: kyverno
+            path: apps/infra/kyverno/policies
+            namespace: kyverno
+            syncWave: "0"
+            helmRepo: https://kyverno.github.io/kyverno/
+            helmChart: kyverno
+            helmVersion: "3.9.1"
+            helmReleaseName: kyverno
+            helmValuesFile: apps/infra/kyverno/values.yaml
+            extras: true
           - app: longhorn
             path: apps/infra/longhorn/manifests
             namespace: longhorn-system

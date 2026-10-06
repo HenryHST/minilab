@@ -7,12 +7,14 @@ metadata:
     # Applied by Application gitops-bootstrap (path apps/argocd-apps/raw) before ApplicationSets.
     argocd.argoproj.io/sync-wave: "-2"
 spec:
-  description: Infra — storage, timezone, NFD, Redis, Mosquitto, CloudNativePG, Traefik error-pages (longhorn, k8tz, nfd, redis, mosquitto, cloudnative-pg, error-pages)
+  description: Infra — storage, admission (Kyverno), timezone, NFD, Redis, Mosquitto, CloudNativePG, Traefik error-pages (kyverno, longhorn, k8tz, nfd, redis, mosquitto, cloudnative-pg, error-pages)
   sourceRepos:
     - "*"
   destinations:
     - server: "*"
       namespace: longhorn-system
+    - server: "*"
+      namespace: kyverno
     - server: "*"
       namespace: k8tz
     - server: "*"

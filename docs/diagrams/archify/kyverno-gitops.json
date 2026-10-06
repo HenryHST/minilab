@@ -1,0 +1,177 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Kyverno GitOps Deploy",
+    "quality_profile": "showcase",
+    "output": "docs/diagrams/archify/kyverno-gitops.html",
+    "views": [
+      {
+        "id": "gitops",
+        "label": "GitOps",
+        "focus": [
+          "git",
+          "appset",
+          "helm",
+          "ns"
+        ],
+        "note": "ApplicationSet infra Wave 0 synct Helm + Extra-Source policies."
+      },
+      {
+        "id": "policy",
+        "label": "Policies",
+        "focus": [
+          "git",
+          "policies",
+          "cp"
+        ],
+        "note": "ClusterPolicies aus apps/infra/kyverno/policies/."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "git",
+      "type": "cloud",
+      "label": "minilab Git",
+      "sublabel": "apps/infra/kyverno",
+      "tag": "source",
+      "pos": [
+        40,
+        140
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "appset",
+      "type": "cloud",
+      "label": "ApplicationSet",
+      "sublabel": "infra",
+      "tag": "wave 0",
+      "pos": [
+        280,
+        140
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "helm",
+      "type": "backend",
+      "label": "Helm Chart",
+      "sublabel": "kyverno 3.9.1",
+      "tag": "kyverno.io",
+      "pos": [
+        510,
+        60
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "policies",
+      "type": "database",
+      "label": "policies/",
+      "sublabel": "Extra source",
+      "tag": "YAML",
+      "pos": [
+        510,
+        240
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "ns",
+      "type": "backend",
+      "label": "Namespace kyverno",
+      "sublabel": "controllers",
+      "tag": "runtime",
+      "pos": [
+        740,
+        60
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "cp",
+      "type": "security",
+      "label": "ClusterPolicies",
+      "sublabel": "cluster-scoped",
+      "tag": "Audit",
+      "pos": [
+        740,
+        240
+      ],
+      "size": [
+        170,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Argo CD",
+      "wraps": [
+        "appset"
+      ],
+      "pad": 14
+    }
+  ],
+  "connections": [
+    {
+      "id": "g1",
+      "from": "git",
+      "to": "appset",
+      "label": "watch",
+      "variant": "emphasis"
+    },
+    {
+      "id": "g2",
+      "from": "appset",
+      "to": "helm",
+      "label": "Helm source"
+    },
+    {
+      "id": "g3",
+      "from": "appset",
+      "to": "policies",
+      "label": "extras path"
+    },
+    {
+      "id": "g4",
+      "from": "helm",
+      "to": "ns",
+      "label": "install"
+    },
+    {
+      "id": "g5",
+      "from": "policies",
+      "to": "cp",
+      "label": "apply"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Wave 0",
+      "items": [
+        "Vor Longhorn/k8tz (Wave 1)",
+        "AppProject Destination kyverno"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Kyverno Admission (Audit)",
+    "quality_profile": "showcase",
+    "output": "docs/diagrams/archify/kyverno-admission.html",
+    "views": [
+      {
+        "id": "admit",
+        "label": "Admission",
+        "focus": [
+          "api",
+          "webhook",
+          "admission",
+          "policies"
+        ],
+        "note": "kube-apiserver ruft ValidatingWebhook; Kyverno bewertet ClusterPolicies."
+      },
+      {
+        "id": "audit",
+        "label": "Audit",
+        "focus": [
+          "admission",
+          "policies",
+          "reports",
+          "apply"
+        ],
+        "note": "failureAction Audit: Apply bleibt erlaubt; Ergebnis in PolicyReports."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "kube-apiserver",
+      "sublabel": "Admission chain",
+      "tag": "control-plane",
+      "pos": [
+        40,
+        120
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "webhook",
+      "type": "security",
+      "label": "ValidatingWebhook",
+      "sublabel": "Kyverno registration",
+      "tag": "API",
+      "pos": [
+        260,
+        120
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "admission",
+      "type": "security",
+      "label": "Kyverno Admission",
+      "sublabel": "NS kyverno",
+      "tag": "controller",
+      "pos": [
+        500,
+        120
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "policies",
+      "type": "database",
+      "label": "ClusterPolicies",
+      "sublabel": "5× Audit",
+      "tag": "policies/",
+      "pos": [
+        500,
+        280
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "reports",
+      "type": "database",
+      "label": "PolicyReports",
+      "sublabel": "namespace / cluster",
+      "tag": "CRD",
+      "pos": [
+        740,
+        120
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "apply",
+      "type": "frontend",
+      "label": "Apply erlaubt",
+      "sublabel": "kubectl / Argo",
+      "tag": "Audit",
+      "pos": [
+        260,
+        280
+      ],
+      "size": [
+        170,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "security-group",
+      "label": "Kyverno",
+      "wraps": [
+        "admission",
+        "policies"
+      ],
+      "pad": 16
+    }
+  ],
+  "connections": [
+    {
+      "id": "c1",
+      "from": "api",
+      "to": "webhook",
+      "label": "admit",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c2",
+      "from": "webhook",
+      "to": "admission",
+      "label": "validate"
+    },
+    {
+      "id": "c3",
+      "from": "admission",
+      "to": "policies",
+      "label": "eval"
+    },
+    {
+      "id": "c4",
+      "from": "admission",
+      "to": "reports",
+      "label": "write"
+    },
+    {
+      "id": "c5",
+      "from": "api",
+      "to": "apply",
+      "label": "persist",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Audit first",
+      "items": [
+        "validationFailureAction: Audit",
+        "Kein Enforce in v1",
+        "Opt-out: policy.stadthagen.dev/exempt"
+      ]
+    }
+  ]
+}

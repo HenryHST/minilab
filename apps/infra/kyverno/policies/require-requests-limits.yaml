@@ -1,0 +1,58 @@
+# Audit: every container should declare CPU and memory requests.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-requests-limits
+  annotations:
+    policies.kyverno.io/title: Require CPU and memory requests
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Containers should set resources.requests.cpu and resources.requests.memory.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: require-requests
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kyverno
+                - argocd
+                - longhorn-system
+                - traefik
+                - cnpg-system
+                - certmanager
+                - node-feature-discovery
+                - k8tz
+                - trivy-system
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  policy.stadthagen.dev/exempt: "true"
+          - resources:
+              selector:
+                matchLabels:
+                  policy.stadthagen.dev/exempt: "true"
+      validate:
+        message: >-
+          Every container needs resources.requests.cpu and resources.requests.memory (Audit).
+        pattern:
+          spec:
+            =(initContainers):
+              - resources:
+                  requests:
+                    memory: "?*"
+                    cpu: "?*"
+            containers:
+              - resources:
+                  requests:
+                    memory: "?*"
+                    cpu: "?*"

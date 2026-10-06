@@ -12,5 +12,6 @@ webhook:
     - kube-system
     - k8tz
     - trivy-system
+    - kyverno
   certManager:
     enabled: false

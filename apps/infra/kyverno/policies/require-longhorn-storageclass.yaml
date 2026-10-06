@@ -1,0 +1,50 @@
+# Audit: PVCs should use StorageClass longhorn (default) or omit SC (cluster default).
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-longhorn-storageclass
+  annotations:
+    policies.kyverno.io/title: Require Longhorn StorageClass
+    policies.kyverno.io/category: Storage
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      App PVCs should use storageClassName longhorn (or empty to pick the default).
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: longhorn-or-default
+      match:
+        any:
+          - resources:
+              kinds:
+                - PersistentVolumeClaim
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kyverno
+                - argocd
+                - longhorn-system
+                - traefik
+                - cnpg-system
+                - certmanager
+                - node-feature-discovery
+                - k8tz
+                - trivy-system
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  policy.stadthagen.dev/exempt: "true"
+          - resources:
+              selector:
+                matchLabels:
+                  policy.stadthagen.dev/exempt: "true"
+      validate:
+        message: >-
+          PVC storageClassName must be "longhorn" or empty (cluster default).
+          Opt-out: label policy.stadthagen.dev/exempt=true on Namespace or PVC.
+        pattern:
+          spec:
+            =(storageClassName): "longhorn | ''"

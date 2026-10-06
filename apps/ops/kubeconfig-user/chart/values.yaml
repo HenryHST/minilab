@@ -1,0 +1,43 @@
+# Default chart values (site overrides: ../values.yaml)
+enabled: true
+createNamespace: true
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  name: cluster-admin-sa
+  labels:
+    userType: human
+  annotations: {}
+
+clusterRoleBinding:
+  create: true
+  # Binding name defaults to <fullname>-cluster-admin
+  name: ""
+  clusterRoleName: cluster-admin
+
+# Classic projected SA token Secret (populated by the token controller).
+tokenSecret:
+  name: "" # default: <sa-name>-token
+  annotations: {}
+
+# External API URL embedded in the generated kubeconfig (jumphost / laptop).
+apiServer: https://192.168.0.40:6443
+clusterName: nXk3
+
+kubeconfigJob:
+  enabled: true
+  secretName: kubeconfig-user-kubeconfig
+  image: registry.k8s.io/kubectl:v1.37.0
+  imagePullPolicy: IfNotPresent
+  serviceAccountName: kubeconfig-user-job
+  backoffLimit: 6
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 86400
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 128Mi

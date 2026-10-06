@@ -1,0 +1,91 @@
+{{- if and .Values.enabled .Values.kubeconfigJob.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "kubeconfig-user.fullname" . }}-write-kubeconfig
+  namespace: {{ include "kubeconfig-user.namespace" . }}
+  labels:
+    {{- include "kubeconfig-user.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  backoffLimit: {{ .Values.kubeconfigJob.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.kubeconfigJob.activeDeadlineSeconds }}
+  ttlSecondsAfterFinished: {{ .Values.kubeconfigJob.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "kubeconfig-user.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: kubeconfig-job
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "kubeconfig-user.jobSaName" . }}
+      containers:
+        - name: write-kubeconfig
+          image: {{ .Values.kubeconfigJob.image | quote }}
+          imagePullPolicy: {{ .Values.kubeconfigJob.imagePullPolicy }}
+          env:
+            - name: NAMESPACE
+              value: {{ include "kubeconfig-user.namespace" . | quote }}
+            - name: SA_NAME
+              value: {{ include "kubeconfig-user.saName" . | quote }}
+            - name: TOKEN_SECRET
+              value: {{ include "kubeconfig-user.tokenSecretName" . | quote }}
+            - name: OUT_SECRET
+              value: {{ include "kubeconfig-user.kubeconfigSecretName" . | quote }}
+            - name: API_SERVER
+              value: {{ .Values.apiServer | quote }}
+            - name: CLUSTER_NAME
+              value: {{ .Values.clusterName | quote }}
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              echo "Waiting for SA token secret ${TOKEN_SECRET}..."
+              i=0
+              while [ "$i" -lt 60 ]; do
+                TOKEN_B64="$(kubectl -n "${NAMESPACE}" get secret "${TOKEN_SECRET}" -o jsonpath='{.data.token}' 2>/dev/null || true)"
+                CA_B64="$(kubectl -n "${NAMESPACE}" get secret "${TOKEN_SECRET}" -o jsonpath='{.data.ca\.crt}' 2>/dev/null || true)"
+                if [ -n "${TOKEN_B64}" ] && [ -n "${CA_B64}" ]; then
+                  break
+                fi
+                i=$((i + 1))
+                sleep 2
+              done
+              if [ -z "${TOKEN_B64}" ] || [ -z "${CA_B64}" ]; then
+                echo "ERROR: token secret ${TOKEN_SECRET} not populated" >&2
+                exit 1
+              fi
+              TOKEN="$(printf '%s' "${TOKEN_B64}" | base64 -d)"
+              umask 077
+              {
+                echo "apiVersion: v1"
+                echo "kind: Config"
+                echo "clusters:"
+                echo "- name: ${CLUSTER_NAME}"
+                echo "  cluster:"
+                echo "    server: ${API_SERVER}"
+                echo "    certificate-authority-data: ${CA_B64}"
+                echo "contexts:"
+                echo "- name: ${CLUSTER_NAME}"
+                echo "  context:"
+                echo "    cluster: ${CLUSTER_NAME}"
+                echo "    user: ${SA_NAME}"
+                echo "    namespace: default"
+                echo "current-context: ${CLUSTER_NAME}"
+                echo "users:"
+                echo "- name: ${SA_NAME}"
+                echo "  user:"
+                echo "    token: ${TOKEN}"
+              } >/tmp/kubeconfig
+              kubectl -n "${NAMESPACE}" create secret generic "${OUT_SECRET}" \
+                --from-file=config=/tmp/kubeconfig \
+                --dry-run=client -o yaml | kubectl apply -f -
+              echo "Wrote secret/${OUT_SECRET} (key: config)"
+          resources:
+            {{- toYaml .Values.kubeconfigJob.resources | nindent 12 }}
+{{- end }}

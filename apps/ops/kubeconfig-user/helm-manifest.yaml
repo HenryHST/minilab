@@ -1,0 +1,240 @@
+# Rendered Helm chart — regenerate with:
+# helm template kubeconfig-user ./chart -f values.yaml --namespace kubeconfig-user > helm-manifest.yaml
+---
+# Source: kubeconfig-user/templates/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubeconfig-user
+  labels:
+    helm.sh/chart: kubeconfig-user-0.1.0
+    app.kubernetes.io/name: kubeconfig-user
+    app.kubernetes.io/instance: kubeconfig-user
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+
+---
+# Source: kubeconfig-user/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cluster-admin-sa
+  namespace: kubeconfig-user
+  labels:
+    helm.sh/chart: kubeconfig-user-0.1.0
+    app.kubernetes.io/name: kubeconfig-user
+    app.kubernetes.io/instance: kubeconfig-user
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+    userType: human
+
+---
+# Source: kubeconfig-user/templates/token-secret.yaml
+# Classic long-lived SA token (controller fills .data.token / ca.crt).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cluster-admin-sa-token
+  namespace: kubeconfig-user
+  labels:
+    helm.sh/chart: kubeconfig-user-0.1.0
+    app.kubernetes.io/name: kubeconfig-user
+    app.kubernetes.io/instance: kubeconfig-user
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    kubernetes.io/service-account.name: cluster-admin-sa
+type: kubernetes.io/service-account-token
+
+---
+# Source: kubeconfig-user/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-admin-sa-cluster-admin
+  labels:
+    helm.sh/chart: kubeconfig-user-0.1.0
+    app.kubernetes.io/name: kubeconfig-user
+    app.kubernetes.io/instance: kubeconfig-user
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: cluster-admin-sa
+    namespace: kubeconfig-user
+---
+# Source: kubeconfig-user/templates/job-rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubeconfig-user-job
+  namespace: kubeconfig-user
+  labels:
+    helm.sh/chart: kubeconfig-user-0.1.0
+    app.kubernetes.io/name: kubeconfig-user
+    app.kubernetes.io/instance: kubeconfig-user
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+
+---
+# Source: kubeconfig-user/templates/job-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kubeconfig-user-job
+  namespace: kubeconfig-user
+  labels:
+    helm.sh/chart: kubeconfig-user-0.1.0
+    app.kubernetes.io/name: kubeconfig-user
+    app.kubernetes.io/instance: kubeconfig-user
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "create", "update", "patch"]
+
+---
+# Source: kubeconfig-user/templates/job-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kubeconfig-user-job
+  namespace: kubeconfig-user
+  labels:
+    helm.sh/chart: kubeconfig-user-0.1.0
+    app.kubernetes.io/name: kubeconfig-user
+    app.kubernetes.io/instance: kubeconfig-user
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kubeconfig-user-job
+subjects:
+  - kind: ServiceAccount
+    name: kubeconfig-user-job
+    namespace: kubeconfig-user
+
+---
+# Source: kubeconfig-user/templates/job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kubeconfig-user-write-kubeconfig
+  namespace: kubeconfig-user
+  labels:
+    helm.sh/chart: kubeconfig-user-0.1.0
+    app.kubernetes.io/name: kubeconfig-user
+    app.kubernetes.io/instance: kubeconfig-user
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  backoffLimit: 6
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kubeconfig-user
+        app.kubernetes.io/instance: kubeconfig-user
+        app.kubernetes.io/component: kubeconfig-job
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: kubeconfig-user-job
+      containers:
+        - name: write-kubeconfig
+          image: "registry.k8s.io/kubectl:v1.37.0"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NAMESPACE
+              value: "kubeconfig-user"
+            - name: SA_NAME
+              value: "cluster-admin-sa"
+            - name: TOKEN_SECRET
+              value: "cluster-admin-sa-token"
+            - name: OUT_SECRET
+              value: "kubeconfig-user-kubeconfig"
+            - name: API_SERVER
+              value: "https://192.168.0.40:6443"
+            - name: CLUSTER_NAME
+              value: "nXk3"
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              echo "Waiting for SA token secret ${TOKEN_SECRET}..."
+              i=0
+              while [ "$i" -lt 60 ]; do
+                TOKEN_B64="$(kubectl -n "${NAMESPACE}" get secret "${TOKEN_SECRET}" -o jsonpath='{.data.token}' 2>/dev/null || true)"
+                CA_B64="$(kubectl -n "${NAMESPACE}" get secret "${TOKEN_SECRET}" -o jsonpath='{.data.ca\.crt}' 2>/dev/null || true)"
+                if [ -n "${TOKEN_B64}" ] && [ -n "${CA_B64}" ]; then
+                  break
+                fi
+                i=$((i + 1))
+                sleep 2
+              done
+              if [ -z "${TOKEN_B64}" ] || [ -z "${CA_B64}" ]; then
+                echo "ERROR: token secret ${TOKEN_SECRET} not populated" >&2
+                exit 1
+              fi
+              TOKEN="$(printf '%s' "${TOKEN_B64}" | base64 -d)"
+              umask 077
+              {
+                echo "apiVersion: v1"
+                echo "kind: Config"
+                echo "clusters:"
+                echo "- name: ${CLUSTER_NAME}"
+                echo "  cluster:"
+                echo "    server: ${API_SERVER}"
+                echo "    certificate-authority-data: ${CA_B64}"
+                echo "contexts:"
+                echo "- name: ${CLUSTER_NAME}"
+                echo "  context:"
+                echo "    cluster: ${CLUSTER_NAME}"
+                echo "    user: ${SA_NAME}"
+                echo "    namespace: default"
+                echo "current-context: ${CLUSTER_NAME}"
+                echo "users:"
+                echo "- name: ${SA_NAME}"
+                echo "  user:"
+                echo "    token: ${TOKEN}"
+              } >/tmp/kubeconfig
+              kubectl -n "${NAMESPACE}" create secret generic "${OUT_SECRET}" \
+                --from-file=config=/tmp/kubeconfig \
+                --dry-run=client -o yaml | kubectl apply -f -
+              echo "Wrote secret/${OUT_SECRET} (key: config)"
+          resources:
+            limits:
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+

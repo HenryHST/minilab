@@ -26,9 +26,13 @@ flowchart TB
 |------|--------|
 | -2 | AppProjects (`infra`, `monitoring`, `ops`, `dev`) |
 | 0 | Application `gitops-bootstrap` → ApplicationSets; frühe Ops (cert-manager, registry, newt, metrics-server) |
-| 1 | longhorn, k8tz, error-pages, kube-prometheus-stack, system-upgrade-controller, cert-manager-webhook |
+| 1 | longhorn, k8tz, error-pages, kube-prometheus-stack, system-upgrade-controller, cert-manager-webhook, **kubeconfig-user** |
 | 2 | authentik, termix, headlamp, hubble-ui, unifipoller |
 | 3 | Dev-Tools, Loki/Alloy, vaultwarden, bookstack, pangolin-publish, … |
+
+## kubeconfig-user (Wave 1)
+
+Siehe Kapitel [08-kubeconfig-user.md](08-kubeconfig-user.md): ServiceAccount mit `cluster-admin`, Token-Secret und PostSync-Job → Secret `kubeconfig-user-kubeconfig`. Enable-Flag = ApplicationSet-Listeneintrag; Feintuning über `values.yaml` + Re-Render von `helm-manifest.yaml`.
 
 ## Neue App
 

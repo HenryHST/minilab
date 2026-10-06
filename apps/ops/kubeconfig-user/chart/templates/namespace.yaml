@@ -1,0 +1,10 @@
+{{- if .Values.enabled }}
+{{- if .Values.createNamespace }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "kubeconfig-user.namespace" . }}
+  labels:
+    {{- include "kubeconfig-user.labels" . | nindent 4 }}
+{{- end }}
+{{- end }}

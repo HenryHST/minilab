@@ -1,0 +1,22 @@
+# Site values for nXk3 — used by: helm template … -f values.yaml
+# Flag: set enabled/kubeconfigJob.enabled false and re-render to disable pieces
+# without removing the ApplicationSet entry.
+enabled: true
+createNamespace: true
+
+serviceAccount:
+  name: cluster-admin-sa
+  labels:
+    userType: human
+
+clusterRoleBinding:
+  create: true
+  clusterRoleName: cluster-admin
+
+apiServer: https://192.168.0.40:6443
+clusterName: nXk3
+
+kubeconfigJob:
+  enabled: true
+  secretName: kubeconfig-user-kubeconfig
+  image: registry.k8s.io/kubectl:v1.37.0

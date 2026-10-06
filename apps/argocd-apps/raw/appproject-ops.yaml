@@ -27,6 +27,8 @@ spec:
       namespace: pangolin-publish
     - server: "*"
       namespace: trivy-system
+    - server: "*"
+      namespace: kubeconfig-user
   clusterResourceWhitelist:
     - group: "*"
       kind: "*"

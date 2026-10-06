@@ -42,7 +42,7 @@ spec:
               value: {{ .Values.apiServer | quote }}
             - name: CLUSTER_NAME
               value: {{ .Values.clusterName | quote }}
-          command: ["/bin/sh", "-ec"]
+          command: [{{ .Values.kubeconfigJob.shell | default "/bin/bash" | quote }}, "-ec"]
           args:
             - |
               echo "Waiting for SA token secret ${TOKEN_SECRET}..."

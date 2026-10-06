@@ -13,5 +13,6 @@ webhook:
     - k8tz
     - trivy-system
     - kyverno
+    - kubeconfig-user
   certManager:
     enabled: false

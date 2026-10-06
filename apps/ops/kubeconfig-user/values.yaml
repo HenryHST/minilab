@@ -19,4 +19,6 @@ clusterName: nXk3
 kubeconfigJob:
   enabled: true
   secretName: kubeconfig-user-kubeconfig
-  image: registry.k8s.io/kubectl:v1.37.0
+  # alpine/k8s includes /bin/sh + kubectl (registry.k8s.io/kubectl is distroless — no shell)
+  image: docker.io/alpine/k8s:1.37.0
+  shell: /bin/sh

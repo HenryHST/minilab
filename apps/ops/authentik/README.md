@@ -6,6 +6,17 @@ GitOps install for `idp.stadthagen.dev`. Day-0 blueprints: [BLUEPRINTS.md](BLUEP
 
 Postgres is Cluster `authentik-pg` (Service `authentik-pg-rw`, PG17, Longhorn 8Gi). Helm subchart is off (`postgresql.enabled: false`). Cutover notes: [09-cnpg-migration](../../docs/bookstack/books/authentik/09-cnpg-migration.md), [ADR-0033](../../docs/adr/0033-authentik-cnpg.md).
 
+### TLS (Hybrid)
+
+Server CA/TLS comes from cert-manager (`cnpg-certificates.yaml` → Secret `authentik-pg-server-tls`). Client/replication stay operator-managed (`authentik-pg-ca`, `authentik-pg-replication`). App uses `AUTHENTIK_POSTGRESQL__SSLMODE=require` (no CA mount yet).
+
+```bash
+kubectl -n authentik get certificate authentik-pg-server
+kubectl -n authentik get cluster authentik-pg -o jsonpath='{.status.certificates}' | jq .
+```
+
+**Follow-up (not in pilot):** (1) mount CA + `verify-full` / `SSLROOTCERT=file:///certs/ca.crt` and update Infra_LAB SecretSpec; (2) same hybrid pattern for Termix (`apps/dev/termix/`).
+
 ## Redis (Performance)
 
 Authentik **requires** Redis for cache, sessions, and the task broker. Without it, gunicorn saturates CPU and the login flow (`/if/flow/default-authentication-flow/`) shows multi-second tails (measured ~p90 2–4 s → ~130 ms after wiring).

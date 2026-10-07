@@ -38,6 +38,10 @@ pluginsManager:
       - name: gatekeeper
         source: https://artifacthub.io/packages/headlamp/gatekeeper-headlamp-plugin/gatekeeper
         version: 0.2.0
+      # https://github.com/kubebeam/trivy-headlamp-plugin — needs Trivy Operator CRs
+      - name: trivy
+        source: https://artifacthub.io/packages/headlamp/headlamp-trivy/headlamp_trivy
+        version: 0.3.2
     installOptions:
       parallel: true
       maxConcurrent: 2

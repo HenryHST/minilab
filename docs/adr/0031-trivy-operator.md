@@ -1,7 +1,7 @@
 # ADR-0031: Trivy Operator
 
 - **Status:** Accepted
-- **Datum:** 2026-10-02 (ergänzt 2026-10-03, Issue #91)
+- **Datum:** 2026-10-02 (ergänzt 2026-10-03 Issue #91; 2026-10-07 Headlamp-Plugin)
 - **Kontext:** `apps/ops/trivy-operator/`
 
 ## Kontext
@@ -18,6 +18,7 @@ Image- und Config-Schwachstellen sollen im laufenden Cluster sichtbar sein (CRDs
 - **Service:** `service.headless: false` (ClusterIP) für ServiceMonitor-Scrape; `metricsPort` Chart-Default `80`.
 - **Metrics:** Chart-`serviceMonitor.enabled` mit Label `release: kube-prometheus-stack` (kein zusätzlicher static scrape job).
 - **Grafana:** Dashboard gnetId **17813** (Revision 2, Folder Trivy) in kube-prometheus-stack — [Aqua Tutorial](https://aquasecurity.github.io/trivy-operator/latest/tutorials/grafana-dashboard/).
+- **Headlamp:** Plugin Manager installiert [headlamp_trivy 0.3.2](https://artifacthub.io/packages/headlamp/headlamp-trivy/headlamp_trivy) ([kubebeam/trivy-headlamp-plugin](https://github.com/kubebeam/trivy-headlamp-plugin)) in `apps/ops/headlamp` — Views für Vulnerability/ConfigAudit/… CRs.
 - **Ressourcen:** Operator memory limit **512Mi** (sonst OOM beim Start vieler Controller).
 - **k8tz:** Namespace `trivy-system` in `ignoredNamespaces` — sonst doppelte `k8tz`-InitContainer an Scan-Jobs.
 - **Private Registry:** Primär Workload-`imagePullSecrets` (Aqua Option 2; Operator erbt sie). Keine Credentials in Git. Fallback: Secret out-of-band + `operator.privateRegistryScanSecretsNames` (siehe `secret.example.yaml`).
@@ -32,6 +33,7 @@ flowchart LR
   Op --> SM[ServiceMonitor]
   SM --> Prom[kube-prometheus-stack]
   Prom --> Graf[Grafana_17813]
+  CRs --> HL[Headlamp_trivy_plugin]
   Workload[App_imagePullSecret] -.->|scan_auth| Op
   CI[Infra_LAB_CI_Trivy] -.->|kein_Cluster| Op
 ```

@@ -1,3 +1,2 @@
-certManager:
-  namespace: certmanager
-  serviceAccountName: cert-manager
+# Values live in vendored chart: apps/ops/cert-manager/webhook/values.yaml
+# (certManager.namespace=certmanager). Kept so older docs/links still resolve.

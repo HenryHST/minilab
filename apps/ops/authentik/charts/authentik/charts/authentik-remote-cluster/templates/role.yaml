@@ -10,12 +10,13 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 rules:
+  # Managed outposts need secrets/services (Trivy AVD-KSV-0113 / 0056 accepted).
+  # configmaps omitted — no goauthentik.io ConfigMaps in this cluster (drops AVD-KSV-0049).
   - apiGroups:
       - ""
     resources:
       - secrets
       - services
-      - configmaps
     verbs:
       {{- include "authentik-remote-cluster.api-verbs-rw" . | nindent 6 }}
   - apiGroups:
@@ -39,12 +40,7 @@ rules:
       - middlewares
     verbs:
       {{- include "authentik-remote-cluster.api-verbs-rw" . | nindent 6 }}
-  - apiGroups:
-      - gateway.networking.k8s.io
-    resources:
-      - httproutes
-    verbs:
-      {{- include "authentik-remote-cluster.api-verbs-rw" . | nindent 6 }}
+  # httproutes omitted — Gateway API unused here.
   - apiGroups:
       - monitoring.coreos.com
     resources:

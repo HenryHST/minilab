@@ -108,12 +108,13 @@ metadata:
     app.kubernetes.io/part-of: "authentik"
     app.kubernetes.io/version: "2.1.0"
 rules:
+  # Managed outposts need secrets/services (Trivy AVD-KSV-0113 / 0056 accepted).
+  # configmaps omitted — no goauthentik.io ConfigMaps in this cluster (drops AVD-KSV-0049).
   - apiGroups:
       - ""
     resources:
       - secrets
       - services
-      - configmaps
     verbs:
       - get
       - create
@@ -153,16 +154,7 @@ rules:
       - delete
       - list
       - patch
-  - apiGroups:
-      - gateway.networking.k8s.io
-    resources:
-      - httproutes
-    verbs:
-      - get
-      - create
-      - delete
-      - list
-      - patch
+  # httproutes omitted — Gateway API unused here.
   - apiGroups:
       - monitoring.coreos.com
     resources:

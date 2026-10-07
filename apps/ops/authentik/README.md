@@ -79,6 +79,21 @@ helm template authentik ./charts/authentik \
 
 IdP config (OAuth/LDAP/Brand) stays in Infra_LAB OpenTofu / `--tags authentik-bootstrap`.
 
+### RBAC / Trivy (managed outposts)
+
+Role `authentik` comes from the `authentik-remote-cluster` subchart (`serviceAccount.create: true`, needed for managed outposts). Outposts (`app.kubernetes.io/managed-by: goauthentik.io`) create Deployments, Services, Secrets, Ingresses, Middlewares, and ServiceMonitors — those write verbs stay.
+
+Stripped locally (unused here): `configmaps`, `httproutes` (Gateway API). After chart bumps, re-apply the patch in `charts/authentik/charts/authentik-remote-cluster/templates/role.yaml` and re-render.
+
+| Trivy check | Severity | Status |
+|-------------|----------|--------|
+| AVD-KSV-0049 (configmaps) | MEDIUM | Cleared by patch |
+| AVD-KSV-0113 (secrets) | MEDIUM | Accepted — outpost secrets |
+| AVD-KSV-0056 (services/ingresses) | HIGH | Accepted — outpost networking |
+| AVD-KSV-0048 (deployments) | MEDIUM | Accepted — outpost workloads |
+
+Other Roles in the namespace (`authentik-pg`, `authentik-restore`, `backup-runner-role`) are unrelated and left unchanged.
+
 ## Bootstrap-Admin (Anmelde-Passwort)
 
 ```bash

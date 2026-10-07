@@ -1,0 +1,82 @@
+# Hybrid TLS for CNPG authentik-pg: cert-manager owns server CA + server TLS.
+# Client / streaming_replica certificates stay operator-managed.
+# Docs: https://cloudnative-pg.io/documentation/1.15/certificates/
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: authentik-pg-selfsigned-issuer
+  namespace: authentik
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: authentik-pg-server-ca
+  namespace: authentik
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  isCA: true
+  commonName: authentik-pg-server-ca
+  secretName: authentik-pg-server-ca-key-pair
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: authentik-pg-selfsigned-issuer
+    kind: Issuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: authentik-pg-server-ca-issuer
+  namespace: authentik
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  ca:
+    secretName: authentik-pg-server-ca-key-pair
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: authentik-pg-server-tls
+  namespace: authentik
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  labels:
+    cnpg.io/reload: ""
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: authentik-pg-server
+  namespace: authentik
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  secretName: authentik-pg-server-tls
+  usages:
+    - server auth
+  dnsNames:
+    - authentik-pg-rw
+    - authentik-pg-rw.authentik
+    - authentik-pg-rw.authentik.svc
+    - authentik-pg-rw.authentik.svc.cluster.local
+    - authentik-pg-r
+    - authentik-pg-r.authentik
+    - authentik-pg-r.authentik.svc
+    - authentik-pg-r.authentik.svc.cluster.local
+    - authentik-pg-ro
+    - authentik-pg-ro.authentik
+    - authentik-pg-ro.authentik.svc
+    - authentik-pg-ro.authentik.svc.cluster.local
+  issuerRef:
+    name: authentik-pg-server-ca-issuer
+    kind: Issuer
+    group: cert-manager.io

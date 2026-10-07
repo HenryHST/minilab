@@ -15,6 +15,7 @@ Authentik (IdP) lief mit dem Bitnami-PostgreSQL-Subchart (`postgresql.enabled: t
 - Einmaliger Import `bootstrap.initdb.import.type: microservice` von `authentik-postgresql` (`sslmode: disable`), danach Import-Block entfernt.
 - App: `postgresql.enabled: false`, `authentik.postgresql.host: authentik-pg-rw`, Secret-Key `AUTHENTIK_POSTGRESQL__SSLMODE=require`.
 - Secret `authentik-credentials`: zusätzlich `username` / `password` für CNPG (gleicher Wert wie `AUTHENTIK_PG_PASSWORD`).
+- **Hybrid-TLS (Pilot):** Server-CA + Server-TLS über cert-manager im Namespace `authentik` (`cnpg-certificates.yaml` → Secret `authentik-pg-server-tls`, Label `cnpg.io/reload`). Cluster setzt `certificates.serverCASecret` / `serverTLSSecret`. Client/streaming_replica bleiben Operator-managed. App bleibt vorerst bei `sslmode=require` (kein CA-Mount).
 - Backup: `ScheduledBackup` VolumeSnapshot + bestehender `pg_dump`-CronJob auf `authentik-pg-rw` / NFS.
 - Bitnami-StatefulSet entfernt; PVC `data-authentik-postgresql-0` bleibt vorerst als Rollback-Kopie Bound.
 
@@ -23,3 +24,4 @@ Authentik (IdP) lief mit dem Bitnami-PostgreSQL-Subchart (`postgresql.enabled: t
 - IdP-Cutover braucht ein kurzes Wartungsfenster (server/worker auf 0).
 - Argo ApplicationSet kann `syncPolicy.automated` zurücksetzen — während des Imports Self-Heal pausieren oder Replicas manuell halten.
 - Nächste Apps (n8n, paperless) können dieselbe Vorlage nutzen ([Termix Migration](../bookstack/books/termix/04-migration.md), [Authentik CNPG](../bookstack/books/authentik/09-cnpg-migration.md)).
+- **Folge nach stabilem Hybrid-Pilot:** optional `verify-full` mit CA-Mount (`AUTHENTIK_POSTGRESQL__SSLROOTCERT=file:///certs/ca.crt`) und Companion-SecretSpec; danach gleiches Hybrid-Muster für Termix.

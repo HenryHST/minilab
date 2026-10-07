@@ -9,6 +9,7 @@ metadata:
   namespace: authentik
   annotations:
     argocd.argoproj.io/sync-options: Prune=false
+    argocd.argoproj.io/sync-wave: "1"
   labels:
     app.kubernetes.io/name: authentik
     app.kubernetes.io/part-of: authentik
@@ -16,6 +17,10 @@ metadata:
 spec:
   instances: 1
   imageName: ghcr.io/cloudnative-pg/postgresql:17
+  # Server TLS from cert-manager (cnpg-certificates.yaml); client/replication stay operator-managed.
+  certificates:
+    serverCASecret: authentik-pg-server-tls
+    serverTLSSecret: authentik-pg-server-tls
   bootstrap:
     initdb:
       database: authentik

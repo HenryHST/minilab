@@ -4,41 +4,36 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Fixed
+## [0.13.0] - 2026-10-07
 
-- **Authentik login latency** — Wired shared Redis (`AUTHENTIK_REDIS__HOST=redis.redis.svc.cluster.local`), allowed `authentik` in `redis-ingress` NetworkPolicy, raised server memory floor (1 Gi request / 3 Gi limit). Login-flow HTML p90 dropped from multi-second tails to ~130 ms. See `apps/ops/authentik/README.md` § Redis.
-
-### Changed
-
-- **Trivy Operator (#91)** — `operator.builtInTrivyServer`, `service.headless: false`, Grafana Dashboard gnetId 17813 (Folder Trivy); Private-Registry-Doku + `secret.example.yaml`; BookStack `trivy-operator` v1.1.0; ADR-0031 ergänzt.
+Authentik auf CloudNativePG und gemeinsamem Redis, Trivy Operator, Termix-Postgres, Mosquitto-LDAP-Preflight, Kyverno-Audit (in den ApplicationSets aus). Begleit-Release Plattform: [Infra_LAB v1.12.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.12.0).
 
 ### Added
 
-- **Trivy Operator** — Wave-1 Helm-App `apps/ops/trivy-operator` (Chart 0.32.1) in `trivy-system`; `ignoreUnfixed`, Exclude `kube-system`/`trivy-system`, ServiceMonitor; ADR-0031; Archify `trivy-architektur`; BookStack `trivy-operator` v1.0.0.
+- **CloudNativePG (#70)** — Wave-1 Helm-App `apps/infra/cloudnative-pg`: Operator 1.28.0 (Chart 0.27.0) in `cnpg-system`, ServiceAccount `postgres-cloud-sa`, PodMonitor, NetworkPolicy; ADR-0030.
+- **Termix auf CloudNativePG** — Cluster `termix` (1 Instanz, PG 16, 1 Gi Longhorn), Service `termix-rw`; Backup/Restore `PGHOST=termix-rw`.
+- **Authentik auf CloudNativePG** — Postgres von Bitnami auf den Operator umgestellt.
+- **Trivy Operator** — Wave-1 Helm-App `apps/ops/trivy-operator` (Chart 0.32.1) in `trivy-system`; `ignoreUnfixed`, Exclude `kube-system`/`trivy-system`, ServiceMonitor; ADR-0031; Archify `trivy-architektur`.
+- **kubeconfig-user** — Chart in `apps/ops` mit cluster-admin Job; Image `alpine/k8s`.
+- **Kyverno** — Audit-Admission mit BookStack-Doku.
+- **BookStack** — Bücher `cheat-sheets` v1.0.0, `authentik` v1.1.0, `longhorn` v1.0.0, `termix` v1.0.0, `cloudnative-pg` v1.4.0, `trivy-operator` v1.1.0, `mosquitto` v1.2.0.
+- **GitHub** — `CODEOWNERS`, Issue- und Pull-Request-Vorlagen.
 
 ### Changed
 
-- **Mosquitto image** — Broker auf `ghcr.io/henryhst/mosquitto-custom:1.1.1` (Mosquitto 2.1.2 glibc + go-auth; amd64 pin); Conf-Pfad `/mosquitto/config/mosquitto.conf`. BookStack `mosquitto` v1.2.0; ADR-0029.
+- **Authentik Redis** — `AUTHENTIK_REDIS__HOST=redis.redis.svc.cluster.local`, Namespace `authentik` in `redis-ingress`, Server-Speicher 1 Gi Request / 3 Gi Limit. Login-HTML p90 bei ~130 ms.
+- **Trivy Operator (#91)** — eingebauter Trivy-Server, `service.headless: false`, Grafana-Dashboard gnetId 17813; höheres Memory-Limit.
+- **Mosquitto** — Broker `ghcr.io/henryhst/mosquitto-custom:1.1.1` (glibc, amd64). Exporter auf den laufenden Digest `sha256:241570341cd144c27ca0952255a2726a4964b7397bfed93a98707b32eb06858c` (kein Semver-Tag). Init `ldap-preflight` wartet auf den LDAP-Outpost und meldet Bind-Fehler vor dem Broker-Start.
+- **CloudNativePG Backup** — Volume-Snapshots für Termix alle 6 Stunden (Klasse `longhorn`). PodMonitor, Alerts `cnpg-alerts`, Grafana-Application `cnpg-grafana`. Kein WAL-Archiv.
+- **Argo CD ApplicationSets** — `info` und UI-Prefs in den Templates. Kyverno in den Sets aus, damit die API entlastet wird.
+- **BookStack Jobs** — Import und Theme-Sync wählen den laufenden App-Pod (`instance=bookstack`, `phase=Running`) und setzen Requests/Limits. Debug-Ausgaben entfernt.
+- **k8tz** — Requests und Limits für das Kyverno-Init-Container.
+- **Images** — n8n v2.43.0, code-server v4.140.0, Meilisearch v1.54.3, `alpine/k8s` v1.37.1.
 
 ### Fixed
 
-- **Termix ServiceAccount** — Argo hat `automountServiceAccountToken` ignoriert und dadurch `false` behalten. Nach dem Resource-Rollout fehlte dem Instanz-Pod das API-Token. Der Ignore ist entfernt. Der Instanz-PodMonitor heißt `termix-instances`, damit der Operator ihn nicht löscht.
-- **Termix Argo-Vergleich** — `GUACD_TUNNEL_HOST` nur noch einmal (`127.0.0.1`, Sidecar). Chart und `extraEnv` hatten den Key doppelt gesetzt; Server-Side Apply konnte das Deployment nicht diffen.
-
-### Changed
-
-- **CloudNativePG Backup und Monitoring** — Volume-Snapshots für Termix (`ScheduledBackup` alle 6 Stunden, Klasse `longhorn`, snapshot-controller v8.6.0). Import-Block entfernt, Instanz-Requests gesetzt, PodMonitor und Alerts `cnpg-alerts`, Grafana über Application `cnpg-grafana`. BookStack `cloudnative-pg` v1.4.0, `termix` v1.1.0. Kein WAL-Archiv; `pg_dump` bleibt.
-
-### Added
-
-- **BookStack Cheat-Sheets** — Buch `cheat-sheets` v1.0.0: Snapshot aus [HenryHST/cheat-sheets](https://github.com/HenryHST/cheat-sheets) (Infra, Linux, macOS, Misc, Tools); Shelf Plattform.
-- **BookStack Authentik** — Buch `authentik` v1.1.0: OpenTofu-Kapitel, Pangolin-Publish für `idp` und öffentliche Apps; Onboarding mit Schritt „öffentlich?“; Archify `authentik-architektur` geschärft.
-- **BookStack Authentik** — Buch `authentik` v1.0.0: Architektur, Deploy, Brand Stadthagen Home, Onboarding-Vorlage für die nächste OIDC- oder ForwardAuth-App; Archify `authentik-architektur` und `authentik-oidc-onboarding`.
-- **BookStack Longhorn** — Buch `longhorn` v1.0.0: Architektur, Deploy, Snapshots und NFS-Backup, Onboarding-Vorlage für das nächste Volume; Archify `longhorn-architektur` und `longhorn-volume-onboarding`.
-- **CloudNativePG (#70)** — Wave-1 Helm-App `apps/infra/cloudnative-pg`: Operator 1.28.0 (Chart 0.27.0) in `cnpg-system`, ServiceAccount `postgres-cloud-sa`, PodMonitor, NetworkPolicy; ADR-0030; BookStack-Buch `cloudnative-pg`.
-- **Termix auf CloudNativePG** — Cluster `termix` (1 Instanz, PG 16, 1Gi Longhorn), Microservice-Import, Service `termix-rw`; Backup/Restore `PGHOST=termix-rw`; BookStack `cloudnative-pg` v1.1.0.
-- **BookStack Termix** — Buch `termix` v1.0.0 (Übersicht, Architektur, Deploy, Migrationsvorlage, Quellen); Archify `termix-architektur` und `termix-db-migration`.
-- **BookStack CloudNativePG** — Buch `cloudnative-pg` v1.3.0: Architektur, Deploy, Onboarding-Vorlage für die nächste Datenbank; Archify `cnpg-architektur` und `cnpg-onboarding`.
+- **Termix ServiceAccount** — `automountServiceAccountToken` wird nicht mehr ignoriert. PodMonitor heißt `termix-instances`.
+- **Termix Argo-Diff** — `GUACD_TUNNEL_HOST` nur noch einmal (`127.0.0.1`).
 
 ## [0.12.0] - 2026-09-30
 

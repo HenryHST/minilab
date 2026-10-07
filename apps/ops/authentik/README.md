@@ -6,6 +6,29 @@ GitOps install for `idp.stadthagen.dev`. Day-0 blueprints: [BLUEPRINTS.md](BLUEP
 
 Postgres is Cluster `authentik-pg` (Service `authentik-pg-rw`, PG17, Longhorn 8Gi). Helm subchart is off (`postgresql.enabled: false`). Cutover notes: [09-cnpg-migration](../../docs/bookstack/books/authentik/09-cnpg-migration.md), [ADR-0033](../../docs/adr/0033-authentik-cnpg.md).
 
+## Redis (Performance)
+
+Authentik **requires** Redis for cache, sessions, and the task broker. Without it, gunicorn saturates CPU and the login flow (`/if/flow/default-authentication-flow/`) shows multi-second tails (measured ~p90 2–4 s → ~130 ms after wiring).
+
+| Piece | Value |
+|-------|--------|
+| Shared instance | `apps/infra/redis` → Service `redis.redis.svc.cluster.local:6379` |
+| Config | `values.yaml` → `authentik.redis.host` → Secret key `AUTHENTIK_REDIS__HOST` |
+| NetworkPolicy | `redis/redis-ingress` allows namespaces `redis`, `paperless`, **`authentik`** |
+| Server resources | requests `250m` / `1Gi`, limit `3Gi` (worker limit `1Gi`) |
+
+Verify:
+
+```bash
+kubectl -n authentik get secret authentik -o jsonpath='{.data.AUTHENTIK_REDIS__HOST}' | base64 -d; echo
+kubectl -n authentik run redis-probe --rm -i --restart=Never --image=busybox:1.36 \
+  --command -- nc -zvw3 redis.redis.svc.cluster.local 6379
+# Login flow should stay under ~300 ms p90 externally:
+# curl -sk -o /dev/null -w '%{time_total}\n' https://idp.stadthagen.dev/if/flow/default-authentication-flow/
+```
+
+After changing `values.yaml`, re-render `helm-manifest.yaml` (see Helm below) and sync Application `authentik` **and** `redis` (NetworkPolicy).
+
 ## Brand media (logos / background)
 
 NFS source: `192.168.0.25:/var/nfs/shared/infra01/media/public/branding/` → PVC `authentik-media` at `/media/public/branding/`.

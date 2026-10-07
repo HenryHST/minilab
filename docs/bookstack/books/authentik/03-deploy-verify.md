@@ -23,10 +23,11 @@ kubectl -n authentik get deploy,pods,ingressroute,cronjob,pvc
 
 1. Deployments von Server und Worker sind Ready.
 2. `https://idp.stadthagen.dev` zeigt die Login-Seite mit Titel **Willkommen Stadthagen Home**.
-3. Job aus `authentik-media-sync` hat die Dateien unter `/media/public/branding/` gelegt. Logo, Favicon und `website-work.svg` sind dabei.
-4. CronJob `authentik-backup-cron` existiert, Zeitplan 05:00 UTC.
-5. Ein OIDC-Login, zum Beispiel Termix über den Reiter External, kommt zurück auf die App.
-6. `https://registry-ui.stadthagen.dev` fordert Authentik an, sobald Outpost `ak-outpost-registry-ui` Ready ist.
-7. Application `pangolin-publish` ist Synced. Newt-Site `k3s` ist healthy.
+3. Redis: Secret `AUTHENTIK_REDIS__HOST` zeigt auf `redis.redis.svc.cluster.local`; TCP 6379 aus dem Namespace `authentik` ist offen (NetworkPolicy `redis-ingress`). Ohne Redis wird die Login-Seite spürbar langsam.
+4. Job aus `authentik-media-sync` hat die Dateien unter `/media/public/branding/` gelegt. Logo, Favicon und `website-work.svg` sind dabei.
+5. CronJob `authentik-backup-cron` existiert, Zeitplan 05:00 UTC.
+6. Ein OIDC-Login, zum Beispiel Termix über den Reiter External, kommt zurück auf die App.
+7. `https://registry-ui.stadthagen.dev` fordert Authentik an, sobald Outpost `ak-outpost-registry-ui` Ready ist.
+8. Application `pangolin-publish` ist Synced. Newt-Site `k3s` ist healthy.
 
 Keine Secret-Werte auslesen. Die Checks lesen Namen und Bereitschaft, nicht den Inhalt von `authentik-credentials`.

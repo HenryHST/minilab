@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Authentik login latency** — Wired shared Redis (`AUTHENTIK_REDIS__HOST=redis.redis.svc.cluster.local`), allowed `authentik` in `redis-ingress` NetworkPolicy, raised server memory floor (1 Gi request / 3 Gi limit). Login-flow HTML p90 dropped from multi-second tails to ~130 ms. See `apps/ops/authentik/README.md` § Redis.
+
 ### Changed
 
 - **Trivy Operator (#91)** — `operator.builtInTrivyServer`, `service.headless: false`, Grafana Dashboard gnetId 17813 (Folder Trivy); Private-Registry-Doku + `secret.example.yaml`; BookStack `trivy-operator` v1.1.0; ADR-0031 ergänzt.

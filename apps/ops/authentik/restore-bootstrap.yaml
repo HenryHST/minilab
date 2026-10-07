@@ -89,6 +89,16 @@ spec:
     spec:
       serviceAccountName: authentik-restore
       restartPolicy: Never
+      # nxk3-w04 is denied by the NFS server (mount exit 32 / access denied).
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - nxk3-w04
       containers:
         - name: restore
           image: alpine/k8s:1.32.0

@@ -111,6 +111,7 @@ hostPath, NFS-Backups und das Quell-Secret `POSTGRES_PASSWORD`. Der Dump ist die
 7. App wieder auf 2 Replicas. Logs: `postgres database ready`. Login-Seite lädt. OIDC-User ist Admin, ein gespeicherter Host war nicht vorhanden.
 8. Job `termix-backup-cutover` schrieb `/backup/termix-20260930-191312.sql.gz` (19,8K) von `termix-rw`.
 9. hostPath `/var/lib/termix-postgres` auf `nxk3-w01` ist nicht gelöscht.
+10. **Hybrid-TLS (2026-10-07):** Server-CA/TLS über cert-manager (`cnpg-certificates.yaml` → Secret `termix-server-tls`). Client/Replication bleiben Operator-managed. App weiter `sslmode=require&uselibpqcompat=true` (kein CA-Mount).
 
 ### Störungen bei Termix
 

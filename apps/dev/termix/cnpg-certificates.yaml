@@ -1,0 +1,82 @@
+# Hybrid TLS for CNPG termix: cert-manager owns server CA + server TLS.
+# Client / streaming_replica certificates stay operator-managed.
+# Docs: https://cloudnative-pg.io/documentation/1.15/certificates/
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: termix-selfsigned-issuer
+  namespace: termix
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: termix-server-ca
+  namespace: termix
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  isCA: true
+  commonName: termix-server-ca
+  secretName: termix-server-ca-key-pair
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: termix-selfsigned-issuer
+    kind: Issuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: termix-server-ca-issuer
+  namespace: termix
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  ca:
+    secretName: termix-server-ca-key-pair
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: termix-server-tls
+  namespace: termix
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  labels:
+    cnpg.io/reload: ""
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: termix-server
+  namespace: termix
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  secretName: termix-server-tls
+  usages:
+    - server auth
+  dnsNames:
+    - termix-rw
+    - termix-rw.termix
+    - termix-rw.termix.svc
+    - termix-rw.termix.svc.cluster.local
+    - termix-r
+    - termix-r.termix
+    - termix-r.termix.svc
+    - termix-r.termix.svc.cluster.local
+    - termix-ro
+    - termix-ro.termix
+    - termix-ro.termix.svc
+    - termix-ro.termix.svc.cluster.local
+  issuerRef:
+    name: termix-server-ca-issuer
+    kind: Issuer
+    group: cert-manager.io

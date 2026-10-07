@@ -9,12 +9,17 @@ metadata:
   namespace: termix
   annotations:
     argocd.argoproj.io/sync-options: Prune=false
+    argocd.argoproj.io/sync-wave: "1"
   labels:
     app.kubernetes.io/name: termix
     app.kubernetes.io/part-of: termix
 spec:
   instances: 1
   imageName: ghcr.io/cloudnative-pg/postgresql:16
+  # Server TLS from cert-manager (cnpg-certificates.yaml); client/replication stay operator-managed.
+  certificates:
+    serverCASecret: termix-server-tls
+    serverTLSSecret: termix-server-tls
   bootstrap:
     initdb:
       database: termix

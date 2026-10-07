@@ -24,4 +24,4 @@ Authentik (IdP) lief mit dem Bitnami-PostgreSQL-Subchart (`postgresql.enabled: t
 - IdP-Cutover braucht ein kurzes Wartungsfenster (server/worker auf 0).
 - Argo ApplicationSet kann `syncPolicy.automated` zurücksetzen — während des Imports Self-Heal pausieren oder Replicas manuell halten.
 - Nächste Apps (n8n, paperless) können dieselbe Vorlage nutzen ([Termix Migration](../bookstack/books/termix/04-migration.md), [Authentik CNPG](../bookstack/books/authentik/09-cnpg-migration.md)).
-- **Folge nach stabilem Hybrid-Pilot:** optional `verify-full` mit CA-Mount (`AUTHENTIK_POSTGRESQL__SSLROOTCERT=file:///certs/ca.crt`) und Companion-SecretSpec; danach gleiches Hybrid-Muster für Termix.
+- **Folge:** optional `verify-full` mit CA-Mount (`AUTHENTIK_POSTGRESQL__SSLROOTCERT=file:///certs/ca.crt`) und Companion-SecretSpec. Termix nutzt dasselbe Hybrid-Muster (`apps/dev/termix/cnpg-certificates.yaml`).

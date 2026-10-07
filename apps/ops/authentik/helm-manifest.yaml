@@ -46,6 +46,7 @@ data:
   AUTHENTIK_POSTGRESQL__NAME: "YXV0aGVudGlr"
   AUTHENTIK_POSTGRESQL__PORT: "NTQzMg=="
   AUTHENTIK_POSTGRESQL__USER: "YXV0aGVudGlr"
+  AUTHENTIK_REDIS__HOST: "cmVkaXMucmVkaXMuc3ZjLmNsdXN0ZXIubG9jYWw="
   AUTHENTIK_WEB__BASE_URL: "aHR0cHM6Ly9pZHAuc3RhZHRoYWdlbi5kZXY="
   AUTHENTIK_WEB__PATH: "Lw=="
 
@@ -323,7 +324,7 @@ spec:
         app.kubernetes.io/part-of: "authentik"
         app.kubernetes.io/version: "2026.8.3"
       annotations:
-        checksum/secret: ea4ae9c3a9a12efb674585b7d2e87863af13e89e379649e4a9fe72cf03fdd101
+        checksum/secret: 5b3d6a95a63899a59d0615c56c51105aaa9c387ef96779f1e7471ca9c65dd7db
     spec:
       securityContext:
         fsGroup: 1000
@@ -399,9 +400,11 @@ spec:
             successThreshold: 1
             timeoutSeconds: 3
           resources:
+            limits:
+              memory: 3Gi
             requests:
-              cpu: 100m
-              memory: 512Mi
+              cpu: 250m
+              memory: 1Gi
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -457,7 +460,7 @@ spec:
         app.kubernetes.io/part-of: "authentik"
         app.kubernetes.io/version: "2026.8.3"
       annotations:
-        checksum/secret: ea4ae9c3a9a12efb674585b7d2e87863af13e89e379649e4a9fe72cf03fdd101
+        checksum/secret: 5b3d6a95a63899a59d0615c56c51105aaa9c387ef96779f1e7471ca9c65dd7db
     spec:
       serviceAccountName: "authentik"
       securityContext:
@@ -536,6 +539,8 @@ spec:
             successThreshold: 1
             timeoutSeconds: 3
           resources:
+            limits:
+              memory: 1Gi
             requests:
               cpu: 100m
               memory: 512Mi

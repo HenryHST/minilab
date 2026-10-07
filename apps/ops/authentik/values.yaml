@@ -12,6 +12,9 @@ authentik:
   # Existing installs: set once in Admin → System → Settings if still blank.
   web:
     base_url: "https://idp.stadthagen.dev"
+  # Shared cluster Redis (apps/infra/redis) — required for cache/sessions/broker.
+  redis:
+    host: redis.redis.svc.cluster.local
   postgresql:
     host: authentik-pg-rw
     name: authentik
@@ -57,10 +60,13 @@ server:
     enabled: true
     serviceMonitor:
       enabled: false
+  # Observed ~1 CPU / ~2Gi under login-flow load without Redis; raise floor + cap.
   resources:
     requests:
-      cpu: 100m
-      memory: 512Mi
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      memory: 3Gi
   initContainers:
     - name: volume-permissions
       image: busybox:1.38
@@ -81,6 +87,8 @@ worker:
     requests:
       cpu: 100m
       memory: 512Mi
+    limits:
+      memory: 1Gi
   initContainers:
     - name: volume-permissions
       image: busybox:1.38

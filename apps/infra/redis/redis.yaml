@@ -1,4 +1,4 @@
-# Redis — shared cluster cache/broker (first consumer: paperless).
+# Redis — shared cluster cache/broker (paperless, authentik).
 # Image pinned; AOF persistence on Longhorn.
 
 apiVersion: v1
@@ -110,6 +110,9 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: paperless
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: authentik
       ports:
         - protocol: TCP
           port: 6379

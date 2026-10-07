@@ -27,6 +27,7 @@ trivy:
 resources:
   requests:
     cpu: 50m
-    memory: 256Mi
-  limits:
     memory: 512Mi
+  limits:
+    # 512Mi OOMs during controller startup (exit 137); RBAC/config scans need headroom.
+    memory: 1Gi

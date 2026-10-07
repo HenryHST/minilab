@@ -76,8 +76,17 @@ spec:
       name: "{{ .app }}"
       annotations:
         argocd.argoproj.io/sync-wave: "{{ .syncWave }}"
+        pref.argocd.argoproj.io/default-view: tree
+        pref.argocd.argoproj.io/default-pod-sort: node
     spec:
       project: dev
+      info:
+        - name: Source
+          value: 'https://github.com/HenryHST/minilab/tree/main/{{ if dig "path" "" . }}{{ dig "path" "" . }}{{ else }}apps/dev/{{ .app }}{{ end }}'
+        - name: Project
+          value: dev
+        - name: Docs
+          value: 'https://github.com/HenryHST/minilab/tree/main/docs/bookstack/books/{{ .app }}'
       destination:
         server: https://kubernetes.default.svc
         namespace: "{{ .namespace }}"

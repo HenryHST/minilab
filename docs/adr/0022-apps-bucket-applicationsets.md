@@ -67,3 +67,4 @@ Reihenfolge laut ADR-0004-Warnung (Finalizer-Konflikte). **Parent `homelab` Auto
 - Neue App = Ordner unter dem passenden Bucket + Listeneintrag im zugehörigen ApplicationSet (kein Einzel-YAML mehr unter `apps/argocd-apps/`).
 - Emergency-Notifications / Ansible-Defaults, die noch `infrastruktur` referenzieren, müssen auf die neuen Project-Namen umgestellt werden (Infra_LAB).
 - Docs/BookStack Sync-Wave-Tabelle und App-READMEs nutzen `apps/<bucket>/…`-Pfade.
+- ApplicationSet-Templates setzen `spec.info` (Source / Project / Docs) und UI-Prefs (`pref.argocd.argoproj.io/default-view`, `default-pod-sort`) für alle Child-Apps.

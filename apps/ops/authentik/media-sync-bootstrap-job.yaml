@@ -1,6 +1,6 @@
 # One-shot rsync, same as CronJob authentik-media-sync (NFS → authentik-media PVC).
-# Not an Argo hook and not a sync health gate: nxk3-w04 cannot mount this NFS
-# export (mount exit 32). Waiting on the Job kept the CNPG host from rolling out.
+# Not an Argo hook and not a sync health gate. Waiting on this Job once blocked
+# the CloudNativePG host from rolling out.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -16,15 +16,6 @@ spec:
       restartPolicy: Never
       nodeSelector:
         worker: "true"
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: NotIn
-                    values:
-                      - nxk3-w04
       containers:
         - name: rsync
           image: instrumentisto/rsync-ssh:alpine

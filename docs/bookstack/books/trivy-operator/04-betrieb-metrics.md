@@ -11,6 +11,12 @@ book_version: "1.1.0"
 - Exclude nur System-Namespaces; App-Namespaces bleiben im Scope.
 - Built-in Trivy-Server in `trivy-system` (Client/Server-Mode).
 
+### RBAC: Kubernetes Bootstrapping überspringen
+
+`trivyOperator.skipResourceByLabels: kubernetes.io/bootstrapping` — ClusterRoles/Roles mit Label `kubernetes.io/bootstrapping` (API-Server-Defaults: `system:controller:*`, `system:aggregate-to-*`, `cluster-admin` / `edit` / `admin`, …) werden nicht gescannt.
+
+Beispiele, die vorher Headlamp-Noise waren: `system:controller:horizontal-pod-autoscaler` (AVD-KSV-0046), `system:aggregate-to-edit` (0041/0048/…). Nicht patchen — `rbac.authorization.kubernetes.io/autoupdate: true`. Chart-/Operator-Rollen ohne dieses Label bleiben im Scope (z. B. Argo CD, Longhorn).
+
 ## Metrics
 
 Operator-Metriken über ServiceMonitor (`service.headless: false`, Port 80). Targets in Prometheus prüfen (`release: kube-prometheus-stack`). Kein zusätzlicher static scrape job.

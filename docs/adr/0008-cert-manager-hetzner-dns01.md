@@ -19,7 +19,7 @@ Traefik IngressRoutes brauchen TLS. Manuelles Kopieren eines Wildcards (`stadtha
 - **Metrics (2026-10-07):** Chart `prometheus.enabled` with **PodMonitor** (not ServiceMonitor) per [cert-manager Prometheus Metrics](https://cert-manager.io/docs/devops-tips/prometheus-metrics/). Label `release: kube-prometheus-stack` (live Prometheus selector). PodMonitor XOR ServiceMonitor.
 - **Grafana:** Dashboard gnetId **20340** (Folder `cert-manager`) in kube-prometheus-stack — [Grafana.com](https://grafana.com/grafana/dashboards/20340-cert-manager/). Alert `CertificateExpiringSoon` in `homelab-alerts.yaml`.
 - **Nicht:** Metrics-Endpoint-TLS, cert-manager-mixin (Jsonnet).
-- **Trivy Builtin (not patched):** `system:aggregate-to-edit` is a Kubernetes default (`rbac.authorization.kubernetes.io/autoupdate: true`, feeds ClusterRole `edit`). Findings AVD-KSV-0041/0048/0049/0053/0056 are accepted noise — do not edit API-server bootstrapping roles.
+- **Trivy Builtin RBAC:** API-server bootstrapping roles (`kubernetes.io/bootstrapping`) are skipped cluster-wide via Trivy Operator `skipResourceByLabels` — see [Trivy Betrieb: Bootstrapping](../bookstack/books/trivy-operator/04-betrieb-metrics.md). Do not patch `system:aggregate-to-edit` / `system:controller:*`.
 
 ## Konsequenzen
 

@@ -20,3 +20,4 @@ Der Cluster braucht eine Default-StorageClass für stateful Workloads. Lokale Di
 - Stateful Apps defaulten auf Longhorn-PVCs.
 - NAS-Export und NFSv3-Optionen sind Teil der Betriebsvoraussetzung.
 - App-spezifische Datei-Backups zusätzlich über CronJobs ([ADR-0015](0015-backup-restore-cronjobs.md)).
+- **Trivy RBAC:** ClusterRole `longhorn-role` Findings (AVD-KSV-0041/0114/0045/0048) sind accepted operator rights — do not strip secrets/webhooks/wildcard verbs. Details: [Longhorn Deploy/Verify](../bookstack/books/longhorn/03-deploy-verify.md).

@@ -31,3 +31,16 @@ kubectl get volumesnapshotclass longhorn
 6. Ein gebundenes PVC, zum Beispiel `termix-1` im Namespace `termix`, nutzt die Klasse `longhorn`.
 
 Ein PVC, das auf `Pending` stehen bleibt, ist kein Sync-Fehler der App. Dann fehlt planbarer Platz. Kapitel **Onboarding**.
+
+## Trivy RBAC (`longhorn-role`)
+
+ClusterRole `longhorn-role` (Chart) bleibt bewusst breit — Abspecken bricht CSI, Volume-Lifecycle und Admission-Webhooks. Findings in Headlamp sind **akzeptiert**:
+
+| Check | Severity | Warum behalten |
+|-------|----------|----------------|
+| AVD-KSV-0041 | CRITICAL | `secrets` get/list/watch (Backing Images, Backup-Credentials, …) |
+| AVD-KSV-0114 | CRITICAL | Mutating/Validating Webhook Configs create/patch/delete |
+| AVD-KSV-0045 | CRITICAL | Wildcard-Verbs auf PVs/PVCs/nodes, storage/snapshot, `longhorn.io/*`, CRDs |
+| AVD-KSV-0048 | MEDIUM | Pods delete (+ read auf Workloads) für Engine/Replica-Lifecycle |
+
+Kein Bootstrapping-Label → Trivy scannt weiter. Siehe auch [ADR-0009](../../../adr/0009-longhorn-nfs-backups.md).

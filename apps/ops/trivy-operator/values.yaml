@@ -24,6 +24,10 @@ operator:
 trivy:
   ignoreUnfixed: true
 
+trivyOperator:
+  # Skip API-server RBAC defaults (system:controller:*, aggregate-to-*, cluster-admin/edit/admin, …).
+  skipResourceByLabels: kubernetes.io/bootstrapping
+
 resources:
   requests:
     cpu: 50m

@@ -29,3 +29,4 @@ Postgres läuft als StatefulSets (`n8n`, `paperless`) bzw. als CNPG-Cluster (`te
 - AppProject `infra` erlaubt Destination `cnpg-system`. Das `Cluster`-Manifest liegt bei der App (`apps/dev/termix/cnpg-cluster.yaml`, AppProject `dev`). Der Operator watched cluster-weit.
 - Ein `pg_dump` vom Cluster nach `termix-backups` ist durch. hostPath `/var/lib/termix-postgres` auf `nxk3-w01` bleibt als Rückfallebene liegen.
 - Snapshots liegen auf den Longhorn-Volumes. Eine Barman-Aufbewahrungsfrist gibt es dafür nicht. `snapshotOwnerReference: backup` löscht den Snapshot zusammen mit dem Backup-Objekt.
+- **Trivy RBAC:** ClusterRole `cloudnative-pg` Findings (AVD-KSV-0050/0053/0041/0049/0056/0114/0048) are accepted operator rights — do not strip secrets, webhooks, roles, pods/exec, or workloads. Details: [CNPG Deploy/Verify](../bookstack/books/cloudnative-pg/03-deploy-verify.md).

@@ -32,3 +32,19 @@ kubectl get crd clusters.postgresql.cnpg.io
 8. `kubectl -n longhorn-system get deploy snapshot-controller` ist Ready. Danach den Operator einmal neu starten. Er erkennt die VolumeSnapshot-CRD nur beim Start. Ohne Neustart lehnt er `method: volumeSnapshot` ab.
 
 Upstream-E2E läuft im Homelab nicht.
+
+## Trivy RBAC (`cloudnative-pg`)
+
+ClusterRole `cloudnative-pg` (Operator-Chart) bleibt bewusst breit — Abspecken bricht Instance-Lifecycle, Secrets/ConfigMaps, Services, Webhooks und Pod-Exec. Findings in Headlamp sind **akzeptiert** (`cloudnative-pg-edit` / `view` / `volumesnapshot` sind clean):
+
+| Check | Severity | Warum behalten |
+|-------|----------|----------------|
+| AVD-KSV-0050 | CRITICAL | `roles` / `rolebindings` für Instance-SA im App-Namespace |
+| AVD-KSV-0053 | HIGH | `pods/exec` für Jobs/Bootstrap/Diagnostics |
+| AVD-KSV-0041 | CRITICAL | `secrets` cluster-weit (DB-Credentials, TLS, app user secrets) |
+| AVD-KSV-0049 | MEDIUM | `configmaps` write (Cluster-Konfiguration) |
+| AVD-KSV-0056 | HIGH | `services` create/patch (RW/RO/r Services pro Cluster) |
+| AVD-KSV-0114 | CRITICAL | Mutating/Validating Webhook Configs get/patch |
+| AVD-KSV-0048 | MEDIUM | `pods` / `deployments` create/delete/patch (Instances) |
+
+Kein Bootstrapping-Label → Trivy scannt weiter. Siehe [ADR-0030](../../../adr/0030-cloudnative-pg.md).

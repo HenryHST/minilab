@@ -101,10 +101,6 @@ spec:
               NS=bookstack
               echo "Waiting for bookstack deployment..."
               kubectl -n "$NS" rollout status deploy/bookstack --timeout=180s
-              # #region agent log
-              echo "DEBUG_HYP_B broad_candidates:"
-              kubectl -n "$NS" get pods -l app.kubernetes.io/name=bookstack -o jsonpath='{range .items[*]}{.metadata.name}|instance={.metadata.labels.app\.kubernetes\.io/instance}|component={.metadata.labels.app\.kubernetes\.io/component}|phase={.status.phase}{"\n"}{end}' || true
-              # #endregion
               # Job pods also label name=bookstack — require Helm instance label + Running.
               POD=$(kubectl -n "$NS" get pods \
                 -l app.kubernetes.io/name=bookstack,app.kubernetes.io/instance=bookstack \
@@ -114,7 +110,6 @@ spec:
                 echo "ERROR: no running bookstack app pod" >&2
                 exit 1
               fi
-              echo "DEBUG_HYP_B selected_pod=$POD"
               echo "Using pod $POD"
 
               # ConfigMap mounts are symlinks; kubectl cp does not follow them — materialize first.

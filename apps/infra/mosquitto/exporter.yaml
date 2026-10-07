@@ -17,12 +17,13 @@ spec:
       labels:
         app: mosquitto-exporter
     spec:
-      # sapcc/mosquitto-exporter:latest is linux/amd64 only (no multi-arch manifest)
+      # sapcc/mosquitto-exporter is linux/amd64 only (no multi-arch manifest).
+      # No semver tag on the registry; pin the digest that was running as :latest.
       nodeSelector:
         kubernetes.io/arch: amd64
       containers:
         - name: exporter
-          image: sapcc/mosquitto-exporter:latest
+          image: sapcc/mosquitto-exporter@sha256:241570341cd144c27ca0952255a2726a4964b7397bfed93a98707b32eb06858c
           imagePullPolicy: IfNotPresent
           env:
             - name: BROKER_ENDPOINT

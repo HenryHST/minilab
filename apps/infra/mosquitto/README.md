@@ -12,7 +12,7 @@ Eclipse Mosquitto MQTT broker with Authentik LDAP auth (go-auth). LAN LoadBalanc
 | Auth | LDAP → `ak-outpost-ldap-stadthagen-outpost:389`; groups `mqtt_users` / `mqtt_admins` |
 | Data | Longhorn PVC `mosquitto-data` 1 Gi RWO (`replicas: 1`, Strategy `Recreate`) |
 | TLS | Certificate `mqtt-pro-tls` (LE); until Ready, init `tls-bootstrap` uses a self-signed placeholder so the pod can start |
-| Metrics | `sapcc/mosquitto-exporter` → `:9234/metrics` (`ServiceMonitor`); broker `sys_interval 10`; image is **amd64-only** (`nodeSelector: kubernetes.io/arch=amd64`) |
+| Metrics | `sapcc/mosquitto-exporter` digest-pinned → `:9234/metrics` (`ServiceMonitor`); broker `sys_interval 10`; image is **amd64-only** (`nodeSelector: kubernetes.io/arch=amd64`) |
 | Smoke | Deployment `mqtt-tools` + CronJob `mqtt-smoke` (every 15 min) |
 
 

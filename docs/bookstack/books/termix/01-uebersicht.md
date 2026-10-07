@@ -27,7 +27,7 @@ flowchart LR
 | Argo App | `termix` (ApplicationSet `dev`, Wave 2) |
 | Namespace | `termix` |
 | LAN | https://termix.stadthagen.dev |
-| Image | `ghcr.io/lukegus/termix:release-2.8.0`, 2 Replicas, Sidecar `guacd` 1.6.0 |
+| Image | `ghcr.io/lukegus/termix:release-2.9.2`, 2 Replicas, Sidecar `guacd` 1.6.0 |
 | Auth | OIDC, Gruppe `Termix Admins`, `ALLOW_REGISTRATION=false` |
 | Datenbank | Cluster `termix`, 1 Instanz, PG 16, 1Gi Longhorn, Service `termix-rw` |
 

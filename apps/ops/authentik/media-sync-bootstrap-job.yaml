@@ -7,7 +7,7 @@ metadata:
   name: authentik-media-sync-bootstrap
   namespace: authentik
   annotations:
-    argocd.argoproj.io/sync-options: Replace=true,SkipHealthCheck=true
+    argocd.argoproj.io/sync-options: SkipHealthCheck=true
 spec:
   ttlSecondsAfterFinished: 86400
   backoffLimit: 2

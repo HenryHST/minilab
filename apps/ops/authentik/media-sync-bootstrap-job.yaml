@@ -1,13 +1,11 @@
-# One-shot PostSync: CronJob alone waits up to 6h; first bootstrap needs media now.
-# Same rsync as CronJob authentik-media-sync (NFS → authentik-media PVC).
+# One-shot rsync, same as CronJob authentik-media-sync (NFS → authentik-media PVC).
+# Not an Argo hook: a PostSync wait blocked the Authentik sync for a day when
+# nxk3-w04 could not mount the NFS export, so the CNPG host never rolled out.
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: authentik-media-sync-bootstrap
   namespace: authentik
-  annotations:
-    argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
   ttlSecondsAfterFinished: 86400
   backoffLimit: 2

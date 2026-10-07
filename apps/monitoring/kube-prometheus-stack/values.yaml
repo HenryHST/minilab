@@ -98,6 +98,12 @@ grafana:
   plugins:
     - apricote-hcloud-datasource
     - grafana-mqtt-datasource
+    - tim012432-calendarheatmap-panel@1.1.1
+    - ventura-psychrometric-panel@5.1.0
+    - neildengg-grafmaid-panel@1.0.6
+    - grafana-pathfinder-app@2.20.1
+    - yesoreyeram-infinity-datasource@4.1.1
+    - grafana-prometheusalerting-app@1.6.1
   dashboardProviders:
     dashboardproviders.yaml:
       apiVersion: 1
@@ -206,6 +212,8 @@ grafana:
         revision: 2
         datasource: Prometheus
   grafana.ini:
+    feature_toggles:
+      enable: interactiveLearning
     server:
       root_url: https://grafana.stadthagen.dev
       domain: grafana.stadthagen.dev

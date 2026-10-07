@@ -1,12 +1,17 @@
 crds:
   enabled: true
 
-# Scrape cert-manager metrics for Grafana dashboard gnetId 20340 + CertificateExpiringSoon.
+# Scrape cert-manager metrics (docs Helm tip: PodMonitor).
+# https://cert-manager.io/docs/devops-tips/prometheus-metrics/
+# Feeds Grafana gnetId 20340 + CertificateExpiringSoon.
 prometheus:
   enabled: true
+  # PodMonitor XOR ServiceMonitor — chart rejects both enabled.
   servicemonitor:
+    enabled: false
+  podmonitor:
     enabled: true
-    # kube-prometheus-stack selects ServiceMonitors with this label.
+    # Live Prometheus selects monitors with this label.
     labels:
       release: kube-prometheus-stack
 

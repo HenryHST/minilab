@@ -6,7 +6,7 @@ Eclipse Mosquitto MQTT broker with Authentik LDAP auth (go-auth). LAN LoadBalanc
 |--|--|
 | Argo | ApplicationSet `infra`, sync wave `1`, namespace `mosquitto` |
 | Image | `ghcr.io/henryhst/mosquitto-custom:1.1.1` (Mosquitto 2.1.2 glibc; [mosquitto-custom](https://github.com/HenryHST/mosquitto-custom); **amd64** `nodeSelector`) |
-| Conf | `/mosquitto/config/mosquitto.conf` (Image-Default; bind pw via init `tls-bootstrap`) |
+| Conf | `/mosquitto/config/mosquitto.conf` (bind pw via init `tls-bootstrap`; init `ldap-preflight` waits for the outpost and checks the bind) |
 | Host | `mqtt-pro.stadthagen.dev` → LB `192.168.0.218` (manual Hetzner A) |
 | Ports | `1883` MQTT, `8883` MQTTS, `9001` WebSockets (TLS) |
 | Auth | LDAP → `ak-outpost-ldap-stadthagen-outpost:389`; groups `mqtt_users` / `mqtt_admins` |
@@ -42,6 +42,17 @@ kubectl -n mosquitto exec -it deploy/mqtt-tools -- \
 ```
 
 Host aliases: short `mqtt` or FQDN `mqtt.mosquitto.svc.cluster.local`. Env `MQTT_USER` / `MQTT_PASS` come from Secret `mosquitto-probe`.
+
+## Startup
+
+go-auth exits the broker as soon as the LDAP outpost refuses TCP or the `ldapservice` bind is rejected. Init `ldap-preflight` handles both before Mosquitto starts:
+
+- Outpost down: the pod stays in `Init` and logs `not accepting LDAP connections`, including the `kubectl logs` command for `ak-outpost-ldap-stadthagen-outpost`. It retries for 10 minutes (40 × 15s), then fails that init.
+- Wrong password or surrounding whitespace: init exits immediately with `invalid credentials` and names Secret `mosquitto-ldap` / SecretSpec `MOSQUITTO_LDAP_BIND_PASSWORD`.
+
+```bash
+kubectl -n mosquitto logs deploy/mosquitto -c ldap-preflight
+```
 
 ## Verify
 

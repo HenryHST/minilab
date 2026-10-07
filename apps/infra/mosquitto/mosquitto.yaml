@@ -92,6 +92,126 @@ spec:
   selector:
     app: mosquitto
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mosquitto-ldap-preflight
+  namespace: mosquitto
+  labels:
+    app: mosquitto
+data:
+  ldap-preflight.sh: |
+    #!/bin/bash
+    # Fail in init, with a specific message, instead of letting go-auth CrashLoopBackOff the broker.
+    set -euo pipefail
+    CONF="${CONF:-/config/mosquitto.conf}"
+    ATTEMPTS="${LDAP_PREFLIGHT_ATTEMPTS:-40}"
+    INTERVAL="${LDAP_PREFLIGHT_INTERVAL:-15}"
+
+    url=$(awk '/^auth_opt_ldap_url / {print $2; exit}' "$CONF")
+    rest=${url#ldap://}
+    hostport=${rest%%/*}
+    host=${hostport%%:*}
+    port=${hostport##*:}
+    dn=$(awk '/^auth_opt_ldap_bind_dn / {sub(/^auth_opt_ldap_bind_dn /,""); print; exit}' "$CONF")
+    line=$(grep -E '^auth_opt_ldap_bind_password ' "$CONF" | head -n1 || true)
+    pw=${line#auth_opt_ldap_bind_password }
+
+    if [ -z "$url" ] || [ -z "$host" ] || [ -z "$port" ] || [ "$port" = "$hostport" ]; then
+      echo "ldap-preflight: rendered mosquitto.conf has no auth_opt_ldap_url ldap://host:port." >&2
+      exit 1
+    fi
+    if [ -z "$line" ] || [ -z "$pw" ]; then
+      echo "ldap-preflight: rendered mosquitto.conf has no auth_opt_ldap_bind_password." >&2
+      echo "ldap-preflight: Secret mosquitto/mosquitto-ldap must contain that line. Source is SecretSpec MOSQUITTO_LDAP_BIND_PASSWORD." >&2
+      exit 1
+    fi
+    if [[ "$pw" =~ ^[[:space:]] ]] || [[ "$pw" =~ [[:space:]]$ ]]; then
+      echo "ldap-preflight: LDAP bind password has leading or trailing whitespace." >&2
+      echo "ldap-preflight: Authentik then returns invalid credentials. Set MOSQUITTO_LDAP_BIND_PASSWORD to the exact Terraform ldapservice_password." >&2
+      exit 1
+    fi
+
+    emit() {
+      local bind_dn="$1" password="$2" dn_len pw_len body_len msg_len
+      dn_len=$(printf '%s' "$bind_dn" | wc -c | tr -d ' ')
+      pw_len=$(printf '%s' "$password" | wc -c | tr -d ' ')
+      if [ "$dn_len" -ge 128 ] || [ "$pw_len" -ge 128 ]; then
+        echo "ldap-preflight: bind DN or password is longer than 127 bytes; refusing to send a truncated LDAP packet." >&2
+        exit 1
+      fi
+      body_len=$((3 + 2 + dn_len + 2 + pw_len))
+      msg_len=$((3 + 2 + body_len))
+      printf '\x30'
+      printf "\\x$(printf '%02x' "$msg_len")"
+      printf '\x02\x01\x01\x60'
+      printf "\\x$(printf '%02x' "$body_len")"
+      printf '\x02\x01\x03\x04'
+      printf "\\x$(printf '%02x' "$dn_len")"
+      printf '%s' "$bind_dn"
+      printf '\x80'
+      printf "\\x$(printf '%02x' "$pw_len")"
+      printf '%s' "$password"
+    }
+
+    ldap_code() {
+      local password="$1" len code
+      exec 3<>"/dev/tcp/${ip}/${port}"
+      emit "$dn" "$password" >&3
+      dd bs=1 count=2 <&3 >/tmp/ldap.hdr status=none
+      len=$(od -An -tu1 /tmp/ldap.hdr | awk '{print $2}')
+      dd bs=1 count="$len" <&3 >/tmp/ldap.body status=none
+      exec 3<&- || true
+      exec 3>&- || true
+      code=$(od -An -tu1 /tmp/ldap.hdr /tmp/ldap.body | awk '{
+        for (i = 1; i <= NF; i++) a[++n] = $i
+      }
+      END {
+        c = -1
+        for (i = 1; i <= n - 2; i++) if (a[i] == 10 && a[i + 1] == 1) { c = a[i + 2]; break }
+        print c
+      }')
+      rm -f /tmp/ldap.hdr /tmp/ldap.body
+      printf '%s\n' "$code"
+    }
+
+    ip=""
+    for ((n = 1; n <= ATTEMPTS; n++)); do
+      ip=$(getent ahostsv4 "$host" | awk 'NR==1 {print $1}')
+      if [ -n "$ip" ] && bash -c "echo >/dev/tcp/${ip}/${port}" >/dev/null 2>&1; then
+        break
+      fi
+      if [ -z "$ip" ]; then
+        echo "ldap-preflight: DNS has no A record for ${host} (attempt ${n}/${ATTEMPTS})." >&2
+      else
+        echo "ldap-preflight: ${host} (${ip}:${port}) is not accepting LDAP connections (attempt ${n}/${ATTEMPTS})." >&2
+      fi
+      echo "ldap-preflight: Mosquitto stays in init until the Authentik outpost listens. go-auth would otherwise exit immediately and CrashLoopBackOff." >&2
+      echo "ldap-preflight: Check kubectl -n authentik logs deploy/ak-outpost-ldap-stadthagen-outpost -c ldap" >&2
+      if [ "$n" -eq "$ATTEMPTS" ]; then
+        echo "ldap-preflight: giving up after $((ATTEMPTS * INTERVAL))s." >&2
+        exit 1
+      fi
+      sleep "$INTERVAL"
+    done
+
+    code=$(ldap_code "$pw")
+    case "$code" in
+      0)
+        echo "ldap-preflight: LDAP simple bind succeeded for ${dn} at ldap://${host}:${port}."
+        ;;
+      49)
+        echo "ldap-preflight: LDAP bind rejected (invalid credentials) for ${dn}." >&2
+        echo "ldap-preflight: Secret mosquitto/mosquitto-ldap key 00-bind.conf does not match the Authentik user ldapservice." >&2
+        echo "ldap-preflight: MOSQUITTO_LDAP_BIND_PASSWORD must be exactly Terraform ldapservice_password, then re-run ansible-playbook site.yaml --tags secrets and restart the pod." >&2
+        exit 1
+        ;;
+      *)
+        echo "ldap-preflight: LDAP bind to ldap://${host}:${port} failed with result code ${code} for ${dn}." >&2
+        exit 1
+        ;;
+    esac
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -147,7 +267,8 @@ spec:
               cp /config-src/mosquitto.conf /config/mosquitto.conf
               BIND_LINE=$(grep -E '^auth_opt_ldap_bind_password ' /ldap-secret/00-bind.conf | head -n1)
               if [ -z "${BIND_LINE}" ]; then
-                echo "tls-bootstrap: missing auth_opt_ldap_bind_password in mosquitto-ldap secret" >&2
+                echo "tls-bootstrap: Secret mosquitto/mosquitto-ldap has no line 'auth_opt_ldap_bind_password <password>'." >&2
+                echo "tls-bootstrap: Set SecretSpec MOSQUITTO_LDAP_BIND_PASSWORD to Terraform ldapservice_password, then ansible-playbook site.yaml --tags secrets." >&2
                 exit 1
               fi
               # Insert bind password immediately after auth_plugin line (same conf file as plugin).
@@ -170,6 +291,24 @@ spec:
               mountPath: /config
             - name: ldap-secret
               mountPath: /ldap-secret
+              readOnly: true
+        # go-auth aborts the broker process when LDAP is down or the bind password is wrong.
+        # Kubernetes then CrashLoopBackOffs and hides the cause. Wait here, and say which of the two it is.
+        - name: ldap-preflight
+          image: ghcr.io/henryhst/mosquitto-custom:1.1.1
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "/preflight/ldap-preflight.sh"]
+          env:
+            - name: LDAP_PREFLIGHT_ATTEMPTS
+              value: "40"
+            - name: LDAP_PREFLIGHT_INTERVAL
+              value: "15"
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: ldap-preflight
+              mountPath: /preflight
               readOnly: true
       containers:
         - name: mosquitto
@@ -224,6 +363,10 @@ spec:
         - name: ldap-secret
           secret:
             secretName: mosquitto-ldap
+        - name: ldap-preflight
+          configMap:
+            name: mosquitto-ldap-preflight
+            defaultMode: 0555
         - name: tls
           emptyDir: {}
         - name: tls-secret

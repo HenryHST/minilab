@@ -1,4 +1,5 @@
 book: trivy-operator
+cover: cover.png
 book_version: "1.1.0"
 updated: "2026-10-03"
 description: Trivy Operator — built-in Server, ServiceMonitor, Grafana 17813, private registry

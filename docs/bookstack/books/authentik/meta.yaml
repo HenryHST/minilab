@@ -1,4 +1,5 @@
 book: authentik
+cover: cover.png
 book_version: "1.2.0"
 updated: "2026-10-06"
 description: Authentik — IdP, Brand Stadthagen Home, OpenTofu, Pangolin-Publish, CNPG-Postgres, Vorlage für die nächste OIDC-App

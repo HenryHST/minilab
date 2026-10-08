@@ -19,7 +19,7 @@ Format angelehnt an [Michael Nygard](https://cognitect.com/blog/2011/11/15/docum
 | [0009](0009-longhorn-nfs-backups.md) | Longhorn als Default-Storage und NFS-Backups | Accepted |
 | [0010](0010-authentik-idp.md) | Authentik als zentrales IdP | Accepted |
 | [0011](0011-pangolin-public-exposure.md) | Selektive Public Exposure über Pangolin | Accepted |
-| [0012](0012-uptime-kuma-sqlite-local-pv.md) | Uptime Kuma: SQLite und Local PV | Accepted |
+| [0012](0012-uptime-kuma-sqlite-local-pv.md) | Uptime Kuma: SQLite und Local PV | Superseded by 0034 |
 | [0013](0013-baseline-alerting.md) | Baseline Alerting (Prometheus + Loki) | Accepted |
 | [0014](0014-helm-strategie.md) | Helm: Native Argo-Helm vs. committed `helm-manifest.yaml` | Accepted |
 | [0015](0015-backup-restore-cronjobs.md) | App-Backups per CronJob auf NFS | Accepted |
@@ -41,6 +41,7 @@ Format angelehnt an [Michael Nygard](https://cognitect.com/blog/2011/11/15/docum
 | [0031](0031-trivy-operator.md) | Trivy Operator (Helm, Vulnerability/Config Audit) | Accepted |
 | [0032](0032-kyverno-admission-audit.md) | Kyverno Admission (Audit ClusterPolicies) | Accepted |
 | [0033](0033-authentik-cnpg.md) | Authentik Postgres auf CloudNativePG | Accepted |
+| [0034](0034-gatus-cnpg.md) | Gatus statt Uptime Kuma, Postgres auf CloudNativePG | Accepted |
 
 ## Neues ADR anlegen
 

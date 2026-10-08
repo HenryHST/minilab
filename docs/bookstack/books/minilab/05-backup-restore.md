@@ -9,7 +9,7 @@
 
 | App | Cron | Inhalt |
 |-----|------|--------|
-| status (Uptime Kuma) | 01:00 | SQLite/data tar |
+| gatus | 01:00 | `pg_dump` |
 | vaultwarden | 02:00 | `/data` tar |
 | termix | 03:00 | `pg_dump` |
 | bookstack | 04:00 | MariaDB dump + `/config` |

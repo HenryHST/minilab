@@ -109,11 +109,7 @@
         href: https://loki.stadthagen.dev
         icon: si-grafana-#F46800
         description: log aggregation
-    - Uptime Kuma:
+    - Gatus:
         href: https://status.stadthagen.dev
-        icon: si-statuspage-#300A27
+        icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/gatus.png
         description: status.stadthagen.dev
-        widget:
-          type: uptimekuma
-          url: http://status.uptimekuma.svc.cluster.local:3001
-          slug: homelab

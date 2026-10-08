@@ -8,6 +8,7 @@ Interaktive HTML-Diagramme und BookStack-Exports für die Plattform-Bücher.
 | `trivy-architektur` | architecture | [trivy-architektur.html](archify/trivy-architektur.html) | `archify/exports/trivy-architektur.png` | Trivy Operator — Overview (#91: Server + Grafana) |
 | `kyverno-admission` | architecture | [kyverno-admission.html](archify/kyverno-admission.html) | `archify/exports/kyverno-admission.png` | Kyverno — Übersicht |
 | `kyverno-gitops` | architecture | [kyverno-gitops.html](archify/kyverno-gitops.html) | `archify/exports/kyverno-gitops.png` | Kyverno — Architektur |
+| `gatus-architektur` | architecture | [gatus-architektur.html](archify/gatus-architektur.html) | `archify/exports/gatus-architektur.png` | Gatus — Übersicht |
 
 ## Archify
 

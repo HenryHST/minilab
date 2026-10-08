@@ -51,10 +51,16 @@ spec:
             path: apps/monitoring/alloy
             namespace: alloy
             syncWave: "3"
-          - app: status
-            path: apps/monitoring/status
-            namespace: uptimekuma
+          - app: gatus
+            path: apps/monitoring/gatus/manifests
+            namespace: status
             syncWave: "3"
+            helmRepo: https://twin.github.io/helm-charts
+            helmChart: gatus
+            helmVersion: "1.5.0"
+            helmReleaseName: gatus
+            helmValuesFile: apps/monitoring/gatus/values.yaml
+            extras: true
           - app: unifipoller
             path: apps/monitoring/unpoller
             namespace: unpoller

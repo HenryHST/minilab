@@ -8,7 +8,7 @@ Metrics, logs, and status tooling.
 | kube-prometheus-stack | 1 | monitoring | kube-prometheus-stack |
 | grafana-loki | 3 | monitoring | grafana-loki |
 | alloy | 3 | alloy | alloy |
-| status | 3 | uptimekuma | status |
+| gatus | 3 | status | gatus |
 | unpoller | 2 | unpoller | unifipoller |
 | kromgo | 3 | kromgo | kromgo |
 

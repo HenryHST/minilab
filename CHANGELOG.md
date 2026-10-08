@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Gatus (#115)** — ersetzt Uptime Kuma. Helm-Chart `gatus` 1.5.0 (v5.34.0) in Namespace `status`, URL `status.stadthagen.dev`. CloudNativePG (PG 16), Authentik-OIDC (`gatus_admins`), Pushover, ServiceMonitor. ADR-0034. Buch `gatus`. Archify `gatus-architektur`.
+
+### Changed
+
+- **Backup** — der 01:00-UTC-Slot ist `pg_dump` von Gatus statt tar von Uptime Kuma (ADR-0015).
+- **Homepage** — Link auf Gatus; das Uptime-Kuma-Widget entfällt (die Seite liegt hinter OIDC).
+
+### Removed
+
+- **Uptime Kuma** — App `status`, Namespace `uptimekuma`, SQLite-PVC. ADR-0012 ist abgelöst.
+
 ## [0.13.0] - 2026-10-07
 
 Authentik auf CloudNativePG und gemeinsamem Redis, Trivy Operator, Termix-Postgres, Mosquitto-LDAP-Preflight, Kyverno-Audit (in den ApplicationSets aus). Begleit-Release Plattform: [Infra_LAB v1.12.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.12.0).

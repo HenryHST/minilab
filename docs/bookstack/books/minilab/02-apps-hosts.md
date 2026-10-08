@@ -11,7 +11,7 @@ Kurzübersicht der User-Apps (Details und Sync Waves: Root-README im Git-Repo).
 | Termix | termix.stadthagen.dev | SSH-Terminal, OIDC |
 | Vaultwarden | vaultwarden.stadthagen.dev | Passwort-Safe, SSO |
 | Web (Homepage) | web.stadthagen.dev | Startseite / Widgets |
-| Status | status.stadthagen.dev | Uptime Kuma |
+| Gatus | status.stadthagen.dev | Health-Dashboard, Authentik OIDC, CloudNativePG |
 | Draw.io | drawio.stadthagen.dev | Diagramme |
 | IT Tools / Omni Tools | it-tools / omni-tools | Utility-Apps |
 | Headlamp | headlamp.stadthagen.dev | Cluster-UI |

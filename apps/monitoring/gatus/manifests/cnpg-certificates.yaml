@@ -1,0 +1,81 @@
+# Hybrid TLS for CNPG gatus: cert-manager owns server CA + server TLS.
+# Client / streaming_replica certificates stay operator-managed.
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: gatus-selfsigned-issuer
+  namespace: status
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gatus-server-ca
+  namespace: status
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  isCA: true
+  commonName: gatus-server-ca
+  secretName: gatus-server-ca-key-pair
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: gatus-selfsigned-issuer
+    kind: Issuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: gatus-server-ca-issuer
+  namespace: status
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  ca:
+    secretName: gatus-server-ca-key-pair
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gatus-server-tls
+  namespace: status
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  labels:
+    cnpg.io/reload: ""
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gatus-server
+  namespace: status
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  secretName: gatus-server-tls
+  usages:
+    - server auth
+  dnsNames:
+    - gatus-rw
+    - gatus-rw.status
+    - gatus-rw.status.svc
+    - gatus-rw.status.svc.cluster.local
+    - gatus-r
+    - gatus-r.status
+    - gatus-r.status.svc
+    - gatus-r.status.svc.cluster.local
+    - gatus-ro
+    - gatus-ro.status
+    - gatus-ro.status.svc
+    - gatus-ro.status.svc.cluster.local
+  issuerRef:
+    name: gatus-server-ca-issuer
+    kind: Issuer
+    group: cert-manager.io

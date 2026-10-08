@@ -24,4 +24,4 @@ ServiceMonitor mit Label `release: kube-prometheus-stack`.
 
 ## Was nicht Longhorn ist
 
-Uptime Kuma bleibt auf einem lokalen Volume ([ADR-0012](../../../adr/0012-uptime-kuma-sqlite-local-pv.md)). App-Dumps nach NFS, zum Beispiel `pg_dump`, sind CronJobs der App ([ADR-0015](../../../adr/0015-backup-restore-cronjobs.md)), nicht das Longhorn-Backup-Target.
+Gatus speichert die Historie in CloudNativePG auf Longhorn ([ADR-0034](../../../adr/0034-gatus-cnpg.md)). App-Dumps nach NFS, zum Beispiel `pg_dump`, sind CronJobs der App ([ADR-0015](../../../adr/0015-backup-restore-cronjobs.md)), nicht das Longhorn-Backup-Target.

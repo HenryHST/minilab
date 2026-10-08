@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Datum:** 2026-09-11 (ergänzt 2026-09-27)
-- **Kontext:** status, vaultwarden, termix, bookstack, authentik, bytestash, n8n
+- **Kontext:** gatus, vaultwarden, termix, bookstack, authentik, bytestash, n8n
 
 ## Kontext
 
@@ -19,7 +19,7 @@ Longhorn-Volume-Backups decken nicht alle App-Semantiken ab (SQLite-Dateien, `pg
 
 | App | Cron | Inhalt |
 |-----|------|--------|
-| status (Uptime Kuma) | 01:00 | tar data |
+| gatus | 01:00 | `pg_dump` |
 | vaultwarden | 02:00 | tar `/data` |
 | termix | 03:00 | `pg_dump` |
 | bookstack | 04:00 | MariaDB + `/config` |

@@ -13,7 +13,7 @@ Der Cluster braucht eine Default-StorageClass für stateful Workloads. Lokale Di
 - **Longhorn** als Default-StorageClass (Replicas 3, Data Path `/var/lib/longhorn`).
 - Disks nur auf Nodes mit Label `node.longhorn.io/create-default-disk=true` (nxk3-w01–w03).
 - Backup-Target: NFS auf UniFi NAS `192.168.0.25` mit **NFSv3** (`nfsvers=3,nolock` — v4 schlägt fehl).
-- Ausnahmen bleiben möglich (z. B. Uptime Kuma Local PV, [ADR-0012](0012-uptime-kuma-sqlite-local-pv.md)).
+- Ausnahmen bleiben möglich. Uptime Kuma auf Local PV ([ADR-0012](0012-uptime-kuma-sqlite-local-pv.md)) ist abgelöst; Gatus liegt auf Longhorn über CloudNativePG ([ADR-0034](0034-gatus-cnpg.md)).
 
 ## Konsequenzen
 

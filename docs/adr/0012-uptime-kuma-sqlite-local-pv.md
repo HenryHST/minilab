@@ -1,6 +1,6 @@
 # ADR-0012: Uptime Kuma — SQLite und Local PV
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-0034
 - **Datum:** 2026-09-11
 - **Kontext:** `apps/monitoring/status/`, Namespace `uptimekuma`
 
@@ -17,7 +17,7 @@ Uptime Kuma v2 unterstützt SQLite, externes MariaDB und Embedded MariaDB. Homel
 | Replicas | 1, `Recreate` (single-writer) |
 | PSS | `enforce: baseline` (wegen `NET_RAW`), `audit`/`warn: restricted` |
 
-Backup/Restore: siehe [ADR-0015](0015-backup-restore-cronjobs.md) und [`apps/monitoring/status/README.md`](../../apps/monitoring/status/README.md).
+Backup/Restore lag bei [ADR-0015](0015-backup-restore-cronjobs.md). Abgelöst durch [ADR-0034](0034-gatus-cnpg.md) (Gatus, CloudNativePG, Namespace `status`).
 
 ## Konsequenzen
 

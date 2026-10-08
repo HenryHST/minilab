@@ -1,0 +1,42 @@
+# Gatus history on CloudNativePG. Recovery point is a Longhorn VolumeSnapshot
+# (ScheduledBackup gatus-snapshot). The pg_dump CronJob remains the off-cluster copy.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: gatus
+  namespace: status
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/name: gatus
+    app.kubernetes.io/part-of: gatus
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:16
+  certificates:
+    serverCASecret: gatus-server-tls
+    serverTLSSecret: gatus-server-tls
+  bootstrap:
+    initdb:
+      database: gatus
+      owner: gatus
+      secret:
+        name: gatus-db
+  storage:
+    size: 1Gi
+    storageClass: longhorn
+  monitoring:
+    enablePodMonitor: false
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+  backup:
+    target: primary
+    volumeSnapshot:
+      className: longhorn
+      online: true
+      snapshotOwnerReference: backup

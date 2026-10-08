@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Gatus auf nXk3",
+    "quality_profile": "showcase",
+    "output": "docs/diagrams/archify/gatus-architektur.html"
+  },
+  "components": [
+    {
+      "id": "browser",
+      "type": "external",
+      "label": "Browser",
+      "sublabel": "LAN",
+      "pos": [36, 228],
+      "size": [140, 68]
+    },
+    {
+      "id": "traefik",
+      "type": "security",
+      "label": "Traefik",
+      "sublabel": "status.stadthagen.dev",
+      "pos": [250, 228],
+      "size": [150, 68]
+    },
+    {
+      "id": "gatus",
+      "type": "backend",
+      "label": "Gatus",
+      "sublabel": "Namespace status",
+      "pos": [480, 216],
+      "size": [176, 88]
+    },
+    {
+      "id": "idp",
+      "type": "security",
+      "label": "Authentik",
+      "sublabel": "OIDC gatus",
+      "pos": [480, 36],
+      "size": [176, 68]
+    },
+    {
+      "id": "prom",
+      "type": "cloud",
+      "label": "Prometheus",
+      "sublabel": "ServiceMonitor",
+      "pos": [760, 36],
+      "size": [176, 68]
+    },
+    {
+      "id": "push",
+      "type": "external",
+      "label": "Pushover",
+      "sublabel": "nach 3 Fehlern",
+      "pos": [760, 226],
+      "size": [176, 68]
+    },
+    {
+      "id": "pg",
+      "type": "database",
+      "label": "CloudNativePG",
+      "sublabel": "gatus-rw",
+      "pos": [480, 412],
+      "size": [176, 72]
+    },
+    {
+      "id": "cron",
+      "type": "backend",
+      "label": "pg_dump",
+      "sublabel": "01:00 UTC",
+      "pos": [760, 414],
+      "size": [150, 68]
+    },
+    {
+      "id": "nfs",
+      "type": "external",
+      "label": "NFS",
+      "sublabel": "gatus-backups",
+      "pos": [990, 414],
+      "size": [160, 68]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "nXk3",
+      "wraps": ["traefik", "gatus", "idp", "prom", "pg", "cron"],
+      "pad": 22
+    },
+    {
+      "kind": "security-group",
+      "label": "Namespace status",
+      "wraps": ["gatus", "pg", "cron"],
+      "pad": 16
+    }
+  ],
+  "connections": [
+    { "from": "browser", "to": "traefik", "label": "HTTPS" },
+    { "from": "traefik", "to": "gatus", "label": "TLS" },
+    { "from": "gatus", "to": "idp", "label": "OIDC", "route": "straight" },
+    { "from": "gatus", "to": "pg", "label": "SQL", "route": "straight" },
+    { "from": "gatus", "to": "push", "label": "Alert", "route": "straight" },
+    { "from": "gatus", "to": "prom", "label": "/metrics" },
+    { "from": "cron", "to": "pg", "label": "pg_dump", "route": "straight" },
+    { "from": "cron", "to": "nfs", "label": "Archiv", "route": "straight" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Checks",
+      "items": [
+        "HTTP 200: Authentik, IT Tools, Paperless, BookStack",
+        "Intervall 1 Minute, kein ICMP"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Zugang",
+      "items": [
+        "Nur Gruppe gatus_admins erhält ein Token",
+        "Gatus unterscheidet keine Admin- und Leserrolle"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Daten",
+      "items": [
+        "Historie in PostgreSQL 16, sslmode=require",
+        "Snapshot alle 6 Stunden plus täglicher Dump"
+      ]
+    }
+  ]
+}

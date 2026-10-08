@@ -18,7 +18,7 @@ spec:
     - server: "*"
       namespace: kube-system
     - server: "*"
-      namespace: uptimekuma
+      namespace: status
     - server: "*"
       namespace: unpoller
     - server: "*"

@@ -1,0 +1,118 @@
+# Native Argo Helm: twin/gatus 1.5.0 (app v5.34.0).
+# Secrets stay in Secret gatus-env (Infra_LAB SecretSpec). Gatus substitutes ${VAR} at startup.
+# Chart ingress and sqlite persistence stay off: Traefik IngressRoute + CloudNativePG.
+
+deployment:
+  strategy: Recreate
+
+image:
+  pullPolicy: IfNotPresent
+
+nodeSelector:
+  worker: "true"
+
+podSecurityContext:
+  fsGroup: 65534
+
+securityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  runAsUser: 65534
+  runAsGroup: 65534
+  readOnlyRootFilesystem: true
+  seccompProfile:
+    type: RuntimeDefault
+  capabilities:
+    drop:
+      - ALL
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 512Mi
+
+ingress:
+  enabled: false
+
+persistence:
+  enabled: false
+
+serviceMonitor:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack
+  path: /metrics
+  interval: 1m
+  # Chart default {} is truthy and would emit an empty tlsConfig block.
+  tlsConfig: null
+
+envFrom:
+  - secretRef:
+      name: gatus-env
+
+config:
+  metrics: true
+  storage:
+    type: postgres
+    path: ${GATUS_DATABASE_URL}
+  security:
+    oidc:
+      issuer-url: https://idp.stadthagen.dev/application/o/gatus/
+      client-id: gatus
+      client-secret: ${GATUS_OIDC_CLIENT_SECRET}
+      redirect-url: https://status.stadthagen.dev/authorization-code/callback
+      scopes:
+        - openid
+        - profile
+        - email
+  alerting:
+    pushover:
+      application-token: ${PUSHOVER_APP_TOKEN}
+      user-key: ${PUSHOVER_USER_KEY}
+  endpoints:
+    - name: authentik
+      group: homelab
+      url: https://idp.stadthagen.dev
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts:
+        - type: pushover
+          failure-threshold: 3
+          success-threshold: 2
+          send-on-resolved: true
+    - name: it-tools
+      group: homelab
+      url: https://it-tools.stadthagen.dev
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts:
+        - type: pushover
+          failure-threshold: 3
+          success-threshold: 2
+          send-on-resolved: true
+    - name: paperless
+      group: homelab
+      url: https://paperless.stadthagen.dev
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts:
+        - type: pushover
+          failure-threshold: 3
+          success-threshold: 2
+          send-on-resolved: true
+    - name: bookstack
+      group: homelab
+      url: https://book.stadthagen.dev
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts:
+        - type: pushover
+          failure-threshold: 3
+          success-threshold: 2
+          send-on-resolved: true

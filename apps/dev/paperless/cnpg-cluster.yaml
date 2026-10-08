@@ -1,0 +1,60 @@
+# One-shot logical import from StatefulSet paperless-postgres (hostPath, ssl off).
+# Remove bootstrap.initdb.import and externalClusters after the cluster is healthy
+# so a recreated volume does not dial the old Service again.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: paperless-pg
+  namespace: paperless
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/name: paperless
+    app.kubernetes.io/part-of: paperless
+    app.kubernetes.io/component: postgresql
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:18
+  certificates:
+    serverCASecret: paperless-pg-server-tls
+    serverTLSSecret: paperless-pg-server-tls
+  bootstrap:
+    initdb:
+      database: paperless
+      owner: paperless
+      secret:
+        name: paperless-db
+      import:
+        type: microservice
+        databases:
+          - paperless
+        source:
+          externalCluster: paperless-postgres
+  externalClusters:
+    - name: paperless-postgres
+      connectionParameters:
+        host: paperless-postgres.paperless.svc.cluster.local
+        user: paperless
+        dbname: paperless
+        sslmode: disable
+      password:
+        name: paperless-db
+        key: password
+  storage:
+    size: 8Gi
+    storageClass: longhorn
+  monitoring:
+    enablePodMonitor: false
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+  backup:
+    target: primary
+    volumeSnapshot:
+      className: longhorn
+      online: true
+      snapshotOwnerReference: backup

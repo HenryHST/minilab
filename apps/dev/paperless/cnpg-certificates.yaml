@@ -1,0 +1,81 @@
+# Hybrid TLS for CNPG paperless-pg: cert-manager owns server CA + server TLS.
+# Client / streaming_replica certificates stay operator-managed.
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: paperless-pg-selfsigned-issuer
+  namespace: paperless
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: paperless-pg-server-ca
+  namespace: paperless
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  isCA: true
+  commonName: paperless-pg-server-ca
+  secretName: paperless-pg-server-ca-key-pair
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: paperless-pg-selfsigned-issuer
+    kind: Issuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: paperless-pg-server-ca-issuer
+  namespace: paperless
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  ca:
+    secretName: paperless-pg-server-ca-key-pair
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: paperless-pg-server-tls
+  namespace: paperless
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  labels:
+    cnpg.io/reload: ""
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: paperless-pg-server
+  namespace: paperless
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  secretName: paperless-pg-server-tls
+  usages:
+    - server auth
+  dnsNames:
+    - paperless-pg-rw
+    - paperless-pg-rw.paperless
+    - paperless-pg-rw.paperless.svc
+    - paperless-pg-rw.paperless.svc.cluster.local
+    - paperless-pg-r
+    - paperless-pg-r.paperless
+    - paperless-pg-r.paperless.svc
+    - paperless-pg-r.paperless.svc.cluster.local
+    - paperless-pg-ro
+    - paperless-pg-ro.paperless
+    - paperless-pg-ro.paperless.svc
+    - paperless-pg-ro.paperless.svc.cluster.local
+  issuerRef:
+    name: paperless-pg-server-ca-issuer
+    kind: Issuer
+    group: cert-manager.io

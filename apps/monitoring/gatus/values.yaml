@@ -76,9 +76,13 @@ config:
       group: homelab
       url: https://idp.stadthagen.dev
       interval: 1m
+      maintenance: &maint-0500
+        start: "05:00"
+        duration: 30m
+        timezone: UTC
       conditions:
         - "[STATUS] == 200"
-      alerts:
+      alerts: &pushover
         - type: pushover
           failure-threshold: 3
           success-threshold: 2
@@ -89,30 +93,227 @@ config:
       interval: 1m
       conditions:
         - "[STATUS] == 200"
-      alerts:
-        - type: pushover
-          failure-threshold: 3
-          success-threshold: 2
-          send-on-resolved: true
+      alerts: *pushover
     - name: paperless
       group: homelab
       url: https://paperless.stadthagen.dev
       interval: 1m
+      maintenance: *maint-0500
       conditions:
         - "[STATUS] == 200"
-      alerts:
-        - type: pushover
-          failure-threshold: 3
-          success-threshold: 2
-          send-on-resolved: true
+      alerts: *pushover
     - name: bookstack
       group: homelab
       url: https://book.stadthagen.dev
       interval: 1m
+      maintenance:
+        start: "04:00"
+        duration: 30m
+        timezone: UTC
       conditions:
         - "[STATUS] == 200"
-      alerts:
-        - type: pushover
-          failure-threshold: 3
-          success-threshold: 2
-          send-on-resolved: true
+      alerts: *pushover
+    - name: omni-tools
+      group: apps
+      url: https://omni-tools.stadthagen.dev
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: searxng
+      group: apps
+      url: https://searxng.stadthagen.dev
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: drawio
+      group: apps
+      url: https://drawio.stadthagen.dev
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: termix
+      group: apps
+      url: https://termix.stadthagen.dev
+      interval: 1m
+      maintenance: &maint-0300
+        start: "03:00"
+        duration: 30m
+        timezone: UTC
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: bytestash
+      group: apps
+      url: https://bytestash.stadthagen.dev
+      interval: 1m
+      maintenance:
+        start: "06:00"
+        duration: 30m
+        timezone: UTC
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: audiobookshelf
+      group: apps
+      url: https://audiobookshelf.stadthagen.dev
+      interval: 1m
+      maintenance: *maint-0300
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: homepage
+      group: apps
+      url: https://web.stadthagen.dev
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: pgweb
+      group: apps
+      url: https://pgweb.stadthagen.dev/
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: vaultwarden
+      group: apps
+      url: https://vaultwarden.stadthagen.dev/alive
+      interval: 1m
+      maintenance:
+        start: "02:00"
+        duration: 30m
+        timezone: UTC
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: karakeep
+      group: apps
+      url: https://karakeep.stadthagen.dev
+      interval: 1m
+      maintenance:
+        start: "07:00"
+        duration: 30m
+        timezone: UTC
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: kromgo
+      group: apps
+      url: https://kromgo.stadthagen.dev
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: longhorn
+      group: apps
+      url: https://longhorn.stadthagen.dev
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: headlamp
+      group: apps
+      url: https://headlamp.stadthagen.dev
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: grafana
+      group: plattform
+      url: https://grafana.stadthagen.dev/api/health
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: prometheus
+      group: plattform
+      url: https://prometheus.stadthagen.dev/-/healthy
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: alertmanager
+      group: plattform
+      url: https://alert-manager.stadthagen.dev/-/healthy
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: loki
+      group: plattform
+      url: https://loki.stadthagen.dev/loki/api/v1/status/buildinfo
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: argocd
+      group: plattform
+      url: https://argocd.stadthagen.dev/healthz
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: n8n
+      group: sso
+      url: https://n8n.stadthagen.dev
+      interval: 1m
+      maintenance:
+        start: "03:30"
+        duration: 30m
+        timezone: UTC
+      client:
+        ignore-redirect: true
+      conditions:
+        - "[STATUS] == 302"
+      alerts: *pushover
+    - name: hubble
+      group: sso
+      url: https://hubble.stadthagen.dev
+      interval: 1m
+      client:
+        ignore-redirect: true
+      conditions:
+        - "[STATUS] == 302"
+      alerts: *pushover
+    - name: registry-ui
+      group: sso
+      url: https://registry-ui.stadthagen.dev
+      interval: 1m
+      client:
+        ignore-redirect: true
+      conditions:
+        - "[STATUS] == 302"
+      alerts: *pushover
+    - name: stirling-pdf
+      group: sso
+      url: https://stirling-pdf.stadthagen.dev
+      interval: 1m
+      client:
+        ignore-redirect: true
+      conditions:
+        - "[STATUS] == 401"
+      alerts: *pushover
+    - name: pangolin
+      group: extern
+      url: https://pangolin.stadthagen.dev
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: mail
+      group: extern
+      url: https://mail.henrystadthagen.de
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
+    - name: mail-smtp
+      group: extern
+      url: tcp://mail.henrystadthagen.de:465
+      interval: 1m
+      conditions:
+        - "[CONNECTED] == true"
+      alerts: *pushover

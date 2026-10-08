@@ -1,0 +1,194 @@
+# Anonymous health badges. The dashboard at / stays behind Authentik OIDC.
+# Badge keys are group_name from values.yaml. Add a check there and an img here.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gatus-overview
+  namespace: status
+  labels:
+    app.kubernetes.io/name: gatus-overview
+    app.kubernetes.io/part-of: gatus
+data:
+  default.conf: |
+    server {
+      listen 8080;
+      server_name _;
+      absolute_redirect off;
+
+      location = /uebersicht {
+        return 301 /uebersicht/;
+      }
+
+      location = /uebersicht/ {
+        alias /usr/share/nginx/html/index.html;
+        default_type text/html;
+        add_header Content-Security-Policy "frame-ancestors https://web.stadthagen.dev" always;
+        add_header Cache-Control "no-store" always;
+      }
+    }
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="de">
+    <head>
+      <meta charset="utf-8">
+      <meta http-equiv="refresh" content="60">
+      <title>Umgebung</title>
+      <style>
+        body { margin: 0; padding: 8px 10px; background: transparent; color: #e8e8e8; font: 13px/1.4 system-ui, sans-serif; }
+        h1 { font-size: 14px; font-weight: 600; margin: 0 0 8px; }
+        h1 a { color: inherit; text-decoration: none; }
+        h2 { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; margin: 10px 0 4px; opacity: .7; }
+        img { height: 20px; margin: 0 4px 4px 0; vertical-align: middle; }
+      </style>
+    </head>
+    <body>
+      <h1><a href="https://status.stadthagen.dev">Umgebung</a></h1>
+      <h2>homelab</h2>
+      <img alt="authentik" src="/api/v1/endpoints/homelab_authentik/health/badge.svg">
+      <img alt="it-tools" src="/api/v1/endpoints/homelab_it-tools/health/badge.svg">
+      <img alt="paperless" src="/api/v1/endpoints/homelab_paperless/health/badge.svg">
+      <img alt="bookstack" src="/api/v1/endpoints/homelab_bookstack/health/badge.svg">
+      <h2>apps</h2>
+      <img alt="omni-tools" src="/api/v1/endpoints/apps_omni-tools/health/badge.svg">
+      <img alt="searxng" src="/api/v1/endpoints/apps_searxng/health/badge.svg">
+      <img alt="drawio" src="/api/v1/endpoints/apps_drawio/health/badge.svg">
+      <img alt="termix" src="/api/v1/endpoints/apps_termix/health/badge.svg">
+      <img alt="bytestash" src="/api/v1/endpoints/apps_bytestash/health/badge.svg">
+      <img alt="audiobookshelf" src="/api/v1/endpoints/apps_audiobookshelf/health/badge.svg">
+      <img alt="homepage" src="/api/v1/endpoints/apps_homepage/health/badge.svg">
+      <img alt="pgweb" src="/api/v1/endpoints/apps_pgweb/health/badge.svg">
+      <img alt="vaultwarden" src="/api/v1/endpoints/apps_vaultwarden/health/badge.svg">
+      <img alt="karakeep" src="/api/v1/endpoints/apps_karakeep/health/badge.svg">
+      <img alt="kromgo" src="/api/v1/endpoints/apps_kromgo/health/badge.svg">
+      <img alt="longhorn" src="/api/v1/endpoints/apps_longhorn/health/badge.svg">
+      <img alt="headlamp" src="/api/v1/endpoints/apps_headlamp/health/badge.svg">
+      <h2>plattform</h2>
+      <img alt="grafana" src="/api/v1/endpoints/plattform_grafana/health/badge.svg">
+      <img alt="prometheus" src="/api/v1/endpoints/plattform_prometheus/health/badge.svg">
+      <img alt="alertmanager" src="/api/v1/endpoints/plattform_alertmanager/health/badge.svg">
+      <img alt="loki" src="/api/v1/endpoints/plattform_loki/health/badge.svg">
+      <img alt="argocd" src="/api/v1/endpoints/plattform_argocd/health/badge.svg">
+      <h2>sso</h2>
+      <img alt="n8n" src="/api/v1/endpoints/sso_n8n/health/badge.svg">
+      <img alt="hubble" src="/api/v1/endpoints/sso_hubble/health/badge.svg">
+      <img alt="registry-ui" src="/api/v1/endpoints/sso_registry-ui/health/badge.svg">
+      <img alt="stirling-pdf" src="/api/v1/endpoints/sso_stirling-pdf/health/badge.svg">
+      <h2>extern</h2>
+      <img alt="pangolin" src="/api/v1/endpoints/extern_pangolin/health/badge.svg">
+      <img alt="mail" src="/api/v1/endpoints/extern_mail/health/badge.svg">
+      <img alt="mail-smtp" src="/api/v1/endpoints/extern_mail-smtp/health/badge.svg">
+    </body>
+    </html>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gatus-overview
+  namespace: status
+  labels:
+    app.kubernetes.io/name: gatus-overview
+    app.kubernetes.io/part-of: gatus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gatus-overview
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gatus-overview
+        app.kubernetes.io/part-of: gatus
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        worker: "true"
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: nginx
+          image: nginxinc/nginx-unprivileged:1.27-alpine
+          ports:
+            - name: http
+              containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+          readinessProbe:
+            httpGet:
+              path: /uebersicht/
+              port: http
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+            - name: html
+              mountPath: /usr/share/nginx/html
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: gatus-overview
+            items:
+              - key: default.conf
+                path: default.conf
+        - name: html
+          configMap:
+            name: gatus-overview
+            items:
+              - key: index.html
+                path: index.html
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gatus-overview
+  namespace: status
+  labels:
+    app.kubernetes.io/name: gatus-overview
+    app.kubernetes.io/part-of: gatus
+spec:
+  selector:
+    app.kubernetes.io/name: gatus-overview
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gatus-overview-ingress
+  namespace: status
+  labels:
+    app.kubernetes.io/name: gatus-overview
+    app.kubernetes.io/part-of: gatus
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: gatus-overview
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 8080

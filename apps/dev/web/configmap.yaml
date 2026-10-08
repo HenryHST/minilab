@@ -151,6 +151,12 @@ data:
             href: https://status.stadthagen.dev
             icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/gatus.png
             description: status.stadthagen.dev
+            widget:
+              type: iframe
+              src: https://status.stadthagen.dev/uebersicht
+              classes: h-72
+              allowScrolling: yes
+              refreshInterval: 60000
 
   settings.yaml: |
     ---

@@ -20,7 +20,7 @@ Gatus deckt dieselben HTTP-Checks ab, spricht OIDC und legt die Historie in Post
 | URL / TLS | `https://status.stadthagen.dev`, Certificate-DNS unverändert, Secret `status-tls` |
 | Datenbank | CloudNativePG, 1 Instanz, PostgreSQL 16, 1Gi Longhorn, Service `gatus-rw`, `sslmode=require` |
 | Auth | OIDC gegen Authentik, Slug `gatus`. Zugriff nur Gruppe `gatus_admins` (Gatus wertet keine Gruppenrollen aus) |
-| Checks | HTTP 200 für Authentik, IT Tools, Paperless, BookStack. Kein ICMP |
+| Checks | Gruppe `homelab`: HTTP 200 für Authentik, IT Tools, Paperless, BookStack. Gruppe `apps`: HTTP 200 der App selbst. Gruppe `plattform`: Health-Pfade, HTTP 200. Gruppe `sso`: `ignore-redirect`, Status 302 oder 401. Gruppe `extern`: Pangolin und Mail (HTTPS plus TCP 465). NFS-Backups: 30 Minuten Wartung ab der Cron-Minute (UTC), darin kein Pushover. Kein ICMP |
 | Alerts | Pushover, eigener Application-Token, User-Key wie Argo CD Notifications |
 | Metriken | `metrics: true`, ServiceMonitor mit Label `release: kube-prometheus-stack`, plus PodMonitor der CNPG-Instanz |
 | PSS | `baseline` (kein `NET_RAW`) |
@@ -34,3 +34,4 @@ Kuma-Monitore und die SQLite-Datei werden nicht migriert.
 - Secrets `gatus-db` und `gatus-env` müssen vor dem ersten Sync existieren (Infra_LAB SecretSpec).
 - Authentik-dev: Application `uptime_kuma` aus, Application `gatus` an. Prod-IdP behält Uptime Kuma.
 - Kurz kein Zertifikat, bis cert-manager `status.stadthagen.dev` im neuen Namespace ausstellt.
+- `https://status.stadthagen.dev/uebersicht` ist ohne Login und zeigt nur Health-Badges. Die Historie bleibt hinter OIDC.

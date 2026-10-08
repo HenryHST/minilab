@@ -17,3 +17,5 @@ Dieses Verzeichnis ist die **Git-Seite** der Dokumentation. Live-Bücher liegen 
 1. Plattform-Wahrheit (Manifeste, Wellen, Secrets) bleibt in Git (`README.md`, `docs/adr/`, App-READMEs).
 2. Lesbare Narration und Screenshots für Endnutzer → BookStack; Markdown-Quellen hier aktualisieren.
 3. Nach größeren Git-Änderungen: betroffene BookStack-Seiten anpassen (manuell oder API — siehe IMPORT.md).
+4. Buchcover: `cover.png` neben `meta.yaml` (Anleitungen: `covers/<stem>.png`). Generator: `scripts/bookstack-import/generate_covers.py --preset minilab`.
+

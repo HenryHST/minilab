@@ -17,6 +17,19 @@ kubectl -n paperless get pods,hpa,pvc,job
 kubectl -n redis exec deploy/redis -- redis-cli ping
 ```
 
+## Postgres (CloudNativePG)
+
+Cluster `paperless-pg` (1 Instanz, Longhorn 8Gi, Image `ghcr.io/cloudnative-pg/postgresql:18`). App und Worker: `PAPERLESS_DBHOST=paperless-pg-rw`, `PAPERLESS_DBSSLMODE=require`. Server-TLS kommt von cert-manager (`cnpg-certificates.yaml`); Client-Zertifikate bleiben beim Operator.
+
+Der einmalige Import vom StatefulSet `paperless-postgres` ist erledigt und aus dem Spec entfernt. Service und StatefulSet sind aus Git weg. hostPath `/var/lib/paperless-postgres` auf `nxk3-w01` bleibt als Rollback.
+
+```bash
+kubectl -n paperless get cluster paperless-pg
+kubectl -n paperless get scheduledbackup paperless-pg-snapshot
+```
+
+Erwartung: Cluster `healthy`, 1 Instanz. `pg_dump` des CronJobs geht gegen `paperless-pg-rw` mit `PGSSLMODE=require`.
+
 ## Checks
 
 - OIDC-Login über LAN

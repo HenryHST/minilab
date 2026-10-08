@@ -44,7 +44,7 @@ spec:
           command:
             - sh
             - -c
-            - until nc -z paperless-postgres 5432; do echo waiting-for-postgres; sleep 3; done
+            - until nc -z paperless-pg-rw 5432; do echo waiting-for-postgres; sleep 3; done
         - name: wait-for-redis
           image: busybox:1.37
           command:
@@ -60,7 +60,9 @@ spec:
               containerPort: 8000
           env:
             - name: PAPERLESS_DBHOST
-              value: paperless-postgres
+              value: paperless-pg-rw
+            - name: PAPERLESS_DBSSLMODE
+              value: require
             - name: PAPERLESS_DBNAME
               value: paperless
             - name: PAPERLESS_DBUSER

@@ -42,6 +42,7 @@ Format angelehnt an [Michael Nygard](https://cognitect.com/blog/2011/11/15/docum
 | [0032](0032-kyverno-admission-audit.md) | Kyverno Admission (Audit ClusterPolicies) | Accepted |
 | [0033](0033-authentik-cnpg.md) | Authentik Postgres auf CloudNativePG | Accepted |
 | [0034](0034-gatus-cnpg.md) | Gatus statt Uptime Kuma, Postgres auf CloudNativePG | Accepted |
+| [0035](0035-paperless-cnpg.md) | Paperless-ngx Postgres auf CloudNativePG | Accepted |
 
 ## Neues ADR anlegen
 

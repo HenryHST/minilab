@@ -6,7 +6,7 @@ metadata:
   name: paperless-pg-snapshot
   namespace: paperless
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "0"
   labels:
     app.kubernetes.io/name: paperless
     app.kubernetes.io/part-of: paperless

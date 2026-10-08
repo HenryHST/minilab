@@ -88,28 +88,39 @@ spec:
             - name: trigger-backup
               image: alpine/k8s:1.32.0
               env:
+                - name: PGHOST
+                  value: paperless-pg-rw
+                - name: PGPORT
+                  value: "5432"
+                - name: PGUSER
+                  value: paperless
+                - name: PGDATABASE
+                  value: paperless
+                - name: PGSSLMODE
+                  value: require
                 - name: PGPASSWORD
                   valueFrom:
                     secretKeyRef:
                       name: paperless-db
-                      key: POSTGRES_PASSWORD
+                      key: password
               command:
                 - /bin/bash
                 - -c
                 - |
                   set -euo pipefail
+                  apk add --no-cache postgresql18-client >/dev/null
                   STAMP="$(date -u +%Y%m%d-%H%M%S)"
                   OUT_DIR="/backup/paperless-${STAMP}"
                   mkdir -p "${OUT_DIR}"
-                  PG_POD="$(kubectl -n paperless get pod -l app=paperless-postgres -o jsonpath='{.items[0].metadata.name}')"
                   WEB_POD="$(kubectl -n paperless get pod -l app=paperless -o jsonpath='{.items[0].metadata.name}')"
-                  if [[ -z "${PG_POD}" || -z "${WEB_POD}" ]]; then
-                    echo "Missing postgres or paperless pod" >&2
+                  if [[ -z "${WEB_POD}" ]]; then
+                    echo "Missing paperless pod" >&2
                     exit 1
                   fi
-                  echo "pg_dump from ${PG_POD}"
-                  kubectl -n paperless exec "${PG_POD}" -c postgres -- \
-                    pg_dump -U paperless -d paperless -Fc > "${OUT_DIR}/paperless.dump"
+                  echo "Waiting for postgres..."
+                  until pg_isready -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -q; do sleep 2; done
+                  echo "pg_dump ${PGDATABASE}@${PGHOST}"
+                  pg_dump -Fc > "${OUT_DIR}/paperless.dump"
                   echo "media+data from ${WEB_POD}"
                   kubectl -n paperless exec "${WEB_POD}" -c paperless -- \
                     tar czf - -C /usr/src/paperless data media > "${OUT_DIR}/data-media.tar.gz"

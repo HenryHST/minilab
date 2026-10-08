@@ -1,6 +1,8 @@
-# One-shot logical import from StatefulSet paperless-postgres (hostPath, ssl off).
-# Remove bootstrap.initdb.import and externalClusters after the cluster is healthy
-# so a recreated volume does not dial the old Service again.
+# Paperless Postgres on CloudNativePG. The one-shot import from paperless-postgres
+# is done and removed: a recreated volume must not dial that Service again.
+# Recovery point is a Longhorn VolumeSnapshot (ScheduledBackup paperless-pg-snapshot).
+# The pg_dump CronJob remains the off-cluster copy.
+# hostPath /var/lib/paperless-postgres on nxk3-w01 stays on disk as rollback.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -8,7 +10,7 @@ metadata:
   namespace: paperless
   annotations:
     argocd.argoproj.io/sync-options: Prune=false
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "0"
   labels:
     app.kubernetes.io/name: paperless
     app.kubernetes.io/part-of: paperless
@@ -16,6 +18,7 @@ metadata:
 spec:
   instances: 1
   imageName: ghcr.io/cloudnative-pg/postgresql:18
+  # Server TLS from cert-manager (cnpg-certificates.yaml); client/replication stay operator-managed.
   certificates:
     serverCASecret: paperless-pg-server-tls
     serverTLSSecret: paperless-pg-server-tls
@@ -25,22 +28,6 @@ spec:
       owner: paperless
       secret:
         name: paperless-db
-      import:
-        type: microservice
-        databases:
-          - paperless
-        source:
-          externalCluster: paperless-postgres
-  externalClusters:
-    - name: paperless-postgres
-      connectionParameters:
-        host: paperless-postgres.paperless.svc.cluster.local
-        user: paperless
-        dbname: paperless
-        sslmode: disable
-      password:
-        name: paperless-db
-        key: password
   storage:
     size: 8Gi
     storageClass: longhorn

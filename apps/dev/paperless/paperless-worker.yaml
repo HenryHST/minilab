@@ -38,7 +38,7 @@ spec:
             - /usr/bin/bash
             - -ce
             - |
-              until (echo >/dev/tcp/paperless-postgres/5432) >/dev/null 2>&1; do echo waiting-for-postgres; sleep 3; done
+              until (echo >/dev/tcp/paperless-pg-rw/5432) >/dev/null 2>&1; do echo waiting-for-postgres; sleep 3; done
               until (echo >/dev/tcp/redis.redis.svc.cluster.local/6379) >/dev/null 2>&1; do echo waiting-for-redis; sleep 3; done
               mkdir -p /tmp/paperless /usr/src/paperless/data /usr/src/paperless/media
               chown -R paperless:paperless /tmp/paperless || true
@@ -48,7 +48,9 @@ spec:
                 --app paperless worker --loglevel INFO --without-mingle --without-gossip
           env:
             - name: PAPERLESS_DBHOST
-              value: paperless-postgres
+              value: paperless-pg-rw
+            - name: PAPERLESS_DBSSLMODE
+              value: require
             - name: PAPERLESS_DBNAME
               value: paperless
             - name: PAPERLESS_DBUSER

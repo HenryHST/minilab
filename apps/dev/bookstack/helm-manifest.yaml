@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/instance: bookstack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: bookstack
-    app.kubernetes.io/version: version-v26.05.5
+    app.kubernetes.io/version: version-v26.09.1
     helm.sh/chart: bookstack-0.20.0
   annotations:
     "helm.sh/resource-policy": keep
@@ -32,7 +32,7 @@ metadata:
     app.kubernetes.io/instance: bookstack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: bookstack
-    app.kubernetes.io/version: version-v26.05.5
+    app.kubernetes.io/version: version-v26.09.1
     helm.sh/chart: bookstack-0.20.0
   annotations:
 spec:
@@ -61,7 +61,7 @@ metadata:
     app.kubernetes.io/instance: bookstack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: bookstack
-    app.kubernetes.io/version: version-v26.05.5
+    app.kubernetes.io/version: version-v26.09.1
     helm.sh/chart: bookstack-0.20.0
 spec:
   revisionHistoryLimit: 3
@@ -87,7 +87,7 @@ spec:
       enableServiceLinks: true
       containers:
         - name: bookstack
-          image: lscr.io/linuxserver/bookstack:version-v26.05.5
+          image: lscr.io/linuxserver/bookstack:version-v26.09.1
           imagePullPolicy: IfNotPresent
           env:
             - name: APP_KEY

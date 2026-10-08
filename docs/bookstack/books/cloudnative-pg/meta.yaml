@@ -1,4 +1,5 @@
 book: cloudnative-pg
+cover: cover.png
 book_version: "1.4.0"
 updated: "2026-09-30"
 description: CloudNativePG — Operator in cnpg-system, Onboarding weiterer Datenbanken

@@ -3,3 +3,8 @@ mode: files_as_books
 shelf: Anleitungen
 description: Kurzanleitungen für Nicht-IT
 updated: "2026-09-25"
+
+covers:
+  01-erste-schritte.md: covers/01-erste-schritte.png
+  02-zugang-passwoerter.md: covers/02-zugang-passwoerter.png
+  03-status-stoerungen.md: covers/03-status-stoerungen.png

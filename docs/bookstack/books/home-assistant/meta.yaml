@@ -1,4 +1,5 @@
 book: Home Assistant
+cover: cover.png
 book_version: "1.0.0"
 updated: "2026-09-25"
 description: Step-by-Step für die Home-Assistant-Instanz ha02.stadthagen.dev

@@ -63,7 +63,7 @@ Nach dem Import: Buch in BookStack **beobachten (Watch)**, damit Nutzer bei Seit
 
 ## 5. Automatischer Import (empfohlen)
 
-Cluster-CronJob / PostSync in [`apps/dev/bookstack/`](../../apps/dev/bookstack/) synct Git-Sources (Infra_LAB + minilab) per REST Upsert + SemVer-Gate. Script: [`scripts/bookstack-import/import_books.py`](../../scripts/bookstack-import/import_books.py). Pro Ordner: `meta.yaml` (`book`, `shelf`, optional `mode: files_as_books`).
+Cluster-CronJob / PostSync in [`apps/dev/bookstack/`](../../apps/dev/bookstack/) synct Git-Sources (Infra_LAB + minilab) per REST Upsert + SemVer-Gate. Script: [`scripts/bookstack-import/import_books.py`](../../scripts/bookstack-import/import_books.py). Pro Ordner: `meta.yaml` (`book`, `shelf`, optional `mode: files_as_books`, optional `cover` / `covers`). Cover-PNGs: `cover.png` bzw. `anleitungen/covers/*.png` — erzeugen mit `python3 scripts/bookstack-import/generate_covers.py --preset minilab`.
 
 ### Einmalig: SecretSpec (Infra_LAB) — User/Rolle/Token auto
 

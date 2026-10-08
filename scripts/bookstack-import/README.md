@@ -6,7 +6,8 @@ Cluster-seitiger Import von Markdown-Büchern (`docs/bookstack/books/`) nach Boo
 
 | Datei | Zweck |
 |-------|--------|
-| `import_books.py` | REST-Upsert (Shelves/Books/Pages); SemVer-Gate via `--state-file` / `--state-prefix` |
+| `import_books.py` | REST-Upsert (Shelves/Books/Pages/Covers); SemVer-Gate via `--state-file` / `--state-prefix` |
+| `generate_covers.py` | Erzeugt `cover.png` (880×500) je Buch — lokal, Pillow |
 | `gitops-bootstrap.php` | Idempotent: Rolle **GitOps Import**, User `gitops-import@localhost`, API-Token `docs-import` |
 | `gitops-bootstrap.sh` | `kubectl exec` → `artisan tinker` im BookStack-Pod |
 | `requirements.txt` | PyYAML (lokal / CronJob) |
@@ -28,4 +29,4 @@ pip install -r requirements.txt
 python3 import_books.py --books-dir ../../docs/bookstack/books --dry-run
 ```
 
-Ausführliche Doku: [`docs/bookstack/IMPORT.md`](../../docs/bookstack/IMPORT.md) · Infra_LAB [IMPORT.md](https://github.com/HenryHST/Infra_LAB/blob/main/docs/bookstack/IMPORT.md).
+Ausführliche Doku: [`docs/bookstack/IMPORT.md`](../../docs/bookstack/IMPORT.md).

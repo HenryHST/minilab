@@ -1,4 +1,5 @@
 book: Kromgo
+cover: cover.png
 book_version: "1.0.0"
 updated: "2026-09-27"
 description: Prometheus metric badges auf nXk3 (LAN)

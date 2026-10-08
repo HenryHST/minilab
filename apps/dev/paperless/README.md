@@ -10,7 +10,7 @@ Document management with OCR (deu+eng), Authentik OIDC, Gotenberg + Tika, HPScan
 | LAN | https://paperless.stadthagen.dev |
 | Ext | https://paperless-ext.stadthagen.dev (pangolin-publish `enabled: false` until flipped) |
 | OCR workers | Deployment `paperless-worker` + HPA 1–3 (pinned to `nxk3-w01` with web; hostPath media) |
-| Storage | hostPath/local on `nxk3-w01` (Postgres/data/media/export); HPScan NFS consume |
+| Storage | **Postgres:** CNPG `paperless-pg` (Longhorn). **App:** hostPath/local on `nxk3-w01` — `/var/lib/paperless-{data,media,export}` (`media-pvc.yaml`). **Consume:** HPScan NFS. **Backups:** NFS `…/infra01/paperless-backups` |
 | IMAP inbox | `paperless@stadthagen.dev` @ `mail.henrystadthagen.de:993` (Secret `paperless-imap`, PostSync `mail-inbox-job`) |
 
 ## Secrets (before first sync)
@@ -27,10 +27,11 @@ See `secret.example.yaml.txt`.
 
 ## Prerequisites
 
-1. un10 HPScan NFS ACL includes k3s node IPs.
-2. LAN DNS `paperless.stadthagen.dev` → `192.168.0.215`.
-3. NFS dir `192.168.0.25:/var/nfs/shared/infra01/paperless-backups` exists.
-4. Mailbox `paperless@stadthagen.dev` on `mail.henrystadthagen.de` + `PAPERLESS_IMAP_PASSWORD` set.
+1. Host paths on `nxk3-w01` (uid/gid `1000`): Infra_LAB `ansible-playbook site.yaml --tags prereq --limit nxk3-w01` — or manual `mkdir`/`chown` for `/var/lib/paperless-{data,media,export}`. Details: BookStack **Paperless → Deploy & Verify**.
+2. un10 HPScan NFS ACL includes k3s node IPs.
+3. LAN DNS `paperless.stadthagen.dev` → `192.168.0.215`.
+4. NFS dir `192.168.0.25:/var/nfs/shared/infra01/paperless-backups` exists.
+5. Mailbox `paperless@stadthagen.dev` on `mail.henrystadthagen.de` + `PAPERLESS_IMAP_PASSWORD` set.
 
 ## Verify
 
@@ -39,9 +40,12 @@ kubectl -n argocd get application paperless redis
 kubectl -n paperless get pods,hpa,ingressroute,pvc,job
 kubectl -n redis exec deploy/redis -- redis-cli ping
 kubectl -n paperless get secret paperless-imap
+kubectl -n paperless get pods -o wide | rg 'paperless-|paperless-worker'
 ```
 
 OIDC login via LAN; drop a scan into HPScan → consume. IMAP: send a PDF to `paperless@stadthagen.dev` → Settings → Mail shows account/rule; document gets tag `inbox` (~10 min poll).
+
+If pods stuck in `Init` with `FailedMount` / path does not exist: create the three host dirs on `nxk3-w01`, then delete the pods (see BookStack Deploy & Verify).
 
 ## Restore
 

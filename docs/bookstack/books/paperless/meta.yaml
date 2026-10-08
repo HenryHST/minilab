@@ -1,6 +1,6 @@
 book: paperless
 cover: cover.png
-book_version: "1.0.0"
-updated: "2026-09-27"
+book_version: "1.1.0"
+updated: "2026-10-08"
 description: Paperless-ngx — Dokumente, OCR, HPScan, Authentik OIDC
 shelf: Plattform

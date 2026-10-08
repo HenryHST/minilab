@@ -10,7 +10,7 @@ Dokumentenarchiv mit OCR, HPScan-Import und Authentik-Login soll auf nXk3 laufen
 
 ## Entscheidung
 
-- **Storage:** hostPath/local PVs on `nxk3-w01` for Postgres/data/media/export (Longhorn derzeit ohne freie Disk — gleiches Muster wie Termix); HPScan consume weiterhin NFS.
+- **Storage:** hostPath/local PVs on `nxk3-w01` for data/media/export (Longhorn derzeit ohne freie Disk — gleiches Muster wie Termix); Postgres inzwischen CNPG auf Longhorn (`paperless-pg`); HPScan consume weiterhin NFS.
 - **Consume:** NFS PV von un10 HPScan-Export; Tag `inbox` via PostSync-Job; IMAP-Inbox `paperless@stadthagen.dev` (`mail.henrystadthagen.de:993`, Secret `paperless-imap`, PostSync `mail-inbox-job`).
 - **Auth:** Authentik OIDC (LAN + Ext-Redirects wie Termix); SMTP outbound `mail.henrystadthagen.de:465` (`auto@…`).
 - **Exposure:** LAN `paperless.stadthagen.dev`; Ext `paperless-ext` in pangolin-publish mit **`enabled: false`** vorbereitet.
@@ -34,3 +34,7 @@ flowchart LR
 - Secrets müssen vor Sync gesetzt sein (`PAPERLESS_*` inkl. optional `PAPERLESS_IMAP_PASSWORD` + OAuth pin in Terraform).
 - un10 NFS-ACL muss k3s-Nodes erlauben.
 - Ext-Traffic erst nach Flip von `enabled: true` in pangolin-publish.
+
+## Betrieb
+
+Nach Node- oder Cluster-Rebuild die hostPath-Verzeichnisse `/var/lib/paperless-{data,media,export}` auf `nxk3-w01` erneut anlegen (Owner/Group `1000`). Empfohlen: Infra_LAB Ansible Role `prereq` (`ansible-playbook site.yaml --tags prereq --limit nxk3-w01`). Kubernetes legt `local.path` nicht selbst an — fehlende Pfade führen zu `FailedMount`. Schritt-für-Schritt: BookStack-Buch **Paperless**, Kapitel **Deploy & Verify**.

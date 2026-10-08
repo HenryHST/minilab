@@ -7,6 +7,51 @@ metadata:
     app.kubernetes.io/name: authentik
     app.kubernetes.io/part-of: authentik-day0
 data:
+  day0-combined-login.yaml: |
+    # yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
+    # Day-0: Combined username/password login on stock default-authentication-flow
+    # Owner: minilab blueprints — password_stage + flow bindings (NOT Infra_LAB TF)
+    # Enrollment/recovery flows on identification remain Terraform (modules/brand).
+    # Stock separate password binding (order 20) is removed so login is one step.
+    version: 1
+    metadata:
+      name: day0-combined-login
+      labels:
+        blueprints.goauthentik.io/description: Day-0 combined login (password_stage on identification)
+    entries:
+      - model: authentik_stages_identification.identificationstage
+        id: default-authentication-identification
+        state: present
+        identifiers:
+          name: default-authentication-identification
+        attrs:
+          name: default-authentication-identification
+          user_fields:
+            - email
+            - username
+          password_stage: !Find [authentik_stages_password.passwordstage, [name, default-authentication-password]]
+
+      - model: authentik_flows.flowstagebinding
+        id: default-authentication-flow-identification-binding
+        state: present
+        identifiers:
+          order: 10
+          target: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          stage: !Find [authentik_stages_identification.identificationstage, [name, default-authentication-identification]]
+        attrs:
+          order: 10
+          target: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          stage: !Find [authentik_stages_identification.identificationstage, [name, default-authentication-identification]]
+
+      # Stock Day-0 binds password separately at order 20; combined login must not.
+      # Identifiers only (no attrs) — safer for state: absent re-apply.
+      - model: authentik_flows.flowstagebinding
+        id: default-authentication-flow-password-binding
+        state: absent
+        identifiers:
+          order: 20
+          target: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          stage: !Find [authentik_stages_password.passwordstage, [name, default-authentication-password]]
   day0-hubble-ui.yaml: |
     # yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
     # Day-0: ForwardAuth for hubble.stadthagen.dev

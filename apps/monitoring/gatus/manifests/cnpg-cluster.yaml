@@ -7,7 +7,9 @@ metadata:
   namespace: status
   annotations:
     argocd.argoproj.io/sync-options: Prune=false
-    argocd.argoproj.io/sync-wave: "1"
+    # Same wave as the Helm Deployment. Wave 1 would wait until Gatus is
+    # healthy, but Gatus cannot become healthy before this database exists.
+    argocd.argoproj.io/sync-wave: "0"
   labels:
     app.kubernetes.io/name: gatus
     app.kubernetes.io/part-of: gatus

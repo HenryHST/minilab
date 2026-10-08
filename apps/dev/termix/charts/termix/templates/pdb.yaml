@@ -2,7 +2,8 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ include "termix.fullname" . }}
+  # Avoid colliding with CNPG PDB naming around the Cluster name.
+  name: {{ printf "%s-app" (include "termix.fullname" .) }}
   labels:
     {{- include "termix.labels" . | nindent 4 }}
 spec:

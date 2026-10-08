@@ -1,5 +1,12 @@
 replicaCount: 2
 
+# Must not share the CNPG cluster SA name "termix" (cluster == SA).
+# Helm SA with automount=false stole that name and broke initdb API access.
+serviceAccount:
+  create: true
+  name: termix-app
+  automount: false
+
 image:
   repository: ghcr.io/lukegus/termix
   pullPolicy: IfNotPresent

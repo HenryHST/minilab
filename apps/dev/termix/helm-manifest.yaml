@@ -1,11 +1,10 @@
-# Rendered Helm chart — regenerate with:
-# helm template termix ./charts/termix -f values.yaml --namespace termix
 ---
 # Source: termix/templates/pdb.yaml
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: termix
+  # Avoid colliding with CNPG PDB naming around the Cluster name.
+  name: termix-app
   labels:
     helm.sh/chart: termix-0.1.0
     app.kubernetes.io/name: termix
@@ -24,7 +23,7 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: termix
+  name: termix-app
   labels:
     helm.sh/chart: termix-0.1.0
     app.kubernetes.io/name: termix
@@ -85,7 +84,7 @@ spec:
         app.kubernetes.io/name: termix
         app.kubernetes.io/instance: termix
     spec:
-      serviceAccountName: termix
+      serviceAccountName: termix-app
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch

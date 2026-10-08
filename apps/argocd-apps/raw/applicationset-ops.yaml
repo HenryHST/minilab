@@ -111,6 +111,7 @@ spec:
           - ApplyOutOfSyncOnly=true
           - PruneLast=true
           - ServerSideApply=true
+          - SkipDryRunOnMissingResource=true
           - RespectIgnoreDifferences=true
   templatePatch: |
     {{- if dig "helmChart" "" . }}

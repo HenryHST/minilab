@@ -156,5 +156,11 @@ spec:
               kcp /overlay/pdf-fonts-head.blade.php "$NS/$POD:/config/www/themes/custom/pdf-fonts-head.blade.php"
               kubectl -n "$NS" exec "$POD" -- rm -f /config/www/themes/custom/views/pdf-fonts-head.blade.php
 
+              # Book covers (docs-import): php-fpm runs as abc; ensure cover_book is writable.
+              # Fresh PVCs often have /config/www/uploads/images owned by root without cover_book.
+              echo "Ensure uploads/images/cover_book writable by abc..."
+              kubectl -n "$NS" exec "$POD" -- sh -c \
+                'mkdir -p /config/www/uploads/images/cover_book && chown -R abc:abc /config/www/uploads && chmod -R u+rwX,g+rwX /config/www/uploads'
+
               kubectl -n "$NS" exec "$POD" -- sh -c 'cd /app/www && php artisan view:clear'
               echo "theme-modules-sync done"

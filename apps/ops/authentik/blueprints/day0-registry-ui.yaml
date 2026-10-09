@@ -2,6 +2,7 @@
 # Day-0 (Plan B): ForwardAuth for registry-ui.stadthagen.dev
 # Owner: minilab blueprints — NOT managed by Infra_LAB terraform/authentik
 # Service name must stay ak-outpost-registry-ui (Traefik middleware).
+# Access groups registry_ui_admins / registry_ui_users are created by Terraform; bindings here.
 version: 1
 metadata:
   name: day0-registry-ui
@@ -31,6 +32,28 @@ entries:
       provider: !KeyOf registry-ui-provider
       meta_launch_url: https://registry-ui.stadthagen.dev
       open_in_new_tab: true
+
+  - model: authentik_policies.policybinding
+    id: registry-ui-bind-admins
+    state: present
+    identifiers:
+      order: 0
+      target: !KeyOf registry-ui-app
+    attrs:
+      order: 0
+      target: !KeyOf registry-ui-app
+      group: !Find [authentik_core.group, [name, registry_ui_admins]]
+
+  - model: authentik_policies.policybinding
+    id: registry-ui-bind-users
+    state: present
+    identifiers:
+      order: 1
+      target: !KeyOf registry-ui-app
+    attrs:
+      order: 1
+      target: !KeyOf registry-ui-app
+      group: !Find [authentik_core.group, [name, registry_ui_users]]
 
   - model: authentik_outposts.outpost
     id: registry-ui-outpost

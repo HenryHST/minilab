@@ -36,6 +36,19 @@ spec:
               chown -R 1000:1000 "${DST}"
               echo "Synced branding assets:"
               ls -la "${DST}"
+
+              AV_SRC="/nfs/public/user-avatars"
+              AV_DST="/media/public/user-avatars"
+              if [[ ! -d "${AV_SRC}" ]]; then
+                echo "Skipping user-avatars sync — ${AV_SRC} not present on NFS" >&2
+              else
+                mkdir -p "${AV_DST}"
+                echo "rsync ${AV_SRC}/ -> ${AV_DST}/"
+                rsync -a --delete "${AV_SRC}/" "${AV_DST}/"
+                chown -R 1000:1000 "${AV_DST}"
+                echo "Synced user-avatars:"
+                ls -la "${AV_DST}"
+              fi
           securityContext:
             runAsUser: 0
           volumeMounts:

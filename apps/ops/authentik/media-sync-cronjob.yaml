@@ -1,6 +1,7 @@
-# Sync Authentik brand assets from UniFi NAS NFS into PVC authentik-media.
-# NFS layout: …/infra01/media/public/branding/{favicon.png,key_transparent.png,…}
-# PVC mount in Authentik pods: /media → public branding at /media/public/branding/
+# Sync Authentik media from UniFi NAS NFS into PVC authentik-media.
+# NFS layout: …/infra01/media/public/branding/{favicon.png,…}
+#             …/infra01/media/public/user-avatars/{marion.png,…}
+# PVC mount: /media/public/branding/ and /media/public/user-avatars/
 ---
 # PV carries mountOptions (core Pod nfs volumes cannot); UniFi NAS needs NFSv3 + nolock.
 apiVersion: v1
@@ -73,6 +74,19 @@ spec:
                   chown -R 1000:1000 "${DST}"
                   echo "Synced branding assets:"
                   ls -la "${DST}"
+
+                  AV_SRC="/nfs/public/user-avatars"
+                  AV_DST="/media/public/user-avatars"
+                  if [[ ! -d "${AV_SRC}" ]]; then
+                    echo "Skipping user-avatars sync — ${AV_SRC} not present on NFS" >&2
+                  else
+                    mkdir -p "${AV_DST}"
+                    echo "rsync ${AV_SRC}/ -> ${AV_DST}/"
+                    rsync -a --delete "${AV_SRC}/" "${AV_DST}/"
+                    chown -R 1000:1000 "${AV_DST}"
+                    echo "Synced user-avatars:"
+                    ls -la "${AV_DST}"
+                  fi
               securityContext:
                 runAsUser: 0
               volumeMounts:

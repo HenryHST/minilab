@@ -23,6 +23,11 @@ spec:
             path: apps/dev/it-tools
             namespace: it-tools
             syncWave: "3"
+          - app: registry-demo
+            path: apps/dev/registry-demo
+            namespace: registry-demo
+            syncWave: "3"
+            localHelm: true
           - app: termix
             path: apps/dev/termix
             namespace: termix
@@ -119,6 +124,16 @@ spec:
         repoURL: https://github.com/HenryHST/minilab
         targetRevision: main
         path: {{ .path }}
+    {{- else if dig "localHelm" false . }}
+    spec:
+      source:
+        repoURL: https://github.com/HenryHST/minilab
+        targetRevision: main
+        path: {{ .path }}
+        helm:
+          releaseName: {{ dig "helmReleaseName" .app . }}
+          valueFiles:
+            - values.yaml
     {{- else if dig "helmChart" "" . }}
     spec:
       sources:

@@ -12,6 +12,8 @@ spec:
     - "*"
   destinations:
     - server: "*"
+      namespace: argocd
+    - server: "*"
       namespace: certmanager
     - server: "*"
       namespace: kube-system

@@ -43,6 +43,7 @@ Format angelehnt an [Michael Nygard](https://cognitect.com/blog/2011/11/15/docum
 | [0033](0033-authentik-cnpg.md) | Authentik Postgres auf CloudNativePG | Accepted |
 | [0034](0034-gatus-cnpg.md) | Gatus statt Uptime Kuma, Postgres auf CloudNativePG | Accepted |
 | [0035](0035-paperless-cnpg.md) | Paperless-ngx Postgres auf CloudNativePG | Accepted |
+| [0036](0036-argocd-image-updater.md) | Argo CD Image Updater (Git write-back + Lab-Registry) | Accepted |
 
 ## Neues ADR anlegen
 

@@ -8,6 +8,7 @@ User-facing tooling and apps.
 | stirling-pdf | 3 | stirling-pdf |
 | bookstack | 3 | bookstack |
 | it-tools | 3 | it-tools |
+| registry-demo | 3 | registry-demo |
 | pgweb | 3 | pgweb |
 | vaultwarden | 3 | vaultwarden |
 | drawio | 3 | drawio |

@@ -9,6 +9,7 @@ Platform ops: TLS, registry, IdP, edge publish, cluster UI.
 | registry | 0 | kube-system |
 | registry-ui | 0 | registry-ui |
 | newt | 0 | newt |
+| argocd-image-updater | 1 | argocd |
 | system-upgrade-controller | 1 | system-upgrade |
 | kubeconfig-user | 1 | kubeconfig-user |
 | authentik | 2 | authentik |

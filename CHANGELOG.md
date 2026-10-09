@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- **Argo CD Image Updater** — Helm-App `argocd-image-updater` (Chart 1.3.1) in `ops`, Git write-back zur Lab-Registry; Pilot `registry-demo` (lokales Helm, `localHelm`); `ImageUpdater` CR `lab-registry-pilot`. ADR-0036. Infra_LAB SecretSpec `ARGOCD_IMAGE_UPDATER_GIT_TOKEN`.
 - **Gatus (#115)** — ersetzt Uptime Kuma. Helm-Chart `gatus` 1.5.0 (v5.34.0) in Namespace `status`, URL `status.stadthagen.dev`. CloudNativePG (PG 16), Authentik-OIDC (`gatus_admins`), Pushover, ServiceMonitor. ADR-0034. Buch `gatus`. Archify `gatus-architektur`.
 
 ### Changed

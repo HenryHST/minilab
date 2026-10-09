@@ -18,6 +18,8 @@ spec:
     - server: "*"
       namespace: it-tools
     - server: "*"
+      namespace: registry-demo
+    - server: "*"
       namespace: termix
     - server: "*"
       namespace: pgweb

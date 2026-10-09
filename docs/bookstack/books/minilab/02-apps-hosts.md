@@ -1,3 +1,8 @@
+---
+title: Apps & Hosts
+book_version: "1.1.2"
+---
+
 # Apps & Hosts
 
 Kurzübersicht der User-Apps (Details und Sync Waves: Root-README im Git-Repo).
@@ -6,8 +11,8 @@ Kurzübersicht der User-Apps (Details und Sync Waves: Root-README im Git-Repo).
 |-----|------|---------|
 | BookStack | book.stadthagen.dev | Wissensdatenbank, Authentik OIDC |
 | Home Assistant | ha02.stadthagen.dev | Smart Home (Host außerhalb k3s; Pangolin Site Stadthagen-pro) |
-| Registry | registry.stadthagen.dev | Distribution `registry:3`, ClusterIP + Traefik |
-| Registry UI | registry-ui.stadthagen.dev | Joxit; Authentik ForwardAuth |
+| Registry | registry.stadthagen.dev | Distribution `registry:3`; htpasswd User `registry` — Buch **registry** |
+| Registry UI | registry-ui.stadthagen.dev | Joxit; Authentik ForwardAuth + Registry-Basic (`REGISTRY_SECURED`) |
 | Termix | termix.stadthagen.dev | SSH-Terminal, OIDC |
 | Vaultwarden | vaultwarden.stadthagen.dev | Passwort-Safe, SSO |
 | Web (Homepage) | web.stadthagen.dev | Startseite / Widgets |

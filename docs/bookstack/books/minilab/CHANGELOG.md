@@ -1,5 +1,11 @@
 # Changelog — Buch Minilab
 
+## [1.1.2] - 2026-10-09
+
+### Changed
+
+- Apps & Hosts: Registry htpasswd / UI `REGISTRY_SECURED`; Verweis Buch **registry**
+
 ## [1.1.1] - 2026-10-06
 
 ### Changed

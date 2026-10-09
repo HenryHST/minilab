@@ -1,0 +1,32 @@
+# Argo CD Image Updater — chart argocd-image-updater 1.3.1 / app v1.3.0
+# Docs: https://argocd-image-updater.readthedocs.io/
+# Infra_LAB: docs/argocd-image-updater.md · ADR-0025
+
+config:
+  name: argocd-image-updater-config
+  "argocd.namespace": argocd
+  # Empty / unset → watch controller namespace only (Applications live in argocd)
+  "watch.namespaces": argocd
+  "git.user": argocd-image-updater
+  "git.email": argocd-image-updater@stadthagen.dev
+  "log.level": info
+  registries:
+    - name: lab
+      api_url: https://registry.stadthagen.dev
+      prefix: registry.stadthagen.dev
+      ping: yes
+      # Anonymous pull today; add credentials: secret:argocd/<name>#token when registry auth lands
+
+# Applications + ImageUpdater CRs are in argocd — ClusterRole not required for NS scope,
+# but chart default keeps ClusterRole; leave enabled for simplicity.
+createClusterRoles: true
+
+metrics:
+  enabled: true
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    memory: 256Mi

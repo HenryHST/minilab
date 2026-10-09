@@ -45,6 +45,16 @@ spec:
             helmReleaseName: registry-ui
             helmValuesFile: apps/ops/registry-ui/values.yaml
             extras: true
+          - app: argocd-image-updater
+            path: apps/ops/argocd-image-updater/manifests
+            namespace: argocd
+            syncWave: "1"
+            helmRepo: https://argoproj.github.io/argo-helm
+            helmChart: argocd-image-updater
+            helmVersion: "1.3.1"
+            helmReleaseName: argocd-image-updater
+            helmValuesFile: apps/ops/argocd-image-updater/values.yaml
+            extras: true
           - app: newt
             namespace: newt
             syncWave: "0"

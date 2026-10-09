@@ -1,0 +1,17 @@
+# Image Updater writes image.repository / image.tag here (Git write-back).
+# Mirror before first sync, e.g.:
+#   crane copy docker.io/library/nginx:1.27.1 \
+#     registry.stadthagen.dev/dev/registry-demo:1.27.1
+image:
+  repository: registry.stadthagen.dev/dev/registry-demo
+  tag: "1.27.1"
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+resources:
+  requests:
+    cpu: 5m
+    memory: 16Mi
+  limits:
+    memory: 64Mi

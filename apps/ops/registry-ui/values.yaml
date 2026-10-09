@@ -15,7 +15,7 @@ ui:
   proxy: true
   dockerRegistryUrl: http://kube-registry.kube-system.svc.cluster.local:5000
   singleRegistry: true
-  registrySecured: false
+  registrySecured: true
   deleteImages: true
   showContentDigest: true
   showCatalogNbTags: true

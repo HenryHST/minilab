@@ -42,6 +42,9 @@ spec:
               mountPath: /etc/distribution/config.yml
               subPath: config.yml
               readOnly: true
+            - name: registry-auth
+              mountPath: /auth
+              readOnly: true
             - name: registry-data
               mountPath: /var/lib/registry
           resources:
@@ -50,15 +53,14 @@ spec:
               memory: 128Mi
             limits:
               memory: 512Mi
+          # htpasswd auth makes unauthenticated GET /v2/ return 401 — use tcpSocket.
           readinessProbe:
-            httpGet:
-              path: /v2/
+            tcpSocket:
               port: http
             initialDelaySeconds: 3
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /v2/
+            tcpSocket:
               port: http
             initialDelaySeconds: 15
             periodSeconds: 20
@@ -66,6 +68,13 @@ spec:
         - name: registry-config
           configMap:
             name: kube-registry-config
+        - name: registry-auth
+          secret:
+            secretName: registry-auth
+            defaultMode: 0400
+            items:
+              - key: htpasswd
+                path: htpasswd
         - name: registry-data
           persistentVolumeClaim:
             claimName: kube-registry

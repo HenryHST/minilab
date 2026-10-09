@@ -12,8 +12,12 @@ storage:
     enabled: true
   filesystem:
     rootdirectory: /var/lib/registry
+auth:
+  htpasswd:
+    realm: registry.stadthagen.dev
+    path: /auth/htpasswd
 http:
   addr: :5000
   headers:
     X-Content-Type-Options: [nosniff]
-  # /v2/ is used for readiness/liveness probes
+  # Probes use tcpSocket (auth makes unauthenticated /v2/ return 401)

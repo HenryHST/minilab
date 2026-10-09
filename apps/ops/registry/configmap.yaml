@@ -23,6 +23,10 @@ data:
         enabled: true
       filesystem:
         rootdirectory: /var/lib/registry
+    auth:
+      htpasswd:
+        realm: registry.stadthagen.dev
+        path: /auth/htpasswd
     http:
       addr: :5000
       headers:

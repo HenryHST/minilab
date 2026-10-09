@@ -14,6 +14,7 @@
 ## Behaviour
 
 - `ui.proxy: true` → UI nginx proxies to the existing registry (`NGINX_PROXY_PASS_URL`), so browser HTTPS does not hit the registry over HTTP (no CORS / Mixed Content).
+- `ui.registrySecured: true` → `REGISTRY_SECURED` — registry uses htpasswd; UI prompts for Basic credentials (user `registry`, same as `docker login`). Separate from Authentik ForwardAuth on the UI host.
 - `ui.deleteImages: true` — tag delete from the UI (registry must allow delete; **GC is separate** — see [`apps/ops/registry`](../registry/) CronJob).
 - Chart-bundled registry server stays **disabled** (`registry.enabled: false`); the GitOps Deployment from `apps/ops/registry` is used.
 

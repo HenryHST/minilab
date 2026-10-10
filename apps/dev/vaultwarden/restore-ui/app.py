@@ -16,8 +16,26 @@ NAMESPACE = os.environ.get("NAMESPACE", "vaultwarden")
 VW_REPLICAS = os.environ.get("VW_REPLICAS", "1")
 ARCHIVE_RE = re.compile(r"^vaultwarden-\d{8}-\d{6}\.tar\.gz$")
 
+
+def _resolve_app_version() -> str:
+    env = os.environ.get("APP_VERSION", "").strip()
+    if env:
+        return env
+    for path in (Path("/app/VERSION"), Path(__file__).resolve().parent / "VERSION"):
+        try:
+            text = path.read_text(encoding="utf-8").strip()
+            if text:
+                return text
+        except OSError:
+            continue
+    return "dev"
+
+
+APP_VERSION = _resolve_app_version()
+
 app = FastAPI(title="Vaultwarden Restore")
 templates = Jinja2Templates(directory="/app/templates")
+templates.env.globals["app_version"] = APP_VERSION
 app.mount("/static", StaticFiles(directory="/app/static"), name="static")
 
 def k8s():

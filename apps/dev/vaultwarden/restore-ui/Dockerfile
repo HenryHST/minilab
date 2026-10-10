@@ -5,6 +5,8 @@ ARG VERSION=1.0.0
 ARG VCS_REF=unknown
 ARG BUILD_DATE=unknown
 
+ENV APP_VERSION=${VERSION}
+
 LABEL org.opencontainers.image.title="vw-restore" \
       org.opencontainers.image.description="Vaultwarden NFS backup restore UI (nXk3)" \
       org.opencontainers.image.url="https://vw-restore.stadthagen.dev" \
@@ -32,6 +34,7 @@ RUN useradd --create-home --uid 1000 --shell /usr/sbin/nologin app \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+COPY --chown=app:app VERSION .
 COPY --chown=app:app app.py .
 COPY --chown=app:app templates/ templates/
 COPY --chown=app:app static/ static/

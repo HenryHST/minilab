@@ -7,7 +7,7 @@ Wiki / Wissensdatenbank:
 | LAN | `https://book.stadthagen.dev` (Traefik) |
 | Internet | `https://book-ext.stadthagen.dev` (Pangolin → Newt → ClusterIP) |
 
-`APP_URL` is the public host (`book-ext`) so OIDC callbacks work from the internet. Authentik also allows LAN redirects (`bookstack_url` + `bookstack_external_url`).
+`APP_URL` is the public host (`book-ext`) so OIDC callbacks work from the internet. Argo applies **`helm-manifest.yaml`** (regenerate after values changes: `helm template bookstack ./charts/bookstack -f values.yaml --namespace bookstack > helm-manifest.yaml`). Authentik also allows LAN redirects (`bookstack_url` + `bookstack_external_url`).
 
 ## Überblick
 

@@ -100,7 +100,7 @@ spec:
             - name: APP_THEME
               value: custom
             - name: APP_URL
-              value: https://book.stadthagen.dev
+              value: https://book-ext.stadthagen.dev
             - name: AUTH_AUTO_INITIATE
               value: "true"
             - name: AUTH_METHOD

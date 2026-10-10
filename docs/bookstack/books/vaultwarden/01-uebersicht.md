@@ -1,6 +1,6 @@
 ---
 title: Übersicht
-book_version: "1.1.2"
+book_version: "1.1.3"
 ---
 
 # Übersicht

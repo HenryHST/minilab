@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **Vaultwarden Restore-UI Image** — `ghcr.io/henryhst/vw-restore:1.0.0` aus `apps/dev/vaultwarden/restore-ui/` (OCI Labels, GHA → GHCR; Lab-Registry ist von außen nicht erreichbar).
+- **Vaultwarden Restore-UI Image** — `ghcr.io/henryhst/vw-restore` aus `apps/dev/vaultwarden/restore-ui/` (SemVer via `VERSION`, Tags `X.Y.Z`/`latest`/`sha-*`, GHA → GHCR).
 - **Vaultwarden Restore-UI** — `https://vw-restore.stadthagen.dev` (ForwardAuth, `vaultwarden_admins`), Dark-Vault-Look; wählt Archiv inkl. `latest` und startet Restore-Job. Day-0 Blueprint `day0-vw-restore`.
 - **Gatus (#115)** — ersetzt Uptime Kuma. Helm-Chart `gatus` 1.5.0 (v5.34.0) in Namespace `status`, URL `status.stadthagen.dev`. CloudNativePG (PG 16), Authentik-OIDC (`gatus_admins`), Pushover, ServiceMonitor. ADR-0034. Buch `gatus`. Archify `gatus-architektur`.
 - **WUD 9.3.0** — `apps/ops/wud` (ApplicationSet `ops`, Wave 3, Namespace `wud`, `wupd.stadthagen.dev`). Nur melden: Kubernetes-Watcher (ClusterRole `wud-reader`, nur get/list) und interne Registry `registry.stadthagen.dev`. Meldungen per Pushover (Trigger `NXK3`) und MQTT mit Home-Assistant-Discovery. Login per Authentik-OIDC (`wupd_admins`/`wupd_users`, `DEFAULTROLE=none`). Image digest-gepinnt, PVC `wud-store`, ServiceMonitor; `/metrics` nicht öffentlich geroutet. Secret `wud-env` aus Infra_LAB `k3s_secrets`.

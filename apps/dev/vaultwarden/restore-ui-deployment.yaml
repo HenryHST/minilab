@@ -25,7 +25,8 @@ spec:
           type: RuntimeDefault
       containers:
         - name: restore-ui
-          image: ghcr.io/henryhst/vw-restore:1.0.0
+          image: ghcr.io/henryhst/vw-restore:1.0.1
+
           imagePullPolicy: IfNotPresent
 
           ports:

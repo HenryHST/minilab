@@ -1,6 +1,6 @@
 ---
 title: Backup und Restore
-book_version: "1.1.2"
+book_version: "1.1.3"
 ---
 
 # Backup & Restore
@@ -46,15 +46,15 @@ kubectl -n vaultwarden logs -f job/vw-backup-manual
 |--|--|
 | URL | https://vw-restore.stadthagen.dev (LAN, kein Pangolin) |
 | Auth | Authentik ForwardAuth, Gruppe `vaultwarden_admins` |
-| Image | `ghcr.io/henryhst/vw-restore:1.0.0` (GHCR; Lab-Registry ist von GHA nicht erreichbar) |
+| Image | `ghcr.io/henryhst/vw-restore:1.0.1` (GHCR; SemVer aus `restore-ui/VERSION`) |
 | Quelle | `apps/dev/vaultwarden/restore-ui/` (Dockerfile + OCI Labels) |
-| Build | GitHub Actions `.github/workflows/vw-restore-image.yml` → GHCR |
+| Build | GHA → Tags `X.Y.Z`, `X.Y`, `X`, `latest`, `sha-*`; optional Git-Tag `vw-restore-v*` |
 | Default | Archiv **latest** (neuestes nach mtime) |
 | Aktion | erzeugt Job `vaultwarden-ui-restore-*` (gleiche Orchestrierung wie PostSync) |
 
 Ablauf: Archiv wählen (oder latest) → optional **force** → `RESTORE` tippen → Restore. Parallel laufende Restores sind gesperrt. Git-ConfigMap bleibt `enabled=false`.
 
-Image neu bauen: Workflow **vw-restore image** → `workflow_dispatch` mit SemVer-Tag (`GITHUB_TOKEN` → GHCR). Package ggf. auf **Public** stellen. Deployment-Tag in Git anheben.
+Release: `VERSION` + Deployment-Image-Tag bumpen → Push (oder `git tag vw-restore-vX.Y.Z`). Package ggf. **Public**.
 
 ## Restore (PostSync-Bootstrap)
 

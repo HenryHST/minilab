@@ -160,7 +160,8 @@ metadata:
 rules:
   - apiGroups: ["apps"]
     resources: ["deployments", "deployments/scale"]
-    verbs: ["get", "list", "patch", "update"]
+    # watch: required by `kubectl rollout status` during restore scale 0/1
+    verbs: ["get", "list", "watch", "patch", "update"]
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list", "create", "delete", "watch"]

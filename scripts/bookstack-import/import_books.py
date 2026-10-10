@@ -164,47 +164,6 @@ def encode_multipart(fields: dict[str, Any], files: dict[str, tuple[str, bytes, 
 
     List field values are emitted as repeated ``name[]`` parts (Laravel/BookStack).
     """
-    # #region agent log
-    def _agent_dbg(hypothesis_id: str, location: str, message: str, data: dict) -> None:
-        try:
-            import time as _time
-
-            _dbg = {
-                "sessionId": "1ae980",
-                "runId": os.environ.get("DEBUG_RUN_ID", "pre-fix"),
-                "hypothesisId": hypothesis_id,
-                "location": location,
-                "message": message,
-                "data": data,
-                "timestamp": int(_time.time() * 1000),
-            }
-            _line = json.dumps(_dbg, ensure_ascii=False)
-            print(f"DEBUG_NDJSON:{_line}", flush=True)
-            for _log_path in (
-                Path("/Users/henry/Infra_LAB/.cursor/debug-1ae980.log"),
-                Path(__file__).resolve().parents[2] / ".cursor" / "debug-1ae980.log",
-            ):
-                try:
-                    _log_path.parent.mkdir(parents=True, exist_ok=True)
-                    with _log_path.open("a", encoding="utf-8") as _lf:
-                        _lf.write(_line + "\n")
-                    break
-                except OSError:
-                    continue
-        except Exception:
-            pass
-
-    _agent_dbg(
-        "A",
-        "import_books.py:encode_multipart",
-        "multipart field types",
-        {
-            "field_types": {k: type(v).__name__ for k, v in fields.items()},
-            "field_list_lens": {k: len(v) for k, v in fields.items() if isinstance(v, list)},
-            "file_keys": list(files.keys()),
-        },
-    )
-    # #endregion
     boundary = f"----BookStackImport{uuid.uuid4().hex}"
     lines: list[bytes] = []
 
@@ -216,14 +175,6 @@ def encode_multipart(fields: dict[str, Any], files: dict[str, tuple[str, bytes, 
 
     for name, value in fields.items():
         if isinstance(value, list):
-            # #region agent log
-            _agent_dbg(
-                "B",
-                "import_books.py:encode_multipart:list",
-                "expanding list field for multipart",
-                {"name": name, "len": len(value)},
-            )
-            # #endregion
             for item in value:
                 _append_field(f"{name}[]", str(item))
             continue
@@ -440,34 +391,6 @@ def ensure_shelf(
         data = cover_path.read_bytes()
         mime = mimetypes.guess_type(cover_path.name)[0] or "image/png"
         print(f"  create shelf with cover: {cover_path.name}")
-        # #region agent log
-        try:
-            import time as _time
-
-            _line = json.dumps(
-                {
-                    "sessionId": "1ae980",
-                    "runId": os.environ.get("DEBUG_RUN_ID", "pre-fix"),
-                    "hypothesisId": "A",
-                    "location": "import_books.py:ensure_shelf:create_cover",
-                    "message": "create shelf multipart fields before encode",
-                    "data": {
-                        "name": name,
-                        "books_type": "list",
-                        "cover": cover_path.name,
-                    },
-                    "timestamp": int(_time.time() * 1000),
-                },
-                ensure_ascii=False,
-            )
-            print(f"DEBUG_NDJSON:{_line}", flush=True)
-            _lp = Path("/Users/henry/Infra_LAB/.cursor/debug-1ae980.log")
-            _lp.parent.mkdir(parents=True, exist_ok=True)
-            with _lp.open("a", encoding="utf-8") as _lf:
-                _lf.write(_line + "\n")
-        except Exception:
-            pass
-        # #endregion
         created = client._req_multipart(
             "POST",
             "/api/shelves",

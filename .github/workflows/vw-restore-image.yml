@@ -71,13 +71,6 @@ jobs:
           echo "minor=${MAJOR}.${MINOR}" >> "$GITHUB_OUTPUT"
           echo "sha=$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
           echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
-          echo "file_version=${FILE_VER}" >> "$GITHUB_OUTPUT"
-
-      # #region agent log
-      - name: Debug resolved image tags
-        run: |
-          echo "debug_session=1ae980 hypothesisId=V1 runId=post-fix version=${{ steps.version.outputs.version }} major=${{ steps.version.outputs.major }} minor=${{ steps.version.outputs.minor }} sha=${{ steps.version.outputs.sha }} file_version=${{ steps.version.outputs.file_version }} ref=${{ github.ref }} event=${{ github.event_name }}"
-      # #endregion
 
       - name: Docker meta
         id: meta

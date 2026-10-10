@@ -71,7 +71,7 @@ metadata:
   name: vaultwarden-backup-cron
   namespace: vaultwarden
 spec:
-  schedule: "0 2 * * *" # 02:00 UTC ≈ 04:00 CEST (1h after kuma)
+  schedule: "0 2,14 * * *" # 02:00 + 14:00 UTC ≈ 04:00 / 16:00 CEST
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -99,8 +99,8 @@ spec:
                   echo "Backing up pod/${POD} /data -> ${OUT}"
                   kubectl -n vaultwarden exec "${POD}" -c vaultwarden -- tar czf - -C /data . > "${OUT}"
                   ls -lh "${OUT}"
-                  # Retention: keep last 7 archives
-                  ls -1t /backup/vaultwarden-*.tar.gz 2>/dev/null | tail -n +8 | xargs -r rm -f
+                  # Retention: keep last 14 archives
+                  ls -1t /backup/vaultwarden-*.tar.gz 2>/dev/null | tail -n +15 | xargs -r rm -f
                   echo "Done. Archives:"
                   ls -1t /backup/vaultwarden-*.tar.gz 2>/dev/null || true
               volumeMounts:

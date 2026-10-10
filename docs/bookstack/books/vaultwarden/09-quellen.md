@@ -1,6 +1,6 @@
 ---
 title: Quellen
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Quellen
@@ -15,7 +15,8 @@ book_version: "1.0.0"
 
 ## Infra_LAB
 
-- Authentik TF: `terraform/authentik/modules/dev/authentik_vaultwarden.tf`
+- Authentik TF: `terraform/authentik/modules/dev/authentik_vaultwarden.tf`, Stub `authentik_vw_restore.tf`
+- Day-0 Blueprint: `apps/ops/authentik/blueprints/day0-vw-restore.yaml`
 - Kapitel *Pangolin Ext: BookStack & Vaultwarden* (Buch Infra_LAB)
 - Secrets: `ansible/playbooks/k3s_cluster/secrets/`
 - k3s-README: Abschnitt Vaultwarden SSO + Pangolin ext

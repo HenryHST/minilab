@@ -1,6 +1,6 @@
 ---
 title: Hosts und DOMAIN
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Hosts & DOMAIN

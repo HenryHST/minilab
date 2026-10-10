@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vw-restore-stadthagen-dev
+  namespace: vaultwarden
+spec:
+  secretName: vw-restore-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - vw-restore.stadthagen.dev

@@ -1,8 +1,11 @@
 # Bootstrap restore from NFS (cluster rebuild). Default is off — set ConfigMap enabled=true
 # (and force=true if data PVC already has db.sqlite3) then Argo Sync; set enabled=false after.
 #
+# PostSync Job and the Restore UI share orchestrate.sh. UI Jobs set RESTORE_ENABLED=true
+# in the Job env (Git ConfigMap stays enabled=false).
+#
 # PostSync Job mounts only RWX NFS so it can start while Vaultwarden holds the RWO data PVC.
-# After scale-to-0 it creates a short-lived worker Pod that mounts data + backup + this script.
+# After scale-to-0 it creates a short-lived worker Pod that mounts data + backup + worker.sh.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -42,6 +45,106 @@ data:
     tar xzf "${ARCHIVE}" -C /data
     ls -la /data
     echo "Restore OK"
+  orchestrate.sh: |
+    #!/bin/bash
+    set -euo pipefail
+
+    if [[ "${RESTORE_ENABLED:-false}" != "true" ]]; then
+      echo "vaultwarden-restore.enabled!=true — skip"
+      exit 0
+    fi
+
+    DEPLOY="vaultwarden"
+    NS="vaultwarden"
+    WORKER="vaultwarden-restore-worker"
+    VW_REPLICAS="${VW_REPLICAS:-1}"
+
+    echo "Scaling ${DEPLOY} to 0..."
+    if kubectl -n "${NS}" get deploy "${DEPLOY}" >/dev/null 2>&1; then
+      kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas=0
+      kubectl -n "${NS}" rollout status deploy/"${DEPLOY}" --timeout=120s || true
+      for i in $(seq 1 60); do
+        N="$(kubectl -n "${NS}" get pods -l app=vaultwarden --field-selector=status.phase!=Succeeded,status.phase!=Failed -o name 2>/dev/null | wc -l | tr -d ' ')"
+        [[ "${N}" == "0" ]] && break
+        sleep 2
+      done
+    fi
+
+    kubectl -n "${NS}" delete pod "${WORKER}" --ignore-not-found --wait=true
+
+    cat <<EOF | kubectl apply -f -
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: ${WORKER}
+      namespace: ${NS}
+      labels:
+        app: vaultwarden-restore-worker
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: restore
+          image: alpine:3.20
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: RESTORE_ARCHIVE
+              value: "${RESTORE_ARCHIVE}"
+            - name: RESTORE_FORCE
+              value: "${RESTORE_FORCE}"
+          command: ["/bin/sh", "/scripts/worker.sh"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: backup
+              mountPath: /backup
+            - name: scripts
+              mountPath: /scripts
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: vaultwarden-data
+        - name: backup
+          persistentVolumeClaim:
+            claimName: vaultwarden-backups
+        - name: scripts
+          configMap:
+            name: vaultwarden-restore
+            defaultMode: 0755
+    EOF
+
+    echo "Waiting for worker ${WORKER}..."
+    for i in $(seq 1 120); do
+      PHASE="$(kubectl -n "${NS}" get pod "${WORKER}" -o jsonpath='{.status.phase}' 2>/dev/null || true)"
+      case "${PHASE}" in
+        Succeeded)
+          kubectl -n "${NS}" logs "${WORKER}" || true
+          break
+          ;;
+        Failed)
+          kubectl -n "${NS}" logs "${WORKER}" || true
+          kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${VW_REPLICAS}" || true
+          kubectl -n "${NS}" delete pod "${WORKER}" --ignore-not-found
+          exit 1
+          ;;
+      esac
+      sleep 2
+    done
+    PHASE="$(kubectl -n "${NS}" get pod "${WORKER}" -o jsonpath='{.status.phase}' 2>/dev/null || true)"
+    if [[ "${PHASE}" != "Succeeded" ]]; then
+      echo "Worker did not succeed (phase=${PHASE})" >&2
+      kubectl -n "${NS}" logs "${WORKER}" || true
+      kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${VW_REPLICAS}" || true
+      kubectl -n "${NS}" delete pod "${WORKER}" --ignore-not-found
+      exit 1
+    fi
+    kubectl -n "${NS}" delete pod "${WORKER}" --ignore-not-found --wait=true
+
+    echo "Scaling ${DEPLOY} to ${VW_REPLICAS}..."
+    if kubectl -n "${NS}" get deploy "${DEPLOY}" >/dev/null 2>&1; then
+      kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${VW_REPLICAS}"
+      kubectl -n "${NS}" rollout status deploy/"${DEPLOY}" --timeout=180s
+    fi
+    echo "Done. If this was a Git PostSync restore, set vaultwarden-restore.enabled=false in Git immediately."
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -64,6 +167,9 @@ rules:
   - apiGroups: [""]
     resources: ["pods/log"]
     verbs: ["get"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch", "create", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -121,109 +227,17 @@ spec:
                   key: replicas
           command:
             - /bin/bash
-            - -c
-            - |
-              set -euo pipefail
-
-              if [[ "${RESTORE_ENABLED}" != "true" ]]; then
-                echo "vaultwarden-restore.enabled!=true — skip"
-                exit 0
-              fi
-
-              DEPLOY="vaultwarden"
-              NS="vaultwarden"
-              WORKER="vaultwarden-restore-worker"
-
-              echo "Scaling ${DEPLOY} to 0..."
-              if kubectl -n "${NS}" get deploy "${DEPLOY}" >/dev/null 2>&1; then
-                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas=0
-                kubectl -n "${NS}" rollout status deploy/"${DEPLOY}" --timeout=120s || true
-                for i in $(seq 1 60); do
-                  N="$(kubectl -n "${NS}" get pods -l app=vaultwarden --field-selector=status.phase!=Succeeded,status.phase!=Failed -o name 2>/dev/null | wc -l | tr -d ' ')"
-                  [[ "${N}" == "0" ]] && break
-                  sleep 2
-                done
-              fi
-
-              kubectl -n "${NS}" delete pod "${WORKER}" --ignore-not-found --wait=true
-
-              cat <<EOF | kubectl apply -f -
-              apiVersion: v1
-              kind: Pod
-              metadata:
-                name: ${WORKER}
-                namespace: ${NS}
-                labels:
-                  app: vaultwarden-restore-worker
-              spec:
-                restartPolicy: Never
-                containers:
-                  - name: restore
-                    image: alpine:3.20
-                    imagePullPolicy: IfNotPresent
-                    env:
-                      - name: RESTORE_ARCHIVE
-                        value: "${RESTORE_ARCHIVE}"
-                      - name: RESTORE_FORCE
-                        value: "${RESTORE_FORCE}"
-                    command: ["/bin/sh", "/scripts/worker.sh"]
-                    volumeMounts:
-                      - name: data
-                        mountPath: /data
-                      - name: backup
-                        mountPath: /backup
-                      - name: scripts
-                        mountPath: /scripts
-                volumes:
-                  - name: data
-                    persistentVolumeClaim:
-                      claimName: vaultwarden-data
-                  - name: backup
-                    persistentVolumeClaim:
-                      claimName: vaultwarden-backups
-                  - name: scripts
-                    configMap:
-                      name: vaultwarden-restore
-                      defaultMode: 0755
-              EOF
-
-              echo "Waiting for worker ${WORKER}..."
-              for i in $(seq 1 120); do
-                PHASE="$(kubectl -n "${NS}" get pod "${WORKER}" -o jsonpath='{.status.phase}' 2>/dev/null || true)"
-                case "${PHASE}" in
-                  Succeeded)
-                    kubectl -n "${NS}" logs "${WORKER}" || true
-                    break
-                    ;;
-                  Failed)
-                    kubectl -n "${NS}" logs "${WORKER}" || true
-                    kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${VW_REPLICAS}" || true
-                    kubectl -n "${NS}" delete pod "${WORKER}" --ignore-not-found
-                    exit 1
-                    ;;
-                esac
-                sleep 2
-              done
-              PHASE="$(kubectl -n "${NS}" get pod "${WORKER}" -o jsonpath='{.status.phase}' 2>/dev/null || true)"
-              if [[ "${PHASE}" != "Succeeded" ]]; then
-                echo "Worker did not succeed (phase=${PHASE})" >&2
-                kubectl -n "${NS}" logs "${WORKER}" || true
-                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${VW_REPLICAS}" || true
-                kubectl -n "${NS}" delete pod "${WORKER}" --ignore-not-found
-                exit 1
-              fi
-              kubectl -n "${NS}" delete pod "${WORKER}" --ignore-not-found --wait=true
-
-              echo "Scaling ${DEPLOY} to ${VW_REPLICAS}..."
-              if kubectl -n "${NS}" get deploy "${DEPLOY}" >/dev/null 2>&1; then
-                kubectl -n "${NS}" scale deploy/"${DEPLOY}" --replicas="${VW_REPLICAS}"
-                kubectl -n "${NS}" rollout status deploy/"${DEPLOY}" --timeout=180s
-              fi
-              echo "Done. Set vaultwarden-restore.enabled=false in Git immediately."
+            - /scripts/orchestrate.sh
           volumeMounts:
+            - name: scripts
+              mountPath: /scripts
             - name: backup
               mountPath: /backup
       volumes:
+        - name: scripts
+          configMap:
+            name: vaultwarden-restore
+            defaultMode: 0755
         - name: backup
           persistentVolumeClaim:
             claimName: vaultwarden-backups

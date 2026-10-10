@@ -29,6 +29,7 @@ NFS-Backup-CronJobs haben ein Fenster von 30 Minuten ab der Cron-Minute, Zeitzon
 | 05:00 | Authentik, Paperless |
 | 06:00 | ByteStash |
 | 07:00 | Karakeep |
+| 14:00 | Vaultwarden |
 
 ## Öffentliche Übersicht
 

@@ -91,9 +91,13 @@ data:
             icon: si-gnubash-#4EAA25
             description: SSH terminal (OIDC)
         - Vaultwarden:
-            href: https://vaultwarden.stadthagen.dev
+            href: https://vw-ext.stadthagen.dev
             icon: si-bitwarden-#175DDC
             description: Password Manager (SSO)
+        - Vaultwarden Restore:
+            href: https://vw-restore.stadthagen.dev
+            icon: si-bitwarden-#175DDC
+            description: NFS backup restore (admins)
         - BookStack:
             href: https://book.stadthagen.dev
             icon: bookstack.png

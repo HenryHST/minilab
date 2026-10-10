@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- **Vaultwarden Restore-UI** — `https://vw-restore.stadthagen.dev` (ForwardAuth, `vaultwarden_admins`), Dark-Vault-Look; wählt Archiv inkl. `latest` und startet Restore-Job. Day-0 Blueprint `day0-vw-restore`.
 - **Gatus (#115)** — ersetzt Uptime Kuma. Helm-Chart `gatus` 1.5.0 (v5.34.0) in Namespace `status`, URL `status.stadthagen.dev`. CloudNativePG (PG 16), Authentik-OIDC (`gatus_admins`), Pushover, ServiceMonitor. ADR-0034. Buch `gatus`. Archify `gatus-architektur`.
 - **WUD 9.3.0** — `apps/ops/wud` (ApplicationSet `ops`, Wave 3, Namespace `wud`, `wupd.stadthagen.dev`). Nur melden: Kubernetes-Watcher (ClusterRole `wud-reader`, nur get/list) und interne Registry `registry.stadthagen.dev`. Meldungen per Pushover (Trigger `NXK3`) und MQTT mit Home-Assistant-Discovery. Login per Authentik-OIDC (`wupd_admins`/`wupd_users`, `DEFAULTROLE=none`). Image digest-gepinnt, PVC `wud-store`, ServiceMonitor; `/metrics` nicht öffentlich geroutet. Secret `wud-env` aus Infra_LAB `k3s_secrets`.
 - **WUD-Monitoring** — Grafana-Dashboard `grafana-dashboard-wud` (upstream `overview.json` 9.3.0), PrometheusRule `wud-alerts` (Scrape down, Trigger-Fehler, leerer Watcher) und Gatus-Endpoint `wud` (`/health`, Pushover).
@@ -14,6 +15,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **Vaultwarden Backup** — Cron `0 2,14 * * *`, Retention 14; Gatus-Wartung 02:00 und 14:00 UTC; Buch v1.1.0 (Argo Create Job + Restore-UI).
 - **Anleitungen Zugang** — Vaultwarden-URL auf `vw-ext.stadthagen.dev`; Verweis auf Ops-Buch.
 - **Backup** — der 01:00-UTC-Slot ist `pg_dump` von Gatus statt tar von Uptime Kuma (ADR-0015).
 - **Homepage** — Link auf Gatus; das Uptime-Kuma-Widget entfällt (die Seite liegt hinter OIDC).

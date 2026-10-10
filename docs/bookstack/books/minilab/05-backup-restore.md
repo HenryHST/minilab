@@ -10,7 +10,7 @@
 | App | Cron | Inhalt |
 |-----|------|--------|
 | gatus | 01:00 | `pg_dump` |
-| vaultwarden | 02:00 | `/data` tar |
+| vaultwarden | 02:00, 14:00 | `/data` tar (Retention 14; UI `vw-restore`) |
 | termix | 03:00 | `pg_dump` |
 | bookstack | 04:00 | MariaDB dump + `/config` |
 | **authentik** | **05:00** | `pg_dump` + `/media` |

@@ -1,6 +1,6 @@
 ---
 title: Übersicht
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Übersicht
@@ -18,7 +18,8 @@ Vaultwarden ist der Bitwarden-kompatible Passwort-Safe im nXk3-Cluster. Login l�
 | LAN-Alias | `https://vaultwarden.stadthagen.dev` → Redirect auf `vw-ext` |
 | Login | Authentik-OIDC, Slug `vaultwarden` — Gruppen `vaultwarden_admins` / `vaultwarden_users` |
 | Speicher | PVC `vaultwarden-data` 2Gi Longhorn RWO (`/data`) |
-| Backup | CronJob 02:00 UTC → NFS, Retention 7 |
+| Backup | CronJob 02:00 + 14:00 UTC → NFS, Retention 14 |
+| Restore-UI | https://vw-restore.stadthagen.dev (`vaultwarden_admins`) |
 
 ## Ownership
 

@@ -1,6 +1,6 @@
 ---
 title: Betrieb
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Betrieb
@@ -18,7 +18,8 @@ book_version: "1.0.0"
 - [ ] `https://vaultwarden.stadthagen.dev` → Redirect auf `vw-ext`
 - [ ] Bitwarden-Client sync über `vw-ext`
 - [ ] `kubectl -n vaultwarden get deploy,ingressroute,networkpolicy`
-- [ ] Backup-CronJob existiert; letztes Successful Job optional prüfen
+- [ ] Backup-CronJob Schedule `0 2,14 * * *`; Argo Create Job / letztes Successful Job optional prüfen
+- [ ] Restore-UI `https://vw-restore.stadthagen.dev` (Authentik, `vaultwarden_admins`)
 - [ ] Pangolin-Status: keine Dual-Write-Warnung für `vw-ext`
 
 ## Troubleshooting

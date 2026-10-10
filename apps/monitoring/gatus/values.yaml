@@ -182,10 +182,13 @@ config:
       group: apps
       url: https://vaultwarden.stadthagen.dev/alive
       interval: 1m
-      maintenance:
-        start: "02:00"
-        duration: 30m
-        timezone: UTC
+      maintenance-windows:
+        - start: "02:00"
+          duration: 30m
+          timezone: UTC
+        - start: "14:00"
+          duration: 30m
+          timezone: UTC
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover

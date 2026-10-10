@@ -1,6 +1,6 @@
 book: Vaultwarden
 cover: cover.png
-book_version: "1.0.0"
+book_version: "1.1.0"
 updated: "2026-10-10"
-description: Vaultwarden 1.37.2 auf nXk3 — Bitwarden-kompatibel, Authentik-OIDC, kanonischer Host vw-ext, Backup/Restore
+description: Vaultwarden 1.37.2 auf nXk3 — Bitwarden-kompatibel, Authentik-OIDC, kanonischer Host vw-ext, Backup/Restore-UI
 shelf: Plattform

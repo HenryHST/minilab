@@ -1,5 +1,5 @@
-# SSO binding cookie (VW_SSO_BINDING) is host-scoped. DOMAIN / OIDC callback is vw-ext.
-# Redirect LAN /identity* and sso-connector so authorize + callback share one host.
+# Vaultwarden DOMAIN is https://vw-ext.stadthagen.dev. The web vault CSP only allows
+# connect-src 'self', and SSO binding cookies are host-scoped — both require one host.
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:

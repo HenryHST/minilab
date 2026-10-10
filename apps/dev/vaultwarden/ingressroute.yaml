@@ -9,22 +9,15 @@ spec:
   entryPoints:
     - websecure
   routes:
-    # SSO must run on DOMAIN host (vw-ext); LAN cookie ≠ EXT callback → binding mismatch.
-    - match: Host(`vaultwarden.stadthagen.dev`) && (PathPrefix(`/identity`) || PathPrefix(`/sso-connector.html`))
+    # DOMAIN / SSO /api/config are vw-ext. Serving the web vault on LAN breaks CSP
+    # (connect-src 'self' cannot call vw-ext → browser "Failed to fetch").
+    - match: Host(`vaultwarden.stadthagen.dev`)
       kind: Rule
-      priority: 100
       middlewares:
         - name: sso-to-ext
         - name: default-headers
       services:
         - name: vaultwarden
           port: 80
-    - match: Host(`vaultwarden.stadthagen.dev`)
-      kind: Rule
-      services:
-        - name: vaultwarden
-          port: 80
-      middlewares:
-        - name: default-headers
   tls:
     secretName: vaultwarden-tls

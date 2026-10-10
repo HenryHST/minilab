@@ -1,0 +1,12 @@
+# SSO binding cookie (VW_SSO_BINDING) is host-scoped. DOMAIN / OIDC callback is vw-ext.
+# Redirect LAN /identity* and sso-connector so authorize + callback share one host.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: sso-to-ext
+  namespace: vaultwarden
+spec:
+  redirectRegex:
+    regex: ^https?://[^/]+/(.*)$
+    replacement: https://vw-ext.stadthagen.dev/$1
+    permanent: false

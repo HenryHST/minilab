@@ -9,6 +9,16 @@ spec:
   entryPoints:
     - websecure
   routes:
+    # SSO must run on DOMAIN host (vw-ext); LAN cookie ≠ EXT callback → binding mismatch.
+    - match: Host(`vaultwarden.stadthagen.dev`) && (PathPrefix(`/identity`) || PathPrefix(`/sso-connector.html`))
+      kind: Rule
+      priority: 100
+      middlewares:
+        - name: sso-to-ext
+        - name: default-headers
+      services:
+        - name: vaultwarden
+          port: 80
     - match: Host(`vaultwarden.stadthagen.dev`)
       kind: Rule
       services:

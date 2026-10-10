@@ -4,7 +4,7 @@ Nach erfolgreichem Deploy von `bookstack` und Authentik-OIDC-Login als Admin:
 
 ## 1. Shelves & Bücher anlegen
 
-1. Shelf **Plattform** → Buch **Minilab** (weitere Plattform-Bücher inkl. `cheat-sheets` kommen per Auto-Import aus `books/*/`)
+1. Shelf **Plattform** → Buch **Minilab** (weitere Plattform-Bücher inkl. `cheat-sheets`, `wud`, `vaultwarden` kommen per Auto-Import aus `books/*/`)
 2. Shelf **Anleitungen** → Bücher:
    - **Erste Schritte am Homelab**
    - **Zugang & Passwörter**
@@ -37,6 +37,22 @@ Quellen: Root-`README.md`, `docs/adr/*`, App-READMEs. Kurz halten; auf Git verli
 ## 4. Nicht-IT-Anleitungen
 
 Kapitel aus `books/anleitungen/` übernehmen (einfache Sprache, nummerierte Schritte, Screenshots später ergänzen).
+
+## 4a. Vaultwarden
+
+Buch **Vaultwarden** — Reihenfolge aus `books/vaultwarden/`:
+
+1. Übersicht
+2. Hosts & DOMAIN
+3. OIDC mit Authentik
+4. Secrets
+5. Pangolin Publish
+6. Netzwerk & Ingress
+7. Backup & Restore
+8. Betrieb
+9. Quellen
+
+URL (kanonisch): `https://vw-ext.stadthagen.dev` · Manifeste: `apps/dev/vaultwarden/`.
 
 ## 4b. Home Assistant
 

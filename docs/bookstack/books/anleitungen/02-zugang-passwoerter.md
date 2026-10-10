@@ -11,7 +11,7 @@ Sie öffnen den Passwort-Safe und finden gespeicherte Zugangsdaten.
 
 ## Schritte
 
-1. Öffnen Sie **https://vaultwarden.stadthagen.dev**
+1. Öffnen Sie **https://vw-ext.stadthagen.dev** (nicht die alte LAN-URL).
 2. Melden Sie sich über **Authentik / SSO** an (nicht ein separates Vaultwarden-Passwort, sofern SSO aktiv ist).
 3. Nach dem Login sehen Sie Ihre Tresore / Einträge.
 4. Zum Kopieren eines Passworts: Eintrag öffnen → Kopieren-Symbol nutzen.
@@ -21,11 +21,13 @@ Sie öffnen den Passwort-Safe und finden gespeicherte Zugangsdaten.
 
 - Teilen Sie Master-Passwörter oder Tresor-Exports **nicht** per E-Mail oder Chat.
 - Bei Verlust des Zugangs: Admin kontaktieren (Wiederherstellung nur mit Backup/Admin-Token möglich).
+- Ops-Dokumentation: BookStack-Buch **Vaultwarden** (Regal Plattform).
 
 ## Wenn etwas nicht klappt
 
 | Problem | Hilfe |
 |---------|-------|
 | Nur Passwort-Feld, kein SSO | Falsche URL oder SSO noch nicht aktiv — Admin fragen |
+| „Failed to fetch“ / Login-Fehler | URL muss `vw-ext` sein; Cookies löschen und erneut versuchen |
 | Tresor leer | Noch keine Einträge oder falsches Konto |
 | 2FA / Geräte | Admin-Dokumentation bzw. Vaultwarden-Einstellungen prüfen |

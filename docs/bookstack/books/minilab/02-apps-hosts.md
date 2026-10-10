@@ -14,7 +14,7 @@ Kurzübersicht der User-Apps (Details und Sync Waves: Root-README im Git-Repo).
 | Registry | registry.stadthagen.dev | Distribution `registry:3`; htpasswd User `registry` — Buch **registry** |
 | Registry UI | registry-ui.stadthagen.dev | Joxit; Authentik ForwardAuth + Registry-Basic (`REGISTRY_SECURED`) |
 | Termix | termix.stadthagen.dev | SSH-Terminal, OIDC |
-| Vaultwarden | vaultwarden.stadthagen.dev | Passwort-Safe, SSO |
+| Vaultwarden | vw-ext.stadthagen.dev (LAN `vaultwarden.` → Redirect) | Passwort-Safe, SSO |
 | Web (Homepage) | web.stadthagen.dev | Startseite / Widgets |
 | Gatus | status.stadthagen.dev | Health-Dashboard, Authentik OIDC, CloudNativePG |
 | Draw.io | drawio.stadthagen.dev | Diagramme |

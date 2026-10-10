@@ -10,9 +10,11 @@ All notable changes to this project will be documented in this file.
 - **WUD 9.3.0** — `apps/ops/wud` (ApplicationSet `ops`, Wave 3, Namespace `wud`, `wupd.stadthagen.dev`). Nur melden: Kubernetes-Watcher (ClusterRole `wud-reader`, nur get/list) und interne Registry `registry.stadthagen.dev`. Meldungen per Pushover (Trigger `NXK3`) und MQTT mit Home-Assistant-Discovery. Login per Authentik-OIDC (`wupd_admins`/`wupd_users`, `DEFAULTROLE=none`). Image digest-gepinnt, PVC `wud-store`, ServiceMonitor; `/metrics` nicht öffentlich geroutet. Secret `wud-env` aus Infra_LAB `k3s_secrets`.
 - **WUD-Monitoring** — Grafana-Dashboard `grafana-dashboard-wud` (upstream `overview.json` 9.3.0), PrometheusRule `wud-alerts` (Scrape down, Trigger-Fehler, leerer Watcher) und Gatus-Endpoint `wud` (`/health`, Pushover).
 - **Buch `wud`** (v1.0.0, 7 Kapitel) — Archify `wud-architektur` und `wud-update-flow` mit PNG-Exporten.
+- **Buch `vaultwarden`** (v1.0.0, 9 Kapitel) — Deploy, DOMAIN/`vw-ext`, OIDC, Secrets, Pangolin, Backup/Restore, Betrieb.
 
 ### Changed
 
+- **Anleitungen Zugang** — Vaultwarden-URL auf `vw-ext.stadthagen.dev`; Verweis auf Ops-Buch.
 - **Backup** — der 01:00-UTC-Slot ist `pg_dump` von Gatus statt tar von Uptime Kuma (ADR-0015).
 - **Homepage** — Link auf Gatus; das Uptime-Kuma-Widget entfällt (die Seite liegt hinter OIDC).
 - **Pangolin publish** — Public-Hosts `bookstack-ext` → `book-ext`, `vaultwarden-ext` → `vw-ext` (BookStack `APP_URL`, Vaultwarden `DOMAIN`, `pangolin-publish` niceId/subdomain/DNS).

@@ -51,7 +51,7 @@ Der interne Traefik-Host (z. B. `book.stadthagen.dev`, `vaultwarden.stadthagen
 
 Wenn die App öffentlich ist und OIDC nutzt, müssen die Redirect-URLs in OpenTofu die externe URL treffen (`termix_external_url`, `bookstack_external_url`, `vaultwarden_external_url`, … und `additional_redirect_bases`). Sonst bricht der Login nach dem IdP ab.
 
-**BookStack / Vaultwarden** sind nicht host-aware: `APP_URL` bzw. `DOMAIN` in minilab zeigen auf die `-ext`-URL (OIDC-Callback). Launch-URL in Authentik bleibt die LAN-URL. Details: Kapitel **OpenTofu** und **Onboarding**; Infra_LAB-Buch Kapitel Pangolin-Ext BookStack/Vaultwarden.
+**BookStack / Vaultwarden** sind nicht host-aware: `APP_URL` bzw. `DOMAIN` in minilab zeigen auf die `-ext`-URL (OIDC-Callback). BookStack-Launch bleibt LAN; Vaultwarden-Launch und Web-Vault sind **`vw-ext`** (SSO-Cookie + CSP). Details: Buch **Vaultwarden**; Kapitel **OpenTofu** / **Onboarding**; Infra_LAB-Buch Pangolin-Ext.
 
 ## Toggle
 

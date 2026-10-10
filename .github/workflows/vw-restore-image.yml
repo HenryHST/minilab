@@ -102,16 +102,3 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
-
-      # #region agent log
-      - name: Debug multi-arch manifest
-        if: success()
-        run: |
-          set -euo pipefail
-          MANIFEST="$(docker buildx imagetools inspect "${{ env.IMAGE }}:${{ steps.version.outputs.version }}" 2>&1 || true)"
-          HAS_AMD64=0; HAS_ARM64=0
-          echo "$MANIFEST" | grep -q 'linux/amd64' && HAS_AMD64=1 || true
-          echo "$MANIFEST" | grep -q 'linux/arm64' && HAS_ARM64=1 || true
-          echo "debug_session=1ae980 hypothesisId=M1 runId=multiarch version=${{ steps.version.outputs.version }} amd64=${HAS_AMD64} arm64=${HAS_ARM64}"
-          echo "$MANIFEST" | head -n 80
-      # #endregion

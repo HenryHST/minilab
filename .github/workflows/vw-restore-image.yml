@@ -1,6 +1,6 @@
 name: vw-restore image
 
-# Lab registry is LAN-only. Image: ghcr.io/henryhst/vw-restore
+# Image: ghcr.io/henryhst/vw-restore (multi-arch: linux/amd64, linux/arm64)
 # SemVer source of truth: apps/dev/vaultwarden/restore-ui/VERSION
 # Optional override: workflow_dispatch input tag, or git tag vw-restore-vX.Y.Z
 
@@ -34,6 +34,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -88,7 +91,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: apps/dev/vaultwarden/restore-ui
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -98,3 +101,17 @@ jobs:
             BUILD_DATE=${{ steps.version.outputs.date }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          provenance: false
+
+      # #region agent log
+      - name: Debug multi-arch manifest
+        if: success()
+        run: |
+          set -euo pipefail
+          MANIFEST="$(docker buildx imagetools inspect "${{ env.IMAGE }}:${{ steps.version.outputs.version }}" 2>&1 || true)"
+          HAS_AMD64=0; HAS_ARM64=0
+          echo "$MANIFEST" | grep -q 'linux/amd64' && HAS_AMD64=1 || true
+          echo "$MANIFEST" | grep -q 'linux/arm64' && HAS_ARM64=1 || true
+          echo "debug_session=1ae980 hypothesisId=M1 runId=multiarch version=${{ steps.version.outputs.version }} amd64=${HAS_AMD64} arm64=${HAS_ARM64}"
+          echo "$MANIFEST" | head -n 80
+      # #endregion

@@ -35,7 +35,7 @@ flowchart LR
 | Geheimnis | SecretSpec `TERMIX_OAUTH_CLIENT_SECRET` | keines in der App; der Outpost trägt sein Token |
 | App-Manifest | `OIDC_*` in `apps/dev/termix/values.yaml` | `apps/ops/registry-ui/manifests/middleware-authentik.yaml` |
 | Outpost | keiner | Service `ak-outpost-registry-ui.authentik.svc:9000` |
-| Öffentlichkeit | `termix-ext` / `bookstack-ext` / `vaultwarden-ext` in `pangolin-publish` | meist nur LAN |
+| Öffentlichkeit | `termix-ext` / `book-ext` / `vw-ext` in `pangolin-publish` | meist nur LAN |
 
 Scopes bei Termix: `openid`, `email`, `profile`. Der Gruppen-Claim kommt aus dem Profile-Mapping, nicht aus einem eigenen Scope.
 

@@ -5,9 +5,9 @@ Wiki / Wissensdatenbank:
 | Access | URL |
 |--------|-----|
 | LAN | `https://book.stadthagen.dev` (Traefik) |
-| Internet | `https://bookstack-ext.stadthagen.dev` (Pangolin → Newt → ClusterIP) |
+| Internet | `https://book-ext.stadthagen.dev` (Pangolin → Newt → ClusterIP) |
 
-`APP_URL` is the public host (`bookstack-ext`) so OIDC callbacks work from the internet. Authentik also allows LAN redirects (`bookstack_url` + `bookstack_external_url`).
+`APP_URL` is the public host (`book-ext`) so OIDC callbacks work from the internet. Authentik also allows LAN redirects (`bookstack_url` + `bookstack_external_url`).
 
 ## Überblick
 
@@ -37,12 +37,12 @@ Vor dem ersten Sync SecretSpecs / Ansible anlegen — Vorlage: [`secret.example.
 ## Authentik
 
 1. Application + OAuth2/OIDC Provider, Slug `bookstack`
-2. Redirect URI (strict): `https://bookstack-ext.stadthagen.dev/oidc/callback` (primary via `APP_URL`) plus LAN `https://book.stadthagen.dev/oidc/callback`
+2. Redirect URI (strict): `https://book-ext.stadthagen.dev/oidc/callback` (primary via `APP_URL`) plus LAN `https://book.stadthagen.dev/oidc/callback`
 3. Post-Logout / login URIs on both hosts (`bookstack_url` + `bookstack_external_url`)
 4. Gruppen (Namen = BookStack-Rollen): `Admin` / `Editor` (OIDC `groups` claim)
 5. Client-Secret → SecretSpec `bookstack-oauth`
 
-Siehe [Authentik ↔ BookStack](https://integrations.goauthentik.io/documentation/bookstack/). Pangolin publish: `apps/ops/pangolin-publish` (niceId `bookstack-ext`).
+Siehe [Authentik ↔ BookStack](https://integrations.goauthentik.io/documentation/bookstack/). Pangolin publish: `apps/ops/pangolin-publish` (niceId `book-ext`).
 
 ## Theme modules & PDF fonts (GitOps)
 

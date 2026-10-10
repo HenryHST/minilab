@@ -40,8 +40,8 @@ Voraussetzungen: Newt healthy, Secret `pangolin-api` mit API-Key und Hetzner-Tok
 |--|--|--|--|
 | `termix` | `termix-ext.stadthagen.dev` | `termix.termix.svc.cluster.local:8080` | true |
 | `karakeep` | `karakeep-ext.stadthagen.dev` | `karakeep.karakeep.svc.cluster.local:3000` | true |
-| `bookstack` | `bookstack-ext.stadthagen.dev` | `bookstack.bookstack.svc.cluster.local:80` | true |
-| `vaultwarden` | `vaultwarden-ext.stadthagen.dev` | `vaultwarden.vaultwarden.svc.cluster.local:80` | true |
+| `bookstack` | `book-ext.stadthagen.dev` | `bookstack.bookstack.svc.cluster.local:80` | true |
+| `vaultwarden` | `vw-ext.stadthagen.dev` | `vaultwarden.vaultwarden.svc.cluster.local:80` | true |
 | `paperless` | `paperless-ext.stadthagen.dev` | `paperless-web.paperless.svc.cluster.local:8000` | false (vorbereitet) |
 | `idp` | `idp.stadthagen.dev` | `authentik-server.authentik.svc.cluster.local:80` | true |
 
@@ -65,7 +65,7 @@ Wenn die App öffentlich ist und OIDC nutzt, müssen die Redirect-URLs in OpenTo
 
 1. `kubectl -n argocd get application pangolin-publish newt`
 2. `https://idp.stadthagen.dev` öffnet die Authentik-Login-Seite.
-3. `https://bookstack-ext.stadthagen.dev` / `https://vaultwarden-ext.stadthagen.dev` — DNS A → Pangolin-Public-IP, OIDC-Login.
+3. `https://book-ext.stadthagen.dev` / `https://vw-ext.stadthagen.dev` — DNS A → Pangolin-Public-IP, OIDC-Login.
 4. Diff und Inventar: Infra_LAB `terraform/pangolin/scripts/pangolin-status.sh`.
 
 README: [`apps/ops/pangolin-publish/README.md`](../../../../apps/ops/pangolin-publish/README.md).

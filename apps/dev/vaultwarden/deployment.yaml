@@ -30,7 +30,7 @@ spec:
           env:
             # Pangolin public host (SSO callback); LAN Ingress vaultwarden.stadthagen.dev remains.
             - name: DOMAIN
-              value: https://vaultwarden-ext.stadthagen.dev
+              value: https://vw-ext.stadthagen.dev
             - name: SIGNUPS_ALLOWED
               value: "false"
             - name: INVITATIONS_ALLOWED

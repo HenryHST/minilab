@@ -1,4 +1,4 @@
-# BookStack: ingress allow Traefik (LAN) + Newt (Pangolin bookstack-ext) + in-namespace.
+# BookStack: ingress allow Traefik (LAN) + Newt (Pangolin book-ext) + in-namespace.
 # Egress left open (Authentik OIDC, SMTP, MariaDB).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

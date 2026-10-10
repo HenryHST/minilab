@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 
 - **Backup** — der 01:00-UTC-Slot ist `pg_dump` von Gatus statt tar von Uptime Kuma (ADR-0015).
 - **Homepage** — Link auf Gatus; das Uptime-Kuma-Widget entfällt (die Seite liegt hinter OIDC).
+- **Pangolin publish** — Public-Hosts `bookstack-ext` → `book-ext`, `vaultwarden-ext` → `vw-ext` (BookStack `APP_URL`, Vaultwarden `DOMAIN`, `pangolin-publish` niceId/subdomain/DNS).
 
 ### Removed
 

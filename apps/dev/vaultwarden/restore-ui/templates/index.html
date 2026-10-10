@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vaultwarden Restore</title>
+  <link rel="stylesheet" href="/static/vaultwarden-restore.css">
+  <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+</head>
+<body>
+  <main class="card">
+    <header class="brand">
+      <img src="/static/logo.svg" alt="" width="40" height="40">
+      <div>
+        <h1>Vaultwarden Restore</h1>
+        <p class="muted">namespace vaultwarden · NFS backups</p>
+      </div>
+    </header>
+    {% if user %}<p class="muted user">Signed in as {{ user }}</p>{% endif %}
+    {% if error %}<div class="alert danger">{{ error }}</div>{% endif %}
+    {% if notice %}<div class="alert ok">{{ notice }}</div>{% endif %}
+    {% if active %}
+    <div class="alert warn">
+      Restore running:
+      {% for j in active %}
+        <a href="/jobs/{{ j.name }}">{{ j.name }}</a> ({{ j.archive }})
+      {% endfor %}
+    </div>
+    {% endif %}
+    <form method="post" action="/restore" class="form">
+      <fieldset {% if active %}disabled{% endif %}>
+        <legend>Archive</legend>
+        <label class="row">
+          <input type="radio" name="archive" value="latest" checked>
+          <span><strong>latest</strong> <span class="muted">(newest by mtime)</span></span>
+        </label>
+        {% for a in archives %}
+        <label class="row">
+          <input type="radio" name="archive" value="{{ a.name }}">
+          <span>
+            <code>{{ a.name }}</code>
+            <span class="muted">{{ a.size_h }} · {{ a.mtime.strftime('%Y-%m-%d %H:%M UTC') }}</span>
+          </span>
+        </label>
+        {% else %}
+        <p class="muted">No archives found on the backup volume.</p>
+        {% endfor %}
+      </fieldset>
+      <div class="danger-zone">
+        <label class="check">
+          <input type="checkbox" name="force" {% if active %}disabled{% endif %}>
+          Force overwrite if <code>db.sqlite3</code> already exists
+        </label>
+        <label>
+          Type <strong>RESTORE</strong> to confirm
+          <input type="text" name="confirm" autocomplete="off" spellcheck="false"
+                 placeholder="RESTORE" {% if active %}disabled{% endif %}>
+        </label>
+      </div>
+      <div class="actions">
+        <a class="btn secondary" href="/">Refresh</a>
+        <button class="btn primary" type="submit" {% if active %}disabled{% endif %}>Restore</button>
+      </div>
+    </form>
+    {% if recent %}
+    <section class="recent">
+      <h2>Recent jobs</h2>
+      <ul>
+        {% for j in recent %}
+        <li>
+          <a href="/jobs/{{ j.name }}">{{ j.name }}</a>
+          <span class="badge {% if j.succeeded %}ok{% elif j.failed %}bad{% else %}muted{% endif %}">
+            {% if j.succeeded %}Succeeded{% elif j.failed %}Failed{% else %}Done{% endif %}
+          </span>
+          <span class="muted">{{ j.archive }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+  </main>
+</body>
+</html>

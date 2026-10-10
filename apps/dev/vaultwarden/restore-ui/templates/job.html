@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% if active %}<meta http-equiv="refresh" content="5">{% endif %}
+  <title>{{ job_name }} · Vaultwarden Restore</title>
+  <link rel="stylesheet" href="/static/vaultwarden-restore.css">
+  <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+</head>
+<body>
+  <main class="card">
+    <header class="brand">
+      <img src="/static/logo.svg" alt="" width="40" height="40">
+      <div>
+        <h1>Restore job</h1>
+        <p class="muted"><code>{{ job_name }}</code></p>
+      </div>
+    </header>
+    {% if user %}<p class="muted user">Signed in as {{ user }}</p>{% endif %}
+    <p>
+      Status
+      <span class="badge {% if status == 'Succeeded' %}ok{% elif status == 'Failed' %}bad{% elif status == 'Running' or status == 'Pending' %}warn{% else %}muted{% endif %}">
+        {{ status }}
+      </span>
+    </p>
+    <p class="muted">Archive: <code>{{ archive }}</code></p>
+    <pre class="logs">{{ logs }}</pre>
+    <div class="actions">
+      <a class="btn secondary" href="/">Back</a>
+      <a class="btn primary" href="/jobs/{{ job_name }}">Refresh</a>
+    </div>
+  </main>
+</body>
+</html>

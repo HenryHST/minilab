@@ -1,4 +1,4 @@
-# Restore UI: Traefik ingress; egress DNS + apiserver + HTTPS (pip on start).
+# Restore UI: Traefik ingress; egress DNS + kube-apiserver (Job create / status).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -54,19 +54,7 @@ spec:
           port: 53
         - protocol: TCP
           port: 53
-    # kube-apiserver (in-cluster Job create / status)
-    - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except:
-              - 10.0.0.0/8
-              - 172.16.0.0/12
-              - 192.168.0.0/16
-      ports:
-        - protocol: TCP
-          port: 443
-        - protocol: TCP
-          port: 6443
+    # kube-apiserver (in-cluster)
     - to:
         - ipBlock:
             cidr: 10.0.0.0/8
@@ -75,5 +63,3 @@ spec:
           port: 443
         - protocol: TCP
           port: 6443
-        - protocol: TCP
-          port: 8080

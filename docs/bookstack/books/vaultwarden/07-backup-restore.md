@@ -1,6 +1,6 @@
 ---
 title: Backup und Restore
-book_version: "1.1.0"
+book_version: "1.1.1"
 ---
 
 # Backup & Restore
@@ -46,10 +46,15 @@ kubectl -n vaultwarden logs -f job/vw-backup-manual
 |--|--|
 | URL | https://vw-restore.stadthagen.dev (LAN, kein Pangolin) |
 | Auth | Authentik ForwardAuth, Gruppe `vaultwarden_admins` |
+| Image | `registry.stadthagen.dev/dev/vw-restore:1.0.0` |
+| Quelle | `apps/dev/vaultwarden/restore-ui/` (Dockerfile + OCI Labels) |
+| Build | GitHub Actions `.github/workflows/vw-restore-image.yml` |
 | Default | Archiv **latest** (neuestes nach mtime) |
 | Aktion | erzeugt Job `vaultwarden-ui-restore-*` (gleiche Orchestrierung wie PostSync) |
 
 Ablauf: Archiv wählen (oder latest) → optional **force** → `RESTORE` tippen → Restore. Parallel laufende Restores sind gesperrt. Git-ConfigMap bleibt `enabled=false`.
+
+Image neu bauen: Workflow **vw-restore image** → `workflow_dispatch` mit SemVer-Tag; Secrets `REGISTRY_USERNAME`=`registry`, `REGISTRY_PASSWORD`. Danach Deployment-Tag in Git anheben.
 
 ## Restore (PostSync-Bootstrap)
 

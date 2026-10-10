@@ -1,6 +1,6 @@
 ---
 title: Quellen
-book_version: "1.1.0"
+book_version: "1.1.1"
 ---
 
 # Quellen
@@ -8,6 +8,7 @@ book_version: "1.1.0"
 ## minilab
 
 - Manifeste: [`apps/dev/vaultwarden/`](https://github.com/HenryHST/minilab/tree/main/apps/dev/vaultwarden)
+- Restore-UI Image: [`apps/dev/vaultwarden/restore-ui/`](https://github.com/HenryHST/minilab/tree/main/apps/dev/vaultwarden/restore-ui) → `registry.stadthagen.dev/dev/vw-restore`
 - Pangolin Publish: [`apps/ops/pangolin-publish/`](https://github.com/HenryHST/minilab/tree/main/apps/ops/pangolin-publish)
 - Buch Authentik — Kapitel *Externe Ressourcen mit Pangolin*, *Onboarding*
 - Buch Minilab — *Apps & Hosts*, *Backup & Restore*

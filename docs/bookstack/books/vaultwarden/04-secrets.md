@@ -1,6 +1,6 @@
 ---
 title: Secrets
-book_version: "1.1.0"
+book_version: "1.1.1"
 ---
 
 # Secrets

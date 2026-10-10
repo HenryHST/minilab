@@ -1,6 +1,6 @@
 ---
 title: OIDC mit Authentik
-book_version: "1.1.0"
+book_version: "1.1.1"
 ---
 
 # OIDC mit Authentik

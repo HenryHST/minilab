@@ -1,6 +1,6 @@
 ---
 title: Pangolin Publish
-book_version: "1.1.0"
+book_version: "1.1.1"
 ---
 
 # Pangolin Publish (`vw-ext`)

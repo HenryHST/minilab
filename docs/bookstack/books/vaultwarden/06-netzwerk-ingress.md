@@ -1,6 +1,6 @@
 ---
 title: Netzwerk und Ingress
-book_version: "1.1.0"
+book_version: "1.1.1"
 ---
 
 # Netzwerk & Ingress

@@ -16,6 +16,8 @@ spec:
         app: vaultwarden-restore-ui
     spec:
       serviceAccountName: vaultwarden-restore
+      imagePullSecrets:
+        - name: registry-pull
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -25,7 +27,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: restore-ui
-          image: python:3.12-slim
+          image: registry.stadthagen.dev/dev/vw-restore:1.0.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -39,70 +41,41 @@ spec:
               value: vaultwarden
             - name: VW_REPLICAS
               value: "1"
-            - name: PIP_DISABLE_PIP_VERSION_CHECK
-              value: "1"
-            - name: PIP_ROOT_USER_ACTION
-              value: ignore
-          command:
-            - /bin/sh
-            - -c
-            - |
-              set -euo pipefail
-              mkdir -p /app/templates /app/static
-              cp /config/app.py /app/app.py
-              cp /config/templates_index.html /app/templates/index.html
-              cp /config/templates_job.html /app/templates/job.html
-              cp /config/static_vaultwarden-restore.css /app/static/vaultwarden-restore.css
-              cp /config/static_logo.svg /app/static/logo.svg
-              pip install --no-cache-dir --user fastapi 'uvicorn[standard]' jinja2 kubernetes python-multipart
-              export PATH="/tmp/.local/bin:${PATH}"
-              cd /app
-              exec uvicorn app:app --host 0.0.0.0 --port 8080
           readinessProbe:
             httpGet:
               path: /healthz
               port: http
-            initialDelaySeconds: 45
+            initialDelaySeconds: 3
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /healthz
               port: http
-            initialDelaySeconds: 60
+            initialDelaySeconds: 10
             periodSeconds: 20
           resources:
             requests:
               cpu: 25m
-              memory: 128Mi
+              memory: 64Mi
             limits:
               cpu: 500m
-              memory: 512Mi
+              memory: 256Mi
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
           volumeMounts:
-            - name: config
-              mountPath: /config
-              readOnly: true
             - name: backup
               mountPath: /backup
               readOnly: true
             - name: tmp
               mountPath: /tmp
-            - name: app
-              mountPath: /app
       volumes:
-        - name: config
-          configMap:
-            name: vaultwarden-restore-ui
         - name: backup
           persistentVolumeClaim:
             claimName: vaultwarden-backups
         - name: tmp
-          emptyDir: {}
-        - name: app
           emptyDir: {}
 ---
 apiVersion: v1

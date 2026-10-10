@@ -28,38 +28,29 @@ spec:
         - protocol: TCP
           port: 8080
 ---
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
+# Cilium labels k3s apiserver backends as reserved:kube-apiserver; plain
+# NetworkPolicy ipBlock (10.0.0.0/8) does not match that identity (Hubble: DENIED).
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
 metadata:
   name: vaultwarden-restore-ui-egress
   namespace: vaultwarden
   labels:
     app: vaultwarden-restore-ui
 spec:
-  podSelector:
+  endpointSelector:
     matchLabels:
       app: vaultwarden-restore-ui
-  policyTypes:
-    - Egress
   egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: kube-system
-          podSelector:
-            matchLabels:
-              k8s-app: kube-dns
-      ports:
-        - protocol: UDP
-          port: 53
-        - protocol: TCP
-          port: 53
-    # kube-apiserver (in-cluster)
-    - to:
-        - ipBlock:
-            cidr: 10.0.0.0/8
-      ports:
-        - protocol: TCP
-          port: 443
-        - protocol: TCP
-          port: 6443
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    - toEntities:
+        - kube-apiserver

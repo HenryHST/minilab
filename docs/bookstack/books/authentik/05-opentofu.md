@@ -1,6 +1,6 @@
 ---
 title: OpenTofu
-book_version: "1.1.0"
+book_version: "1.2.0"
 ---
 
 # OpenTofu
@@ -32,10 +32,11 @@ Scope-Mappings bei Termix: `openid`, `email`, `profile`. Der Gruppen-Claim kommt
 Neue native OIDC-App: Datei unter `modules/shared/` oder dem passenden Env-Modul, Aufruf von `oauth_app`.
 
 1. `name`, `slug`, `meta_launch_url` = App-URL.
-2. `allowed_redirect_uris` mit `matching_mode: strict`. Sie müssen mit `meta_launch_url` beginnen. Der Check `redirect_uri_matches_meta_launch_url` bricht sonst ab.
-3. `client_secret` aus der Variable, die Ansible aus der SecretSpec füllt.
-4. Gruppen und `authentik_policy_binding` an die Application.
-5. Apply mit `--tags authentik-bootstrap`. Danach die App in Argo auf denselben Issuer zeigen: `https://idp.stadthagen.dev/application/o/<slug>/`.
+2. `allowed_redirect_uris` mit `matching_mode: strict`. Sie müssen mit `meta_launch_url` **oder** einem Eintrag in `additional_redirect_bases` beginnen. Der Check `redirect_uri_matches_meta_launch_url` bricht sonst ab.
+3. Öffentliche Pangolin-Hosts: optionale Variable `*_external_url` (z. B. `bookstack_external_url`, `vaultwarden_external_url`, `termix_external_url`) → zusätzliche Redirects + `additional_redirect_bases`. Launch-URL bleibt die LAN-URL.
+4. `client_secret` aus der Variable, die Ansible aus der SecretSpec füllt.
+5. Gruppen und `authentik_policy_binding` an die Application.
+6. Apply mit `--tags authentik-bootstrap`. Danach die App in Argo auf denselben Issuer zeigen: `https://idp.stadthagen.dev/application/o/<slug>/`.
 
 ForwardAuth-Apps wie registry-ui haben oft kein OpenTofu-Modul. Provider und Outpost stehen dann in Authentik bzw. in Day-0-Blueprints. Die Traefik-Middleware bleibt in GitOps.
 

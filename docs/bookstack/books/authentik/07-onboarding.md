@@ -35,21 +35,21 @@ flowchart LR
 | Geheimnis | SecretSpec `TERMIX_OAUTH_CLIENT_SECRET` | keines in der App; der Outpost trägt sein Token |
 | App-Manifest | `OIDC_*` in `apps/dev/termix/values.yaml` | `apps/ops/registry-ui/manifests/middleware-authentik.yaml` |
 | Outpost | keiner | Service `ak-outpost-registry-ui.authentik.svc:9000` |
-| Öffentlichkeit | optional `termix-ext` in `pangolin-publish` | meist nur LAN |
+| Öffentlichkeit | `termix-ext` / `bookstack-ext` / `vaultwarden-ext` in `pangolin-publish` | meist nur LAN |
 
 Scopes bei Termix: `openid`, `email`, `profile`. Der Gruppen-Claim kommt aus dem Profile-Mapping, nicht aus einem eigenen Scope.
 
 ## Schritte, native OIDC
 
-1. **Application.** Modul `oauth_app`: Name, Slug, `meta_launch_url` gleich der App-URL. `allowed_redirect_uris` müssen mit dieser URL beginnen. Der Check `redirect_uri_matches_meta_launch_url` bricht sonst ab.
-2. **Redirect.** Strict-Match auf den Callback der App. Termix: `/users/oidc/callback`.
+1. **Application.** Modul `oauth_app`: Name, Slug, `meta_launch_url` gleich der App-URL. `allowed_redirect_uris` müssen mit dieser URL **oder** `additional_redirect_bases` beginnen. Der Check `redirect_uri_matches_meta_launch_url` bricht sonst ab.
+2. **Redirect.** Strict-Match auf den Callback der App. Termix: `/users/oidc/callback`. BookStack: `/oidc/callback`. Vaultwarden: `/identity/connect/oidc-signin`.
 3. **Gruppe.** `authentik_group` und `authentik_policy_binding` an die Application. Dieselbe Gruppe trägt die App als Admin-Claim, bei Termix `OIDC_ADMIN_GROUP=Termix Admins`.
 4. **Secret.** Client-Secret nur in der SecretSpec. Ansible `--tags secrets` schreibt es ins Cluster. Nicht ins Git.
 5. **Sync.** OpenTofu `--tags authentik-bootstrap`, danach die App in Argo. Issuer ist `https://idp.stadthagen.dev/application/o/<slug>/`.
 6. **Login.** Die App zeigt den externen Login und kehrt auf den Redirect zurück. Ein Benutzer in der Admin-Gruppe sieht die Admin-Fläche.
-7. **Öffentlich?** Nur wenn nötig: Eintrag in `apps/ops/pangolin-publish` `resources.json`, Sync der App `pangolin-publish`. Redirects und ggf. `*_external_url` in OpenTofu auf den öffentlichen Host setzen. Sonst bleibt die App hinter Traefik im LAN.
+7. **Öffentlich?** Nur wenn nötig: Eintrag in `apps/ops/pangolin-publish` `resources.json`, Sync der App `pangolin-publish`, NetworkPolicy für Newt. Redirects und `*_external_url` in OpenTofu. Apps ohne Host-Awareness (BookStack `APP_URL`, Vaultwarden `DOMAIN`) müssen die `-ext`-URL als Primär-URL setzen. Sonst bleibt die App hinter Traefik im LAN.
 
-Weicht der Redirect von der URL ab, die der Browser wirklich trifft, die Application nicht veröffentlichen.
+Weicht der Redirect von der URL ab, die der Browser wirklich trifft, die Application nicht veröffentlichen. BookStack/Vaultwarden: siehe auch `APP_URL`/`DOMAIN` auf dem `-ext`-Host (Kapitel **Externe Ressourcen mit Pangolin**).
 
 ## Schritte, ForwardAuth
 

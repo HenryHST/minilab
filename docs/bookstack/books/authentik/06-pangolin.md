@@ -1,6 +1,6 @@
 ---
 title: Externe Ressourcen mit Pangolin
-book_version: "1.1.0"
+book_version: "1.2.0"
 ---
 
 # Externe Ressourcen mit Pangolin
@@ -34,11 +34,24 @@ Der Browser spricht HTTPS mit Pangolin. Newt leitet HTTP an die ClusterIP weiter
 
 Voraussetzungen: Newt healthy, Secret `pangolin-api` mit API-Key und Hetzner-Token (Ansible `--tags secrets`).
 
-## Weitere öffentliche Apps
+## Öffentliche Apps (`resources.json`)
 
-Eine App, die von außen erreichbar sein soll, bekommt einen eigenen Eintrag in `resources.json`, zum Beispiel `termix` → `termix-ext.stadthagen.dev` → Service im Cluster. Der interne Traefik-Host (`termix.stadthagen.dev`) bleibt für LAN/VPN.
+| Key | Öffentlicher Host | Ziel | `enabled` |
+|--|--|--|--|
+| `termix` | `termix-ext.stadthagen.dev` | `termix.termix.svc.cluster.local:8080` | true |
+| `karakeep` | `karakeep-ext.stadthagen.dev` | `karakeep.karakeep.svc.cluster.local:3000` | true |
+| `bookstack` | `bookstack-ext.stadthagen.dev` | `bookstack.bookstack.svc.cluster.local:80` | true |
+| `vaultwarden` | `vaultwarden-ext.stadthagen.dev` | `vaultwarden.vaultwarden.svc.cluster.local:80` | true |
+| `paperless` | `paperless-ext.stadthagen.dev` | `paperless-web.paperless.svc.cluster.local:8000` | false (vorbereitet) |
+| `idp` | `idp.stadthagen.dev` | `authentik-server.authentik.svc.cluster.local:80` | true |
 
-Wenn die App öffentlich ist und OIDC nutzt, müssen die Redirect-URLs in OpenTofu die externe URL treffen (`termix_external_url` und zusätzliche `allowed_redirect_uris`). Sonst bricht der Login nach dem IdP ab. Details: Kapitel **OpenTofu** und **Onboarding**.
+Der interne Traefik-Host (z. B. `book.stadthagen.dev`, `vaultwarden.stadthagen.dev`) bleibt für LAN/VPN. NetworkPolicy der Workloads muss Ingress aus Namespace `newt` erlauben.
+
+### OIDC und `*_external_url`
+
+Wenn die App öffentlich ist und OIDC nutzt, müssen die Redirect-URLs in OpenTofu die externe URL treffen (`termix_external_url`, `bookstack_external_url`, `vaultwarden_external_url`, … und `additional_redirect_bases`). Sonst bricht der Login nach dem IdP ab.
+
+**BookStack / Vaultwarden** sind nicht host-aware: `APP_URL` bzw. `DOMAIN` in minilab zeigen auf die `-ext`-URL (OIDC-Callback). Launch-URL in Authentik bleibt die LAN-URL. Details: Kapitel **OpenTofu** und **Onboarding**; Infra_LAB-Buch Kapitel Pangolin-Ext BookStack/Vaultwarden.
 
 ## Toggle
 
@@ -52,6 +65,7 @@ Wenn die App öffentlich ist und OIDC nutzt, müssen die Redirect-URLs in OpenTo
 
 1. `kubectl -n argocd get application pangolin-publish newt`
 2. `https://idp.stadthagen.dev` öffnet die Authentik-Login-Seite.
-3. Diff und Inventar: Infra_LAB `terraform/pangolin/scripts/pangolin-status.sh`.
+3. `https://bookstack-ext.stadthagen.dev` / `https://vaultwarden-ext.stadthagen.dev` — DNS A → Pangolin-Public-IP, OIDC-Login.
+4. Diff und Inventar: Infra_LAB `terraform/pangolin/scripts/pangolin-status.sh`.
 
 README: [`apps/ops/pangolin-publish/README.md`](../../../../apps/ops/pangolin-publish/README.md).

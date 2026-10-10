@@ -60,6 +60,34 @@ data:
           "method": "http"
         }
       },
+      "bookstack": {
+        "enabled": true,
+        "name": "bookstack-ext.stadthagen.dev",
+        "niceId": "bookstack-ext",
+        "subdomain": "bookstack-ext",
+        "ssl": true,
+        "sso": false,
+        "dns": true,
+        "target": {
+          "ip": "bookstack.bookstack.svc.cluster.local",
+          "port": 80,
+          "method": "http"
+        }
+      },
+      "vaultwarden": {
+        "enabled": true,
+        "name": "vaultwarden-ext.stadthagen.dev",
+        "niceId": "vaultwarden-ext",
+        "subdomain": "vaultwarden-ext",
+        "ssl": true,
+        "sso": false,
+        "dns": true,
+        "target": {
+          "ip": "vaultwarden.vaultwarden.svc.cluster.local",
+          "port": 80,
+          "method": "http"
+        }
+      },
       "idp": {
         "enabled": true,
         "name": "idp.stadthagen.dev",

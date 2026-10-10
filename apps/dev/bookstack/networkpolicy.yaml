@@ -1,5 +1,4 @@
-# BookStack: ingress allow Traefik + in-namespace (Vaultwarden/Termix-style).
-# No Newt — internal only (book.stadthagen.dev), not published via pangolin-publish.
+# BookStack: ingress allow Traefik (LAN) + Newt (Pangolin bookstack-ext) + in-namespace.
 # Egress left open (Authentik OIDC, SMTP, MariaDB).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -28,6 +27,13 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 80
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: newt
       ports:
         - protocol: TCP
           port: 80

@@ -28,8 +28,9 @@ spec:
               containerPort: 80
               protocol: TCP
           env:
+            # Pangolin public host (SSO callback); LAN Ingress vaultwarden.stadthagen.dev remains.
             - name: DOMAIN
-              value: https://vaultwarden.stadthagen.dev
+              value: https://vaultwarden-ext.stadthagen.dev
             - name: SIGNUPS_ALLOWED
               value: "false"
             - name: INVITATIONS_ALLOWED

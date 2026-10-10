@@ -27,7 +27,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: restore-ui
-          image: registry.stadthagen.dev/dev/vw-restore:1.0.2
+          image: registry.stadthagen.dev/dev/vw-restore:1.0.3
           imagePullPolicy: Always
           ports:
             - name: http

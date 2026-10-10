@@ -154,12 +154,6 @@ def restore(
 
     # Checkbox value="true"; browsers may also send "on".
     force_flag = "true" if str(force).strip().lower() in ("true", "on", "1", "yes") else "false"
-    # #region agent log
-    print(
-        f"debug_session=1ae980 hypothesisId=F2 force_raw={force!r} force_flag={force_flag} archive={archive}",
-        flush=True,
-    )
-    # #endregion
     if force_flag != "true":
         ctx["error"] = (
             "Overwrite is required: enable “Overwrite existing data” "

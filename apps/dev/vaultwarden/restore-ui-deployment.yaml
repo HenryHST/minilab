@@ -16,6 +16,8 @@ spec:
         app: vaultwarden-restore-ui
     spec:
       serviceAccountName: vaultwarden-restore
+      imagePullSecrets:
+        - name: registry-pull
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -27,9 +29,6 @@ spec:
         - name: restore-ui
           image: registry.stadthagen.dev/dev/vw-restore:1.0.2
           imagePullPolicy: Always
-          imagePullSecrets:
-            - name: registry-pull
-
           ports:
             - name: http
               containerPort: 8080

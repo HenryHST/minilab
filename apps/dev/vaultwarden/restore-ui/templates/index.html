@@ -47,14 +47,16 @@
         {% endfor %}
       </fieldset>
       <div class="danger-zone">
+        <p class="alert warn">Existing PVC data is kept unless you enable overwrite. Without it the job aborts with <code>force!=true</code>.</p>
         <label class="check">
-          <input type="checkbox" name="force" {% if active %}disabled{% endif %}>
-          Force overwrite if <code>db.sqlite3</code> already exists
+          <input type="checkbox" name="force" value="true" required
+                 {% if active %}disabled{% endif %}>
+          <strong>Overwrite existing data</strong> (required — clears <code>/data</code> including <code>db.sqlite3</code>)
         </label>
         <label>
           Type <strong>RESTORE</strong> to confirm
           <input type="text" name="confirm" autocomplete="off" spellcheck="false"
-                 placeholder="RESTORE" {% if active %}disabled{% endif %}>
+                 placeholder="RESTORE" required {% if active %}disabled{% endif %}>
         </label>
       </div>
       <div class="actions">

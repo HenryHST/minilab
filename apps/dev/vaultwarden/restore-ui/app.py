@@ -152,7 +152,21 @@ def restore(
         ctx["error"] = f"Archive not found: {archive}"
         return templates.TemplateResponse("index.html", ctx, status_code=404)
 
-    force_flag = "true" if force == "on" else "false"
+    # Checkbox value="true"; browsers may also send "on".
+    force_flag = "true" if str(force).strip().lower() in ("true", "on", "1", "yes") else "false"
+    # #region agent log
+    print(
+        f"debug_session=1ae980 hypothesisId=F2 force_raw={force!r} force_flag={force_flag} archive={archive}",
+        flush=True,
+    )
+    # #endregion
+    if force_flag != "true":
+        ctx["error"] = (
+            "Overwrite is required: enable “Overwrite existing data” "
+            "(PVC already has db.sqlite3; without force the worker aborts)."
+        )
+        return templates.TemplateResponse("index.html", ctx, status_code=400)
+
     ts = time.strftime("%y%m%d%H%M%S", time.gmtime())
     job_name = f"vaultwarden-ui-restore-{ts}"
 

@@ -109,7 +109,7 @@ Strukturierte Bücher & Checkliste: [`docs/bookstack/`](../../docs/bookstack/). 
 | [`docs-import-configmap.yaml`](docs-import-configmap.yaml) | Sources (`infra-lab-platform`, `minilab-docs`, …), Runner, Importer, `gitops-bootstrap` |
 | [`docs-import-cronjob.yaml`](docs-import-cronjob.yaml) | SA/RBAC, State-CM, CronJob (alle 6 h), PostSync-Job |
 
-**Voraussetzung:** Infra_LAB SecretSpec `BOOKSTACK_API_TOKEN_ID` / `BOOKSTACK_API_TOKEN_SECRET` → `--tags secrets` → Secret `bookstack-import`. Beim Lauf: Upsert Rolle **GitOps Import**, User `gitops-import@localhost`, Token `docs-import`, danach Markdown-Import (SemVer-Gate in CM `bookstack-import-state`).
+**Voraussetzung:** Infra_LAB SecretSpec `BOOKSTACK_API_TOKEN_ID` / `BOOKSTACK_API_TOKEN_SECRET` → `--tags secrets` → Secret `bookstack-import`. Beim Lauf: Upsert Rolle **GitOps Import** (+ Content-ACL-Rechte), Rolle **BookStack Familie**, User `gitops-import@localhost`, Token `docs-import`, danach Markdown-Import (nested books, Shelf-Cover, Familie-ACL; SemVer-Gate in CM `bookstack-import-state`). `shelfPermissionsCron` kopiert Regal-Rechte auf Kind-Bücher.
 
 ```bash
 # manuell

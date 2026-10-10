@@ -2,7 +2,9 @@
 /**
  * Idempotent BookStack bootstrap for cluster docs-import.
  * Env: BOOKSTACK_TOKEN_ID, BOOKSTACK_TOKEN_SECRET
- * Creates/updates role "GitOps Import", user gitops-import@localhost, API token "docs-import".
+ * Creates/updates:
+ *   - role "GitOps Import" + user gitops-import@localhost + API token "docs-import"
+ *   - role "BookStack Familie" (OIDC group display_name; content ACL for Regal Familie)
  */
 declare(strict_types=1);
 
@@ -25,7 +27,7 @@ if (strlen($tokenId) < 16 || strlen($tokenSecret) < 16) {
     exit(1);
 }
 
-$permissions = [
+$gitopsPermissions = [
     'access-api',
     'bookshelf-view-all',
     'bookshelf-create-all',
@@ -39,12 +41,38 @@ $permissions = [
     'page-view-all',
     'page-create-all',
     'page-update-all',
+    // Content ACL for Regal Familie (import_books.py → /api/content-permissions)
+    'restrictions-manage-all',
+    // List roles for ACL role_id lookup (/api/roles)
+    'settings-manage',
+];
+
+$familiePermissions = [
+    'bookshelf-view-all',
+    'bookshelf-create-all',
+    'bookshelf-update-all',
+    'book-view-all',
+    'book-create-all',
+    'book-update-all',
+    'chapter-view-all',
+    'chapter-create-all',
+    'chapter-update-all',
+    'page-view-all',
+    'page-create-all',
+    'page-update-all',
+    'image-create-all',
+    'image-update-all',
+    'attachment-create-all',
+    'attachment-update-all',
+    'comment-create-all',
+    'comment-update-all',
 ];
 
 $roleName = 'GitOps Import';
 $email = 'gitops-import@localhost';
 $userName = 'gitops-import';
 $tokenName = 'docs-import';
+$familieRoleName = 'BookStack Familie';
 
 /** @var PermissionsRepo $permsRepo */
 $permsRepo = app(PermissionsRepo::class);
@@ -56,18 +84,37 @@ if ($role === null) {
     $role = $permsRepo->saveNewRole([
         'display_name' => $roleName,
         'description' => 'Least-privilege API role for cluster docs-import CronJob',
-        'permissions' => $permissions,
+        'permissions' => $gitopsPermissions,
         'mfa_enforced' => false,
     ]);
     echo "ROLE created id={$role->id}\n";
 } else {
     $permsRepo->updateRole($role->id, [
         'description' => 'Least-privilege API role for cluster docs-import CronJob',
-        'permissions' => $permissions,
+        'permissions' => $gitopsPermissions,
         'mfa_enforced' => false,
     ]);
     $role = $permsRepo->getRoleById($role->id);
     echo "ROLE updated id={$role->id}\n";
+}
+
+$familieRole = Role::query()->where('display_name', $familieRoleName)->first();
+if ($familieRole === null) {
+    $familieRole = $permsRepo->saveNewRole([
+        'display_name' => $familieRoleName,
+        'description' => 'OIDC group BookStack Familie — Regal Familie (view/create/update, no delete)',
+        'permissions' => $familiePermissions,
+        'mfa_enforced' => false,
+    ]);
+    echo "ROLE created id={$familieRole->id} display_name={$familieRoleName}\n";
+} else {
+    $permsRepo->updateRole($familieRole->id, [
+        'description' => 'OIDC group BookStack Familie — Regal Familie (view/create/update, no delete)',
+        'permissions' => $familiePermissions,
+        'mfa_enforced' => false,
+    ]);
+    $familieRole = $permsRepo->getRoleById($familieRole->id);
+    echo "ROLE updated id={$familieRole->id} display_name={$familieRoleName}\n";
 }
 
 $user = User::query()->where('email', $email)->first();

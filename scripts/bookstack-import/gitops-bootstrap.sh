@@ -18,9 +18,14 @@ fi
 
 echo "Waiting for bookstack deployment..."
 kubectl -n "${NS}" rollout status deploy/bookstack --timeout=180s
-POD="$(kubectl -n "${NS}" get pods -l app.kubernetes.io/name=bookstack -o jsonpath='{.items[0].metadata.name}')"
+
+# Prefer Helm app labels (instance=bookstack). Job pods also carry name=bookstack and must not be selected.
+POD="$(kubectl -n "${NS}" get pods \
+  -l app.kubernetes.io/name=bookstack,app.kubernetes.io/instance=bookstack \
+  --field-selector=status.phase=Running \
+  -o jsonpath='{.items[0].metadata.name}')"
 if [ -z "${POD}" ]; then
-  echo "ERROR: no bookstack pod" >&2
+  echo "ERROR: no running bookstack app pod (name+instance=bookstack)" >&2
   exit 1
 fi
 echo "Bootstrap via pod/${POD}"

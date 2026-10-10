@@ -77,7 +77,7 @@ mariadb:
   enabled: false
 
 shelfPermissionsCron:
-  enabled: false
+  enabled: true
 
 podSecurityContext:
   fsGroup: 911

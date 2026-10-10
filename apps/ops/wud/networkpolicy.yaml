@@ -1,0 +1,30 @@
+# Ingress: Traefik (UI) and Prometheus (/metrics). Egress stays open (Kubernetes API, registries,
+# Authentik OIDC, Pushover, Mosquitto) — public registry/CDN IPs are not stable enough to pin.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: wud-ingress
+  namespace: wud
+  labels:
+    app.kubernetes.io/name: wud
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: wud
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 3000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 3000

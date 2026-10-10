@@ -1,0 +1,15 @@
+# /store — WUD LokiJS DB (containers, users, trigger state)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wud-store
+  namespace: wud
+  labels:
+    app.kubernetes.io/name: wud
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi

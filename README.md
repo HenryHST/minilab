@@ -51,6 +51,7 @@ Je Bucket ein AppProject mit Destination-Namespace-Allowlist (`infra`, `monitori
 | drawio | `apps/dev/drawio/` | `drawio` | `drawio.stadthagen.dev` (Port 8080) |
 | newt | `apps/ops/newt/` | `newt` | Pangolin Newt tunnel agent (site k3s) |
 | pangolin-publish | `apps/ops/pangolin-publish/` | `pangolin-publish` | PostSync Job: Pangolin Integration API upsert — `termix-ext` → Termix ClusterIP; `idp` → Authentik ClusterIP (site k3s) |
+| wud | `apps/ops/wud/` | `wud` | `wupd.stadthagen.dev` ([WUD](https://getwud.app) 9.3.0, notify-only: Kubernetes watcher + `registry.stadthagen.dev` → Pushover + MQTT/HA; OIDC Authentik — Secret `wud-env`) |
 | termix | `apps/dev/termix/` | `termix` | `termix.stadthagen.dev` (internal Traefik) + public `termix-ext.stadthagen.dev` via Pangolin; OIDC Authentik — Secrets `termix-oauth` / `termix-ha` / `termix-db`; NetworkPolicy allows traefik + newt |
 | headlamp | `apps/ops/headlamp/` | `kube-system` | `headlamp.stadthagen.dev` ([Headlamp](https://kubernetes-sigs.github.io/headlamp/) Helm 0.45.0; Plugin Manager: [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) 0.1.1, [gatekeeper](https://github.com/open-policy-agent/gatekeeper-headlamp-plugin) 0.2.0) |
 | gatus | `apps/monitoring/gatus/` | `status` | `status.stadthagen.dev` (Gatus Helm 1.5.0 / v5.34.0, CloudNativePG PG 16, Authentik OIDC, Pushover; `pg_dump` 01:00 UTC → `192.168.0.25:/var/nfs/shared/infra01/gatus-backups`) |

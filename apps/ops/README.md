@@ -15,6 +15,7 @@ Platform ops: TLS, registry, IdP, edge publish, cluster UI.
 | headlamp | 2 | kube-system |
 | hubble-ui | 2 | kube-system |
 | pangolin-publish | 3 | pangolin-publish |
+| wud | 3 | wud |
 
 Stub (not in ApplicationSet): `kargo/`.
 

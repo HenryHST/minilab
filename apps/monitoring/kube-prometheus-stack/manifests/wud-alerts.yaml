@@ -1,0 +1,48 @@
+# WUD (apps/ops/wud) — operational alerts only. "Update available" is delivered by WUD itself
+# (Pushover NXK3 + MQTT); an info rule here would duplicate it via the email-warning default route.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: wud-alerts
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: wud
+      rules:
+        - alert: WudScrapeDown
+          expr: up{namespace="wud", service="wud"} == 0
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: "WUD /metrics not reachable for 10m"
+            description: |
+              Prometheus cannot scrape WUD (`wud/wud`). Update notifications (Pushover/MQTT) are probably not sent either.
+              Check: kubectl -n wud get pods; kubectl -n wud logs deploy/wud
+
+        - alert: WudTriggerFailing
+          expr: increase(wud_trigger_count{status="error"}[1h]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'WUD trigger {{ $labels.type }}.{{ $labels.name }} failed'
+            description: |
+              WUD trigger `{{ $labels.type }}.{{ $labels.name }}` failed {{ $value | printf "%.0f" }} times in the last hour
+              (Pushover token/user, Mosquitto login `mqtt-wud`).
+              Check: kubectl -n wud logs deploy/wud | grep -i trigger
+
+        - alert: WudWatcherEmpty
+          expr: sum(wud_watcher_total{type="kubernetes"}) == 0
+          for: 2h
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: "WUD Kubernetes watcher sees no workloads"
+            description: |
+              `wud_watcher_total{type="kubernetes"}` is 0 for 2h — RBAC (ClusterRole `wud-reader`) or API access is broken.
+              Check: kubectl auth can-i list deployments --as=system:serviceaccount:wud:wud -A

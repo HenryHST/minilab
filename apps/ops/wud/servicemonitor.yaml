@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: wud
+  namespace: wud
+  labels:
+    app.kubernetes.io/name: wud
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: wud
+  namespaceSelector:
+    matchNames:
+      - wud
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 60s

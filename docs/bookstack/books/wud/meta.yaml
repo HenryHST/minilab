@@ -1,0 +1,6 @@
+book: WUD
+cover: cover.png
+book_version: "1.0.0"
+updated: "2026-10-10"
+description: What's up Docker 9.3.0 auf nXk3 (wupd.stadthagen.dev) — Kubernetes-Watcher, interne Registry, Pushover, MQTT/Home Assistant, Authentik-OIDC, Prometheus
+shelf: Plattform

@@ -1,0 +1,20 @@
+# Auth is WUD-native OIDC (Authentik provider wupd) — no ForwardAuth middleware.
+# /metrics is unauthenticated (WUD_PROMETHEUS_AUTH=false) and stays off the public route (404).
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: wud
+  namespace: wud
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`wupd.stadthagen.dev`) && !PathPrefix(`/metrics`)
+      kind: Rule
+      services:
+        - name: wud
+          port: 3000
+  tls:
+    secretName: wupd-tls

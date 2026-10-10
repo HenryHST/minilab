@@ -1,0 +1,132 @@
+# WUD 9.3.0 — notify-only: Kubernetes watcher + registries → Pushover (NXK3) + MQTT (Home Assistant).
+# Secrets (Secret wud-env, Infra_LAB k3s_secrets): OIDC client secret, Pushover token/user, MQTT + registry password.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wud
+  namespace: wud
+  labels:
+    app.kubernetes.io/name: wud
+    app.kubernetes.io/part-of: wud
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: wud
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: wud
+        app.kubernetes.io/part-of: wud
+    spec:
+      serviceAccountName: wud
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: wud
+          image: getwud/wud:9.3.0@sha256:58b1d93ab3b752ef83125b39d014dde8fadbed5be0cf6fbdee9ffa8d2ca72b32
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: wud-env
+          env:
+            - name: TZ
+              value: Europe/Berlin
+            - name: WUD_PUBLIC_URL
+              value: https://wupd.stadthagen.dev
+            # Kubernetes watcher (in-cluster ServiceAccount, all namespaces)
+            - name: WUD_WATCHER_KUBERNETES_NXK3_CRON
+              value: "0 6 * * *"
+            - name: WUD_WATCHER_KUBERNETES_NXK3_WATCHATSTART
+              value: "true"
+            - name: WUD_WATCHER_KUBERNETES_NXK3_WATCHBYDEFAULT
+              value: "true"
+            # Internal registry — host must match image refs (registry.stadthagen.dev/...)
+            - name: WUD_REGISTRY_CUSTOM_NXK3_URL
+              value: https://registry.stadthagen.dev
+            - name: WUD_REGISTRY_CUSTOM_NXK3_LOGIN
+              value: registry
+            # Pushover (token/user from wud-env); one message per update, like Gatus defaults
+            - name: WUD_TRIGGER_PUSHOVER_NXK3_PRIORITY
+              value: "0"
+            - name: WUD_TRIGGER_PUSHOVER_NXK3_SOUND
+              value: pushover
+            - name: WUD_TRIGGER_PUSHOVER_NXK3_MODE
+              value: simple
+            - name: WUD_TRIGGER_PUSHOVER_NXK3_ONCE
+              value: "true"
+            - name: WUD_TRIGGER_PUSHOVER_NXK3_SIMPLETITLE
+              value: "nXk3: ${container.name} ${container.updateKind.remoteValue}"
+            # MQTT → Mosquitto (LDAP user mqtt-wud) + Home Assistant discovery
+            - name: WUD_TRIGGER_MQTT_MOSQUITTO_URL
+              value: mqtt://mosquitto.mosquitto.svc.cluster.local:1883
+            - name: WUD_TRIGGER_MQTT_MOSQUITTO_USER
+              value: mqtt-wud
+            - name: WUD_TRIGGER_MQTT_MOSQUITTO_CLIENTID
+              value: wud-nxk3
+            - name: WUD_TRIGGER_MQTT_MOSQUITTO_TOPIC
+              value: wud/container
+            - name: WUD_TRIGGER_MQTT_MOSQUITTO_HASS_ENABLED
+              value: "true"
+            - name: WUD_TRIGGER_MQTT_MOSQUITTO_HASS_DISCOVERY
+              value: "true"
+            # OIDC (Authentik provider wupd); no local admin — wupd_admins → admin, wupd_users → ro
+            - name: WUD_AUTH_OIDC_AUTHENTIK_CLIENTID
+              value: wupd
+            - name: WUD_AUTH_OIDC_AUTHENTIK_DISCOVERY
+              value: https://idp.stadthagen.dev/application/o/wupd/.well-known/openid-configuration
+            - name: WUD_AUTH_OIDC_AUTHENTIK_REDIRECT
+              value: "true"
+            # groups claim comes from the profile scope; Authentik has no separate groups scope
+            - name: WUD_AUTH_OIDC_AUTHENTIK_SCOPE
+              value: openid email profile
+            - name: WUD_AUTH_OIDC_AUTHENTIK_GROUPSCLAIM
+              value: groups
+            - name: WUD_AUTH_OIDC_AUTHENTIK_ADMINGROUP
+              value: wupd_admins
+            - name: WUD_AUTH_OIDC_AUTHENTIK_ROGROUP
+              value: wupd_users
+            - name: WUD_AUTH_OIDC_AUTHENTIK_DEFAULTROLE
+              value: none
+            # Prometheus /metrics without auth — limited to namespace monitoring by NetworkPolicy
+            - name: WUD_PROMETHEUS_ENABLED
+              value: "true"
+            - name: WUD_PROMETHEUS_AUTH
+              value: "false"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: store
+              mountPath: /store
+      volumes:
+        - name: store
+          persistentVolumeClaim:
+            claimName: wud-store

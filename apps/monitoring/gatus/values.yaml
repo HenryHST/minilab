@@ -256,6 +256,14 @@ config:
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
+    - name: wud
+      group: plattform
+      url: https://wupd.stadthagen.dev/health
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
+        - "has([BODY].uptime) == true"
+      alerts: *pushover
     - name: n8n
       group: sso
       url: https://n8n.stadthagen.dev

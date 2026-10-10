@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "WUD 9.3.0 auf nXk3",
+    "quality_profile": "showcase",
+    "output": "docs/diagrams/archify/wud-architektur.html"
+  },
+  "components": [
+    {
+      "id": "browser",
+      "type": "external",
+      "label": "Browser",
+      "sublabel": "LAN",
+      "pos": [36, 228],
+      "size": [140, 68]
+    },
+    {
+      "id": "traefik",
+      "type": "security",
+      "label": "Traefik",
+      "sublabel": "wupd.stadthagen.dev",
+      "pos": [250, 228],
+      "size": [150, 68]
+    },
+    {
+      "id": "wud",
+      "type": "backend",
+      "label": "WUD 9.3.0",
+      "sublabel": "Namespace wud, nur melden",
+      "pos": [480, 216],
+      "size": [176, 88]
+    },
+    {
+      "id": "idp",
+      "type": "security",
+      "label": "Authentik",
+      "sublabel": "OIDC wupd",
+      "pos": [480, 36],
+      "size": [176, 68]
+    },
+    {
+      "id": "prom",
+      "type": "cloud",
+      "label": "Prometheus",
+      "sublabel": "ServiceMonitor wud",
+      "pos": [250, 36],
+      "size": [150, 68]
+    },
+    {
+      "id": "regint",
+      "type": "database",
+      "label": "Registry intern",
+      "sublabel": "registry.stadthagen.dev",
+      "pos": [760, 36],
+      "size": [176, 68]
+    },
+    {
+      "id": "push",
+      "type": "external",
+      "label": "Pushover",
+      "sublabel": "Trigger NXK3",
+      "pos": [760, 226],
+      "size": [176, 68]
+    },
+    {
+      "id": "hub",
+      "type": "external",
+      "label": "Public Registries",
+      "sublabel": "Docker Hub, GHCR, Quay",
+      "pos": [236, 412],
+      "size": [176, 68]
+    },
+    {
+      "id": "kapi",
+      "type": "backend",
+      "label": "Kubernetes API",
+      "sublabel": "ClusterRole wud-reader",
+      "pos": [480, 412],
+      "size": [176, 68]
+    },
+    {
+      "id": "mosq",
+      "type": "messagebus",
+      "label": "Mosquitto",
+      "sublabel": "User mqtt-wud",
+      "pos": [760, 412],
+      "size": [176, 68]
+    },
+    {
+      "id": "ha",
+      "type": "external",
+      "label": "Home Assistant",
+      "sublabel": "Update-Entities",
+      "pos": [1010, 412],
+      "size": [160, 68]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "nXk3",
+      "wraps": ["traefik", "wud", "idp", "prom", "regint", "kapi", "mosq"],
+      "pad": 22
+    },
+    {
+      "kind": "security-group",
+      "label": "Namespace wud",
+      "wraps": ["wud"],
+      "pad": 16
+    }
+  ],
+  "connections": [
+    { "from": "browser", "to": "traefik", "label": "HTTPS" },
+    { "from": "traefik", "to": "wud", "label": "TLS" },
+    { "from": "wud", "to": "idp", "label": "OIDC", "route": "straight" },
+    { "from": "prom", "to": "wud", "label": "/metrics" },
+    { "from": "wud", "to": "regint", "label": "Tags" },
+    { "from": "wud", "to": "push", "label": "Update", "route": "straight" },
+    { "from": "wud", "to": "kapi", "label": "list", "route": "straight" },
+    { "from": "wud", "to": "hub", "label": "Tags" },
+    { "from": "wud", "to": "mosq", "label": "wud/#" },
+    { "from": "mosq", "to": "ha", "label": "Discovery", "route": "straight" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Scan",
+      "items": [
+        "Kubernetes-Watcher täglich 06:00, alle Namespaces",
+        "Deployments, StatefulSets, DaemonSets, CronJobs"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Zugang",
+      "items": [
+        "wupd_admins = Admin, wupd_users = nur lesen",
+        "Andere Konten weist WUD ab (DEFAULTROLE none)"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Nur melden",
+      "items": [
+        "Keine Update-Trigger, Argo CD synct aus Git",
+        "Zustand in PVC wud-store (/store, Longhorn)"
+      ]
+    }
+  ]
+}

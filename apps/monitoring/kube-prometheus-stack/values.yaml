@@ -179,27 +179,27 @@ grafana:
     unpoller:
       client-dpi:
         gnetId: 11310
-        revision: 10
+        revision: 1
         datasource: Prometheus
       network-sites:
         gnetId: 11311
-        revision: 10
+        revision: 1
         datasource: Prometheus
       usw-insights:
         gnetId: 11312
-        revision: 10
+        revision: 1
         datasource: Prometheus
       usg-insights:
         gnetId: 11313
-        revision: 10
+        revision: 1
         datasource: Prometheus
       uap-insights:
         gnetId: 11314
-        revision: 10
+        revision: 1
         datasource: Prometheus
       client-insights:
         gnetId: 11315
-        revision: 10
+        revision: 1
         datasource: Prometheus
     argocd:
       operational-overview:

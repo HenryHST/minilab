@@ -6,6 +6,9 @@ image:
     attacher:
       repository: longhornio/csi-attacher
       tag: v4.13.0
+    provisioner:
+      repository: longhornio/csi-provisioner
+      tag: v6.3.0
 
 preUpgradeChecker:
   jobEnabled: false

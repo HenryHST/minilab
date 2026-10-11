@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **Longhorn CSI** — `longhornio/csi-provisioner` **v6.3.0**.
 - **Longhorn CSI** — `longhornio/csi-attacher` **v4.13.0** (image pin in values).
 - **Image bumps (batch 2)** — Newt `1.18.1`, Gatus `v5.37.0`, Vaultwarden `1.37.4`, Paperless `3.3.0`, k8s-sidecar `2.14.1`, MariaDB `11.8.9`, alpine/openssl `3.5.9`.
 - **Image bumps** — `jgraph/drawio:32.4.1`, Homepage `v2.5.0`, Audiobookshelf `2.37.1`, `alpine/k8s:1.37.1` (Jobs/GC/kubeconfig-user), kube-prometheus-stack Helm **92.0.0** (Operator `v0.94.1`, Grafana `13.2.3`).

@@ -44,7 +44,7 @@ Voraussetzungen: Newt healthy, Secret `pangolin-api` mit API-Key und Hetzner-Tok
 | `vaultwarden` | `vw-ext.stadthagen.dev` | `vaultwarden.vaultwarden.svc.cluster.local:80` | true |
 | `paperless` | `paperless-ext.stadthagen.dev` | `paperless-web.paperless.svc.cluster.local:8000` | false (vorbereitet) |
 | `idp` | `idp.stadthagen.dev` | `authentik-server.authentik.svc.cluster.local:80` | true |
-| | |  | 
+| ha02| `ha02.stadthagen.dev`|  | true |
 
 Der interne Traefik-Host (z. B. `book.stadthagen.dev`, `vaultwarden.stadthagen.dev`) bleibt für LAN/VPN. NetworkPolicy der Workloads muss Ingress aus Namespace `newt` erlauben.
 

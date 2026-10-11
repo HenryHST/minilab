@@ -54,6 +54,10 @@ kubectl -n vaultwarden logs -f job/vw-backup-manual
 
 Ablauf: Archiv wählen (oder latest) → optional **force** → `RESTORE` tippen → Restore. Parallel laufende Restores sind gesperrt. Git-ConfigMap bleibt `enabled=false`.
 
+![Restore-UI Dashboard 1.0.5](images/vw-restore-dashboard-1.0.5.png)
+
+![Restore-UI Confirm / Force 1.0.5](images/vw-restore-confirm-1.0.5.png)
+
 Release: `VERSION` + Deployment-Image-Tag bumpen → Push (oder `git tag vw-restore-vX.Y.Z`). Package ggf. **Public**.
 
 ## Restore (PostSync-Bootstrap)

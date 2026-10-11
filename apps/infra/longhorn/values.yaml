@@ -1,4 +1,11 @@
 # Longhorn v1.12.1 — https://longhorn.io/docs/1.12.1/deploy/install/install-with-argocd/
+
+# CSI sidecar pins (chart v1.12.1 defaults attacher to v4.12.0)
+image:
+  csi:
+    attacher:
+      repository: longhornio/csi-attacher
+      tag: v4.13.0
 preUpgradeChecker:
   jobEnabled: false
 

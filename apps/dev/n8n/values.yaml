@@ -59,7 +59,8 @@ main:
           name: n8n-smtp
           key: password
 
-  # hostPath /var/lib/n8n-data on nxk3-w01 must be chown 1000:1000 (see README)
+  # hostPath /var/lib/n8n-data on nxk3-w01 is root-owned after DirectoryOrCreate.
+  # Chart has no extraInitContainers hook — keep volume-permissions init in helm-manifest.yaml.
   podSecurityContext:
     runAsNonRoot: true
     runAsUser: 1000

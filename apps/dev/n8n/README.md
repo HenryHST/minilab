@@ -57,12 +57,16 @@ ADR: [0028-n8n](../../../docs/adr/0028-n8n.md).
 
 ## Data directory permissions
 
-n8n data uses hostPath `/var/lib/n8n-data` on `nxk3-w01` (PVC `n8n-data`). After first create on a fresh node:
+n8n data uses hostPath `/var/lib/n8n-data` on `nxk3-w01` (PVC `n8n-data`). `DirectoryOrCreate` makes the dir `root:root`; n8n runs as UID **1000** and fails with `EACCES ... /home/node/.n8n/config` if ownership is wrong.
+
+**Durable fix:** InitContainer `volume-permissions` in `helm-manifest.yaml` runs `chown -R 1000:1000` before the app starts. After regenerating the chart template, re-add that init (or merge by hand).
+
+**One-shot (emergency):**
 
 ```bash
 kubectl -n n8n run n8n-fix-perms --rm -it --restart=Never \
-  --overrides='{"spec":{"nodeSelector":{"kubernetes.io/hostname":"nxk3-w01"},"containers":[{"name":"fix","image":"busybox:1.36","command":["sh","-c","chown -R 1000:1000 /data"],"securityContext":{"runAsUser":0},"volumeMounts":[{"name":"data","mountPath":"/data"}]}],"volumes":[{"name":"data","hostPath":{"path":"/var/lib/n8n-data","type":"DirectoryOrCreate"}}]}}' \
-  --image=busybox:1.36 --command -- true
+  --overrides='{"spec":{"nodeSelector":{"kubernetes.io/hostname":"nxk3-w01"},"containers":[{"name":"fix","image":"busybox:1.36","command":["sh","-c","chown -R 1000:1000 /data"],"securityContext":{"runAsUser":0},"volumeMounts":[{"name":"data","mountPath":"/data"}]}],"volumes":[{"name":"data","persistentVolumeClaim":{"claimName":"n8n-data"}}]}}' \
+  --image=busybox:1.36
 ```
 
 Also set explicit `N8N_PORT=5678` (Service name `n8n` otherwise injects `N8N_PORT=tcp://…`).

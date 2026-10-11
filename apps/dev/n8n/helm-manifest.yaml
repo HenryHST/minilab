@@ -131,6 +131,17 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
+      # hostPath /var/lib/n8n-data is DirectoryOrCreate as root — chown before n8n (UID 1000) starts
+      initContainers:
+        - name: volume-permissions
+          image: busybox:1.36
+          command: ["sh", "-c", "chown -R 1000:1000 /home/node/.n8n"]
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+          volumeMounts:
+            - name: data
+              mountPath: /home/node/.n8n
       containers:
         - name: n8n
           securityContext:

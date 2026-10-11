@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - **Vaultwarden Restore-UI** — Image `vw-restore` **1.0.5** (`VERSION` + Deployment `registry.stadthagen.dev/dev/vw-restore:1.0.5`); BookStack-Kapitel Backup/Restore mit Screenshots.
+- **Vaultwarden Restore-UI** — Starlette 1.7 `TemplateResponse` request-first (Fix Internal Server Error auf `/`).
 
 ## [0.14.0] - 2026-10-11
 

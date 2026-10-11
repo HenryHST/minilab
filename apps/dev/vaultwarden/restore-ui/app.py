@@ -36,6 +36,14 @@ APP_VERSION = _resolve_app_version()
 app = FastAPI(title="Vaultwarden Restore")
 templates = Jinja2Templates(directory="/app/templates")
 templates.env.globals["app_version"] = APP_VERSION
+
+
+def render(request: Request, name: str, context: dict, status_code: int = 200):
+    """Jinja response compatible with Starlette >=1.0 (request-first API)."""
+    ctx = {k: v for k, v in context.items() if k != "request"}
+    return templates.TemplateResponse(request, name, ctx, status_code=status_code)
+
+
 app.mount("/static", StaticFiles(directory="/app/static"), name="static")
 
 
@@ -127,10 +135,10 @@ def index(request: Request):
     archives = list_archives()
     active, recent = running_restore_jobs(batch)
     user = request.headers.get("X-authentik-username", "")
-    return templates.TemplateResponse(
+    return render(
+        request,
         "index.html",
         {
-            "request": request,
             "archives": archives,
             "active": active,
             "recent": recent,
@@ -164,19 +172,19 @@ def restore(
 
     if active:
         ctx["error"] = "A restore job is already running."
-        return templates.TemplateResponse("index.html", ctx, status_code=409)
+        return render(request, "index.html", ctx, status_code=409)
 
     if confirm.strip() != "RESTORE":
         ctx["error"] = 'Type RESTORE to confirm.'
-        return templates.TemplateResponse("index.html", ctx, status_code=400)
+        return render(request, "index.html", ctx, status_code=400)
 
     if archive != "latest" and not ARCHIVE_RE.match(archive):
         ctx["error"] = "Invalid archive name."
-        return templates.TemplateResponse("index.html", ctx, status_code=400)
+        return render(request, "index.html", ctx, status_code=400)
 
     if archive != "latest" and not (BACKUP_DIR / archive).is_file():
         ctx["error"] = f"Archive not found: {archive}"
-        return templates.TemplateResponse("index.html", ctx, status_code=404)
+        return render(request, "index.html", ctx, status_code=404)
 
     force_flag = "true" if str(force).strip().lower() in ("true", "on", "1", "yes") else "false"
     if force_flag != "true":
@@ -184,7 +192,7 @@ def restore(
             "Overwrite is required: enable \"Overwrite existing data\" "
             "(PVC already has db.sqlite3; without force the worker aborts)."
         )
-        return templates.TemplateResponse("index.html", ctx, status_code=400)
+        return render(request, "index.html", ctx, status_code=400)
 
     ts = time.strftime("%y%m%d%H%M%S", time.gmtime())
     job_name = f"vaultwarden-ui-restore-{ts}"
@@ -258,7 +266,7 @@ def restore(
         batch.create_namespaced_job(NAMESPACE, job)
     except ApiException as e:
         ctx["error"] = f"Failed to create job: {e.reason}"
-        return templates.TemplateResponse("index.html", ctx, status_code=500)
+        return render(request, "index.html", ctx, status_code=500)
 
     return RedirectResponse(url=f"/jobs/{job_name}", status_code=303)
 
@@ -270,10 +278,10 @@ def job_status(request: Request, job_name: str):
     try:
         j = batch.read_namespaced_job(job_name, NAMESPACE)
     except ApiException:
-        return templates.TemplateResponse(
+        return render(
+            request,
             "job.html",
             {
-                "request": request,
                 "user": user,
                 "job_name": job_name,
                 "status": "NotFound",
@@ -302,10 +310,10 @@ def job_status(request: Request, job_name: str):
     started_at = getattr(j.metadata, "creation_timestamp", None)
     finished_at = getattr(j.status, "completion_time", None)
 
-    return templates.TemplateResponse(
+    return render(
+        request,
         "job.html",
         {
-            "request": request,
             "user": user,
             "job_name": job_name,
             "status": status,

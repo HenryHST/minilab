@@ -8,66 +8,132 @@
   <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
 </head>
 <body>
-  <main class="card">
-    <header class="brand">
-      <img src="/static/logo.svg" alt="" width="40" height="40">
-      <div>
-        <h1>Vaultwarden Restore</h1>
-        <p class="muted">namespace vaultwarden · NFS backups</p>
+  <main class="dashboard">
+    <header class="topbar">
+      <div class="brand">
+        <img src="/static/logo.svg" alt="Vaultwarden logo" width="38" height="38">
+        <div>
+          <h1>Vaultwarden Restore</h1>
+          <p class="muted">Restore a backup into the vaultwarden namespace</p>
+        </div>
       </div>
+
+      {% if user %}
+      <div class="user-pill">{{ user }}</div>
+      {% endif %}
     </header>
-    {% if user %}<p class="muted user">Signed in as {{ user }}</p>{% endif %}
-    {% if error %}<div class="alert danger">{{ error }}</div>{% endif %}
-    {% if notice %}<div class="alert ok">{{ notice }}</div>{% endif %}
+
+    {% if error %}
+    <div class="alert danger" role="alert">{{ error }}</div>
+    {% endif %}
+
+    {% if notice %}
+    <div class="alert success" role="status">{{ notice }}</div>
+    {% endif %}
+
     {% if active %}
-    <div class="alert warn">
-      Restore running:
+    <div class="alert warning" role="alert">
+      Restore is already running:
       {% for j in active %}
-        <a href="/jobs/{{ j.name }}">{{ j.name }}</a> ({{ j.archive }})
+        <a href="/jobs/{{ j.name }}">{{ j.name }}</a>{% if not loop.last %}, {% endif %}
       {% endfor %}
     </div>
     {% endif %}
-    <form method="post" action="/restore" class="form">
-      <fieldset {% if active %}disabled{% endif %}>
-        <legend>Archive</legend>
-        <label class="row">
-          <input type="radio" name="archive" value="latest" checked>
-          <span><strong>latest</strong> <span class="muted">(newest by mtime)</span></span>
-        </label>
-        {% for a in archives %}
-        <label class="row">
-          <input type="radio" name="archive" value="{{ a.name }}">
+
+    <section class="stats">
+      <div class="stat-card">
+        <span class="label">Backups</span>
+        <strong>{{ archives|length }}</strong>
+      </div>
+      <div class="stat-card">
+        <span class="label">Latest</span>
+        <strong>{% if archives %}{{ archives[0].name }}{% else %}none{% endif %}</strong>
+      </div>
+      <div class="stat-card">
+        <span class="label">State</span>
+        <strong>{% if active %}running{% else %}ready{% endif %}</strong>
+      </div>
+    </section>
+
+    <form method="post" action="/restore" class="restore-form">
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Select backup</h2>
+          <span class="muted">{{ archives|length }} archives</span>
+        </div>
+
+        <div class="archive-list">
+          <label class="archive-item active">
+            <input type="radio" name="archive" value="latest" checked>
+            <div class="archive-copy">
+              <div class="archive-title">
+                <strong>latest</strong>
+                <span class="muted">Newest backup</span>
+              </div>
+              <span class="archive-meta">
+                {% if archives %}{{ archives[0].mtime.strftime('%Y-%m-%d %H:%M UTC') }}{% else %}n/a{% endif %}
+              </span>
+            </div>
+          </label>
+
+          {% for a in archives %}
+          <label class="archive-item">
+            <input type="radio" name="archive" value="{{ a.name }}">
+            <div class="archive-copy">
+              <div class="archive-title">
+                <strong>{{ a.name }}</strong>
+                <span class="muted">{{ a.size_h }}</span>
+              </div>
+              <span class="archive-meta">{{ a.mtime.strftime('%Y-%m-%d %H:%M UTC') }}</span>
+            </div>
+          </label>
+          {% else %}
+          <div class="empty-state">
+            No archives found on the backup volume.
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="panel danger-panel">
+        <div class="panel-header">
+          <h2>Restore safety</h2>
+        </div>
+
+        <div class="warning-box">
+          Existing data is kept unless overwrite is explicitly enabled. Without this, the job aborts.
+        </div>
+
+        <label class="check-row">
+          <input type="checkbox" name="force" value="true" required {% if active %}disabled{% endif %}>
           <span>
-            <code>{{ a.name }}</code>
-            <span class="muted">{{ a.size_h }} · {{ a.mtime.strftime('%Y-%m-%d %H:%M UTC') }}</span>
+            <strong>Overwrite existing data</strong>
+            <small>Clears the Vaultwarden data directory, including db.sqlite3.</small>
           </span>
         </label>
-        {% else %}
-        <p class="muted">No archives found on the backup volume.</p>
-        {% endfor %}
-      </fieldset>
-      <div class="danger-zone">
-        <p class="alert warn">Existing PVC data is kept unless you enable overwrite. Without it the job aborts with <code>force!=true</code>.</p>
-        <label class="check">
-          <input type="checkbox" name="force" value="true" required
-                 {% if active %}disabled{% endif %}>
-          <strong>Overwrite existing data</strong> (required — clears <code>/data</code> including <code>db.sqlite3</code>)
-        </label>
-        <label>
-          Type <strong>RESTORE</strong> to confirm
+
+        <label class="confirm-row">
+          <span>Type <strong>RESTORE</strong> to confirm</span>
           <input type="text" name="confirm" autocomplete="off" spellcheck="false"
                  placeholder="RESTORE" required {% if active %}disabled{% endif %}>
         </label>
-      </div>
+      </section>
+
       <div class="actions">
         <a class="btn secondary" href="/">Refresh</a>
-        <button class="btn primary" type="submit" {% if active %}disabled{% endif %}>Restore</button>
+        <button class="btn primary" type="submit" {% if active %}disabled{% endif %}>
+          Restore archive
+        </button>
       </div>
     </form>
+
     {% if recent %}
-    <section class="recent">
-      <h2>Recent jobs</h2>
-      <ul>
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Recent jobs</h2>
+      </div>
+
+      <ul class="job-list">
         {% for j in recent %}
         <li>
           <a href="/jobs/{{ j.name }}">{{ j.name }}</a>
@@ -81,6 +147,9 @@
     </section>
     {% endif %}
   </main>
-  <footer class="app-footer muted">vw-restore {{ app_version }}</footer>
+
+  <footer class="app-footer">
+    <span class="version">vw-restore v{{ app_version }}</span>
+  </footer>
 </body>
 </html>

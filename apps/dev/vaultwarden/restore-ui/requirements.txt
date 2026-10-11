@@ -2,4 +2,4 @@ fastapi==0.143.0
 uvicorn[standard]==0.54.0
 jinja2==3.1.6
 kubernetes==37.0.1
-python-multipart==0.0.20
+python-multipart==0.0.32

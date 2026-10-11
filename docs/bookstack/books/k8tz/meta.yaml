@@ -1,6 +1,6 @@
-book: k8tz
+book: K8tz
 cover: cover.png
-book_version: "1.0.0"
-updated: "2026-09-27"
+book_version: "1.0.1"
+updated: "2026-10-11"
 description: Cluster-Timezone Europe/Berlin via Admission Webhook
 shelf: Plattform

@@ -14,7 +14,7 @@ Gatus deckt dieselben HTTP-Checks ab, spricht OIDC und legt die Historie in Post
 
 | Thema | Wahl |
 |-------|------|
-| App | Gatus, Helm-Chart `gatus` 1.5.0 (App v5.34.0) aus `https://twin.github.io/helm-charts`, nativ in Argo ([ADR-0014](0014-helm-strategie.md)) |
+| App | Gatus, Helm-Chart `gatus` 1.5.0 (App v5.37.0) aus `https://twin.github.io/helm-charts`, nativ in Argo ([ADR-0014](0014-helm-strategie.md)) |
 | Argo-App | `gatus`, Extras unter `apps/monitoring/gatus/manifests/` |
 | Namespace | `status` (ersetzt `uptimekuma`) |
 | URL / TLS | `https://status.stadthagen.dev`, Certificate-DNS unverändert, Secret `status-tls` |

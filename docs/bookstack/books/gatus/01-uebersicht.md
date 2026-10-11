@@ -15,7 +15,7 @@ flowchart LR
 | | |
 |--|--|
 | Argo App | `gatus` (Wave 3, natives Helm) |
-| Chart | `gatus` 1.5.0, App v5.34.0 |
+| Chart | `gatus` 1.5.0, App v5.37.0 |
 | Namespace | `status` |
 | URL | https://status.stadthagen.dev |
 | Datenbank | CloudNativePG `gatus-rw`, PostgreSQL 16, 1Gi Longhorn |

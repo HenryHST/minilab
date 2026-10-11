@@ -21,7 +21,7 @@ spec:
         kubernetes.io/hostname: nxk3-w02
       containers:
         - name: vaultwarden
-          image: vaultwarden/server:1.37.2
+          image: vaultwarden/server:1.37.4
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

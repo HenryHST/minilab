@@ -1,4 +1,11 @@
 # Credentials live in Secret newt-main-tunnel-auth (SecretSpec via Infra_LAB).
+# Chart fossorial/newt 1.5.0 appVersion is 1.12.5 — pin image ahead of chart.
+global:
+  image:
+    registry: docker.io
+    repository: fosrl/newt
+    tag: "1.18.1"
+
 newtInstances:
   - name: main-tunnel
     enabled: true

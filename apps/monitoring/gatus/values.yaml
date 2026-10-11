@@ -1,4 +1,4 @@
-# Native Argo Helm: twin/gatus 1.5.0 (app v5.34.0).
+# Native Argo Helm: twin/gatus 1.5.0; image pin twinproduction/gatus:v5.37.0.
 # Secrets stay in Secret gatus-env (Infra_LAB SecretSpec). Gatus substitutes ${VAR} at startup.
 # Chart ingress and sqlite persistence stay off: Traefik IngressRoute + CloudNativePG.
 
@@ -6,6 +6,8 @@ deployment:
   strategy: Recreate
 
 image:
+  repository: twinproduction/gatus
+  tag: v5.37.0
   pullPolicy: IfNotPresent
 
 nodeSelector:

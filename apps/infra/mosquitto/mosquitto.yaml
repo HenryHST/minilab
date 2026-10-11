@@ -240,7 +240,7 @@ spec:
         # cert-manager Secret mqtt-pro-tls may lag (DNS-01); bootstrap so 1883 can start for Grafana.
         # Also inject LDAP bind password into mosquitto.conf (include_dir + auth_opt_ is rejected by Mosquitto).
         - name: tls-bootstrap
-          image: alpine/openssl:3.3.2
+          image: alpine/openssl:3.5.9
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh

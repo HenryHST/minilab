@@ -11,7 +11,7 @@ Vaultwarden ist der Bitwarden-kompatible Passwort-Safe im nXk3-Cluster. Login l√
 |--|--|
 | Argo App | `vaultwarden` (ApplicationSet `dev`, Wave 3, Plain-Manifeste) |
 | Pfad | `apps/dev/vaultwarden/` |
-| Image | `vaultwarden/server:1.37.2` |
+| Image | `vaultwarden/server:1.37.4` |
 | Namespace | `vaultwarden` |
 | Node | `nxk3-w02` |
 | URL (kanonisch) | https://vw-ext.stadthagen.dev |

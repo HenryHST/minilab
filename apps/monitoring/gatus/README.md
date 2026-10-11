@@ -8,7 +8,7 @@ Replaces Uptime Kuma. Historical Kuma monitors and the SQLite file are not impor
 
 | Piece | Where |
 |-------|--------|
-| Helm values | `values.yaml` (chart `gatus` 1.5.0, app v5.34.0) |
+| Helm values | `values.yaml` (chart `gatus` 1.5.0, app v5.37.0) |
 | Namespace, TLS, IngressRoute, CNPG, backup | `manifests/` |
 | Secrets | Infra_LAB SecretSpec → `gatus-db`, `gatus-env` (see `secret.example.yaml`) |
 

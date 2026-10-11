@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **Image bumps (batch 2)** — Newt `1.18.1`, Gatus `v5.37.0`, Vaultwarden `1.37.4`, Paperless `3.3.0`, k8s-sidecar `2.14.1`, MariaDB `11.8.9`, alpine/openssl `3.5.9`.
 - **Image bumps** — `jgraph/drawio:32.4.1`, Homepage `v2.5.0`, Audiobookshelf `2.37.1`, `alpine/k8s:1.37.1` (Jobs/GC/kubeconfig-user), kube-prometheus-stack Helm **92.0.0** (Operator `v0.94.1`, Grafana `13.2.3`).
 - **Grafana dashboards** — UniFi-Poller gnet Revisions `10` → `1` (grafana.com 404 auf init download-dashboards).
 - **Vaultwarden Restore-UI** — Image `vw-restore` **1.0.6** (Job-Image `alpine/k8s:1.37.1`).

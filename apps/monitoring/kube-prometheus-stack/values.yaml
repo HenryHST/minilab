@@ -87,6 +87,11 @@ grafana:
   image:
     repository: grafana/grafana
     tag: "13.2.3"
+  sidecar:
+    image:
+      registry: quay.io
+      repository: kiwigrid/k8s-sidecar
+      tag: "2.14.1"
   ingress:
     enabled: false
   deploymentStrategy:

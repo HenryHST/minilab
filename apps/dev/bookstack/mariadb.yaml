@@ -39,7 +39,7 @@ spec:
         fsGroup: 999
       containers:
         - name: mariadb
-          image: mariadb:11.4
+          image: mariadb:11.8.9
           imagePullPolicy: IfNotPresent
           ports:
             - name: mysql

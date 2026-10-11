@@ -27,7 +27,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: restore-gate
-          image: alpine/k8s:1.32.0
+          image: alpine/k8s:1.37.1
           command:
             - /bin/bash
             - -c

@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **Image bumps** — `jgraph/drawio:32.4.1`, Homepage `v2.5.0`, Audiobookshelf `2.37.1`, `alpine/k8s:1.37.1` (Jobs/GC/kubeconfig-user), kube-prometheus-stack Helm **92.0.0** (Operator `v0.94.1`, Grafana `13.2.3`).
+- **Vaultwarden Restore-UI** — Image `vw-restore` **1.0.6** (Job-Image `alpine/k8s:1.37.1`).
 - **Vaultwarden Restore-UI** — Image `vw-restore` **1.0.5** (`VERSION` + Deployment `registry.stadthagen.dev/dev/vw-restore:1.0.5`); BookStack-Kapitel Backup/Restore mit Screenshots.
 - **Vaultwarden Restore-UI** — Starlette 1.7 `TemplateResponse` request-first (Fix Internal Server Error auf `/`).
 

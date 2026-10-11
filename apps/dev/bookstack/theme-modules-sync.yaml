@@ -70,7 +70,7 @@ spec:
             name: bookstack-theme-overlay
       containers:
         - name: sync
-          image: alpine/k8s:1.32.0
+          image: alpine/k8s:1.37.1
           imagePullPolicy: IfNotPresent
           resources:
             requests:

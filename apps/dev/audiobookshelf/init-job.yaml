@@ -1,4 +1,4 @@
-# Idempotent root bootstrap via POST /init (Abs has no INIT_USER_* in 2.37.0).
+# Idempotent root bootstrap via POST /init (Abs has no INIT_USER_* in 2.37.1).
 # Skips when Secret missing or status.isInit already true.
 apiVersion: batch/v1
 kind: Job

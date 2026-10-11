@@ -21,7 +21,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: email
-          image: alpine/k8s:1.32.0
+          image: alpine/k8s:1.37.1
           env:
             - name: ABS_URL
               value: http://audiobookshelf.audiobookshelf.svc.cluster.local

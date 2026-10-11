@@ -6,7 +6,7 @@ Hörbuch-/Podcast-Server auf nXk3 (LAN). Issue [HenryHST/minilab#86](https://git
 |--|--|
 | URL | https://audiobookshelf.stadthagen.dev |
 | Namespace | `audiobookshelf` |
-| Image | `ghcr.io/advplyr/audiobookshelf:2.37.0` |
+| Image | `ghcr.io/advplyr/audiobookshelf:2.37.1` |
 | Auth | Authentik OIDC (slug `audiobookshelf`) |
 | DNS | Hetzner A `audiobookshelf` → Traefik LB `192.168.0.215` |
 
@@ -36,7 +36,7 @@ Creates Secrets `audiobookshelf-oauth` (`client-secret`), `audiobookshelf-root` 
 
 ## Initial setup
 
-PostSync Job `audiobookshelf-init` calls Abs `POST /init` when `/status` has `isInit=false` (paths stay `/config` + `/metadata`). Skip if Secret fehlt oder Server schon initialisiert. Kein Env-Bootstrap in Image `2.37.0` (`INIT_USER_*` erst upstream neuer).
+PostSync Job `audiobookshelf-init` calls Abs `POST /init` when `/status` has `isInit=false` (paths stay `/config` + `/metadata`). Skip if Secret fehlt oder Server schon initialisiert. Kein Env-Bootstrap in Image `2.37.1` (`INIT_USER_*` erst upstream neuer).
 
 ## OIDC
 

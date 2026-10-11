@@ -84,6 +84,9 @@ prometheus:
 grafana:
   enabled: true
   replicas: 1
+  image:
+    repository: grafana/grafana
+    tag: "13.2.3"
   ingress:
     enabled: false
   deploymentStrategy:
@@ -373,6 +376,10 @@ kubeStateMetrics:
   enabled: true
 
 prometheusOperator:
+  image:
+    registry: quay.io
+    repository: prometheus-operator/prometheus-operator
+    tag: v0.94.1
   resources:
     requests:
       cpu: 50m

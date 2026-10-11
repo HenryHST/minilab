@@ -86,7 +86,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: trigger-backup
-              image: alpine/k8s:1.32.0
+              image: alpine/k8s:1.37.1
               env:
                 - name: PGHOST
                   value: paperless-pg-rw

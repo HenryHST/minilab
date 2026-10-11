@@ -3,6 +3,10 @@
 #
 # Day-0 blueprints (Plan B): ConfigMap authentik-blueprints-day0 → /blueprints
 # Owner matrix: Infra_LAB docs/adr/0017-authentik-day0-blueprints-und-tf-reconcile.md
+#
+# Scheduling: no hard worker=true pin (allows arm64 Pi fallback). Soft nodeAffinity
+# prefers Proxmox workers. Do not label Pis with worker=true (Traefik/Longhorn stay Proxmox).
+# Media PVC is RWX (Longhorn) → server/worker replicas > 1 OK.
 
 authentik:
   log_level: info
@@ -32,10 +36,21 @@ blueprints:
     - authentik-blueprints-day0
 
 global:
-  nodeSelector:
-    worker: "true"
+  # Preferred Proxmox (worker=true); soft = can schedule on Pi if needed. No hostname pin.
+  affinity:
+    podAntiAffinity: soft
+    nodeAffinity:
+      type: soft
+      matchExpressions:
+        - key: worker
+          operator: In
+          values:
+            - "true"
   deploymentStrategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000
@@ -53,7 +68,7 @@ global:
       mountPath: /media
 
 server:
-  replicas: 1
+  replicas: 2
   ingress:
     enabled: false
   metrics:
@@ -78,7 +93,7 @@ server:
           mountPath: /media
 
 worker:
-  replicas: 1
+  replicas: 2
   metrics:
     enabled: true
     serviceMonitor:

@@ -2,6 +2,19 @@
 
 GitOps install for `idp.stadthagen.dev`. Day-0 blueprints: [BLUEPRINTS.md](BLUEPRINTS.md).
 
+## Scheduling / HA
+
+- **No** hard `nodeSelector: worker=true` and **no** hostname pin (`nodeName` / required affinity).
+- Soft `nodeAffinity` prefers Proxmox (`worker=true`); Pi agents are a valid fallback (multi-arch images).
+- Do **not** label Pis with `worker=true` (Traefik / Longhorn-disk stay Proxmox-only).
+- server/worker **replicas: 2**, `RollingUpdate`, PDB `minAvailable: 1` (`pdb.yaml`). Media PVC is **RWX**.
+- Runtime/HA narrative: Infra_LAB BookStack **Authentik Runtime** + `docs/diagrams/authentik/authentik-{scheduling,fail-domains,failover}.html`.
+
+```bash
+kubectl -n authentik get deploy,pods,pdb -o wide
+kubectl -n authentik get deploy authentik-server -o yaml | grep -A25 affinity
+```
+
 ## Database (CloudNativePG)
 
 Postgres is Cluster `authentik-pg` (Service `authentik-pg-rw`, PG17, Longhorn 8Gi). Helm subchart is off (`postgresql.enabled: false`). Cutover notes: [09-cnpg-migration](../../docs/bookstack/books/authentik/09-cnpg-migration.md), [ADR-0033](../../docs/adr/0033-authentik-cnpg.md).

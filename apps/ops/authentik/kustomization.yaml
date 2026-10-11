@@ -20,3 +20,4 @@ resources:
   - ingressroute.yaml
   - default-headers.yaml
   - blueprints-configmap.yaml
+  - pdb.yaml

@@ -297,8 +297,11 @@ metadata:
     app.kubernetes.io/version: "2026.8.3"
 spec:
   strategy:
-    type: Recreate
-  replicas: 1
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  replicas: 2
   revisionHistoryLimit: 3
   selector:
     matchLabels:
@@ -408,8 +411,15 @@ spec:
                     app.kubernetes.io/instance: "authentik"
                     app.kubernetes.io/component: "server"
                 topologyKey: kubernetes.io/hostname
-      nodeSelector:
-        worker: "true"
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: worker
+                    operator: In
+                    values:
+                    - "true"
       volumes:
         - name: media
           persistentVolumeClaim:
@@ -433,8 +443,11 @@ metadata:
     app.kubernetes.io/version: "2026.8.3"
 spec:
   strategy:
-    type: Recreate
-  replicas: 1
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  replicas: 2
   revisionHistoryLimit: 3
   selector:
     matchLabels:
@@ -547,8 +560,15 @@ spec:
                     app.kubernetes.io/instance: "authentik"
                     app.kubernetes.io/component: "worker"
                 topologyKey: kubernetes.io/hostname
-      nodeSelector:
-        worker: "true"
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: worker
+                    operator: In
+                    values:
+                    - "true"
       volumes:
         - name: media
           persistentVolumeClaim:

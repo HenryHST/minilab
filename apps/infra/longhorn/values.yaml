@@ -6,6 +6,7 @@ image:
     attacher:
       repository: longhornio/csi-attacher
       tag: v4.13.0
+
 preUpgradeChecker:
   jobEnabled: false
 

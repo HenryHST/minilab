@@ -1,5 +1,12 @@
 # Changelog — Buch Paperless
 
+## [1.0.1]
+
+### Added
+
+- typos
+
+
 ## [1.1.0] - 2026-10-08
 
 ### Added

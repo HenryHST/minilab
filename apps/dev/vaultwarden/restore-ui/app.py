@@ -38,12 +38,14 @@ templates = Jinja2Templates(directory="/app/templates")
 templates.env.globals["app_version"] = APP_VERSION
 app.mount("/static", StaticFiles(directory="/app/static"), name="static")
 
+
 def k8s():
     try:
         config.load_incluster_config()
     except config.ConfigException:
         config.load_kube_config()
     return client.BatchV1Api(), client.CoreV1Api()
+
 
 def list_archives():
     items = []
@@ -64,12 +66,14 @@ def list_archives():
     items.sort(key=lambda x: x["mtime"], reverse=True)
     return items
 
+
 def _human(n: int) -> str:
     for unit in ("B", "KB", "MB", "GB"):
         if n < 1024:
             return f"{n:.0f} {unit}" if unit == "B" else f"{n:.1f} {unit}"
         n /= 1024
     return f"{n:.1f} TB"
+
 
 def running_restore_jobs(batch: client.BatchV1Api):
     jobs = batch.list_namespaced_job(
@@ -98,6 +102,7 @@ def running_restore_jobs(batch: client.BatchV1Api):
     recent.sort(key=lambda x: x["name"], reverse=True)
     return active, recent[:5]
 
+
 def job_logs(core: client.CoreV1Api, job_name: str) -> str:
     pods = core.list_namespaced_pod(
         NAMESPACE, label_selector=f"job-name={job_name}"
@@ -110,9 +115,11 @@ def job_logs(core: client.CoreV1Api, job_name: str) -> str:
     except ApiException as e:
         return f"(logs unavailable: {e.reason})"
 
+
 @app.get("/healthz")
 def healthz():
     return {"ok": True}
+
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
@@ -132,6 +139,7 @@ def index(request: Request):
             "notice": None,
         },
     )
+
 
 @app.post("/restore", response_class=HTMLResponse)
 def restore(
@@ -170,11 +178,10 @@ def restore(
         ctx["error"] = f"Archive not found: {archive}"
         return templates.TemplateResponse("index.html", ctx, status_code=404)
 
-    # Checkbox value="true"; browsers may also send "on".
     force_flag = "true" if str(force).strip().lower() in ("true", "on", "1", "yes") else "false"
     if force_flag != "true":
         ctx["error"] = (
-            "Overwrite is required: enable “Overwrite existing data” "
+            "Overwrite is required: enable \"Overwrite existing data\" "
             "(PVC already has db.sqlite3; without force the worker aborts)."
         )
         return templates.TemplateResponse("index.html", ctx, status_code=400)
@@ -255,6 +262,7 @@ def restore(
 
     return RedirectResponse(url=f"/jobs/{job_name}", status_code=303)
 
+
 @app.get("/jobs/{job_name}", response_class=HTMLResponse)
 def job_status(request: Request, job_name: str):
     batch, core = k8s()
@@ -272,12 +280,16 @@ def job_status(request: Request, job_name: str):
                 "archive": "?",
                 "logs": "Job not found",
                 "active": False,
+                "started_at": None,
+                "finished_at": None,
             },
             status_code=404,
         )
+
     succeeded = (j.status.succeeded or 0) > 0
     failed = (j.status.failed or 0) > 0
     is_active = (j.status.active or 0) > 0
+
     if succeeded:
         status = "Succeeded"
     elif failed:
@@ -286,6 +298,10 @@ def job_status(request: Request, job_name: str):
         status = "Running"
     else:
         status = "Pending"
+
+    started_at = getattr(j.metadata, "creation_timestamp", None)
+    finished_at = getattr(j.status, "completion_time", None)
+
     return templates.TemplateResponse(
         "job.html",
         {
@@ -298,5 +314,7 @@ def job_status(request: Request, job_name: str):
             ),
             "logs": job_logs(core, job_name),
             "active": is_active or status == "Pending",
+            "started_at": started_at,
+            "finished_at": finished_at,
         },
     )

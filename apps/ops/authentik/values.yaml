@@ -36,6 +36,8 @@ blueprints:
     - authentik-blueprints-day0
 
 global:
+  # Explicit empty — do not inherit a leftover hard worker pin from older applies.
+  nodeSelector: {}
   # Preferred Proxmox (worker=true); soft = can schedule on Pi if needed. No hostname pin.
   affinity:
     podAntiAffinity: soft

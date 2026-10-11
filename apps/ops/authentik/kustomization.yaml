@@ -21,3 +21,5 @@ resources:
   - default-headers.yaml
   - blueprints-configmap.yaml
   - pdb.yaml
+patches:
+  - path: clear-nodeselector.yaml

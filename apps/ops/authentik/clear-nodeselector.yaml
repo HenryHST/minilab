@@ -1,0 +1,19 @@
+# Strategic-merge from older values left worker=true on the Deployment;
+# last-applied omit does not delete map keys. Force-clear on every sync.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authentik-server
+spec:
+  template:
+    spec:
+      nodeSelector: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authentik-worker
+spec:
+  template:
+    spec:
+      nodeSelector: {}

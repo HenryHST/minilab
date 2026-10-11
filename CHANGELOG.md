@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **Vaultwarden Restore-UI** — Image `vw-restore` **1.0.5** (`VERSION` + Deployment `registry.stadthagen.dev/dev/vw-restore:1.0.5`); BookStack-Kapitel Backup/Restore mit Screenshots.
+
 ## [0.14.0] - 2026-10-11
 
 Authentik **HA / Pi-Fallback** (soft Proxmox-Affinity, Replicas 2, PDB), Gatus, WUD, Vaultwarden Restore-UI. Begleit-Release Plattform: [Infra_LAB v1.13.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.13.0).

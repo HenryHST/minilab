@@ -17,7 +17,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: mail-inbox
-          image: alpine/k8s:1.32.0
+          image: alpine/k8s:1.37.1
           env:
             - name: IMAP_PASSWORD
               valueFrom:

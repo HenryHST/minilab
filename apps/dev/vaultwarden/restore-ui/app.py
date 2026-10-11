@@ -224,7 +224,7 @@ def restore(
                     containers=[
                         client.V1Container(
                             name="restore",
-                            image="alpine/k8s:1.32.0",
+                            image="alpine/k8s:1.37.1",
                             image_pull_policy="IfNotPresent",
                             env=[
                                 client.V1EnvVar(name="RESTORE_ENABLED", value="true"),

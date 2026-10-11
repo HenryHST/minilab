@@ -18,7 +18,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: inbox-tag
-          image: alpine/k8s:1.32.0
+          image: alpine/k8s:1.37.1
           command:
             - /bin/bash
             - -c

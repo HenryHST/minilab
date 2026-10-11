@@ -4,8 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-10-11
+
+Authentik **HA / Pi-Fallback** (soft Proxmox-Affinity, Replicas 2, PDB), Gatus, WUD, Vaultwarden Restore-UI. Begleit-Release Plattform: [Infra_LAB v1.13.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.13.0).
+
 ### Added
 
+- **Authentik Scheduling/HA** — soft `nodeAffinity` bevorzugt `worker=true` (Proxmox); **kein** hard `nodeSelector` / hostname-Pin; server/worker **replicas 2**, RollingUpdate, PDB `minAvailable: 1`; Kustomize-Patch `clear-nodeselector.yaml` gegen verwaiste Selectors.
 - **Vaultwarden Restore-UI Image** — `ghcr.io/henryhst/vw-restore` aus `apps/dev/vaultwarden/restore-ui/` (SemVer via `VERSION`, Tags `X.Y.Z`/`latest`/`sha-*`, GHA → GHCR).
 - **Vaultwarden Restore-UI** — `https://vw-restore.stadthagen.dev` (ForwardAuth, `vaultwarden_admins`), Dark-Vault-Look; wählt Archiv inkl. `latest` und startet Restore-Job. Day-0 Blueprint `day0-vw-restore`.
 - **Gatus (#115)** — ersetzt Uptime Kuma. Helm-Chart `gatus` 1.5.0 (v5.34.0) in Namespace `status`, URL `status.stadthagen.dev`. CloudNativePG (PG 16), Authentik-OIDC (`gatus_admins`), Pushover, ServiceMonitor. ADR-0034. Buch `gatus`. Archify `gatus-architektur`.

@@ -9,28 +9,77 @@
   <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
 </head>
 <body>
-  <main class="card">
-    <header class="brand">
-      <img src="/static/logo.svg" alt="" width="40" height="40">
-      <div>
-        <h1>Restore job</h1>
-        <p class="muted"><code>{{ job_name }}</code></p>
+  <main class="dashboard">
+    <header class="topbar">
+      <div class="brand">
+        <img src="/static/logo.svg" alt="Vaultwarden logo" width="38" height="38">
+        <div>
+          <h1>Restore job</h1>
+          <p class="muted"><code>{{ job_name }}</code></p>
+        </div>
       </div>
+
+      {% if user %}
+      <div class="user-pill">{{ user }}</div>
+      {% endif %}
     </header>
-    {% if user %}<p class="muted user">Signed in as {{ user }}</p>{% endif %}
-    <p>
-      Status
-      <span class="badge {% if status == 'Succeeded' %}ok{% elif status == 'Failed' %}bad{% elif status == 'Running' or status == 'Pending' %}warn{% else %}muted{% endif %}">
-        {{ status }}
-      </span>
-    </p>
-    <p class="muted">Archive: <code>{{ archive }}</code></p>
-    <pre class="logs">{{ logs }}</pre>
+
+    <section class="panel status-panel">
+      <div class="panel-header">
+        <h2>Job status</h2>
+        <span class="badge
+          {% if status == 'Succeeded' %}ok
+          {% elif status == 'Failed' %}bad
+          {% elif status == 'Running' or status == 'Pending' %}warn
+          {% else %}muted
+          {% endif %}">
+          {{ status }}
+        </span>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">Archive</span>
+          <strong>{{ archive }}</strong>
+        </div>
+        <div class="info-item">
+          <span class="label">Mode</span>
+          <strong>{% if active %}Live follow{% else %}Completed{% endif %}</strong>
+        </div>
+
+        {% if started_at %}
+        <div class="info-item">
+          <span class="label">Started</span>
+          <strong>{{ started_at.strftime('%Y-%m-%d %H:%M UTC') }}</strong>
+        </div>
+        {% endif %}
+
+        {% if finished_at %}
+        <div class="info-item">
+          <span class="label">Finished</span>
+          <strong>{{ finished_at.strftime('%Y-%m-%d %H:%M UTC') }}</strong>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Restore output</h2>
+        <span class="muted">{% if active %}Auto-refresh{% else %}Final output{% endif %}</span>
+      </div>
+
+      <pre class="logs">{{ logs }}</pre>
+    </section>
+
     <div class="actions">
       <a class="btn secondary" href="/">Back</a>
       <a class="btn primary" href="/jobs/{{ job_name }}">Refresh</a>
     </div>
   </main>
-  <footer class="app-footer muted">vw-restore {{ app_version }}</footer>
+
+  <footer class="app-footer">
+    <span class="version">vw-restore v{{ app_version }}</span>
+  </footer>
 </body>
 </html>

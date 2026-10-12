@@ -81,12 +81,16 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
+                    "color": "rgba(245, 54, 54, 0.9)",
                     "value": null
                   },
                   {
-                    "color": "red",
-                    "value": 80
+                    "color": "rgba(237, 129, 40, 0.89)",
+                    "value": 2592000
+                  },
+                  {
+                    "color": "rgba(50, 172, 45, 0.97)",
+                    "value": 5184000
                   }
                 ]
               }
@@ -95,90 +99,23 @@ data:
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "Time"
+                  "options": "Time Left"
                 },
                 "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "Time"
-                  },
-                  {
-                    "id": "custom.align"
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Value"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "Time Left"
-                  },
                   {
                     "id": "unit",
                     "value": "dtdurations"
                   },
                   {
                     "id": "decimals",
-                    "value": 2
+                    "value": 0
                   },
                   {
                     "id": "custom.cellOptions",
                     "value": {
-                      "type": "color-background"
+                      "type": "color-background",
+                      "mode": "basic"
                     }
-                  },
-                  {
-                    "id": "custom.align"
-                  },
-                  {
-                    "id": "thresholds",
-                    "value": {
-                      "mode": "absolute",
-                      "steps": [
-                        {
-                          "color": "rgba(245, 54, 54, 0.9)",
-                          "value": null
-                        },
-                        {
-                          "color": "rgba(237, 129, 40, 0.89)",
-                          "value": 2592000
-                        },
-                        {
-                          "color": "rgba(50, 172, 45, 0.97)",
-                          "value": 5184000
-                        },
-                        {
-                          "value": 7776000
-                        }
-                      ]
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Metric"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "Certificate"
-                  },
-                  {
-                    "id": "unit",
-                    "value": "short"
-                  },
-                  {
-                    "id": "decimals",
-                    "value": 2
-                  },
-                  {
-                    "id": "custom.align"
                   }
                 ]
               }
@@ -201,7 +138,13 @@ data:
               ],
               "show": false
             },
-            "showHeader": true
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": false,
+                "displayName": "Time Left"
+              }
+            ]
           },
           "pluginVersion": "10.2.3",
           "targets": [
@@ -211,19 +154,33 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sort_desc( sum(certmanager_certificate_expiration_timestamp_seconds{exported_namespace=~\"$namespace\"} - time()) by (name,exported_namespace) )",
+              "expr": "sort_desc(sum(certmanager_certificate_expiration_timestamp_seconds{exported_namespace=~\"$namespace\"} - time()) by (name, exported_namespace))",
               "format": "table",
               "instant": true,
-              "legendFormat": " {{exported_namespace}} / {{name}}",
+              "legendFormat": "__auto",
               "refId": "A"
             }
           ],
           "title": "Time Left",
           "transformations": [
             {
-              "id": "seriesToRows",
+              "id": "organize",
               "options": {
-                "reducers": []
+                "excludeByName": {
+                  "Time": true,
+                  "__name__": true
+                },
+                "indexByName": {
+                  "exported_namespace": 0,
+                  "name": 1,
+                  "Value": 2,
+                  "Time": 3
+                },
+                "renameByName": {
+                  "exported_namespace": "Namespace",
+                  "name": "Certificate",
+                  "Value": "Time Left"
+                }
               }
             }
           ],
@@ -391,7 +348,7 @@ data:
                   }
                 ]
               },
-              "unit": "s"
+              "unit": "dtdurations"
             },
             "overrides": []
           },
@@ -422,11 +379,11 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum(certmanager_certificate_expiration_timestamp_seconds{exported_namespace=~\"$namespace\"} - time()) BY (name,exported_namespace)",
-              "instant": false,
-              "intervalFactor": 1,
+              "expr": "sum(certmanager_certificate_expiration_timestamp_seconds{exported_namespace=~\"$namespace\"} - time()) by (name, exported_namespace)",
               "legendFormat": "{{exported_namespace}} / {{name}}",
-              "refId": "A"
+              "refId": "A",
+              "instant": false,
+              "range": true
             }
           ],
           "title": "Time Left",
@@ -664,8 +621,12 @@ data:
             "allValue": ".*",
             "current": {
               "selected": true,
-              "text": "All",
-              "value": "$__all"
+              "text": [
+                "All"
+              ],
+              "value": [
+                "$__all"
+              ]
             },
             "datasource": {
               "type": "prometheus",
@@ -699,7 +660,7 @@ data:
               "uid": "prometheus"
             },
             "definition": "label_values(certmanager_certificate_expiration_timestamp_seconds{exported_namespace=~\"$namespace\"}, name)",
-            "hide": 0,
+            "hide": 2,
             "includeAll": true,
             "multi": true,
             "name": "certificate",
@@ -748,6 +709,6 @@ data:
       "timezone": "browser",
       "title": "cert-manager",
       "uid": "cert-manager",
-      "version": 2,
+      "version": 3,
       "weekStart": ""
     }

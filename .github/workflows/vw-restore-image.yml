@@ -3,6 +3,7 @@ name: vw-restore image
 # Image: ghcr.io/henryhst/vw-restore (multi-arch: linux/amd64, linux/arm64)
 # SemVer source of truth: apps/dev/vaultwarden/restore-ui/VERSION
 # Optional override: workflow_dispatch input tag, or git tag vw-restore-vX.Y.Z
+# Secure build: BuildKit provenance + SBOM, Trivy CRITICAL/HIGH gate, Cosign keyless OIDC
 
 on:
   push:
@@ -29,6 +30,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write # keyless cosign (GitHub OIDC → Fulcio/Rekor)
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -88,6 +90,7 @@ jobs:
             type=sha,prefix=sha-,format=short
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: apps/dev/vaultwarden/restore-ui
@@ -101,4 +104,29 @@ jobs:
             BUILD_DATE=${{ steps.version.outputs.date }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          provenance: false
+          provenance: true
+          sbom: true
+
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE }}@${{ steps.build.outputs.digest }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign image (keyless OIDC)
+        if: steps.build.outputs.digest != ''
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          # Keyless signing via GitHub OIDC → Fulcio/Rekor (no long-lived key in repo).
+          while IFS= read -r image; do
+            [[ -z "${image}" ]] && continue
+            cosign sign --yes "${image}@${DIGEST}"
+          done <<< "${{ steps.meta.outputs.tags }}"

@@ -18,7 +18,7 @@ LABEL org.opencontainers.image.title="vw-restore" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.base.name="docker.io/library/python:3.12-slim"
+      org.opencontainers.image.base.name="docker.io/library/python:3.14-slim"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

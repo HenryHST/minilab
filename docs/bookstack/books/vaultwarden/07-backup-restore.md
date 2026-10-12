@@ -46,9 +46,9 @@ kubectl -n vaultwarden logs -f job/vw-backup-manual
 |--|--|
 | URL | https://vw-restore.stadthagen.dev (LAN, kein Pangolin) |
 | Auth | Authentik ForwardAuth, Gruppe `vaultwarden_admins` |
-| Image | `registry.stadthagen.dev/dev/vw-restore:1.0.6` (Lab-Registry; GHCR `ghcr.io/henryhst/vw-restore:1.0.6`; SemVer aus `restore-ui/VERSION`) |
+| Image | Digest-Pin Lab-Registry `registry.stadthagen.dev/dev/vw-restore@sha256:…` (SemVer `1.0.6`; GHCR `ghcr.io/henryhst/vw-restore`) |
 | Quelle | `apps/dev/vaultwarden/restore-ui/` (Dockerfile + OCI Labels) |
-| Build | GHA → Tags `X.Y.Z`, `X.Y`, `X`, `latest`, `sha-*`; optional Git-Tag `vw-restore-v*` |
+| Build | GHA → Tags `X.Y.Z`, `X.Y`, `X`, `latest`, `sha-*`; Provenance + SBOM; Cosign keyless; Trivy CRITICAL/HIGH |
 | Default | Archiv **latest** (neuestes nach mtime) |
 | Aktion | erzeugt Job `vaultwarden-ui-restore-*` (gleiche Orchestrierung wie PostSync) |
 
@@ -58,7 +58,7 @@ Ablauf: Archiv wählen (oder latest) → optional **force** → `RESTORE` tippen
 
 ![Restore-UI Confirm / Force 1.0.5](images/vw-restore-confirm-1.0.5.png)
 
-Release: `VERSION` + Deployment-Image-Tag bumpen → Push (oder `git tag vw-restore-vX.Y.Z`). Package ggf. **Public**.
+Release: `VERSION` bumpen → GHA baut/signiert GHCR → `crane copy` nach Lab-Registry (Signaturen/Attestations mitnehmen) → Deployment auf denselben Digest pinnten. Details: [`restore-ui/README.md`](https://github.com/HenryHST/minilab/blob/main/apps/dev/vaultwarden/restore-ui/README.md). Package ggf. **Public**.
 
 ## Restore (PostSync-Bootstrap)
 

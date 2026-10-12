@@ -7,8 +7,9 @@ Vaultwarden NFS backup restore UI for nXk3.
 - Also published: `X.Y`, `X`, `latest`, `sha-<short>`
 - Runtime host: `https://vw-restore.stadthagen.dev`
 - Build: GitHub Actions [vw-restore-image.yml](../../../../.github/workflows/vw-restore-image.yml)
+- Supply chain: BuildKit **provenance** + **SBOM**, **Trivy** gate (`CRITICAL`/`HIGH`, ignore unfixed), **Cosign keyless** (GitHub OIDC)
 
-Release: bump `VERSION` + Deployment image tag in the same commit, then push (or tag `vw-restore-v1.0.1`).
+Release: bump `VERSION` + Deployment image digest in the same commit, then push (or tag `vw-restore-v1.0.1`).
 
 ```bash
 VER=$(tr -d '[:space:]' < VERSION)
@@ -20,3 +21,49 @@ docker build \
 ```
 
 After the first CI push: GitHub → Packages → `vw-restore` → visibility **Public**.
+
+## Verify (after CI)
+
+```bash
+VER=$(tr -d '[:space:]' < VERSION)
+DIGEST=$(crane digest "ghcr.io/henryhst/vw-restore:${VER}")
+
+cosign verify \
+  --certificate-identity-regexp 'https://github.com/HenryHST/minilab/.github/workflows/vw-restore-image.yml@refs/heads/main' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  "ghcr.io/henryhst/vw-restore:${VER}"
+
+cosign tree "ghcr.io/henryhst/vw-restore@${DIGEST}"
+# Expect: signature + SBOM / provenance attestations
+
+trivy image --severity CRITICAL,HIGH --ignore-unfixed \
+  "ghcr.io/henryhst/vw-restore@${DIGEST}"
+```
+
+## Mirror to lab registry
+
+Cluster pulls `registry.stadthagen.dev/dev/vw-restore` (LAN). After a signed GHCR release, copy **image + signatures/attestations**, then pin the Deployment to the digest:
+
+```bash
+VER=$(tr -d '[:space:]' < VERSION)
+SRC="ghcr.io/henryhst/vw-restore:${VER}"
+DST="registry.stadthagen.dev/dev/vw-restore:${VER}"
+
+# Prefer crane (preserves multi-arch index + referrers when supported)
+crane copy "${SRC}" "${DST}"
+
+DIGEST=$(crane digest "${SRC}")
+# Update restore-ui-deployment.yaml:
+#   image: registry.stadthagen.dev/dev/vw-restore@${DIGEST}
+#   # semver: ${VER}
+# Keep imagePullPolicy: IfNotPresent when digest-pinned.
+```
+
+Verify the lab copy against the same identity (or verify GHCR digest before promote):
+
+```bash
+cosign verify \
+  --certificate-identity-regexp 'https://github.com/HenryHST/minilab/.github/workflows/vw-restore-image.yml@refs/heads/main' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  "ghcr.io/henryhst/vw-restore@${DIGEST}"
+```

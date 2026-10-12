@@ -31,7 +31,7 @@ data:
           "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
           "id": 1,
           "options": {
-            "content": "## Mosquitto MQTT\n\nBroker: `mqtt.mosquitto.svc.cluster.local:1883` (in-cluster).\nLAN: `mqtt-pro.stadthagen.dev` — ports **1883** / **8883** / **9001**.\nAuth: Authentik LDAP groups `mqtt_users` / `mqtt_admins`.\n\nUse Explore → MQTT datasource with topic `#` or `home/#`.",
+            "content": "## Mosquitto MQTT\n\nBroker: `mqtt.mosquitto.svc.cluster.local:1883` (in-cluster).\nLAN: `mqtt-pro.stadthagen.dev` — ports **1883** / **8883** / **9001**.\nAuth: Authentik LDAP (`mqtt-grafana` ∈ `mqtt_users`).\n\nLive panels stream only while open (grafana-mqtt-datasource). Broker counters: dashboard **Mosquitto Broker ($SYS)** (Prometheus).\n\nExplore → MQTT → Topic z. B. `wud/#` oder `#`.",
             "mode": "markdown"
           },
           "title": "Overview",
@@ -39,6 +39,7 @@ data:
         },
         {
           "datasource": { "type": "grafana-mqtt-datasource", "uid": "mqtt" },
+          "description": "Streaming subscribe; field must be topic (not queryText). Messages appear only while the panel is open.",
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -83,11 +84,48 @@ data:
           "targets": [
             {
               "datasource": { "type": "grafana-mqtt-datasource", "uid": "mqtt" },
-              "queryText": "#",
+              "topic": "wud/#",
               "refId": "A"
             }
           ],
-          "title": "MQTT topics (#)",
+          "title": "WUD topics (wud/#)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "grafana-mqtt-datasource", "uid": "mqtt" },
+          "description": "Broad subscribe; noisy. Prefer narrower topics in Explore.",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "lineWidth": 1,
+                "showPoints": "auto",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{ "color": "green", "value": null }]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 16 },
+          "id": 3,
+          "options": {
+            "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "single", "sort": "none" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "grafana-mqtt-datasource", "uid": "mqtt" },
+              "topic": "#",
+              "refId": "A"
+            }
+          ],
+          "title": "All topics (#)",
           "type": "timeseries"
         }
       ],

@@ -167,14 +167,8 @@ grafana:
           editable: false
           options:
             path: /var/lib/grafana/dashboards/trivy
-        - name: cert-manager
-          orgId: 1
-          folder: cert-manager
-          type: file
-          disableDeletion: false
-          editable: false
-          options:
-            path: /var/lib/grafana/dashboards/cert-manager
+        # cert-manager: provisioned via manifests/dashboard-cert-manager.yaml (sidecar).
+        # gnetId 20340 download leaves ${DS_PROMETHEUS} unresolved → empty panels.
   dashboards:
     unpoller:
       client-dpi:
@@ -221,10 +215,6 @@ grafana:
       trivy-operator-dashboard:
         gnetId: 17813
         revision: 2
-        datasource: Prometheus
-    cert-manager:
-      overview:
-        gnetId: 20340
         datasource: Prometheus
   grafana.ini:
     feature_toggles:

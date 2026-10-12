@@ -36,8 +36,12 @@ cosign verify \
 cosign tree "ghcr.io/henryhst/vw-restore@${DIGEST}"
 # Expect: signature + SBOM / provenance attestations
 
-trivy image --severity CRITICAL,HIGH --ignore-unfixed \
-  "ghcr.io/henryhst/vw-restore@${DIGEST}"
+# Prefer rootfs/FS scan: `trivy image` merges BuildKit OCI SBOM and can report
+# stale phantom packages (FilePath=null). CI uses `crane export` + `trivy fs`.
+tmpdir=$(mktemp -d)
+crane export --platform linux/amd64 "ghcr.io/henryhst/vw-restore@${DIGEST}" - | tar -x -C "$tmpdir"
+trivy fs --severity CRITICAL,HIGH --ignore-unfixed --scanners vuln "$tmpdir"
+rm -rf "$tmpdir"
 ```
 
 ## Mirror to lab registry

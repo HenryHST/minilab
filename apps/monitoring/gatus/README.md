@@ -22,6 +22,27 @@ NFS backup CronJobs get a 30-minute maintenance window from the cron minute, tim
 
 `https://status.stadthagen.dev/uebersicht` is anonymous and shows only the health badges (`manifests/overview.yaml`). The dashboard and its history stay behind OIDC. A new check needs an `<img>` there; the badge key is `group_name`.
 
+## Grafana
+
+Prometheus scrapes Gatus via ServiceMonitor `gatus` (namespace `status`). Dashboard ConfigMap: [`../kube-prometheus-stack/manifests/dashboard-gatus.yaml`](../kube-prometheus-stack/manifests/dashboard-gatus.yaml).
+
+| Item | Value |
+|------|--------|
+| URL | `https://grafana.stadthagen.dev/d/gatus` |
+| Folder | **Gatus** |
+| UID | `gatus` |
+| Datasource | Prometheus (`uid: prometheus`) |
+
+Useful Explore queries:
+
+```promql
+gatus_results_endpoint_success
+gatus_results_duration_seconds
+sum by (name) (rate(gatus_results_total{success="true"}[5m]))
+  / sum by (name) (rate(gatus_results_total[5m]))
+gatus_results_certificate_expiration_seconds - time()
+```
+
 ## Backup / Restore
 
 - CronJob `gatus-backup-cron` (01:00 UTC): `pg_dump` → NFS `192.168.0.25:/var/nfs/shared/infra01/gatus-backups` (retention 7)

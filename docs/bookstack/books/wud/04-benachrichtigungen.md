@@ -36,7 +36,7 @@ Ohne `WUD_PUSHOVER_APP_TOKEN` registriert WUD den Trigger nicht. Im Log steht da
 
 | Variable | Wert |
 |--|--|
-| `WUD_TRIGGER_MQTT_MOSQUITTO_URL` | `mqtt://mosquitto.mosquitto.svc.cluster.local:1883` |
+| `WUD_TRIGGER_MQTT_MOSQUITTO_URL` | `mqtt://mqtt.mosquitto.svc.cluster.local:1883` (Service heißt `mqtt`) |
 | `WUD_TRIGGER_MQTT_MOSQUITTO_USER` | `mqtt-wud` (Authentik-Service-Account, Gruppe `mqtt_users`) |
 | `WUD_TRIGGER_MQTT_MOSQUITTO_PASSWORD` | aus `wud-env` |
 | `WUD_TRIGGER_MQTT_MOSQUITTO_CLIENTID` | `wud-nxk3` |
@@ -52,5 +52,5 @@ Mitlesen:
 
 ```bash
 kubectl -n mosquitto exec deploy/mqtt-tools -- \
-  mosquitto_sub -h mosquitto -u mqtt-probe -P "$PW" -t 'wud/#' -v
+  mosquitto_sub -h mqtt -u mqtt-probe -P "$PW" -t 'wud/#' -v
 ```

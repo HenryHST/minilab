@@ -66,7 +66,8 @@ spec:
               value: "nXk3: ${container.name} ${container.updateKind.remoteValue}"
             # MQTT → Mosquitto (LDAP user mqtt-wud) + Home Assistant discovery
             - name: WUD_TRIGGER_MQTT_MOSQUITTO_URL
-              value: mqtt://mosquitto.mosquitto.svc.cluster.local:1883
+              # Service name is mqtt (not mosquitto) in namespace mosquitto
+              value: mqtt://mqtt.mosquitto.svc.cluster.local:1883
             - name: WUD_TRIGGER_MQTT_MOSQUITTO_USER
               value: mqtt-wud
             - name: WUD_TRIGGER_MQTT_MOSQUITTO_CLIENTID

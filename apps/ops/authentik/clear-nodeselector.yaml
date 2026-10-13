@@ -1,9 +1,12 @@
 # Strategic-merge from older values left worker=true on the Deployment;
 # last-applied omit does not delete map keys. Force-clear on every sync.
+# namespace must match helm-manifest Deployments (otherwise kustomize reports
+# Deployment.v1.apps/authentik-server.[noNs] with no unique target).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: authentik-server
+  namespace: authentik
 spec:
   template:
     spec:
@@ -13,6 +16,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: authentik-worker
+  namespace: authentik
 spec:
   template:
     spec:

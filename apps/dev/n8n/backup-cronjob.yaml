@@ -105,14 +105,17 @@ spec:
                   echo "pg_dump n8n@n8n-postgres"
                   until pg_isready -h n8n-postgres -U n8n -d n8n -q; do sleep 2; done
                   pg_dump -h n8n-postgres -U n8n -d n8n --no-owner --no-acl | gzip -c > "${OUT_DIR}/n8n.sql.gz"
-                  N8N_POD="$(kubectl -n n8n get pod -l app.kubernetes.io/name=n8n,app.kubernetes.io/type=master -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+                  N8N_POD="$(kubectl -n n8n get pod \
+                    -l app.kubernetes.io/name=n8n,app.kubernetes.io/type=master \
+                    --field-selector=status.phase=Running \
+                    -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
                   if [[ -n "${N8N_POD}" ]]; then
                     echo "tar n8n data from ${N8N_POD}"
                     kubectl -n n8n exec "${N8N_POD}" -c n8n -- \
                       tar czf - -C /home/node .n8n > "${OUT_DIR}/n8n-data.tar.gz" || \
                       echo "WARN: data tar failed (empty PVC?)"
                   else
-                    echo "WARN: no n8n pod — skipping data tar"
+                    echo "WARN: no Running n8n pod — skipping data tar"
                   fi
                   tar czf "/backup/n8n-${STAMP}.tar.gz" -C /backup "n8n-${STAMP}"
                   rm -rf "${OUT_DIR}"

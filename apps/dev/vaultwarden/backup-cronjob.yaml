@@ -90,9 +90,13 @@ spec:
                 - -c
                 - |
                   set -euo pipefail
-                  POD="$(kubectl -n vaultwarden get pod -l app=vaultwarden -o jsonpath='{.items[0].metadata.name}')"
+                  # Only Running pods — bare items[0] can hit Succeeded leftovers after
+                  # node pressure ("cannot exec into a completed pod").
+                  POD="$(kubectl -n vaultwarden get pod -l app=vaultwarden \
+                    --field-selector=status.phase=Running \
+                    -o jsonpath='{.items[0].metadata.name}')"
                   if [[ -z "${POD}" ]]; then
-                    echo "No vaultwarden pod found in namespace vaultwarden" >&2
+                    echo "No Running vaultwarden pod found" >&2
                     exit 1
                   fi
                   OUT="/backup/vaultwarden-$(date -u +%Y%m%d-%H%M%S).tar.gz"

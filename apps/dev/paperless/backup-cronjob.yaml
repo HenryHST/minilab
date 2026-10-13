@@ -112,9 +112,11 @@ spec:
                   STAMP="$(date -u +%Y%m%d-%H%M%S)"
                   OUT_DIR="/backup/paperless-${STAMP}"
                   mkdir -p "${OUT_DIR}"
-                  WEB_POD="$(kubectl -n paperless get pod -l app=paperless -o jsonpath='{.items[0].metadata.name}')"
+                  WEB_POD="$(kubectl -n paperless get pod -l app=paperless \
+                    --field-selector=status.phase=Running \
+                    -o jsonpath='{.items[0].metadata.name}')"
                   if [[ -z "${WEB_POD}" ]]; then
-                    echo "Missing paperless pod" >&2
+                    echo "Missing Running paperless pod" >&2
                     exit 1
                   fi
                   echo "Waiting for postgres..."

@@ -90,9 +90,11 @@ spec:
                 - -c
                 - |
                   set -euo pipefail
-                  POD="$(kubectl -n audiobookshelf get pod -l app=audiobookshelf -o jsonpath='{.items[0].metadata.name}')"
+                  POD="$(kubectl -n audiobookshelf get pod -l app=audiobookshelf \
+                    --field-selector=status.phase=Running \
+                    -o jsonpath='{.items[0].metadata.name}')"
                   if [[ -z "${POD}" ]]; then
-                    echo "No audiobookshelf pod found" >&2
+                    echo "No Running audiobookshelf pod found" >&2
                     exit 1
                   fi
                   OUT="/backup/audiobookshelf-$(date -u +%Y%m%d-%H%M%S).tar.gz"

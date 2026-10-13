@@ -108,9 +108,12 @@ spec:
                     -h bookstack-mariadb -u bookstack --single-transaction --routines --triggers \
                     bookstack | gzip -c > "${WORK}/db.sql.gz"
 
-                  BS_POD="$(kubectl -n bookstack get pod -l app.kubernetes.io/name=bookstack,app.kubernetes.io/instance=bookstack -o jsonpath='{.items[0].metadata.name}')"
+                  BS_POD="$(kubectl -n bookstack get pod \
+                    -l app.kubernetes.io/name=bookstack,app.kubernetes.io/instance=bookstack \
+                    --field-selector=status.phase=Running \
+                    -o jsonpath='{.items[0].metadata.name}')"
                   if [[ -z "${BS_POD}" ]]; then
-                    echo "No bookstack pod found" >&2
+                    echo "No Running bookstack pod found" >&2
                     exit 1
                   fi
                   echo "Archiving pod/${BS_POD} /config -> config.tar.gz"

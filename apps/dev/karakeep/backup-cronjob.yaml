@@ -90,16 +90,44 @@ spec:
                 - -c
                 - |
                   set -euo pipefail
-                  POD="$(kubectl -n karakeep get pod -l app.kubernetes.io/component=karakeep,app.kubernetes.io/name=karakeep -o jsonpath='{.items[0].metadata.name}')"
+                  # Prefer Running pods (avoids Succeeded/Terminating during rollouts).
+                  POD="$(kubectl -n karakeep get pod \
+                    -l app.kubernetes.io/component=karakeep,app.kubernetes.io/name=karakeep \
+                    --field-selector=status.phase=Running \
+                    -o jsonpath='{.items[0].metadata.name}')"
                   if [[ -z "${POD}" ]]; then
-                    echo "No karakeep pod found in namespace karakeep" >&2
+                    echo "No Running karakeep pod found in namespace karakeep" >&2
                     exit 1
                   fi
                   OUT="/backup/karakeep-$(date -u +%Y%m%d-%H%M%S).tar.gz"
+                  PART="${OUT}.partial"
                   echo "Backing up pod/${POD} /data -> ${OUT}"
-                  kubectl -n karakeep exec "${POD}" -c karakeep -- tar czf - -C /data . > "${OUT}"
+                  # Retry transient Longhorn I/O (e.g. DiskPressure): tar "Cannot savedir: Input/output error"
+                  ok=0
+                  for attempt in 1 2 3; do
+                    rm -f "${PART}"
+                    if kubectl -n karakeep exec "${POD}" -c karakeep -- tar czf - -C /data . > "${PART}"; then
+                      # Reject empty/tiny archives from failed mid-stream writes
+                      sz="$(wc -c < "${PART}" | tr -d ' ')"
+                      if [[ "${sz}" -gt 1024 ]]; then
+                        mv -f "${PART}" "${OUT}"
+                        ok=1
+                        break
+                      fi
+                      echo "attempt ${attempt}: archive too small (${sz} bytes), retrying..." >&2
+                    else
+                      echo "attempt ${attempt}: tar/exec failed, retrying in $((attempt * 20))s..." >&2
+                    fi
+                    rm -f "${PART}"
+                    sleep $((attempt * 20))
+                  done
+                  if [[ "${ok}" != "1" ]]; then
+                    echo "Backup failed after retries" >&2
+                    exit 1
+                  fi
                   ls -lh "${OUT}"
-                  # Retention: keep last 7 archives
+                  # Drop corrupt leftovers (<1KiB) then keep last 7 good archives
+                  find /backup -maxdepth 1 -name 'karakeep-*.tar.gz' -type f -size -1k -delete 2>/dev/null || true
                   ls -1t /backup/karakeep-*.tar.gz 2>/dev/null | tail -n +8 | xargs -r rm -f
                   echo "Done. Archives:"
                   ls -1t /backup/karakeep-*.tar.gz 2>/dev/null || true

@@ -66,20 +66,23 @@ spec:
               value: "true"
             - name: WUD_TRIGGER_PUSHOVER_NXK3_SIMPLETITLE
               value: "nXk3: ${container.name} ${container.updateKind.remoteValue}"
-            # MQTT → Mosquitto (LDAP user mqtt-wud) + Home Assistant discovery
-            - name: WUD_TRIGGER_MQTT_MOSQUITTO_URL
-              # Service name is mqtt (not mosquitto) in namespace mosquitto
-              value: mqtt://mqtt.mosquitto.svc.cluster.local:1883
-            - name: WUD_TRIGGER_MQTT_MOSQUITTO_USER
-              value: mqtt-wud
-            - name: WUD_TRIGGER_MQTT_MOSQUITTO_CLIENTID
-              value: wud-nxk3
-            - name: WUD_TRIGGER_MQTT_MOSQUITTO_TOPIC
-              value: wud/container
-            - name: WUD_TRIGGER_MQTT_MOSQUITTO_HASS_ENABLED
-              value: "true"
-            - name: WUD_TRIGGER_MQTT_MOSQUITTO_HASS_DISCOVERY
-              value: "true"
+            # MQTT trigger DISABLED (2026-10-14): Mosquitto LDAP auth returns
+            # "Not authorized (5)" for mqtt-wud (and mqtt-smoke). WUD 9.4.1 then
+            # throws uncaught "MQTT client is not connected" mid-watch and crashes
+            # before finishing rediscovery (paperless never indexed). Re-enable
+            # when mqtt-smoke succeeds again; password remains in secret wud-env.
+            # - name: WUD_TRIGGER_MQTT_MOSQUITTO_URL
+            #   value: mqtt://mqtt.mosquitto.svc.cluster.local:1883
+            # - name: WUD_TRIGGER_MQTT_MOSQUITTO_USER
+            #   value: mqtt-wud
+            # - name: WUD_TRIGGER_MQTT_MOSQUITTO_CLIENTID
+            #   value: wud-nxk3
+            # - name: WUD_TRIGGER_MQTT_MOSQUITTO_TOPIC
+            #   value: wud/container
+            # - name: WUD_TRIGGER_MQTT_MOSQUITTO_HASS_ENABLED
+            #   value: "true"
+            # - name: WUD_TRIGGER_MQTT_MOSQUITTO_HASS_DISCOVERY
+            #   value: "true"
             # OIDC (Authentik provider wupd); no local admin — wupd_admins → admin, wupd_users → ro
             - name: WUD_AUTH_OIDC_AUTHENTIK_CLIENTID
               value: wupd

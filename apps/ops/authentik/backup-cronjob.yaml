@@ -119,13 +119,15 @@ spec:
                   echo "Dumping ${PGDATABASE}@${PGHOST} -> db.sql.gz"
                   pg_dump --no-owner --no-acl | gzip -c > "${WORK}/db.sql.gz"
 
-                  SERVER_POD="$(kubectl -n authentik get pod -l app.kubernetes.io/name=authentik,app.kubernetes.io/component=server -o jsonpath='{.items[0].metadata.name}')"
-                  if [[ -z "${SERVER_POD}" ]]; then
-                    echo "No authentik-server pod found" >&2
+                  # Prefer deploy/ so kubectl picks a Ready Running replica.
+                  # Bare label + items[0] can hit Succeeded/Terminating pods during
+                  # rollouts or node pressure ("cannot exec into a completed pod").
+                  if ! kubectl -n authentik get deploy authentik-server >/dev/null 2>&1; then
+                    echo "deploy/authentik-server not found" >&2
                     exit 1
                   fi
-                  echo "Archiving pod/${SERVER_POD} /media -> media.tar.gz"
-                  kubectl -n authentik exec "${SERVER_POD}" -c server -- tar czf - -C /media . > "${WORK}/media.tar.gz"
+                  echo "Archiving deploy/authentik-server /media -> media.tar.gz"
+                  kubectl -n authentik exec deploy/authentik-server -c server -- tar czf - -C /media . > "${WORK}/media.tar.gz"
 
                   tar czf "${OUT}" -C "${WORK}" .
                   ls -lh "${OUT}"

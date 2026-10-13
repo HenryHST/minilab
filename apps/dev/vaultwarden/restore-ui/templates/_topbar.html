@@ -8,11 +8,18 @@
   </div>
 
   <div class="topbar-actions">
-    <nav class="lang-switch" aria-label="{{ t('lang_switch_aria') }}">
-      <a href="?lang=de" class="{% if lang == 'de' %}active{% endif %}" hreflang="de" lang="de">DE</a>
-      <span class="lang-sep" aria-hidden="true">|</span>
-      <a href="?lang=en" class="{% if lang == 'en' %}active{% endif %}" hreflang="en" lang="en">EN</a>
-    </nav>
+    <a href="?lang={{ 'en' if lang == 'de' else 'de' }}"
+       class="lang-toggle is-{{ lang }}"
+       role="switch"
+       aria-checked="{{ 'true' if lang == 'en' else 'false' }}"
+       aria-label="{{ t('lang_switch_aria') }}"
+       hreflang="{{ 'en' if lang == 'de' else 'de' }}">
+      <span class="lang-toggle-track" aria-hidden="true">
+        <span class="lang-toggle-thumb">
+          <img src="/static/flag-{{ lang }}.svg" alt="" width="14" height="14">
+        </span>
+      </span>
+    </a>
     {% if user %}
     <div class="user-pill">{{ user }}</div>
     {% endif %}

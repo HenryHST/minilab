@@ -10,7 +10,7 @@ DEFAULT_LANG = "de"
 
 TRANSLATIONS: dict[str, dict[str, str]] = {
     "de": {
-        "lang_switch_aria": "Sprache",
+        "lang_switch_aria": "Sprache wechseln (aktuell Deutsch)",
         "brand_title": "Vaultwarden Restore",
         "brand_subtitle": "Backup in den Namespace vaultwarden wiederherstellen",
         "page_title": "Vaultwarden Restore",
@@ -73,7 +73,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "logo_alt": "Vaultwarden-Logo",
     },
     "en": {
-        "lang_switch_aria": "Language",
+        "lang_switch_aria": "Switch language (currently English)",
         "brand_title": "Vaultwarden Restore",
         "brand_subtitle": "Restore a backup into the vaultwarden namespace",
         "page_title": "Vaultwarden Restore",

@@ -5,7 +5,7 @@ Eclipse Mosquitto MQTT broker with Authentik LDAP auth (go-auth). LAN LoadBalanc
 | | |
 |--|--|
 | Argo | ApplicationSet `infra`, sync wave `1`, namespace `mosquitto` |
-| Image | `ghcr.io/henryhst/mosquitto-custom:1.1.1` (Mosquitto 2.1.2 glibc; [mosquitto-custom](https://github.com/HenryHST/mosquitto-custom); **amd64** `nodeSelector`) |
+| Image | `ghcr.io/henryhst/mosquitto-custom:1.1.2` (Mosquitto 2.1.2 glibc; [mosquitto-custom](https://github.com/HenryHST/mosquitto-custom); **amd64** `nodeSelector`) |
 | Conf | `/mosquitto/config/mosquitto.conf` (bind pw via init `tls-bootstrap`; init `ldap-preflight` waits for the outpost and checks the bind) |
 | Host | `mqtt-pro.stadthagen.dev` → LB `192.168.0.218` (manual Hetzner A) |
 | Ports | `1883` MQTT, `8883` MQTTS, `9001` WebSockets (TLS) |
@@ -48,11 +48,14 @@ Host aliases: short `mqtt` or FQDN `mqtt.mosquitto.svc.cluster.local`. Env `MQTT
 go-auth exits the broker as soon as the LDAP outpost refuses TCP or the `ldapservice` bind is rejected. Init `ldap-preflight` handles both before Mosquitto starts:
 
 - Outpost down: the pod stays in `Init` and logs `not accepting LDAP connections`, including the `kubectl logs` command for `ak-outpost-ldap-stadthagen-outpost`. It retries for 10 minutes (40 × 15s), then fails that init.
-- Wrong password or surrounding whitespace: init exits immediately with `invalid credentials` and names Secret `mosquitto-ldap` / SecretSpec `MOSQUITTO_LDAP_BIND_PASSWORD`.
+- Wrong password or surrounding whitespace: init exits immediately with `invalid credentials` / whitespace message and names Secret `mosquitto-ldap` / SecretSpec `MOSQUITTO_LDAP_BIND_PASSWORD`.
+- **urlencode trap:** `00-bind.conf` must be literal (`format_encode: none` in Infra_LAB `k3s_secrets`). Default Ansible `urlencode` turns `@` into `%40` and breaks LDAP bind even when SecretSpec is correct.
 
 ```bash
 kubectl -n mosquitto logs deploy/mosquitto -c ldap-preflight
 ```
+
+BookStack runbook + SeeCode flowchart: [Fehlersuche LDAP](../../../docs/bookstack/books/mosquitto/06-fehlersuche-ldap.md).
 
 ## Verify
 

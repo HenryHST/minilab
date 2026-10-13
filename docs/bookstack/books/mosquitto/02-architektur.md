@@ -1,13 +1,13 @@
 ---
 title: Architektur
-book_version: "1.2.0"
+book_version: "1.3.0"
 ---
 
 # Architektur
 
 ## Broker
 
-- Image `ghcr.io/henryhst/mosquitto-custom:1.1.1` (Mosquitto 2.1.2 Debian/glibc + vendored go-auth LDAP-Plugin; amd64 nodeSelector).
+- Image `ghcr.io/henryhst/mosquitto-custom:1.1.2` (Mosquitto 2.1.2 Debian/glibc + vendored go-auth LDAP-Plugin; amd64 nodeSelector).
 - Conf `/mosquitto/config/mosquitto.conf` (bind password inject im init `tls-bootstrap`).
 - `replicas: 1`, Strategy `Recreate`, PVC `mosquitto-data` 1 Gi Longhorn RWO.
 - `sys_interval 10` — publiziert `$SYS/#` für den Exporter.

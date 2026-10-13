@@ -42,8 +42,10 @@ spec:
             - name: WUD_PUBLIC_URL
               value: https://wupd.stadthagen.dev
             # Kubernetes watcher (in-cluster ServiceAccount, all namespaces)
+            # Hourly rediscovery — watchatstart only runs when the store is empty,
+            # so new namespaces (e.g. paperless) otherwise wait until the next cron.
             - name: WUD_WATCHER_KUBERNETES_NXK3_CRON
-              value: "0 6 * * *"
+              value: "0 * * * *"
             - name: WUD_WATCHER_KUBERNETES_NXK3_WATCHATSTART
               value: "true"
             - name: WUD_WATCHER_KUBERNETES_NXK3_WATCHBYDEFAULT
@@ -115,13 +117,14 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
-            failureThreshold: 3
+            # Cluster-wide k8s watch can block the event loop for minutes.
+            failureThreshold: 10
           resources:
             requests:
               cpu: 50m
-              memory: 128Mi
+              memory: 256Mi
             limits:
-              memory: 512Mi
+              memory: 1Gi
           securityContext:
             allowPrivilegeEscalation: false
           volumeMounts:

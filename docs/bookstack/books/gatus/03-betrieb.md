@@ -33,9 +33,15 @@ NFS-Backup-CronJobs haben ein Fenster von 30 Minuten ab der Cron-Minute, Zeitzon
 
 ## Öffentliche Übersicht
 
-`https://status.stadthagen.dev/uebersicht` zeigt nur die Health-Badges und verlangt kein Login. Die Homepage bettet die Seite ein. Historie und die volle Liste bleiben hinter OIDC.
+`https://status.stadthagen.dev/uebersicht` zeigt Health-Badges und verlangt kein Login. Die Homepage bettet die Seite ein. Historie und die volle Liste bleiben hinter OIDC.
 
-Ein neuer Check braucht ein Bild auf dieser Seite. Der Badge-Schlüssel ist `gruppe_name`, zum Beispiel `extern_mail-smtp`.
+Ein neuer Gatus-Check braucht ein Bild auf dieser Seite. Der Badge-Schlüssel ist `gruppe_name`, zum Beispiel `extern_mail-smtp`.
+
+### nXk3 cluster (Kromgo)
+
+Oben auf der Übersicht: Abschnitt **nXk3 cluster** mit SVG-Badges von `kromgo.stadthagen.dev` (PromQL wie Grafana **nXk3 Node Health**): `nodes_ready`, `nodes_notready`, `disk_pressure`, `memory_pressure`, `root_free_min`, `longhorn_ready`.
+
+Das sind **keine** Gatus-Endpoints — nur Einbettung. Kromgo ist LAN-only (ADR-0019). Alerts bleiben bei PrometheusRule `nxk3-node-stability`. Details: Infra_LAB Buch K3s → Observability Phase 4.
 
 ## Login
 

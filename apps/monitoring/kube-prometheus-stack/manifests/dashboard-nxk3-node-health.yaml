@@ -59,7 +59,7 @@ data:
           },
           "id": 1,
           "options": {
-            "content": "## nXk3 Node Health\\n\\nReady / Pressure / root free% / Longhorn. Alerts: `nxk3-node-stability`. Runbook: Infra_LAB `docs/node-stability.md`. Weekly: Semaphore **08 Weekly stability check**.\\n\\nHubble/Cilium UI nur bei Netz-Incidents \u2014 nicht als Dauer-Stabilit\u00e4tshebel.",
+            "content": "## nXk3 Node Health\\n\\nReady / Pressure / root free% / Longhorn. Alerts: `nxk3-node-stability`. Runbook: Infra_LAB `docs/node-stability.md`. Weekly: Semaphore **08 Weekly stability check**.\\n\\nPublic LAN badges: [Kromgo](https://kromgo.stadthagen.dev/badges/nodes_ready) · Gatus [Übersicht](https://status.stadthagen.dev/uebersicht) (Abschnitt nXk3 cluster).\\n\\nHubble/Cilium UI nur bei Netz-Incidents \u2014 nicht als Dauer-Stabilit\u00e4tshebel.",
             "mode": "markdown"
           },
           "title": "",

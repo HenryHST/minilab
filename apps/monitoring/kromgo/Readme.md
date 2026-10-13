@@ -15,6 +15,18 @@ Prometheus metric badges on `https://kromgo.stadthagen.dev` (Argo app `kromgo`, 
 - App NS: ingress Traefik; egress monitoring:9090 + kube-system DNS
 - Prometheus (`apps/monitoring/kube-prometheus-stack/manifests/networkpolicy.yaml`): allow ingress from NS `kromgo` on :9090
 
+## Badges
+
+| id | Meaning |
+|----|---------|
+| `cluster_cpu` / `cluster_memory` / `pod_count` | Cluster utilisation |
+| `nodes_ready` / `nodes_notready` | kube-state Ready conditions (Phase 4) |
+| `disk_pressure` / `memory_pressure` | Node pressure counts |
+| `root_free_min` | Min root filesystem free % (alert threshold 20 %) |
+| `longhorn_ready` | Longhorn nodes with `condition=ready` |
+
+Embedded on Gatus anonymous overview (`https://status.stadthagen.dev/uebersicht` → section **nXk3 cluster**). Kromgo is LAN-only (ADR-0019).
+
 ## Verify
 
 ```bash
@@ -22,6 +34,10 @@ kubectl -n kromgo get pods,ingressroute,certificate
 dig +short A kromgo.stadthagen.dev
 curl -kI https://kromgo.stadthagen.dev/
 curl -kI https://kromgo.stadthagen.dev/badges/cluster_cpu
+curl -kI https://kromgo.stadthagen.dev/badges/nodes_ready
+curl -kI https://kromgo.stadthagen.dev/badges/disk_pressure
 ```
+
+After ConfigMap changes: `kubectl -n kromgo rollout restart deploy/kromgo` (subPath mount).
 
 ADR: [`docs/adr/0019-kromgo.md`](../../docs/adr/0019-kromgo.md). Upstream: [home-operations/kromgo](https://github.com/home-operations/kromgo).

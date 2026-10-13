@@ -46,6 +46,14 @@ data:
     </head>
     <body>
       <h1><a href="https://status.stadthagen.dev">Umgebung</a></h1>
+      <!-- nXk3 cluster: Kromgo PromQL badges (LAN-only, ADR-0019). Not Gatus HTTP checks. -->
+      <h2>nXk3 cluster</h2>
+      <img alt="nodes_ready" src="https://kromgo.stadthagen.dev/badges/nodes_ready">
+      <img alt="nodes_notready" src="https://kromgo.stadthagen.dev/badges/nodes_notready">
+      <img alt="disk_pressure" src="https://kromgo.stadthagen.dev/badges/disk_pressure">
+      <img alt="memory_pressure" src="https://kromgo.stadthagen.dev/badges/memory_pressure">
+      <img alt="root_free_min" src="https://kromgo.stadthagen.dev/badges/root_free_min">
+      <img alt="longhorn_ready" src="https://kromgo.stadthagen.dev/badges/longhorn_ready">
       <h2>homelab</h2>
       <img alt="authentik" src="/api/v1/endpoints/homelab_authentik/health/badge.svg">
       <img alt="it-tools" src="/api/v1/endpoints/homelab_it-tools/health/badge.svg">

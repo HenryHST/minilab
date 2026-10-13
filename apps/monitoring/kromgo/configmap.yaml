@@ -14,14 +14,54 @@ data:
         title: CPU
         query: 'round(cluster:node_cpu:ratio_rate5m * 100, 0.1)'
         valueExpr: string(result) + "%"
+        colorExpr: 'colorScale(result, [35.0, 75.0], ["green", "orange", "red"])'
         icon: mdi:cpu-64-bit
       - id: cluster_memory
         title: Memory
         query: 'round((1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes)) * 100, 0.1)'
         valueExpr: string(result) + "%"
+        colorExpr: 'colorScale(result, [35.0, 75.0], ["green", "orange", "red"])'
         icon: mdi:memory
       - id: pod_count
         title: Pods
         query: 'count(kube_pod_info)'
         valueExpr: string(int(result))
+        colorExpr: '"blue"'
         icon: si:kubernetes
+      # Phase-4 nXk3 Node Health (same PromQL as Grafana dashboard nxk3-node-health)
+      - id: nodes_ready
+        title: Ready
+        query: 'count(kube_node_status_condition{condition="Ready",status="true"} == 1)'
+        valueExpr: string(int(result))
+        colorExpr: 'colorScale(result, [1.0], ["red", "green"])'
+        icon: si:kubernetes
+      - id: nodes_notready
+        title: NotReady
+        query: 'count(kube_node_status_condition{condition="Ready",status="true"} == 0) or vector(0)'
+        valueExpr: string(int(result))
+        colorExpr: 'colorScale(result, [1.0], ["green", "red"])'
+        icon: mdi:alert
+      - id: disk_pressure
+        title: DiskPressure
+        query: 'count(kube_node_status_condition{condition="DiskPressure",status="true"} == 1) or vector(0)'
+        valueExpr: string(int(result))
+        colorExpr: 'colorScale(result, [1.0], ["green", "orange"])'
+        icon: mdi:harddisk
+      - id: memory_pressure
+        title: MemoryPressure
+        query: 'count(kube_node_status_condition{condition="MemoryPressure",status="true"} == 1) or vector(0)'
+        valueExpr: string(int(result))
+        colorExpr: 'colorScale(result, [1.0], ["green", "orange"])'
+        icon: mdi:memory
+      - id: root_free_min
+        title: Root free% min
+        query: 'round(min(100 * (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs",mountpoint="/"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs",mountpoint="/"})), 0.1)'
+        valueExpr: string(result) + "%"
+        colorExpr: 'colorScale(result, [20.0, 30.0], ["red", "orange", "green"])'
+        icon: mdi:harddisk
+      - id: longhorn_ready
+        title: LH Ready
+        query: 'count(longhorn_node_status{condition="ready"} == 1) or vector(0)'
+        valueExpr: string(int(result))
+        colorExpr: 'colorScale(result, [1.0], ["red", "green"])'
+        icon: mdi:database

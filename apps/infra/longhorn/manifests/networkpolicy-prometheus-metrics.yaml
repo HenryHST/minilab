@@ -1,0 +1,25 @@
+# Allow Prometheus (monitoring NS) to scrape longhorn-manager metrics :9500.
+# Complements chart NetPol longhorn-manager (in-NS peers only); policies union for ingress.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: longhorn-manager-prometheus-metrics
+  namespace: longhorn-system
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/part-of: longhorn
+    app.kubernetes.io/component: metrics
+spec:
+  podSelector:
+    matchLabels:
+      app: longhorn-manager
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9500

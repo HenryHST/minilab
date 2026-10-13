@@ -23,7 +23,8 @@ Prometheus metric badges on `https://kromgo.stadthagen.dev` (Argo app `kromgo`, 
 | `nodes_ready` / `nodes_notready` | kube-state Ready conditions (Phase 4) |
 | `disk_pressure` / `memory_pressure` | Node pressure counts |
 | `root_free_min` | Min root filesystem free % (alert threshold 20 %) |
-| `longhorn_ready` | `longhorn-manager` DaemonSet Ready count (node_status metric not scraped yet) |
+| `longhorn_ready` | Longhorn nodes with `longhorn_node_status{condition="ready"}` |
+| `cilium_unavailable` | Cilium DaemonSet unavailable pods (`kube-system/cilium`) |
 
 Embedded on Gatus anonymous overview (`https://status.stadthagen.dev/uebersicht` → section **nXk3 cluster**). Kromgo is LAN-only (ADR-0019).
 
@@ -36,6 +37,8 @@ curl -kI https://kromgo.stadthagen.dev/
 curl -kI https://kromgo.stadthagen.dev/badges/cluster_cpu
 curl -kI https://kromgo.stadthagen.dev/badges/nodes_ready
 curl -kI https://kromgo.stadthagen.dev/badges/disk_pressure
+curl -kI https://kromgo.stadthagen.dev/badges/longhorn_ready
+curl -kI https://kromgo.stadthagen.dev/badges/cilium_unavailable
 ```
 
 After ConfigMap changes: `kubectl -n kromgo rollout restart deploy/kromgo` (subPath mount).

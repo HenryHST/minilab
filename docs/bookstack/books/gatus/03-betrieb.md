@@ -39,7 +39,7 @@ Ein neuer Gatus-Check braucht ein Bild auf dieser Seite. Der Badge-Schlüssel is
 
 ### nXk3 cluster (Kromgo)
 
-Oben auf der Übersicht: Abschnitt **nXk3 cluster** mit SVG-Badges von `kromgo.stadthagen.dev` (PromQL wie Grafana **nXk3 Node Health**): `nodes_ready`, `nodes_notready`, `disk_pressure`, `memory_pressure`, `root_free_min`, `longhorn_ready`.
+Oben auf der Übersicht: Abschnitt **nXk3 cluster** mit SVG-Badges von `kromgo.stadthagen.dev` (PromQL wie Grafana **nXk3 Node Health**): `nodes_ready`, `nodes_notready`, `disk_pressure`, `memory_pressure`, `root_free_min`, `longhorn_ready`, `cilium_unavailable`.
 
 Das sind **keine** Gatus-Endpoints — nur Einbettung. Kromgo ist LAN-only (ADR-0019). Alerts bleiben bei PrometheusRule `nxk3-node-stability`. Details: Infra_LAB Buch K3s → Observability Phase 4.
 

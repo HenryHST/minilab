@@ -20,7 +20,9 @@ Helm-Ingress ist aus. Die IngressRoute `longhorn` auf `traefik-external` reicht 
 
 ## Metriken
 
-ServiceMonitor mit Label `release: kube-prometheus-stack`.
+ServiceMonitor mit Label `release: kube-prometheus-stack` (Chart: `metrics.serviceMonitor.enabled`). Scraped Port **9500** am `longhorn-manager`.
+
+Die Chart-NetworkPolicy `longhorn-manager` lässt nur Longhorn-Pods im Namespace zu. Zusätzlich erlaubt `manifests/networkpolicy-prometheus-metrics.yaml` Ingress aus Namespace **monitoring** auf TCP 9500 — sonst bleiben Prometheus-Targets down (`context deadline exceeded`).
 
 ## Was nicht Longhorn ist
 

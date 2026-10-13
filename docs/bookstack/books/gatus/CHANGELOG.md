@@ -1,5 +1,11 @@
 # Changelog — Buch Gatus
 
+## [1.1.1] - 2026-10-13
+
+### Changed
+
+- Betrieb: Badge `cilium_unavailable`; `longhorn_ready` über `longhorn_node_status`
+
 ## [1.1.0] - 2026-10-13
 
 ### Added

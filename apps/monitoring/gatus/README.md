@@ -22,7 +22,7 @@ NFS backup CronJobs get a 30-minute maintenance window from the cron minute, tim
 
 `https://status.stadthagen.dev/uebersicht` is anonymous and shows health badges (`manifests/overview.yaml`). The dashboard and its history stay behind OIDC. A new Gatus check needs an `<img>` there; the badge key is `group_name`.
 
-Section **nXk3 cluster** embeds Kromgo PromQL badges (Ready / Pressure / root free% / Longhorn) from `https://kromgo.stadthagen.dev/badges/<id>` — not Gatus HTTP endpoints. Kromgo is LAN-only (ADR-0019); badges load on the homepage embed and LAN clients.
+Section **nXk3 cluster** embeds Kromgo PromQL badges (Ready / Pressure / root free% / Longhorn / Cilium DS) from `https://kromgo.stadthagen.dev/badges/<id>` — not Gatus HTTP endpoints. Kromgo is LAN-only (ADR-0019); badges load on the homepage embed and LAN clients.
 
 ## Grafana
 

@@ -60,9 +60,14 @@ data:
         colorExpr: 'colorScale(result, [20.0, 30.0], ["red", "orange", "green"])'
         icon: mdi:harddisk
       - id: longhorn_ready
-        title: LH mgr Ready
-        # longhorn_node_status is not scraped yet; use manager DS Ready (same as Grafana panel)
-        query: 'kube_daemonset_status_number_ready{namespace="longhorn-system",daemonset="longhorn-manager"} or vector(0)'
+        title: LH Ready
+        query: 'count(longhorn_node_status{condition="ready"} == 1) or vector(0)'
         valueExpr: string(int(result))
         colorExpr: 'colorScale(result, [1.0], ["red", "green"])'
         icon: mdi:database
+      - id: cilium_unavailable
+        title: Cilium unavail
+        query: 'kube_daemonset_status_number_unavailable{namespace="kube-system",daemonset="cilium"} or vector(0)'
+        valueExpr: string(int(result))
+        colorExpr: 'colorScale(result, [1.0], ["green", "orange"])'
+        icon: si:cilium

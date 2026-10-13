@@ -54,6 +54,7 @@ data:
       <img alt="memory_pressure" src="https://kromgo.stadthagen.dev/badges/memory_pressure">
       <img alt="root_free_min" src="https://kromgo.stadthagen.dev/badges/root_free_min">
       <img alt="longhorn_ready" src="https://kromgo.stadthagen.dev/badges/longhorn_ready">
+      <img alt="cilium_unavailable" src="https://kromgo.stadthagen.dev/badges/cilium_unavailable">
       <h2>homelab</h2>
       <img alt="authentik" src="/api/v1/endpoints/homelab_authentik/health/badge.svg">
       <img alt="it-tools" src="/api/v1/endpoints/homelab_it-tools/health/badge.svg">

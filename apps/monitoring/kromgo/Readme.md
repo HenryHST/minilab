@@ -23,7 +23,7 @@ Prometheus metric badges on `https://kromgo.stadthagen.dev` (Argo app `kromgo`, 
 | `nodes_ready` / `nodes_notready` | kube-state Ready conditions (Phase 4) |
 | `disk_pressure` / `memory_pressure` | Node pressure counts |
 | `root_free_min` | Min root filesystem free % (alert threshold 20 %) |
-| `longhorn_ready` | Longhorn nodes with `condition=ready` |
+| `longhorn_ready` | `longhorn-manager` DaemonSet Ready count (node_status metric not scraped yet) |
 
 Embedded on Gatus anonymous overview (`https://status.stadthagen.dev/uebersicht` → section **nXk3 cluster**). Kromgo is LAN-only (ADR-0019).
 

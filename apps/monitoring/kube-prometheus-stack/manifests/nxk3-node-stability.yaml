@@ -1,0 +1,100 @@
+# nXk3 node / Longhorn stability (Phase 0).
+# Source of truth for Argo (kube-prometheus-stack extra manifests).
+# Mirror: Infra_LAB ansible/playbooks/k3s_cluster/manifests/monitoring/nxk3-node-stability-rules.yaml
+# Runbook: Infra_LAB ansible/playbooks/k3s_cluster/docs/node-stability.md
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: nxk3-node-stability
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: nxk3-node-stability
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: nxk3.node.stability
+      rules:
+        - alert: NXk3NodeNotReady
+          expr: |
+            kube_node_status_condition{condition="Ready",status="true"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: "Node {{ $labels.node }} not Ready"
+            description: >-
+              Kubernetes node {{ $labels.node }} has been NotReady for >5m.
+              See Infra_LAB ansible/playbooks/k3s_cluster/docs/node-stability.md.
+
+        - alert: NXk3NodeMemoryPressure
+          expr: |
+            kube_node_status_condition{condition="MemoryPressure",status="true"} == 1
+          for: 5m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: "MemoryPressure on {{ $labels.node }}"
+            description: >-
+              Node {{ $labels.node }} reports MemoryPressure. Check VM RAM
+              (terraform/proxmox_k3s/dev.tfvars) and kubelet systemReserved.
+
+        - alert: NXk3NodeDiskPressure
+          expr: |
+            kube_node_status_condition{condition="DiskPressure",status="true"} == 1
+          for: 5m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: "DiskPressure on {{ $labels.node }}"
+            description: >-
+              Node {{ $labels.node }} reports DiskPressure. Soft eviction is 15%;
+              Longhorn shares worker root. See BookStack K3s → Longhorn DiskPressure.
+
+        # Early warning before soft eviction (15%): free < 20% on root.
+        - alert: NXk3RootFilesystemLow
+          expr: |
+            (
+              node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs",mountpoint="/"}
+                / node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs",mountpoint="/"}
+            ) < 0.20
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: "Root filesystem <20% free on {{ $labels.instance }}"
+            description: >-
+              Mount `/` on {{ $labels.instance }} has been under 20% free for >10m
+              ({{ $value | humanizePercentage }}). Soft DiskPressure triggers at ~15%.
+              Check Longhorn usage on Proxmox workers: df -h /; du -sh /var/lib/longhorn.
+
+        - alert: NXk3LonghornManagerUnavailable
+          expr: |
+            kube_daemonset_status_number_unavailable{namespace="longhorn-system",daemonset="longhorn-manager"} > 0
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: "longhorn-manager unavailable on {{ $value }} node(s)"
+            description: >-
+              DaemonSet longhorn-system/longhorn-manager has unavailable pods.
+              Often follows DiskPressure (managers Evicted). Check:
+              kubectl -n longhorn-system get pods -l app=longhorn-manager -o wide
+
+        - alert: NXk3LonghornNodeNotReady
+          expr: |
+            longhorn_node_status{condition="ready"} == 0
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: "Longhorn node {{ $labels.node }} not ready"
+            description: >-
+              Longhorn reports node {{ $labels.node }} condition ready=0.
+              Cross-check Kubernetes DiskPressure / ManagerPodDown:
+              kubectl -n longhorn-system get nodes.longhorn.io

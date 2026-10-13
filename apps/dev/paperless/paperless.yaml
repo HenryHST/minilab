@@ -131,7 +131,7 @@ spec:
                   key: PAPERLESS_SOCIALACCOUNT_PROVIDERS
             - name: PAPERLESS_ACCOUNT_DEFAULT_HTTP_PROTOCOL
               value: https
-            # Map Authentik groups claim → Django (paperless_admins / paperless_users)
+            # Map Authentik groups claim → Django (access + familie_*/vs-nfd; groups must exist — inbox-tag-job)
             - name: PAPERLESS_SOCIAL_ACCOUNT_SYNC_GROUPS
               value: "true"
             - name: PAPERLESS_SOCIAL_ACCOUNT_SYNC_GROUPS_CLAIM

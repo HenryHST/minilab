@@ -46,7 +46,7 @@ spec:
                   t.is_inbox_tag = True
                   t.save(update_fields=['is_inbox_tag'])
               print('inbox tag ok', 'created=' + str(created))
-              # OIDC groups (Authentik paperless_admins / paperless_users)
+              # OIDC groups (Authentik access + document-permission groups)
               admins, _ = Group.objects.get_or_create(name='paperless_admins')
               users, _ = Group.objects.get_or_create(name='paperless_users')
               doc_apps = ('documents', 'paperless', 'paperless_mail', 'auth', 'guardian')
@@ -63,5 +63,12 @@ spec:
                   'view_note', 'add_note', 'change_note', 'delete_note',
               )
               users.permissions.set(Permission.objects.filter(codename__in=user_codenames))
+              # Document-permission groups (Authentik OIDC names must match)
+              doc_group_names = ('familie_stadthagen', 'familie_erdmann', 'vs-nfd')
+              user_perms = Permission.objects.filter(codename__in=user_codenames)
+              for name in doc_group_names:
+                  g, _ = Group.objects.get_or_create(name=name)
+                  g.permissions.set(user_perms)
+                  print('doc group ok', name, 'perms', g.permissions.count())
               print('oidc groups ok', 'admins_perms', admins.permissions.count(), 'users_perms', users.permissions.count())
               "

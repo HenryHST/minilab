@@ -12,6 +12,7 @@ Document management with OCR (deu+eng), Authentik OIDC, Gotenberg + Tika, HPScan
 | OCR workers | Deployment `paperless-worker` + HPA 1–3 (pinned to `nxk3-w01` with web; hostPath media) |
 | Storage | **Postgres:** CNPG `paperless-pg` (Longhorn). **App:** hostPath/local on `nxk3-w01` — `/var/lib/paperless-{data,media,export}` (`media-pvc.yaml`). **Consume:** HPScan NFS. **Backups:** NFS `…/infra01/paperless-backups` |
 | IMAP inbox | `paperless@stadthagen.dev` @ `mail.henrystadthagen.de:993` (Secret `paperless-imap`, PostSync `mail-inbox-job`) |
+| OIDC groups | Access: `paperless_admins` / `paperless_users`. Document: `familie_stadthagen` / `familie_erdmann` / `vs-nfd` (PostSync `inbox-tag-job`; Authentik membership in Infra_LAB) |
 
 ## Secrets (before first sync)
 

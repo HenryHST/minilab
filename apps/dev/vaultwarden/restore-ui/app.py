@@ -3,6 +3,7 @@ import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlencode
 
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -11,10 +12,13 @@ from fastapi.templating import Jinja2Templates
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
+from i18n import COOKIE_NAME, make_translator, normalize_lang, t
+
 BACKUP_DIR = Path(os.environ.get("BACKUP_DIR", "/backup"))
 NAMESPACE = os.environ.get("NAMESPACE", "vaultwarden")
 VW_REPLICAS = os.environ.get("VW_REPLICAS", "1")
 ARCHIVE_RE = re.compile(r"^vaultwarden-\d{8}-\d{6}\.tar\.gz$")
+COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 
 def _resolve_app_version() -> str:
@@ -34,17 +38,53 @@ def _resolve_app_version() -> str:
 APP_VERSION = _resolve_app_version()
 
 app = FastAPI(title="Vaultwarden Restore")
-templates = Jinja2Templates(directory="/app/templates")
+_templates_dir = Path(__file__).resolve().parent / "templates"
+if not _templates_dir.is_dir():
+    _templates_dir = Path("/app/templates")
+templates = Jinja2Templates(directory=str(_templates_dir))
 templates.env.globals["app_version"] = APP_VERSION
+
+
+def resolve_lang(request: Request) -> str:
+    return normalize_lang(request.cookies.get(COOKIE_NAME))
 
 
 def render(request: Request, name: str, context: dict, status_code: int = 200):
     """Jinja response compatible with Starlette >=1.0 (request-first API)."""
+    lang = resolve_lang(request)
     ctx = {k: v for k, v in context.items() if k != "request"}
+    ctx.setdefault("lang", lang)
+    ctx.setdefault("t", make_translator(lang))
     return templates.TemplateResponse(request, name, ctx, status_code=status_code)
 
 
-app.mount("/static", StaticFiles(directory="/app/static"), name="static")
+_static_dir = Path(__file__).resolve().parent / "static"
+if not _static_dir.is_dir():
+    _static_dir = Path("/app/static")
+app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
+
+
+@app.middleware("http")
+async def lang_cookie_middleware(request: Request, call_next):
+    raw = request.query_params.get("lang")
+    if raw is None:
+        return await call_next(request)
+    lang = normalize_lang(raw)
+    # Drop lang from query and redirect (PRG) so refresh keeps cookie only.
+    q = [(k, v) for k, v in request.query_params.multi_items() if k != "lang"]
+    target = request.url.path
+    if q:
+        target = f"{target}?{urlencode(q)}"
+    resp = RedirectResponse(url=target or "/", status_code=303)
+    resp.set_cookie(
+        COOKIE_NAME,
+        lang,
+        max_age=COOKIE_MAX_AGE,
+        httponly=False,
+        samesite="lax",
+        path="/",
+    )
+    return resp
 
 
 def k8s():
@@ -111,17 +151,17 @@ def running_restore_jobs(batch: client.BatchV1Api):
     return active, recent[:5]
 
 
-def job_logs(core: client.CoreV1Api, job_name: str) -> str:
+def job_logs(core: client.CoreV1Api, job_name: str, lang: str) -> str:
     pods = core.list_namespaced_pod(
         NAMESPACE, label_selector=f"job-name={job_name}"
     )
     if not pods.items:
-        return "(no pods yet)"
+        return t("logs_no_pods", lang)
     pod = pods.items[0].metadata.name
     try:
         return core.read_namespaced_pod_log(pod, NAMESPACE, tail_lines=80)
     except ApiException as e:
-        return f"(logs unavailable: {e.reason})"
+        return t("logs_unavailable", lang, reason=e.reason)
 
 
 @app.get("/healthz")
@@ -156,12 +196,12 @@ def restore(
     confirm: str = Form(""),
     force: str = Form(""),
 ):
+    lang = resolve_lang(request)
     batch, core = k8s()
     archives = list_archives()
     active, recent = running_restore_jobs(batch)
     user = request.headers.get("X-authentik-username", "")
     ctx = {
-        "request": request,
         "archives": archives,
         "active": active,
         "recent": recent,
@@ -171,27 +211,24 @@ def restore(
     }
 
     if active:
-        ctx["error"] = "A restore job is already running."
+        ctx["error"] = t("err_already_running", lang)
         return render(request, "index.html", ctx, status_code=409)
 
     if confirm.strip() != "RESTORE":
-        ctx["error"] = 'Type RESTORE to confirm.'
+        ctx["error"] = t("err_confirm", lang)
         return render(request, "index.html", ctx, status_code=400)
 
     if archive != "latest" and not ARCHIVE_RE.match(archive):
-        ctx["error"] = "Invalid archive name."
+        ctx["error"] = t("err_invalid_archive", lang)
         return render(request, "index.html", ctx, status_code=400)
 
     if archive != "latest" and not (BACKUP_DIR / archive).is_file():
-        ctx["error"] = f"Archive not found: {archive}"
+        ctx["error"] = t("err_archive_not_found", lang, archive=archive)
         return render(request, "index.html", ctx, status_code=404)
 
     force_flag = "true" if str(force).strip().lower() in ("true", "on", "1", "yes") else "false"
     if force_flag != "true":
-        ctx["error"] = (
-            "Overwrite is required: enable \"Overwrite existing data\" "
-            "(PVC already has db.sqlite3; without force the worker aborts)."
-        )
+        ctx["error"] = t("err_force_required", lang)
         return render(request, "index.html", ctx, status_code=400)
 
     ts = time.strftime("%y%m%d%H%M%S", time.gmtime())
@@ -265,7 +302,7 @@ def restore(
     try:
         batch.create_namespaced_job(NAMESPACE, job)
     except ApiException as e:
-        ctx["error"] = f"Failed to create job: {e.reason}"
+        ctx["error"] = t("err_create_job", lang, reason=e.reason)
         return render(request, "index.html", ctx, status_code=500)
 
     return RedirectResponse(url=f"/jobs/{job_name}", status_code=303)
@@ -273,6 +310,7 @@ def restore(
 
 @app.get("/jobs/{job_name}", response_class=HTMLResponse)
 def job_status(request: Request, job_name: str):
+    lang = resolve_lang(request)
     batch, core = k8s()
     user = request.headers.get("X-authentik-username", "")
     try:
@@ -285,8 +323,9 @@ def job_status(request: Request, job_name: str):
                 "user": user,
                 "job_name": job_name,
                 "status": "NotFound",
+                "status_label": t("status_NotFound", lang),
                 "archive": "?",
-                "logs": "Job not found",
+                "logs": t("logs_job_not_found", lang),
                 "active": False,
                 "started_at": None,
                 "finished_at": None,
@@ -317,10 +356,11 @@ def job_status(request: Request, job_name: str):
             "user": user,
             "job_name": job_name,
             "status": status,
+            "status_label": t(f"status_{status}", lang),
             "archive": (j.metadata.annotations or {}).get(
                 "vaultwarden.restore/archive", "?"
             ),
-            "logs": job_logs(core, job_name),
+            "logs": job_logs(core, job_name, lang),
             "active": is_active or status == "Pending",
             "started_at": started_at,
             "finished_at": finished_at,

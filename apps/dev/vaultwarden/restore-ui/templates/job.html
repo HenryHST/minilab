@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ lang }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {% if active %}<meta http-equiv="refresh" content="5">{% endif %}
-  <title>{{ job_name }} · Vaultwarden Restore</title>
+  <title>{{ t('job_page_title', job_name=job_name) }}</title>
   <link rel="stylesheet" href="/static/vaultwarden-restore.css">
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/static/favicon-32x32.png" type="image/png" sizes="32x32">
@@ -12,53 +12,43 @@
 </head>
 <body>
   <main class="dashboard">
-    <header class="topbar">
-      <div class="brand">
-        <img src="/static/logo.svg" alt="Vaultwarden logo" width="38" height="38">
-        <div>
-          <h1>Restore job</h1>
-          <p class="muted"><code>{{ job_name }}</code></p>
-        </div>
-      </div>
-
-      {% if user %}
-      <div class="user-pill">{{ user }}</div>
-      {% endif %}
-    </header>
+    {% with brand_title=t('job_heading'), brand_subtitle='<code>' ~ job_name ~ '</code>' %}
+    {% include "_topbar.html" %}
+    {% endwith %}
 
     <section class="panel status-panel">
       <div class="panel-header">
-        <h2>Job status</h2>
+        <h2>{{ t('job_status') }}</h2>
         <span class="badge
           {% if status == 'Succeeded' %}ok
           {% elif status == 'Failed' %}bad
           {% elif status == 'Running' or status == 'Pending' %}warn
           {% else %}muted
           {% endif %}">
-          {{ status }}
+          {{ status_label }}
         </span>
       </div>
 
       <div class="info-grid">
         <div class="info-item">
-          <span class="label">Archive</span>
+          <span class="label">{{ t('label_archive') }}</span>
           <strong>{{ archive }}</strong>
         </div>
         <div class="info-item">
-          <span class="label">Mode</span>
-          <strong>{% if active %}Live follow{% else %}Completed{% endif %}</strong>
+          <span class="label">{{ t('label_mode') }}</span>
+          <strong>{% if active %}{{ t('mode_live') }}{% else %}{{ t('mode_completed') }}{% endif %}</strong>
         </div>
 
         {% if started_at %}
         <div class="info-item">
-          <span class="label">Started</span>
+          <span class="label">{{ t('label_started') }}</span>
           <strong>{{ started_at.strftime('%Y-%m-%d %H:%M UTC') }}</strong>
         </div>
         {% endif %}
 
         {% if finished_at %}
         <div class="info-item">
-          <span class="label">Finished</span>
+          <span class="label">{{ t('label_finished') }}</span>
           <strong>{{ finished_at.strftime('%Y-%m-%d %H:%M UTC') }}</strong>
         </div>
         {% endif %}
@@ -67,16 +57,16 @@
 
     <section class="panel">
       <div class="panel-header">
-        <h2>Restore output</h2>
-        <span class="muted">{% if active %}Auto-refresh{% else %}Final output{% endif %}</span>
+        <h2>{{ t('restore_output') }}</h2>
+        <span class="muted">{% if active %}{{ t('auto_refresh') }}{% else %}{{ t('final_output') }}{% endif %}</span>
       </div>
 
       <pre class="logs">{{ logs }}</pre>
     </section>
 
     <div class="actions">
-      <a class="btn secondary" href="/">Back</a>
-      <a class="btn primary" href="/jobs/{{ job_name }}">Refresh</a>
+      <a class="btn secondary" href="/">{{ t('btn_back') }}</a>
+      <a class="btn primary" href="/jobs/{{ job_name }}">{{ t('btn_refresh') }}</a>
     </div>
   </main>
 

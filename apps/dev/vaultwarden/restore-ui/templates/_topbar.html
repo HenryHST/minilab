@@ -1,0 +1,20 @@
+<header class="topbar">
+  <div class="brand">
+    <img src="/static/logo.svg" alt="{{ t('logo_alt') }}" width="38" height="38">
+    <div>
+      <h1>{{ brand_title }}</h1>
+      <p class="muted">{{ brand_subtitle|safe }}</p>
+    </div>
+  </div>
+
+  <div class="topbar-actions">
+    <nav class="lang-switch" aria-label="{{ t('lang_switch_aria') }}">
+      <a href="?lang=de" class="{% if lang == 'de' %}active{% endif %}" hreflang="de" lang="de">DE</a>
+      <span class="lang-sep" aria-hidden="true">|</span>
+      <a href="?lang=en" class="{% if lang == 'en' %}active{% endif %}" hreflang="en" lang="en">EN</a>
+    </nav>
+    {% if user %}
+    <div class="user-pill">{{ user }}</div>
+    {% endif %}
+  </div>
+</header>

@@ -72,6 +72,45 @@ a { color: inherit; }
   font-size: 0.85rem;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-shrink: 0;
+}
+
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.lang-switch a {
+  color: var(--muted);
+  text-decoration: none;
+  padding: 0.1rem 0.15rem;
+}
+
+.lang-switch a:hover {
+  color: var(--text);
+}
+
+.lang-switch a.active {
+  color: var(--primary);
+}
+
+.lang-sep {
+  color: var(--border);
+  user-select: none;
+}
+
 .user-pill {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -477,6 +516,11 @@ input[type="text"]:focus {
   .topbar {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .stats,

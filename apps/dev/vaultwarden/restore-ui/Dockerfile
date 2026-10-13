@@ -35,7 +35,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY --chown=app:app VERSION .
-COPY --chown=app:app app.py .
+COPY --chown=app:app app.py i18n.py .
 COPY --chown=app:app templates/ templates/
 COPY --chown=app:app static/ static/
 

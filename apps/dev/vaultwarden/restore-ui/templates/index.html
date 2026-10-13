@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ lang }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Vaultwarden Restore</title>
+  <title>{{ t('page_title') }}</title>
   <link rel="stylesheet" href="/static/vaultwarden-restore.css">
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/static/favicon-32x32.png" type="image/png" sizes="32x32">
@@ -11,19 +11,9 @@
 </head>
 <body>
   <main class="dashboard">
-    <header class="topbar">
-      <div class="brand">
-        <img src="/static/logo.svg" alt="Vaultwarden logo" width="38" height="38">
-        <div>
-          <h1>Vaultwarden Restore</h1>
-          <p class="muted">Restore a backup into the vaultwarden namespace</p>
-        </div>
-      </div>
-
-      {% if user %}
-      <div class="user-pill">{{ user }}</div>
-      {% endif %}
-    </header>
+    {% with brand_title=t('brand_title'), brand_subtitle=t('brand_subtitle') %}
+    {% include "_topbar.html" %}
+    {% endwith %}
 
     {% if error %}
     <div class="alert danger" role="alert">{{ error }}</div>
@@ -35,7 +25,7 @@
 
     {% if active %}
     <div class="alert warning" role="alert">
-      Restore is already running:
+      {{ t('alert_already_running') }}
       {% for j in active %}
         <a href="/jobs/{{ j.name }}">{{ j.name }}</a>{% if not loop.last %}, {% endif %}
       {% endfor %}
@@ -44,24 +34,24 @@
 
     <section class="stats">
       <div class="stat-card">
-        <span class="label">Backups</span>
+        <span class="label">{{ t('stat_backups') }}</span>
         <strong>{{ archives|length }}</strong>
       </div>
       <div class="stat-card">
-        <span class="label">Latest</span>
-        <strong>{% if archives %}{{ archives[0].name }}{% else %}none{% endif %}</strong>
+        <span class="label">{{ t('stat_latest') }}</span>
+        <strong>{% if archives %}{{ archives[0].name }}{% else %}{{ t('stat_none') }}{% endif %}</strong>
       </div>
       <div class="stat-card">
-        <span class="label">State</span>
-        <strong>{% if active %}running{% else %}ready{% endif %}</strong>
+        <span class="label">{{ t('stat_state') }}</span>
+        <strong>{% if active %}{{ t('stat_running') }}{% else %}{{ t('stat_ready') }}{% endif %}</strong>
       </div>
     </section>
 
     <form method="post" action="/restore" class="restore-form">
       <section class="panel">
         <div class="panel-header">
-          <h2>Select backup</h2>
-          <span class="muted">{{ archives|length }} archives</span>
+          <h2>{{ t('select_backup') }}</h2>
+          <span class="muted">{{ t('archives_count', n=archives|length) }}</span>
         </div>
 
         <div class="archive-list">
@@ -69,8 +59,8 @@
             <input type="radio" name="archive" value="latest" checked>
             <div class="archive-copy">
               <div class="archive-title">
-                <strong>latest</strong>
-                <span class="muted">Newest backup</span>
+                <strong>{{ t('latest_label') }}</strong>
+                <span class="muted">{{ t('newest_backup') }}</span>
               </div>
               <span class="archive-meta">
                 {% if archives %}{{ archives[0].mtime.strftime('%Y-%m-%d %H:%M UTC') }}{% else %}n/a{% endif %}
@@ -91,7 +81,7 @@
           </label>
           {% else %}
           <div class="empty-state">
-            No archives found on the backup volume.
+            {{ t('empty_archives') }}
           </div>
           {% endfor %}
         </div>
@@ -99,32 +89,32 @@
 
       <section class="panel danger-panel">
         <div class="panel-header">
-          <h2>Restore safety</h2>
+          <h2>{{ t('restore_safety') }}</h2>
         </div>
 
         <div class="warning-box">
-          Existing data is kept unless overwrite is explicitly enabled. Without this, the job aborts.
+          {{ t('warning_overwrite') }}
         </div>
 
         <label class="check-row">
           <input type="checkbox" name="force" value="true" required {% if active %}disabled{% endif %}>
           <span>
-            <strong>Overwrite existing data</strong>
-            <small>Clears the Vaultwarden data directory, including db.sqlite3.</small>
+            <strong>{{ t('overwrite_title') }}</strong>
+            <small>{{ t('overwrite_hint') }}</small>
           </span>
         </label>
 
         <label class="confirm-row">
-          <span>Type <strong>RESTORE</strong> to confirm</span>
+          <span>{{ t('confirm_label')|safe }}</span>
           <input type="text" name="confirm" autocomplete="off" spellcheck="false"
                  placeholder="RESTORE" required {% if active %}disabled{% endif %}>
         </label>
       </section>
 
       <div class="actions">
-        <a class="btn secondary" href="/">Refresh</a>
+        <a class="btn secondary" href="/">{{ t('btn_refresh') }}</a>
         <button class="btn primary" type="submit" {% if active %}disabled{% endif %}>
-          Restore archive
+          {{ t('btn_restore') }}
         </button>
       </div>
     </form>
@@ -132,7 +122,7 @@
     {% if recent %}
     <section class="panel">
       <div class="panel-header">
-        <h2>Recent jobs</h2>
+        <h2>{{ t('recent_jobs') }}</h2>
       </div>
 
       <ul class="job-list">
@@ -140,7 +130,7 @@
         <li>
           <a href="/jobs/{{ j.name }}">{{ j.name }}</a>
           <span class="badge {% if j.succeeded %}ok{% elif j.failed %}bad{% else %}muted{% endif %}">
-            {% if j.succeeded %}Succeeded{% elif j.failed %}Failed{% else %}Done{% endif %}
+            {% if j.succeeded %}{{ t('badge_succeeded') }}{% elif j.failed %}{{ t('badge_failed') }}{% else %}{{ t('badge_done') }}{% endif %}
           </span>
           <span class="muted">{{ j.archive }}</span>
         </li>

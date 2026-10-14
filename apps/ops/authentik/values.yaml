@@ -24,7 +24,7 @@ authentik:
     name: authentik
     user: authentik
   email:
-    host: mail.henrstadthagen.de
+    host: mail.henrystadthagen.de
     port: 465
     use_tls: false
     use_ssl: true

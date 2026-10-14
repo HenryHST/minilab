@@ -25,15 +25,22 @@ spec:
             - |
               set -euo pipefail
               for i in $(seq 1 60); do
-                POD="$(kubectl -n paperless get pod -l app=paperless -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
-                READY="$(kubectl -n paperless get pod -l app=paperless -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null || true)"
+                POD="$(kubectl -n paperless get pod -l app=paperless --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+                READY="$(kubectl -n paperless get pod -l app=paperless --field-selector=status.phase=Running -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null || true)"
+                # #region agent log
+                echo "DEBUG_POD_SELECT i=${i} pod=${POD:-none} ready=${READY:-none}"
+                # #endregion
                 if [[ -n "${POD}" && "${READY}" == "true" ]]; then
                   break
                 fi
                 sleep 5
               done
-              POD="$(kubectl -n paperless get pod -l app=paperless -o jsonpath='{.items[0].metadata.name}')"
-              if [[ -z "${POD}" ]]; then
+              POD="$(kubectl -n paperless get pod -l app=paperless --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')"
+              READY="$(kubectl -n paperless get pod -l app=paperless --field-selector=status.phase=Running -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null || true)"
+              # #region agent log
+              echo "DEBUG_POD_FINAL pod=${POD:-none} ready=${READY:-none}"
+              # #endregion
+              if [[ -z "${POD}" || "${READY}" != "true" ]]; then
                 echo "paperless pod not ready" >&2
                 exit 1
               fi

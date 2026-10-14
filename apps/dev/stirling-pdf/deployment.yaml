@@ -19,7 +19,7 @@ spec:
         worker: "true"
       containers:
         - name: stirling-pdf
-          image: stirlingtools/stirling-pdf:2.14.3-fat
+          image: stirlingtools/stirling-pdf:3.1.0-fat
           ports:
             - containerPort: 8080
           env:

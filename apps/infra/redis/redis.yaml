@@ -49,6 +49,8 @@ spec:
       labels:
         app: redis
     spec:
+      nodeSelector:
+        worker: "true"
       containers:
         - name: redis
           image: redis:7-alpine

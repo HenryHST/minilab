@@ -4,8 +4,8 @@
 # Day-0 blueprints (Plan B): ConfigMap authentik-blueprints-day0 → /blueprints
 # Owner matrix: Infra_LAB docs/adr/0017-authentik-day0-blueprints-und-tf-reconcile.md
 #
-# Scheduling: no hard worker=true pin (allows arm64 Pi fallback). Soft nodeAffinity
-# prefers Proxmox workers. Do not label Pis with worker=true (Traefik/Longhorn stay Proxmox).
+# Scheduling: hard worker=true (Proxmox only). Pis stay free of IdP/Longhorn engines.
+# Do not label Pis with worker=true (Traefik/Longhorn-disk stay Proxmox).
 # Media PVC is RWX (Longhorn) → server/worker replicas > 1 OK.
 
 authentik:
@@ -37,13 +37,12 @@ blueprints:
     - authentik-blueprints-day0
 
 global:
-  # Explicit empty — do not inherit a leftover hard worker pin from older applies.
-  nodeSelector: {}
-  # Preferred Proxmox (worker=true); soft = can schedule on Pi if needed. No hostname pin.
+  nodeSelector:
+    worker: "true"
   affinity:
     podAntiAffinity: soft
     nodeAffinity:
-      type: soft
+      type: hard
       matchExpressions:
         - key: worker
           operator: In

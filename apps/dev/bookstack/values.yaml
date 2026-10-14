@@ -12,6 +12,10 @@ controller:
   strategy: Recreate
   replicas: 1
 
+# RWO config PVC — Proxmox Longhorn workers only (never Pi agents).
+nodeSelector:
+  worker: "true"
+
 env:
   TZ: Europe/Berlin
   PUID: "911"

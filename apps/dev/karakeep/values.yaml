@@ -6,6 +6,11 @@ applicationHost: karakeep.stadthagen.dev
 applicationSecretKey: null
 meilisearchMasterKey: null
 
+# Longhorn RWO (data + Meilisearch) — Proxmox workers only.
+defaultPodOptions:
+  nodeSelector:
+    worker: "true"
+
 controllers:
   karakeep:
     type: statefulset
@@ -156,6 +161,8 @@ meilisearch:
     enabled: true
     size: 5Gi
     storageClass: longhorn
+  nodeSelector:
+    worker: "true"
   # skip helm test pod noise in Argo
   tests:
     enabled: false

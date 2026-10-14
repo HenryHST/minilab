@@ -31,6 +31,9 @@ spec:
   storage:
     size: 8Gi
     storageClass: longhorn
+  affinity:
+    nodeSelector:
+      worker: "true"
   monitoring:
     enablePodMonitor: false
   resources:

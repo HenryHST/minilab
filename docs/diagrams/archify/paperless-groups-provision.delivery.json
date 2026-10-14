@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "afb4d105-c0b3-4fcb-ba0f-9f710510ca63",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/henry/Projects/minilab/docs/diagrams/archify/paperless-groups-provision.json",
+  "output": "/Users/henry/Projects/minilab/docs/diagrams/archify/paperless-groups-provision.html",
+  "specification": {
+    "sha256": "d28c520d258f41a487d843b1aa70f59176ba4068e93c0c04f0f8c0cb4b31b82a",
+    "bytes": 4328
+  },
+  "artifact": {
+    "sha256": "d8cdcdc31cd71961fd7d467dba8e774e394f3c5db73c792932c4084585f7e121",
+    "bytes": 755763
+  }
+}

@@ -1,11 +1,11 @@
 ---
 title: Übersicht
-book_version: "1.1.0"
+book_version: "1.2.0"
 ---
 
 # Übersicht
 
-> **Buch** v1.1.0 · Stand: 2026-10-08
+> **Buch** v1.2.0 · Stand: 2026-10-14
 
 Paperless-ngx archiviert Dokumente mit OCR (Deutsch + Englisch), importiert Scans vom HPScan-NFS und meldet sich per Authentik an.
 
@@ -29,3 +29,5 @@ flowchart LR
 | **Storage** | **Postgres:** CNPG `paperless-pg` auf Longhorn. **App-Daten:** lokale Volumes (`local` PVs, StorageClass `manual-paperless`) auf Worker **`nxk3-w01`** — `/var/lib/paperless-data`, `/var/lib/paperless-media`, `/var/lib/paperless-export`. **Consume:** NFS HPScan. **Backups:** NFS `…/infra01/paperless-backups`. |
 
 Web- und Worker-Pods sind an `nxk3-w01` gebunden (Node-Affinity / hostPath). Ohne die drei Verzeichnisse auf dem Node starten sie nicht (`FailedMount`). Details und Anlage: Kapitel **Deploy & Verify** (Local Storage / Troubleshooting). Begründung: [ADR-0026](../../../adr/0026-paperless-ngx.md).
+
+OIDC-Zugang und Dokumentgruppen (Familien / vs-nfd): Kapitel **OIDC-Gruppen**.

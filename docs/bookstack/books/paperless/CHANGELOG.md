@@ -1,5 +1,12 @@
 # Changelog — Buch Paperless
 
+## [1.2.0] - 2026-10-14
+
+### Added
+
+- Kapitel **OIDC-Gruppen**: Access vs. Dokumentrechte, Membership, PostSync-Provisionierung
+- Archify: `paperless-oidc-groups`, `paperless-groups-provision` (HTML + PNG)
+
 ## [1.0.1]
 
 ### Added

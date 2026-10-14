@@ -1,0 +1,228 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Paperless Gruppen-Provisionierung",
+    "subtitle": "PostSync inbox-tag-job",
+    "output": "docs/diagrams/archify/paperless-groups-provision.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "happy",
+        "label": "Erfolgspfad",
+        "focus": [
+          "sync",
+          "wait",
+          "select",
+          "exec",
+          "create",
+          "done"
+        ],
+        "note": "Nur Running+Ready Paperless-Pods werden für exec genutzt."
+      },
+      {
+        "id": "fail",
+        "label": "Fehler (alt)",
+        "focus": [
+          "select",
+          "bad",
+          "fail"
+        ],
+        "note": "items[0] ohne phase=Running traf Completed-Pods."
+      }
+    ],
+    "viewBox": [
+      1100,
+      660
+    ]
+  },
+  "lanes": [
+    {
+      "id": "gitops",
+      "label": "GitOps"
+    },
+    {
+      "id": "job",
+      "label": "inbox-tag-job"
+    },
+    {
+      "id": "paperless",
+      "label": "Paperless"
+    },
+    {
+      "id": "failpath",
+      "label": "Fehlerpfad",
+      "variant": "exception"
+    }
+  ],
+  "phases": [
+    {
+      "id": "deploy",
+      "label": "Sync",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "select",
+      "label": "Pod wählen",
+      "fromCol": 2,
+      "toCol": 3,
+      "variant": "emphasis"
+    },
+    {
+      "id": "apply",
+      "label": "Gruppen anlegen",
+      "fromCol": 4,
+      "toCol": 5
+    }
+  ],
+  "mainPath": [
+    "sync",
+    "wait",
+    "select",
+    "exec",
+    "create",
+    "done"
+  ],
+  "nodes": [
+    {
+      "id": "sync",
+      "lane": "gitops",
+      "col": 0,
+      "type": "cloud",
+      "label": "Argo Sync",
+      "sublabel": "PostSync hook",
+      "width": 128
+    },
+    {
+      "id": "wait",
+      "lane": "job",
+      "col": 1,
+      "type": "backend",
+      "label": "Warten",
+      "sublabel": "bis Ready",
+      "width": 120
+    },
+    {
+      "id": "select",
+      "lane": "job",
+      "col": 2,
+      "type": "security",
+      "label": "Pod-Select",
+      "sublabel": "phase=Running",
+      "tag": "field-selector",
+      "width": 140
+    },
+    {
+      "id": "exec",
+      "lane": "job",
+      "col": 3,
+      "type": "backend",
+      "label": "kubectl exec",
+      "sublabel": "manage.py shell",
+      "width": 130
+    },
+    {
+      "id": "create",
+      "lane": "paperless",
+      "col": 4,
+      "type": "database",
+      "label": "get_or_create",
+      "sublabel": "Django Group",
+      "width": 140
+    },
+    {
+      "id": "done",
+      "lane": "paperless",
+      "col": 5,
+      "type": "frontend",
+      "label": "Gruppen ready",
+      "sublabel": "für OIDC Sync",
+      "width": 130
+    },
+    {
+      "id": "bad",
+      "lane": "failpath",
+      "col": 2,
+      "type": "security",
+      "label": "Completed Pod",
+      "sublabel": "items[0] alt",
+      "width": 130
+    },
+    {
+      "id": "fail",
+      "lane": "failpath",
+      "col": 3,
+      "type": "security",
+      "label": "exec fail",
+      "sublabel": "exit 1",
+      "width": 120
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "sync",
+      "to": "wait",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e2",
+      "from": "wait",
+      "to": "select",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e3",
+      "from": "select",
+      "to": "exec",
+      "label": "Running+Ready",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e4",
+      "from": "exec",
+      "to": "create",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e5",
+      "from": "create",
+      "to": "done",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e6",
+      "from": "select",
+      "to": "bad",
+      "label": "ohne Filter",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "e7",
+      "from": "bad",
+      "to": "fail",
+      "variant": "security",
+      "role": "error"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Anzulegende Gruppen",
+      "items": [
+        "paperless_admins / paperless_users",
+        "familie_stadthagen / familie_erdmann / vs-nfd"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Bugfix",
+      "items": [
+        "Immer --field-selector=status.phase=Running",
+        "Ready=true prüfen vor exec"
+      ]
+    }
+  ]
+}

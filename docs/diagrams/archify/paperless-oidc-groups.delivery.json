@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "b432af61-c538-4989-af22-79f719ecaeae",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/henry/Projects/minilab/docs/diagrams/archify/paperless-oidc-groups.json",
+  "output": "/Users/henry/Projects/minilab/docs/diagrams/archify/paperless-oidc-groups.html",
+  "specification": {
+    "sha256": "83d4a52738c86bd2bbe2304a3d1a87f28db8babe4c997aa0f0ed0865bc65065c",
+    "bytes": 4985
+  },
+  "artifact": {
+    "sha256": "0621c8d0f02f919933fc6fde72ba36aed971daba90dc8acc301f86f7eb40c462",
+    "bytes": 760940
+  }
+}

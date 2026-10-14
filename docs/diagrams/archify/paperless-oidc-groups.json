@@ -1,0 +1,268 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Paperless OIDC-Gruppen",
+    "subtitle": "Authentik Claim → Django Groups → Dokumentrechte",
+    "output": "docs/diagrams/archify/paperless-oidc-groups.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "provision",
+        "label": "Provisionierung",
+        "focus": [
+          "tofu",
+          "argo",
+          "job",
+          "django"
+        ],
+        "note": "OpenTofu legt Authentik-Gruppen an; Argo PostSync erzeugt Django-Gruppen."
+      },
+      {
+        "id": "login",
+        "label": "Login-Sync",
+        "focus": [
+          "user",
+          "idp",
+          "web",
+          "django"
+        ],
+        "note": "OIDC groups-Claim mappt User auf bestehende Django-Gruppen."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "tofu",
+      "type": "backend",
+      "label": "OpenTofu Authentik",
+      "sublabel": "Infra_LAB groups + users",
+      "pos": [
+        40,
+        240
+      ],
+      "size": [
+        168,
+        64
+      ],
+      "tag": "IaC"
+    },
+    {
+      "id": "idp",
+      "type": "security",
+      "label": "Authentik",
+      "sublabel": "OIDC groups claim",
+      "pos": [
+        330,
+        240
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "IdP"
+    },
+    {
+      "id": "argo",
+      "type": "cloud",
+      "label": "Argo CD",
+      "sublabel": "App paperless",
+      "pos": [
+        560,
+        100
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "tag": "GitOps"
+    },
+    {
+      "id": "job",
+      "type": "backend",
+      "label": "PostSync Job",
+      "sublabel": "inbox-tag-job",
+      "pos": [
+        560,
+        380
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "wave 5"
+    },
+    {
+      "id": "web",
+      "type": "frontend",
+      "label": "Paperless Web",
+      "sublabel": "Running pod only",
+      "pos": [
+        780,
+        240
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "django",
+      "type": "database",
+      "label": "Django Groups",
+      "sublabel": "auth_group",
+      "pos": [
+        1040,
+        240
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "user",
+      "type": "external",
+      "label": "User",
+      "sublabel": "OIDC Login",
+      "pos": [
+        40,
+        40
+      ],
+      "size": [
+        130,
+        56
+      ]
+    },
+    {
+      "id": "docs",
+      "type": "backend",
+      "label": "Dokumente",
+      "sublabel": "Gruppenrechte",
+      "pos": [
+        1040,
+        40
+      ],
+      "size": [
+        150,
+        56
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Infra_LAB · Authentik Terraform",
+      "wraps": [
+        "tofu",
+        "idp"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "minilab · NS paperless",
+      "wraps": [
+        "argo",
+        "job",
+        "web",
+        "django"
+      ],
+      "pad": 18
+    }
+  ],
+  "connections": [
+    {
+      "from": "tofu",
+      "to": "idp",
+      "label": "groups + membership",
+      "variant": "emphasis"
+    },
+    {
+      "from": "argo",
+      "to": "job",
+      "label": "PostSync",
+      "variant": "emphasis"
+    },
+    {
+      "from": "job",
+      "to": "web",
+      "label": "kubectl exec Running",
+      "variant": "security"
+    },
+    {
+      "from": "web",
+      "to": "django",
+      "label": "get_or_create",
+      "variant": "emphasis"
+    },
+    {
+      "from": "user",
+      "to": "idp",
+      "label": "login",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "idp",
+      "to": "web",
+      "label": "OIDC + groups claim",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "from": "web",
+      "to": "django",
+      "label": "SYNC_GROUPS",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [
+        [
+          855,
+          180
+        ],
+        [
+          1115,
+          180
+        ]
+      ]
+    },
+    {
+      "from": "django",
+      "to": "docs",
+      "label": "permissions",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Zwei Schichten",
+      "items": [
+        "Access: paperless_admins / paperless_users (Policy Binding)",
+        "Dokumente: familie_stadthagen / familie_erdmann / vs-nfd"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Voraussetzung Sync",
+      "items": [
+        "Django-Gruppe muss exakt so heißen wie Authentik",
+        "PAPERLESS_SOCIAL_ACCOUNT_SYNC_GROUPS=true"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Membership",
+      "items": [
+        "henry + marion → familie_stadthagen + vs-nfd",
+        "gabi + frank → familie_erdmann"
+      ]
+    }
+  ]
+}

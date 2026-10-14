@@ -9,6 +9,8 @@ Interaktive HTML-Diagramme und BookStack-Exports für die Plattform-Bücher.
 | `kyverno-admission` | architecture | [kyverno-admission.html](archify/kyverno-admission.html) | `archify/exports/kyverno-admission.png` | Kyverno — Übersicht |
 | `kyverno-gitops` | architecture | [kyverno-gitops.html](archify/kyverno-gitops.html) | `archify/exports/kyverno-gitops.png` | Kyverno — Architektur |
 | `gatus-architektur` | architecture | [gatus-architektur.html](archify/gatus-architektur.html) | `archify/exports/gatus-architektur.png` | Gatus — Übersicht |
+| `paperless-oidc-groups` | architecture | [paperless-oidc-groups.html](archify/paperless-oidc-groups.html) | `archify/exports/paperless-oidc-groups.png` | Paperless — OIDC-Gruppen |
+| `paperless-groups-provision` | workflow | [paperless-groups-provision.html](archify/paperless-groups-provision.html) | `archify/exports/paperless-groups-provision.png` | Paperless — Gruppen-Provisionierung |
 
 ## Archify
 

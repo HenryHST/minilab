@@ -22,8 +22,22 @@ Explorer: [mosquitto-ldap-fehlersuche.html](https://github.com/HenryHST/minilab/
 |---------|----------------|
 | `mosquitto` `Init:Error` / `CrashLoopBackOff` auf `ldap-preflight` | Exporter: `dial …:1883: no route to host` |
 | Preflight meldet Whitespace / invalid credentials | Smoke/CronJob Failed, MQTT `not authorised` |
+| Broker **Ready**, aber `mqtt-smoke` `BackoffLimitExceeded` / `Error: The connection was lost` und Broker-Log `LDAP superuser search error: … ldap: connection closed` | Exporter/`mqtt-tools` Auth flaky; TCP zum LDAP-Outpost kann trotzdem offen sein |
 
 Ohne laufenden Broker sind Exporter und Smoke **Folgeschäden**.
+
+### Runtime: go-auth LDAP-Session tot (Broker bleibt Ready)
+
+Init `ldap-preflight` prüft den Bind nur beim Start. Danach kann Authentik den LDAP-Outpost-Session schließen; go-auth nutzt dann eine tote Verbindung. Symptom: viele `LDAP superuser search error` / `ldap: connection closed`, Smoke-Pods `connection was lost`, Job `BackoffLimitExceeded` — während `nc …:389` aus dem Namespace weiter `open` meldet.
+
+```bash
+kubectl -n mosquitto logs deploy/mosquitto -c mosquitto --since=2m | grep -c 'LDAP superuser search error'
+kubectl -n mosquitto rollout restart deploy/mosquitto
+kubectl -n mosquitto rollout status deploy/mosquitto
+kubectl -n mosquitto create job --from=cronjob/mqtt-smoke "mqtt-smoke-check-$(date +%H%M%S)"
+```
+
+Erwartung nach Restart: Preflight wieder `LDAP simple bind succeeded`, LDAP-Fehler-Zähler ~0, Smoke-Job `Complete`.
 
 ## Preflight-Meldungen
 

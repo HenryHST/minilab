@@ -11,6 +11,8 @@ Homepage-Eintrag siehe [`apps/dev/web/config/services.yaml`](https://github.com/
 - Updates: `system.showUpdate: false`
 - Mail / invites: `mail.henrystadthagen.de:465`, user `auto@henrystadthagen.de`
 - `processExecutor`: LibreOffice/Tesseract session limits (docs defaults)
+- Resources: memory 512Mi/2Gi; **ephemeral-storage 2Gi/4Gi** (DiskPressure / 2GB uploads; keep `-fat` for LibreOffice)
+- BookStack: `docs/bookstack/books/stirling-pdf/`
 
 ## Secrets
 

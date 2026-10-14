@@ -57,11 +57,15 @@ spec:
             periodSeconds: 30
             failureThreshold: 5
           resources:
+            # ephemeral-storage: protect workers under DiskPressure; 2GB upload limit
+            # needs headroom for LibreOffice/Tesseract temp (fat image required).
             requests:
               cpu: 100m
               memory: 512Mi
+              ephemeral-storage: 2Gi
             limits:
               memory: 2Gi
+              ephemeral-storage: 4Gi
       volumes:
         - name: configs
           emptyDir: {}

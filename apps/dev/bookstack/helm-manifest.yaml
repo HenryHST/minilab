@@ -208,6 +208,8 @@ spec:
         - name: config
           persistentVolumeClaim:
             claimName: bookstack-config
+      nodeSelector:
+        worker: "true"
 
 
 
@@ -344,4 +346,6 @@ spec:
                 requests:
                   cpu: 50m
                   memory: 256Mi
+          nodeSelector:
+            worker: "true"
           restartPolicy: Never

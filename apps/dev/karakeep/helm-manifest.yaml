@@ -8,7 +8,7 @@ metadata:
     helm.sh/chart: meilisearch-0.12.0
     app.kubernetes.io/name: meilisearch
     app.kubernetes.io/instance: karakeep
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.54.3"
     app.kubernetes.io/component: search-engine
     app.kubernetes.io/part-of: meilisearch
     app.kubernetes.io/managed-by: Helm
@@ -23,7 +23,7 @@ metadata:
     helm.sh/chart: meilisearch-0.12.0
     app.kubernetes.io/name: meilisearch
     app.kubernetes.io/instance: karakeep
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.54.3"
     app.kubernetes.io/component: search-engine
     app.kubernetes.io/part-of: meilisearch
     app.kubernetes.io/managed-by: Helm
@@ -41,7 +41,7 @@ metadata:
     helm.sh/chart: meilisearch-0.12.0
     app.kubernetes.io/name: meilisearch
     app.kubernetes.io/instance: karakeep
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.54.3"
     app.kubernetes.io/component: search-engine
     app.kubernetes.io/part-of: meilisearch
     app.kubernetes.io/managed-by: Helm
@@ -62,7 +62,7 @@ metadata:
     helm.sh/chart: meilisearch-0.12.0
     app.kubernetes.io/name: meilisearch
     app.kubernetes.io/instance: karakeep
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.54.3"
     app.kubernetes.io/component: search-engine
     app.kubernetes.io/part-of: meilisearch
     app.kubernetes.io/managed-by: Helm
@@ -173,6 +173,8 @@ spec:
       hostNetwork: false
       hostPID: false
       dnsPolicy: ClusterFirst
+      nodeSelector: 
+        worker: "true"
       containers: 
         - args:
           - --remote-debugging-address=0.0.0.0
@@ -231,7 +233,7 @@ metadata:
     helm.sh/chart: meilisearch-0.12.0
     app.kubernetes.io/name: meilisearch
     app.kubernetes.io/instance: karakeep
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.54.3"
     app.kubernetes.io/component: search-engine
     app.kubernetes.io/part-of: meilisearch
     app.kubernetes.io/managed-by: Helm
@@ -248,12 +250,12 @@ spec:
         helm.sh/chart: meilisearch-0.12.0
         app.kubernetes.io/name: meilisearch
         app.kubernetes.io/instance: karakeep
-        app.kubernetes.io/version: "v1.13.0"
+        app.kubernetes.io/version: "v1.54.3"
         app.kubernetes.io/component: search-engine
         app.kubernetes.io/part-of: meilisearch
         app.kubernetes.io/managed-by: Helm
       annotations:
-        checksum/config: 87186460929524abb1a98fcb0deb528c232cee24aeb7ae42a939fb5c84882977
+        checksum/config: d14281ab16be362af195b9e455f7155f735844df4e8a38c01fc4605836b2b275
     spec:
       serviceAccountName: karakeep-meilisearch
       securityContext:
@@ -273,7 +275,7 @@ spec:
             
       containers:
         - name: meilisearch
-          image: "getmeili/meilisearch:v1.13.0"
+          image: "getmeili/meilisearch:v1.54.3"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -316,6 +318,8 @@ spec:
             initialDelaySeconds: 0
           resources:
             {}
+      nodeSelector:
+        worker: "true"
 
 ---
 # Source: karakeep/templates/common.yaml
@@ -357,6 +361,8 @@ spec:
       hostNetwork: false
       hostPID: false
       dnsPolicy: ClusterFirst
+      nodeSelector: 
+        worker: "true"
       containers: 
         - env:
           - name: AUTH_TRUST_HOST
@@ -386,7 +392,7 @@ spec:
               name: karakeep
           - secretRef:
               name: karakeep-meilesearch
-          image: ghcr.io/karakeep-app/karakeep:0.33.1
+          image: ghcr.io/karakeep-app/karakeep:0.33.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
             httpGet:

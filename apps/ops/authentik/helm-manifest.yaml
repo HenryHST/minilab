@@ -319,7 +319,7 @@ spec:
         app.kubernetes.io/part-of: "authentik"
         app.kubernetes.io/version: "2026.8.3"
       annotations:
-        checksum/secret: 5b3d6a95a63899a59d0615c56c51105aaa9c387ef96779f1e7471ca9c65dd7db
+        checksum/secret: 1c83246f6d1fb31728570efcfeb19e585bf3f3f429881c3b23292771f514ede6
     spec:
       securityContext:
         fsGroup: 1000
@@ -412,14 +412,15 @@ spec:
                     app.kubernetes.io/component: "server"
                 topologyKey: kubernetes.io/hostname
         nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 1
-              preference:
-                matchExpressions:
-                  - key: worker
-                    operator: In
-                    values:
-                    - "true"
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: worker
+                  operator: In
+                  values:
+                  - "true"
+      nodeSelector:
+        worker: "true"
       volumes:
         - name: media
           persistentVolumeClaim:
@@ -465,7 +466,7 @@ spec:
         app.kubernetes.io/part-of: "authentik"
         app.kubernetes.io/version: "2026.8.3"
       annotations:
-        checksum/secret: 5b3d6a95a63899a59d0615c56c51105aaa9c387ef96779f1e7471ca9c65dd7db
+        checksum/secret: 1c83246f6d1fb31728570efcfeb19e585bf3f3f429881c3b23292771f514ede6
     spec:
       serviceAccountName: "authentik"
       securityContext:
@@ -561,14 +562,15 @@ spec:
                     app.kubernetes.io/component: "worker"
                 topologyKey: kubernetes.io/hostname
         nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 1
-              preference:
-                matchExpressions:
-                  - key: worker
-                    operator: In
-                    values:
-                    - "true"
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: worker
+                  operator: In
+                  values:
+                  - "true"
+      nodeSelector:
+        worker: "true"
       volumes:
         - name: media
           persistentVolumeClaim:

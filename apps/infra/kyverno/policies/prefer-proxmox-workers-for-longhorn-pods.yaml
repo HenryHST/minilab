@@ -1,5 +1,5 @@
-# Audit: Pods that mount PVCs should prefer Proxmox workers (worker=true).
-# Longhorn runs only on Proxmox-labeled workers; Pi agents should not schedule Longhorn volumes.
+# Enforce: Pods that mount PVCs must target Proxmox workers (worker=true).
+# Longhorn disks are Proxmox-only; Pi agents must not host RWO engines.
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
@@ -9,10 +9,10 @@ metadata:
     policies.kyverno.io/category: Storage
     policies.kyverno.io/severity: medium
     policies.kyverno.io/description: >-
-      Pods with persistentVolumeClaim volumes should target nodes with worker=true
-      (Proxmox Longhorn workers). Audit only — no mutation in v1.
+      Pods with persistentVolumeClaim volumes must target nodes with worker=true
+      (Proxmox Longhorn workers). Enforce blocks create/update without the pin.
 spec:
-  validationFailureAction: Audit
+  validationFailureAction: Enforce
   background: true
   rules:
     - name: pvc-pods-prefer-worker-label
@@ -53,8 +53,8 @@ spec:
             value: 1
       validate:
         message: >-
-          Pods mounting PVCs should set nodeSelector worker=true (or equivalent affinity)
-          so Longhorn volumes land on Proxmox workers (Audit).
+          Pods mounting PVCs must set nodeSelector worker=true (or equivalent affinity)
+          so Longhorn volumes land on Proxmox workers.
         anyPattern:
           - spec:
               nodeSelector:

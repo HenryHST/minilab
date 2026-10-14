@@ -29,6 +29,9 @@ spec:
   storage:
     size: 1Gi
     storageClass: longhorn
+  affinity:
+    nodeSelector:
+      worker: "true"
   # Deprecated field. false stops the operator-owned PodMonitor; podmonitor.yaml replaces it.
   monitoring:
     enablePodMonitor: false

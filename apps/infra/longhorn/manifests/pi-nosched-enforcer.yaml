@@ -1,0 +1,115 @@
+# Keep Longhorn replica scheduling off Raspberry Pi agents (pi1cl/pi2cl/pi4cl).
+# Engines still follow pods — pair with hard worker=true pins on RWO workloads.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: longhorn-pi-nosched
+  namespace: longhorn-system
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/component: pi-nosched-enforcer
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: longhorn-pi-nosched
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/component: pi-nosched-enforcer
+rules:
+  - apiGroups: ["longhorn.io"]
+    resources: ["nodes"]
+    verbs: ["get", "list", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: longhorn-pi-nosched
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/component: pi-nosched-enforcer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: longhorn-pi-nosched
+subjects:
+  - kind: ServiceAccount
+    name: longhorn-pi-nosched
+    namespace: longhorn-system
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: longhorn-pi-nosched
+  namespace: longhorn-system
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/component: pi-nosched-enforcer
+data:
+  enforce.sh: |
+    #!/bin/sh
+    set -eu
+    NODES="${PI_LONGHORN_NODES:-pi1cl pi2cl pi4cl}"
+    for n in $NODES; do
+      if ! kubectl get nodes.longhorn.io "$n" >/dev/null 2>&1; then
+        echo "skip: nodes.longhorn.io/$n not found"
+        continue
+      fi
+      cur="$(kubectl get nodes.longhorn.io "$n" -o jsonpath='{.spec.allowScheduling}')"
+      if [ "$cur" = "false" ]; then
+        echo "ok: $n allowScheduling=false"
+        continue
+      fi
+      echo "patch: $n allowScheduling=false (was ${cur:-unset})"
+      kubectl patch nodes.longhorn.io "$n" --type merge -p '{"spec":{"allowScheduling":false}}'
+    done
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: longhorn-pi-nosched
+  namespace: longhorn-system
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/component: pi-nosched-enforcer
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: longhorn
+            app.kubernetes.io/component: pi-nosched-enforcer
+        spec:
+          serviceAccountName: longhorn-pi-nosched
+          restartPolicy: Never
+          nodeSelector:
+            worker: "true"
+          containers:
+            - name: enforce
+              image: alpine/k8s:1.37.1
+              imagePullPolicy: IfNotPresent
+              command: ["/bin/sh", "/scripts/enforce.sh"]
+              env:
+                - name: PI_LONGHORN_NODES
+                  value: "pi1cl pi2cl pi4cl"
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+          volumes:
+            - name: scripts
+              configMap:
+                name: longhorn-pi-nosched
+                defaultMode: 0555

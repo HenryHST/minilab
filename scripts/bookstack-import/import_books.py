@@ -322,25 +322,36 @@ def book_slug(books_dir: Path, book_dir: Path) -> str:
     return book_dir.name
 
 
-def resolve_shelf_cover(books_dir: Path, book_dir: Path, shelf_name: str) -> Path | None:
-    """books/<shelf-slug>/shelf-cover.png for nested books (folder name ≈ shelf)."""
-    try:
-        rel = book_dir.relative_to(books_dir)
-    except ValueError:
-        return None
-    if len(rel.parts) < 2:
-        return None
-    shelf_dir = books_dir / rel.parts[0]
-    slug = rel.parts[0]
-    # familie ↔ Familie; my-shelf ↔ My Shelf
-    slug_as_title = slug.replace("-", " ").title()
-    if shelf_name.strip().casefold() not in (slug.casefold(), slug_as_title.casefold()):
-        return None
+def _shelf_cover_in_dir(shelf_dir: Path) -> Path | None:
     for name in ("shelf-cover.png", "shelf-cover.jpg", "shelf-cover.webp"):
         p = shelf_dir / name
         if p.is_file():
             return p
     return None
+
+
+def shelf_name_to_slug(shelf_name: str) -> str:
+    """Plattform → plattform; Anleitungen → anleitungen; My Shelf → my-shelf."""
+    return "-".join(shelf_name.strip().casefold().split())
+
+
+def resolve_shelf_cover(books_dir: Path, book_dir: Path, shelf_name: str) -> Path | None:
+    """Shelf cover: nested books/<shelf>/<book>/ parent, or books/<shelf-slug>/shelf-cover.png."""
+    name = shelf_name.strip()
+    try:
+        rel = book_dir.relative_to(books_dir)
+    except ValueError:
+        rel = None
+    # Nested: books/familie/wichtige-kontakte → books/familie/shelf-cover.png
+    if rel is not None and len(rel.parts) >= 2:
+        slug = rel.parts[0]
+        slug_as_title = slug.replace("-", " ").title()
+        if name.casefold() in (slug.casefold(), slug_as_title.casefold()):
+            found = _shelf_cover_in_dir(books_dir / slug)
+            if found is not None:
+                return found
+    # Flat books / files_as_books: books/plattform/shelf-cover.png, books/anleitungen/…
+    return _shelf_cover_in_dir(books_dir / shelf_name_to_slug(name))
 
 
 def ensure_shelf(

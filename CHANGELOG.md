@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **Security updates (#137)** — Loki Helm **18.15.1** (app **3.7.8**); n8n **2.44.0**; Gatus overview nginx `1.31-alpine3.24-slim`; gatus-backup `postgres:18-alpine3.24`; Trivy Operator chart **0.37.0** (app **0.35.0**) + trivy-server **0.76.0**; system-upgrade-controller **v0.20.2**. Platform companion: Argo CD / Traefik / cilium-envoy in Infra_LAB.
 - **Longhorn CSI** — `longhornio/csi-provisioner` **v6.3.0**.
 - **Longhorn CSI** — `longhornio/csi-attacher` **v4.13.0** (image pin in values).
 - **Image bumps (batch 2)** — Newt `1.18.1`, Gatus `v5.37.0`, Vaultwarden `1.37.4`, Paperless `3.3.0`, k8s-sidecar `2.14.1`, MariaDB `11.8.9`, alpine/openssl `3.5.9`.

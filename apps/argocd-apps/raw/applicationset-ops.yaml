@@ -28,7 +28,7 @@ spec:
             syncWave: "1"
             helmRepo: https://aquasecurity.github.io/helm-charts/
             helmChart: trivy-operator
-            helmVersion: "0.32.1"
+            helmVersion: "0.37.0"
             helmReleaseName: trivy-operator
             helmValuesFile: apps/ops/trivy-operator/values.yaml
           - app: registry

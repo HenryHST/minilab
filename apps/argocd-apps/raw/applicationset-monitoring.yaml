@@ -43,7 +43,7 @@ spec:
             syncWave: "3"
             helmRepo: https://grafana-community.github.io/helm-charts
             helmChart: loki
-            helmVersion: "18.11.7"
+            helmVersion: "18.15.1"
             helmReleaseName: loki
             helmValuesFile: apps/monitoring/loki/values.yaml
             extras: true

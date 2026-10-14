@@ -5,7 +5,7 @@ Cluster vulnerability and configuration scanning (Aqua Trivy Operator). Compleme
 | | |
 |--|--|
 | Argo | ApplicationSet `ops`, sync wave `1`, namespace `trivy-system` |
-| Chart | `trivy-operator` **0.32.1** from `https://aquasecurity.github.io/helm-charts/` |
+| Chart | `trivy-operator` **0.37.0** from `https://aquasecurity.github.io/helm-charts/` |
 | Scan | All namespaces except `kube-system` and `trivy-system` |
 | Policy | `trivy.ignoreUnfixed: true` (same idea as Infra_LAB CI) |
 | Server | `operator.builtInTrivyServer: true` (Client/Server mode in-cluster) |

@@ -1,5 +1,11 @@
 # Changelog — Buch Stirling PDF
 
+## [1.1.0] - 2026-10-14
+
+### Added
+
+- Kapitel **Uploads & OCR**: Traefik-Buffering entfernt (Multipart EOF), ServersTransport-Timeouts
+
 ## [1.0.0] - 2026-10-14
 
 ### Added

@@ -1,11 +1,17 @@
+# Do not use Traefik buffering for uploads: it fully buffers the request body in
+# Traefik before forwarding and truncates multipart (Jetty: unexpected EOF in PREAMBLE).
+# Size limit stays in the app (fileUploadLimit / SYSTEMFILEUPLOADLIMIT = 2GB).
 apiVersion: traefik.io/v1alpha1
-kind: Middleware
+kind: ServersTransport
 metadata:
-  name: stirling-pdf-upload
+  name: stirling-pdf
   namespace: stirling-pdf
 spec:
-  buffering:
-    maxRequestBodyBytes: 2147483648
+  forwardingTimeouts:
+    dialTimeout: 30s
+    # OCR / LibreOffice can run up to processExecutor.timeoutMinutes (30)
+    responseHeaderTimeout: 35m
+    idleConnTimeout: 90s
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -20,10 +26,9 @@ spec:
   routes:
     - match: Host(`stirling-pdf.stadthagen.dev`)
       kind: Rule
-      middlewares:
-        - name: stirling-pdf-upload
       services:
         - name: stirling-pdf
           port: 8080
+          serversTransport: stirling-pdf
   tls:
     secretName: stirling-pdf-tls

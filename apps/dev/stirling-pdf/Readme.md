@@ -7,7 +7,8 @@ Homepage-Eintrag siehe [`apps/dev/web/config/services.yaml`](https://github.com/
 ## Configuration (GitOps)
 
 - Locale / UI: `de-DE` / `de_DE` via ConfigMap `stirling-pdf-settings` → `/configs/custom_settings.yml`
-- Upload limit: `2GB` (app + Traefik Middleware `stirling-pdf-upload`)
+- Upload limit: `2GB` (app only — **no** Traefik buffering; buffering broke multipart/OCR)
+- Traefik: `ServersTransport` `responseHeaderTimeout: 35m` for OCR/LibreOffice
 - Updates: `system.showUpdate: false`
 - Mail / invites: `mail.henrystadthagen.de:465`, user `auto@henrystadthagen.de`
 - `processExecutor`: LibreOffice/Tesseract session limits (docs defaults)

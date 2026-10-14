@@ -1,5 +1,11 @@
 # Changelog — Buch Stirling PDF
 
+## [1.2.0] - 2026-10-14
+
+### Changed
+
+- Kapitel **Uploads & OCR**: vollständige Fehleranalyse (Hypothesen, Evidenz, Abgrenzung DiskPressure, Verify inkl. Client-Boundary-Check)
+
 ## [1.1.0] - 2026-10-14
 
 ### Added

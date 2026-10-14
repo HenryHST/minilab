@@ -1,11 +1,12 @@
 ---
 title: Deploy & Verify
-book_version: "1.1.0"
+book_version: "1.2.0"
 ---
+
 
 # Deploy & Verify
 
-> **Buch** v1.1.0 · Stand: 2026-10-14
+> **Buch** v1.2.0 · Stand: 2026-10-14
 
 ## Secrets
 
@@ -29,4 +30,4 @@ kubectl -n stirling-pdf get deploy stirling-pdf -o jsonpath='{.spec.template.spe
 curl -fsS https://stirling-pdf.stadthagen.dev/api/v1/info/status
 ```
 
-Erwartete Resources u. a. `ephemeral-storage` Request `2Gi` / Limit `4Gi`.
+Erwartete Resources u. a. `ephemeral-storage` Request `2Gi` / Limit `4Gi`. Keine Traefik-Buffering-Middleware (siehe **Uploads & OCR**).

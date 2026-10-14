@@ -1,11 +1,12 @@
 ---
 title: Ephemeral Storage
-book_version: "1.1.0"
+book_version: "1.2.0"
 ---
+
 
 # Ephemeral Storage
 
-> **Buch** v1.1.0 · Stand: 2026-10-14
+> **Buch** v1.2.0 · Stand: 2026-10-14
 
 ## Problem
 
@@ -50,3 +51,5 @@ kubectl -n stirling-pdf get deploy stirling-pdf -o jsonpath='{.spec.template.spe
 ```
 
 Wenn Worker dauerhaft >80 % Root nutzen: Longhorn-Replicas/Images bereinigen — Stirling allein füllt die Disk nicht.
+
+Abgrenzung: Multipart `EOF in PREAMBLE` ist **kein** DiskPressure — siehe Kapitel **Uploads & OCR**.

@@ -28,7 +28,8 @@ authentik:
     port: 465
     use_tls: false
     use_ssl: true
-    from: authentik@henrystadthagen.de
+    # Must match AUTHENTIK_EMAIL__USERNAME (mailbox auto@…); mail server rejects foreign From.
+    from: auto@henrystadthagen.de
 
 # Mount GitOps blueprints (keys ending in .yaml are applied by the worker).
 blueprints:

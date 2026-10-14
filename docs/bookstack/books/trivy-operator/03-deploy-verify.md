@@ -1,9 +1,15 @@
 ---
 title: Deploy und Verify
-book_version: "1.1.0"
+book: trivy-operator
+book_version: "1.2.1"
+chapter: deploy-verify
+chapter_version: "1.1.0"
+updated: "2026-10-12"
 ---
 
 # Deploy und Verify
+
+> **Buch** v1.2.1 · **Kapitel** v1.1.0 · Stand: 2026-10-12
 
 ## Deploy
 
@@ -22,3 +28,5 @@ kubectl get configauditreports -A | head
 ```
 
 Erwartung: Operator Deployment Ready, Trivy-Server StatefulSet Ready, Service ClusterIP (nicht headless), ServiceMonitor vorhanden, erste Reports nach kurzer Zeit. In Grafana: Folder Trivy → Trivy Operator Dashboard.
+
+Demo-Workload und Report-Inspektion: [Reports Walkthrough](05-reports-walkthrough.md).

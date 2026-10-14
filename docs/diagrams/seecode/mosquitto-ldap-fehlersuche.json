@@ -1,0 +1,95 @@
+{
+  "type": "flowchart",
+  "title": "Mosquitto LDAP-Fehlersuche",
+  "subtitle": "Init:Error → ldap-preflight → Secret / Outpost",
+  "lang": "de",
+  "skin": "light",
+  "motion": "trace",
+  "size": "auto",
+  "nodes": [
+    {
+      "id": "symptom",
+      "label": "Init:Error",
+      "sub": "ldap-preflight",
+      "shape": "terminal",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "logs",
+      "label": "Logs lesen",
+      "sub": "-c ldap-preflight",
+      "icon": "document",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "ws",
+      "label": "Whitespace?",
+      "shape": "decision",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "outpost",
+      "label": "Outpost prüfen",
+      "sub": "TCP :389",
+      "kind": "muted",
+      "icon": "server",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "secret",
+      "label": "Secret prüfen",
+      "sub": "mosquitto-ldap",
+      "focal": true,
+      "icon": "key",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "enc",
+      "label": "%40 / urlencode?",
+      "shape": "decision",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "fix",
+      "label": "format_encode none",
+      "sub": "+ trim",
+      "focal": true,
+      "icon": "gear",
+      "row": 5,
+      "col": 1
+    },
+    {
+      "id": "reapply",
+      "label": "Secrets reapply",
+      "sub": "--tags secrets",
+      "row": 6,
+      "col": 1
+    },
+    {
+      "id": "ok",
+      "label": "Bind OK",
+      "sub": "Broker Ready",
+      "shape": "terminal",
+      "row": 7,
+      "col": 1
+    }
+  ],
+  "edges": [
+    ["symptom", "logs"],
+    ["logs", "ws"],
+    ["ws", "outpost", "nein"],
+    ["ws", "secret", "ja", "primary"],
+    ["secret", "enc", "", "primary"],
+    ["enc", "fix", "ja", "primary"],
+    ["fix", "reapply", "", "primary"],
+    ["reapply", "ok", "", "primary"]
+  ],
+  "order": ["symptom", "logs", "ws", "secret", "enc", "fix", "reapply", "ok"],
+  "caption": "Incident 2026-10-12: Trailing-Space + urlencode (@→%40) im Secret; SecretSpec war bereits sauber."
+}

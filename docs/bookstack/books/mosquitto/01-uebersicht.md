@@ -1,11 +1,13 @@
 ---
 title: Übersicht
-book_version: "1.2.0"
+book_version: "1.3.0"
 ---
 
 # Übersicht
 
 Eclipse Mosquitto stellt MQTT auf nXk3 bereit. Auth läuft über Authentik LDAP-Outpost (kein OIDC — MQTT unterstützt das nicht). Exposure ist LAN-LoadBalancer `192.168.0.218`.
+
+Bei `Init:Error` auf dem Broker: Kapitel [Fehlersuche LDAP](06-fehlersuche-ldap.md).
 
 ![Mosquitto Architektur](https://raw.githubusercontent.com/HenryHST/minilab/main/docs/diagrams/archify/exports/mosquitto-architektur.png)
 

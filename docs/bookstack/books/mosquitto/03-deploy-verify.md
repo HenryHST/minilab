@@ -1,6 +1,6 @@
 ---
 title: Deploy & Verify
-book_version: "1.2.0"
+book_version: "1.3.0"
 ---
 
 # Deploy & Verify
@@ -8,7 +8,8 @@ book_version: "1.2.0"
 ## Voraussetzungen
 
 1. SecretSpec → `--tags secrets`:
-   - `MOSQUITTO_LDAP_BIND_PASSWORD` (= TF `ldapservice_password`) → `mosquitto-ldap`
+   - `MOSQUITTO_LDAP_BIND_PASSWORD` (= TF `ldapservice_password`) → `mosquitto-ldap`  
+     Literal in `00-bind.conf` (`format_encode: none`); **kein** trailing Space/Newline; `@` darf nicht als `%40` landen. Siehe [Fehlersuche LDAP](06-fehlersuche-ldap.md).
    - `MOSQUITTO_GRAFANA_PASSWORD` → `grafana-mqtt`
    - `MOSQUITTO_EXPORTER_PASSWORD` → `mosquitto-exporter`
    - `MOSQUITTO_PROBE_PASSWORD` → `mosquitto-probe`

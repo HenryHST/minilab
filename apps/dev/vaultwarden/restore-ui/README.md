@@ -44,9 +44,13 @@ trivy fs --severity CRITICAL,HIGH --ignore-unfixed --scanners vuln "$tmpdir"
 rm -rf "$tmpdir"
 ```
 
+## PreSync image pull
+
+Argo App `vaultwarden` runs Job [`../restore-ui-image-pull-job.yaml`](../restore-ui-image-pull-job.yaml) as **PreSync** (same digest as the Deployment). Sync fails fast if the lab registry lacks the image — mirror first (below). Keep both YAML `image:` lines identical when bumping digests.
+
 ## Mirror to lab registry
 
-Cluster pulls `registry.stadthagen.dev/dev/vw-restore` (LAN). After a signed GHCR release, copy **image + signatures/attestations**, then pin the Deployment to the digest:
+Cluster pulls `registry.stadthagen.dev/dev/vw-restore` (LAN). After a signed GHCR release, copy **image + signatures/attestations**, then pin the Deployment **and** PreSync Job to the digest:
 
 ```bash
 VER=$(tr -d '[:space:]' < VERSION)
@@ -57,10 +61,10 @@ DST="registry.stadthagen.dev/dev/vw-restore:${VER}"
 crane copy "${SRC}" "${DST}"
 
 DIGEST=$(crane digest "${SRC}")
-# Update restore-ui-deployment.yaml:
+# Update restore-ui-deployment.yaml + restore-ui-image-pull-job.yaml:
 #   image: registry.stadthagen.dev/dev/vw-restore@${DIGEST}
 #   # semver: ${VER}
-# Keep imagePullPolicy: IfNotPresent when digest-pinned.
+# Deploy: imagePullPolicy IfNotPresent; PreSync Job: Always.
 ```
 
 Verify the lab copy against the same identity (or verify GHCR digest before promote):

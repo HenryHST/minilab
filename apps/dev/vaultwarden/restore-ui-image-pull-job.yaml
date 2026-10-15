@@ -1,0 +1,53 @@
+# PreSync: pull/verify lab registry image before restore-ui Deploy applies.
+# Keep image: in sync with restore-ui-deployment.yaml (same digest).
+# Mirror from GHCR first — see restore-ui/README.md ("Mirror to lab registry").
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vw-restore-image-pull
+  namespace: vaultwarden
+  labels:
+    app: vaultwarden-restore-ui
+    app.kubernetes.io/component: image-pull
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 180
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app: vw-restore-image-pull
+    spec:
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: registry-pull
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: pull
+          # Keep in sync with restore-ui-deployment.yaml
+          # semver: 1.0.9 (ghcr.io/henryhst/vw-restore:1.0.9)
+          image: registry.stadthagen.dev/dev/vw-restore@sha256:981e0c438b9f7af66e6852b892de5ab294767d8cac7514a3fde0ce9e30c2e3cc
+          imagePullPolicy: Always
+          command: ["true"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

@@ -108,7 +108,7 @@ jobs:
           sbom: true
 
       - name: Install crane
-        uses: imjasonh/setup-crane@v0.4
+        uses: imjasonh/setup-crane@v0.7
 
       # #region agent log
       # BuildKit OCI SBOM attestations make `trivy image` report phantom packages

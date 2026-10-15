@@ -21,12 +21,12 @@ metadata:
   name: authentik
   namespace: "authentik"
   labels:
-    helm.sh/chart: "authentik-2026.8.3"
+    helm.sh/chart: "authentik-2026.8.4"
     app.kubernetes.io/name: "authentik"
     app.kubernetes.io/instance: "authentik"
     app.kubernetes.io/managed-by: "Helm"
     app.kubernetes.io/part-of: "authentik"
-    app.kubernetes.io/version: "2026.8.3"
+    app.kubernetes.io/version: "2026.8.4"
 data:  
   AUTHENTIK_EMAIL__FROM: "YXV0b0BoZW5yeXN0YWR0aGFnZW4uZGU="
   AUTHENTIK_EMAIL__HOST: "bWFpbC5oZW5yeXN0YWR0aGFnZW4uZGU="
@@ -203,13 +203,13 @@ metadata:
   name: authentik-server-metrics
   namespace: "authentik"
   labels:
-    helm.sh/chart: "authentik-2026.8.3"
+    helm.sh/chart: "authentik-2026.8.4"
     app.kubernetes.io/name: "authentik"
     app.kubernetes.io/instance: "authentik"
     app.kubernetes.io/component: "server-metrics"
     app.kubernetes.io/managed-by: "Helm"
     app.kubernetes.io/part-of: "authentik"
-    app.kubernetes.io/version: "2026.8.3"
+    app.kubernetes.io/version: "2026.8.4"
 spec:
   type: ClusterIP
   ports:
@@ -230,13 +230,13 @@ metadata:
   name: authentik-server
   namespace: "authentik"
   labels:
-    helm.sh/chart: "authentik-2026.8.3"
+    helm.sh/chart: "authentik-2026.8.4"
     app.kubernetes.io/name: "authentik"
     app.kubernetes.io/instance: "authentik"
     app.kubernetes.io/component: "server"
     app.kubernetes.io/managed-by: "Helm"
     app.kubernetes.io/part-of: "authentik"
-    app.kubernetes.io/version: "2026.8.3"
+    app.kubernetes.io/version: "2026.8.4"
 spec:
   type: ClusterIP
   ports:
@@ -261,13 +261,13 @@ metadata:
   name: authentik-worker-metrics
   namespace: "authentik"
   labels:
-    helm.sh/chart: "authentik-2026.8.3"
+    helm.sh/chart: "authentik-2026.8.4"
     app.kubernetes.io/name: "authentik"
     app.kubernetes.io/instance: "authentik"
     app.kubernetes.io/component: "worker-metrics"
     app.kubernetes.io/managed-by: "Helm"
     app.kubernetes.io/part-of: "authentik"
-    app.kubernetes.io/version: "2026.8.3"
+    app.kubernetes.io/version: "2026.8.4"
 spec:
   type: ClusterIP
   ports:
@@ -288,13 +288,13 @@ metadata:
   name: authentik-server
   namespace: "authentik"
   labels:
-    helm.sh/chart: "authentik-2026.8.3"
+    helm.sh/chart: "authentik-2026.8.4"
     app.kubernetes.io/name: "authentik"
     app.kubernetes.io/instance: "authentik"
     app.kubernetes.io/component: "server"
     app.kubernetes.io/managed-by: "Helm"
     app.kubernetes.io/part-of: "authentik"
-    app.kubernetes.io/version: "2026.8.3"
+    app.kubernetes.io/version: "2026.8.4"
 spec:
   strategy:
     type: RollingUpdate
@@ -311,15 +311,15 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: "authentik-2026.8.3"
+        helm.sh/chart: "authentik-2026.8.4"
         app.kubernetes.io/name: "authentik"
         app.kubernetes.io/instance: "authentik"
         app.kubernetes.io/component: "server"
         app.kubernetes.io/managed-by: "Helm"
         app.kubernetes.io/part-of: "authentik"
-        app.kubernetes.io/version: "2026.8.3"
+        app.kubernetes.io/version: "2026.8.4"
       annotations:
-        checksum/secret: 1c83246f6d1fb31728570efcfeb19e585bf3f3f429881c3b23292771f514ede6
+        checksum/secret: 62a6bef67a6ab03a871220d20da8bd9c7bcaaa6dd37eb904a4b2125f4b5f6e31
     spec:
       securityContext:
         fsGroup: 1000
@@ -341,7 +341,7 @@ spec:
           name: media
       containers:
         - name: server
-          image: ghcr.io/goauthentik/server:2026.8.3
+          image: ghcr.io/goauthentik/server:2026.8.4
           imagePullPolicy: IfNotPresent
           args:
             - server
@@ -435,13 +435,13 @@ metadata:
   name: authentik-worker
   namespace: "authentik"
   labels:
-    helm.sh/chart: "authentik-2026.8.3"
+    helm.sh/chart: "authentik-2026.8.4"
     app.kubernetes.io/name: "authentik"
     app.kubernetes.io/instance: "authentik"
     app.kubernetes.io/component: "worker"
     app.kubernetes.io/managed-by: "Helm"
     app.kubernetes.io/part-of: "authentik"
-    app.kubernetes.io/version: "2026.8.3"
+    app.kubernetes.io/version: "2026.8.4"
 spec:
   strategy:
     type: RollingUpdate
@@ -458,15 +458,15 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: "authentik-2026.8.3"
+        helm.sh/chart: "authentik-2026.8.4"
         app.kubernetes.io/name: "authentik"
         app.kubernetes.io/instance: "authentik"
         app.kubernetes.io/component: "worker"
         app.kubernetes.io/managed-by: "Helm"
         app.kubernetes.io/part-of: "authentik"
-        app.kubernetes.io/version: "2026.8.3"
+        app.kubernetes.io/version: "2026.8.4"
       annotations:
-        checksum/secret: 1c83246f6d1fb31728570efcfeb19e585bf3f3f429881c3b23292771f514ede6
+        checksum/secret: 62a6bef67a6ab03a871220d20da8bd9c7bcaaa6dd37eb904a4b2125f4b5f6e31
     spec:
       serviceAccountName: "authentik"
       securityContext:
@@ -489,7 +489,7 @@ spec:
           name: media
       containers:
         - name: worker
-          image: ghcr.io/goauthentik/server:2026.8.3
+          image: ghcr.io/goauthentik/server:2026.8.4
           imagePullPolicy: IfNotPresent
           args:
             - worker

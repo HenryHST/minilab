@@ -36,7 +36,7 @@ spec:
         - name: pull
           # Keep in sync with restore-ui-deployment.yaml
           # semver: 1.0.9 (ghcr.io/henryhst/vw-restore:1.0.9)
-          image: registry.stadthagen.dev/dev/vw-restore@sha256:981e0c438b9f7af66e6852b892de5ab294767d8cac7514a3fde0ce9e30c2e3cc
+          image: registry.stadthagen.dev/dev/vw-restore@sha256:4a251ce4ea047262b051b8e061b268037ed3a71e0a7c1c5584daee8a7fb80385
           imagePullPolicy: Always
           command: ["true"]
           resources:

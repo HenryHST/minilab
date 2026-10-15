@@ -83,7 +83,7 @@ Avoids Argo CD `kustomize --enable-helm` / `helm pull` races (`charts/... alread
 
 ```bash
 # bump chart version, then:
-helm pull authentik --repo https://charts.goauthentik.io --version 2026.8.3 --untar --untardir charts
+helm pull authentik --repo https://charts.goauthentik.io --version 2026.8.4 --untar --untardir charts
 helm dependency update charts/authentik
 helm template authentik ./charts/authentik \
   -f values.yaml --namespace authentik --include-crds \

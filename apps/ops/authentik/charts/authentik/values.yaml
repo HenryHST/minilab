@@ -1014,7 +1014,7 @@ geoip:
     # -- If defined, a repository for GeoIP images
     repository: ghcr.io/maxmind/geoipupdate
     # -- If defined, a tag for GeoIP images
-    tag: v8.0.0
+    tag: v7.1.1
     # -- If defined, an image digest for GeoIP images
     digest: ""
     # -- If defined, an imagePullPolicy for GeoIP images
@@ -1094,7 +1094,7 @@ postgresql:
   image:
     registry: docker.io
     repository: library/postgres
-    tag: "17.11-bookworm"
+    tag: "17.11-trixie"
   auth:
     username: authentik
     database: authentik
@@ -1157,7 +1157,7 @@ postgresql:
     resourcesPreset: "none"
     image:
       repository: prometheuscommunity/postgres-exporter
-      tag: v0.20.1
+      tag: v0.19.1
 
 # -- additional resources to deploy. Those objects are templated.
 additionalObjects: []

@@ -1,6 +1,5 @@
-# Regenerated from 8gears/n8n-helm-chart (local clone, deps stripped) — 2026-09-29
-#   helm template n8n . -f values.yaml -n n8n --skip-tests
-# Image tag from values.yaml; app.kubernetes.io/version labels set to match.
+Pulled: 8gears.container-registry.com/library/n8n:2.1.1
+Digest: sha256:ac5e38f96b91bb39539a0e1647d5f390b8aadf6c03f706e61acfd783b03a6217
 ---
 # Source: n8n/templates/serviceaccount.yaml
 apiVersion: v1
@@ -12,7 +11,7 @@ metadata:
     helm.sh/chart: n8n-2.1.1
     app.kubernetes.io/name: n8n
     app.kubernetes.io/instance: n8n
-    app.kubernetes.io/version: "2.41.3"
+    app.kubernetes.io/version: "2.36.8"
     app.kubernetes.io/managed-by: Helm
 
 ---
@@ -26,7 +25,7 @@ metadata:
     helm.sh/chart: n8n-2.1.1
     app.kubernetes.io/name: n8n
     app.kubernetes.io/instance: n8n
-    app.kubernetes.io/version: "2.41.3"
+    app.kubernetes.io/version: "2.36.8"
     app.kubernetes.io/managed-by: Helm
 data:
   QUEUE_HEALTH_CHECK_ACTIVE: "true"
@@ -43,7 +42,7 @@ metadata:
     helm.sh/chart: n8n-2.1.1
     app.kubernetes.io/name: n8n
     app.kubernetes.io/instance: n8n
-    app.kubernetes.io/version: "2.41.3"
+    app.kubernetes.io/version: "2.36.8"
     app.kubernetes.io/managed-by: Helm
 data:
   DB_POSTGRESDB_DATABASE: "n8n"
@@ -78,7 +77,7 @@ metadata:
     helm.sh/chart: n8n-2.1.1
     app.kubernetes.io/name: n8n
     app.kubernetes.io/instance: n8n
-    app.kubernetes.io/version: "2.41.3"
+    app.kubernetes.io/version: "2.36.8"
     app.kubernetes.io/managed-by: Helm
 spec:
   type: ClusterIP
@@ -104,7 +103,7 @@ metadata:
     helm.sh/chart: n8n-2.1.1
     app.kubernetes.io/name: n8n
     app.kubernetes.io/instance: n8n
-    app.kubernetes.io/version: "2.41.3"
+    app.kubernetes.io/version: "2.36.8"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 1
@@ -146,7 +145,7 @@ spec:
         - name: n8n
           securityContext:
             {}
-          image: "n8nio/n8n:2.41.3"
+          image: "n8nio/n8n:2.44.0"
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
@@ -205,3 +204,29 @@ spec:
         - name: "data"
           persistentVolumeClaim:
             claimName: n8n-data
+---
+# Source: n8n/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "n8n-test-connection"
+  labels:
+    helm.sh/chart: n8n-2.1.1
+    app.kubernetes.io/name: n8n
+    app.kubernetes.io/instance: n8n
+    app.kubernetes.io/version: "2.36.8"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: alpine
+      command: ['sh', '-c']
+      args:
+        - |
+          echo "Testing connection to n8n:5678";
+          nslookup n8n;
+          wget n8n:5678;
+  restartPolicy: Never
+

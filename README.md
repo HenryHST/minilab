@@ -58,9 +58,9 @@ Je Bucket ein AppProject mit Destination-Namespace-Allowlist (`infra`, `monitori
 | vaultwarden | `apps/dev/vaultwarden/` | `vaultwarden` | `vw-ext` + LAN redirect; Restore-UI `vw-restore.stadthagen.dev`; Cron 02:00+14:00 UTC NFS backup (Retention 14) → `192.168.0.25:/var/nfs/shared/infra01/vaultwarden-backups` |
 | bookstack | `apps/dev/bookstack/` | `bookstack` | `book.stadthagen.dev` (BookStack via gabe565 Helm → `helm-manifest.yaml`, MariaDB hostPath @ `nxk3-w01`, Authentik OIDC, SMTP vorbereitet; daily NFS backup + bootstrap restore → `192.168.0.25:/var/nfs/shared/infra01/bookstack-backups`; Inhalte unter `docs/bookstack/`) |
 | kube-prometheus-stack | `apps/monitoring/kube-prometheus-stack/` | `monitoring` | `grafana.stadthagen.dev`, `prometheus.stadthagen.dev`, `alert-manager.stadthagen.dev` (Helm chart 92.0.0: Prometheus Operator, Grafana, Alertmanager, node-exporter, kube-state-metrics; Longhorn PVC 5Gi / 9d retention; E-Mail alerts) |
-| grafana-loki | `apps/monitoring/loki/` | `monitoring` | `loki.stadthagen.dev` (Helm chart 18.11.7, Longhorn PVC 2Gi) |
+| grafana-loki | `apps/monitoring/loki/` | `monitoring` | `loki.stadthagen.dev` (Helm chart 18.15.1, Longhorn PVC 2Gi) |
 | alloy | `apps/monitoring/alloy/` | `alloy` | Syslog → Loki (`loki-gateway.monitoring.svc.cluster.local`) |
-| system-upgrade-controller | `apps/ops/system-upgrade-controller/` | `system-upgrade` | Rancher SUC v0.20.1 (CRDs + Controller, vendored upstream). **Keine** Upgrade-`Plan`s — kein automatisches k3s-Upgrade, bis Plans ergänzt werden. |
+| system-upgrade-controller | `apps/ops/system-upgrade-controller/` | `system-upgrade` | Rancher SUC v0.20.2 (CRDs + Controller, vendored upstream). **Keine** Upgrade-`Plan`s — kein automatisches k3s-Upgrade, bis Plans ergänzt werden. |
 
 Longhorn: Replika-Daten lokal `/var/lib/longhorn` auf Worker mit Label `node.longhorn.io/create-default-disk=true` (nxk3-w01–w03). Backup-Target: `nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups?nfsOptions=nfsvers=3,nolock` (UniFi NAS benötigt NFSv3).
 

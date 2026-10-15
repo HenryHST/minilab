@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "f45d2172-994b-4ccc-ae8b-5ce8d689ca80",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/henry/Projects/minilab/docs/diagrams/archify/authentik-architektur.json",
+  "output": "/Users/henry/Projects/minilab/docs/diagrams/archify/authentik-architektur.html",
+  "specification": {
+    "sha256": "d8365be5f060922bff7c75f38187e81d56fb1ed8fc653ce6e590aa11b178b4ff",
+    "bytes": 2409
+  },
+  "artifact": {
+    "sha256": "3bbc51c6fee51ca809522cb3fbf2452f72ed1353948ea6ee9d8ebbb9ff5bd069",
+    "bytes": 755236
+  }
+}

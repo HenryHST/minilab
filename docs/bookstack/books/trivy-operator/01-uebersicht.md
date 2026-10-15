@@ -1,9 +1,15 @@
 ---
 title: Übersicht
-book_version: "1.1.0"
+book: trivy-operator
+book_version: "1.2.1"
+chapter: uebersicht
+chapter_version: "1.1.0"
+updated: "2026-10-12"
 ---
 
 # Übersicht
+
+> **Buch** v1.2.1 · **Kapitel** v1.1.0 · Stand: 2026-10-12
 
 Der **Trivy Operator** scannt laufende Workloads im nXk3-Cluster und schreibt Findings als Kubernetes-CRDs (`VulnerabilityReport`, `ConfigAuditReport`, …). Das ergänzt das CI-Trivy in Infra_LAB (GitHub Actions als Merge-Gate) — der Operator ist Transparenz im Cluster, kein Git-Blocker.
 

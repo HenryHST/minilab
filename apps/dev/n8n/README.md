@@ -6,7 +6,7 @@ Workflow automation on nXk3 with **Traefik ForwardAuth** (Authentik Outpost). No
 |--|--|
 | Host | https://n8n.stadthagen.dev |
 | Namespace | `n8n` |
-| Chart | [8gears/n8n-helm-chart](https://github.com/8gears/n8n-helm-chart) `2.1.1` / image `2.41.3` → committed `helm-manifest.yaml` ([ADR-0014](../../../docs/adr/0014-helm-strategie.md)) |
+| Chart | [8gears/n8n-helm-chart](https://github.com/8gears/n8n-helm-chart) `2.1.1` / image `2.44.0` → committed `helm-manifest.yaml` ([ADR-0014](../../../docs/adr/0014-helm-strategie.md)) |
 | Auth | ForwardAuth → `ak-outpost-n8n` (Day-0 `day0-n8n`); groups `n8n_admins` / `n8n_users` (TF) |
 | DB | Postgres 16 hostPath on `nxk3-w01` |
 | SMTP | `mail.henrystadthagen.de:465` / `auto@henrystadthagen.de` (Secret `n8n-smtp`) |

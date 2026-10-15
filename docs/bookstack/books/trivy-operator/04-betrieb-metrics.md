@@ -1,9 +1,15 @@
 ---
 title: Betrieb und Metrics
-book_version: "1.1.0"
+book: trivy-operator
+book_version: "1.2.1"
+chapter: betrieb-metrics
+chapter_version: "1.1.0"
+updated: "2026-10-12"
 ---
 
 # Betrieb und Metrics
+
+> **Buch** v1.2.1 · **Kapitel** v1.1.0 · Stand: 2026-10-12
 
 ## Policy
 

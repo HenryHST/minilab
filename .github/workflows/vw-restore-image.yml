@@ -110,10 +110,8 @@ jobs:
       - name: Install crane
         uses: imjasonh/setup-crane@v0.4
 
-      # #region agent log
-      # BuildKit OCI SBOM attestations make `trivy image` report phantom packages
-      # (FilePath=null: msgpack@1.1.2, setuptools@70.3.0, urllib3@2.7.0 while on-disk
-      # urllib3 is 2.8.0). Scan extracted rootfs instead; attestations stay on the image.
+      # BuildKit OCI SBOM can make `trivy image` report stale phantom packages;
+      # scan extracted rootfs instead (attestations remain on the pushed image).
       - name: Export rootfs for Trivy (avoid OCI SBOM false positives)
         id: rootfs
         env:
@@ -124,9 +122,6 @@ jobs:
           mkdir -p "$ROOTFS"
           crane export --platform linux/amd64 "${{ env.IMAGE }}@${DIGEST}" - | tar -x -C "$ROOTFS"
           echo "rootfs=${ROOTFS}" >> "$GITHUB_OUTPUT"
-          # Structured debug line for post-fix log correlation
-          echo "::notice::debug_session=1ae980 hypothesisId=C scan_mode=fs digest=${DIGEST}"
-      # #endregion
 
       - name: Trivy vulnerability scan
         uses: aquasecurity/trivy-action@v0.36.0

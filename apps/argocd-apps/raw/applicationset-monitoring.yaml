@@ -69,6 +69,10 @@ spec:
             path: apps/monitoring/kromgo
             namespace: kromgo
             syncWave: "3"
+          - app: otel-collector
+            path: apps/monitoring/otel-collector
+            namespace: otel-collector
+            syncWave: "2"
   template:
     metadata:
       name: "{{ .app }}"

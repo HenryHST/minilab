@@ -57,12 +57,13 @@ backupTarget: nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups?nfsOpt
 # backupTargetCredentialSecret entfernen
 ```
 
-Alte NFS-Objekte werden nicht automatisch nach RustFS migriert.
+Historische NFS-Backup-Objekte können einmalig per `rclone sync` nach `s3://longhorn-backups` übernommen werden (siehe CHANGELOG / Ops-Runbook). NFS bleibt Rollback-Pfad.
+
 
 ## Monitoring
 
-- **Gatus:** HTTP `/health` (in Scope).
-- **Prometheus:** RustFS hat kein natives `/metrics` — nur OTLP → OpenTelemetry Collector (Follow-up).
+- **Gatus:** HTTP `/health` → 200.
+- **Prometheus:** RustFS hat kein natives `/metrics`. OTLP HTTP → otel-collector LoadBalancer `http://192.168.0.219:4318` (`RUSTFS_OBS_ENDPOINT`); Collector exportiert Prometheus auf `:8889` (ServiceMonitor).
 
 ## ADR
 

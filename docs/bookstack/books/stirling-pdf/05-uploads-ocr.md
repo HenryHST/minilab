@@ -1,11 +1,11 @@
 ---
 title: Uploads & OCR
-book_version: "1.2.0"
+book_version: "1.3.0"
 ---
 
 # Uploads & OCR
 
-> **Buch** v1.2.0 · Stand: 2026-10-14
+> **Buch** v1.3.0 · Stand: 2026-10-16
 
 Fehleranalyse und Fix für Multipart-/OCR-Uploads hinter Traefik (`POST /api/v1/misc/ocr-pdf`).
 
@@ -102,5 +102,21 @@ kubectl -n stirling-pdf logs deploy/stirling-pdf -c stirling-pdf --since=10m \
 ### Wenn PREAMBLE erneut auftaucht
 
 1. Prüfen, ob wieder eine Buffering-/Compress-Middleware an der Route hängt.
-2. Im Browser DevTools → Network am fehlgeschlagenen `ocr-pdf`: enthält `Content-Type` ein `boundary=…`? Fehlt es, liegt der Fehler am Client (Extension, falscher API-Client), nicht an Traefik.
+2. Im Browser DevTools → Network am fehlgeschlagenen Request: enthält `Content-Type` ein `boundary=…`? Fehlt es, liegt der Fehler am Client (Extension, falscher API-Client), nicht an Traefik.
 3. `Content-Length` vs. tatsächlich gesendete Bytes — Abbruch mitten im Upload sieht ähnlich aus.
+4. Endpoint **`POST /api/v1/storage/files`** („Upload to server“ / My Files): bei Stirling **3.1.0** oft **Client-Bug**, nicht Traefik — siehe unten.
+
+## „Upload to server“ → `/api/v1/storage/files` (2026-10-15)
+
+Gleiche Jetty-Exception, **anderer Endpoint**. Live-Check nXk3:
+
+| Hypothese | Ergebnis | Evidenz |
+|--|--|--|
+| Traefik Buffering wieder aktiv | **verworfen** | IngressRoute ohne Middlewares; `kubectl -n stirling-pdf get middleware` leer |
+| Disk / ephemeral voll | **verworfen** | Pod Overlay ~50 % frei |
+| Malformed CT ohne Boundary (generisch) | **möglich** | `curl` mit `Content-Type: multipart/form-data` ohne `boundary` → HTTP 400 + PREAMBLE; korrektes `-F` → 401 (Auth, Parse ok) |
+| Leerer Multipart-Body vom UI („Upload to server“) | **bestätigt (Upstream)** | 16× Fehler in ~1,5 s auf `/api/v1/storage/files`; deckungsgleich mit [Stirling-PDF#8446](https://github.com/Stirling-Tools/Stirling-PDF/issues/8446) (3.1.0): Headers kommen an, Body vor erster Boundary leer — vor allem **iPadOS/iOS WebKit** (IndexedDB-Blob); Desktop oft ok |
+
+**Workaround:** Upload von Desktop-Browser (Chrome/Firefox) testen; iOS/iPadOS meiden bis Upstream-Fix. Kein Infra-Change nötig, solange die IngressRoute ohne Buffering bleibt.
+
+Gleiches Muster am **22:58** auf `POST /api/v1/general/merge-pdfs` (nicht nur Storage): Traefik-Pfad mit gültigem `curl -F fileInput=@…` → **401** (Auth, kein PREAMBLE). UI-Fehler = leerer/kaputter Multipart-Body vom Client (oft IndexedDB-Blob). Site-Daten für `stirling-pdf.stadthagen.dev` löschen oder Dateien frisch vom Dateisystem wählen; optional Image-Bump auf `3.2.0` (Release 2026-10-15) + Cache leeren.

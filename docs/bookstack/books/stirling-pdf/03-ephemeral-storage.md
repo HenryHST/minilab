@@ -1,12 +1,12 @@
 ---
 title: Ephemeral Storage
-book_version: "1.2.0"
+book_version: "1.3.0"
 ---
 
 
 # Ephemeral Storage
 
-> **Buch** v1.2.0 · Stand: 2026-10-14
+> **Buch** v1.3.0 · Stand: 2026-10-16
 
 ## Problem
 

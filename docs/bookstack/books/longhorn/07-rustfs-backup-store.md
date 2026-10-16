@@ -57,7 +57,9 @@ backupTarget: nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups?nfsOpt
 # backupTargetCredentialSecret entfernen
 ```
 
-Historische NFS-Backup-Objekte können einmalig per `rclone sync` nach `s3://longhorn-backups` übernommen werden (siehe CHANGELOG / Ops-Runbook). NFS bleibt Rollback-Pfad.
+### NFS → RustFS Migration (2026-10-16)
+
+Einmaliger Check: NFS `192.168.0.25:/var/nfs/shared/infra01/longhorn-backups` war **leer** (0 Byte) — kein `rclone sync` nötig. Neue Backups liegen nur noch auf RustFS (`s3://longhorn-backups@us-east-1/`). NFS bleibt Rollback-Pfad in `values.yaml`.
 
 
 ## Monitoring

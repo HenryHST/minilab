@@ -2,6 +2,11 @@
 
 ## [1.1.0] - 2026-10-16
 
+### Notes
+
+- NFS-Migration geprüft: Quellpfad `longhorn-backups` leer — kein Objekt-Transfer nötig
+
+
 ### Added
 
 - Kapitel **RustFS Backup Store** (pi7cl, S3, Gatus `/health`)

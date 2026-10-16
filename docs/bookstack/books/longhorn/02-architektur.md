@@ -1,6 +1,6 @@
 ---
 title: Architektur
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Architektur
@@ -11,7 +11,8 @@ book_version: "1.0.0"
 - ApplicationSet `infra`, Wave 1, Namespace `longhorn-system`.
 - Die StorageClass `longhorn` ist die Default-Klasse. `numberOfReplicas` ist 3. Neue Volumes binden sofort (`volumeBindingMode` Immediate).
 - Datenpfad auf dem Node: `/var/lib/longhorn`.
-- Disks legt Longhorn nur auf Nodes mit `node.longhorn.io/create-default-disk=true` an. Das sind `nxk3-w01`, `nxk3-w02` und `nxk3-w03`.
+- Disks legt Longhorn nur auf Nodes mit `node.longhorn.io/create-default-disk=true` an (Proxmox-Worker). Pi-Agents inkl. **pi7cl** (RustFS) haben kein Disk-Label; `longhorn-pi-nosched` setzt `allowScheduling=false`.
+- Volume-**Backups** gehen nach RustFS auf `pi7cl` (`192.168.0.107:9000`) — Diagramm `longhorn-rustfs-backup`.
 - Over-Provisioning steht auf 200 Prozent. Bei 100 Prozent blieb auf den etwa 32Gi-Disks zu wenig planbarer Platz für ein neues PVC.
 
 ## UI

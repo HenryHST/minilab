@@ -1,6 +1,6 @@
 ---
 title: Snapshots und Backup
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Snapshots und Backup
@@ -10,11 +10,11 @@ Drei Kopien, drei verschiedene Wege. Sie ersetzen sich nicht.
 | | Snapshot | Longhorn-Backup | App-Dump |
 |--|--|--|--|
 | Was | CSI-VolumeSnapshot auf dem Volume | Kopie zum NAS | `pg_dump` oder Archiv der App |
-| Klasse / Ziel | `VolumeSnapshotClass` `longhorn`, `type: snap` | `nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups` | eigener NFS-Export der App |
+| Klasse / Ziel | `VolumeSnapshotClass` `longhorn`, `type: snap` | `s3://longhorn-backups@us-east-1/` → RustFS `pi7cl` (`192.168.0.107:9000`) | eigener NFS-Export der App |
 | Beispiel | Termix `ScheduledBackup` `termix-snapshot` | Backup-Target in den Longhorn-Settings | `termix-backup-cron` nach `termix-backups` |
 | Restore | neuer Cluster oder PVC aus dem Snapshot | Longhorn-Restore aus dem Backup-Target | SQL oder das Restore-Job der App |
 
-NFSv4 auf diesem NAS liefert „No such file or directory“. Das Backup-Target hängt deshalb mit `nfsOptions=nfsvers=3,nolock`.
+Aktuelles Backup-Target: **RustFS S3** auf `pi7cl` (siehe Kapitel **RustFS Backup Store** / ADR-0036). Rollback NFS (NFSv3): `nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups?nfsOptions=nfsvers=3,nolock`.
 
 ## Snapshot-Controller
 

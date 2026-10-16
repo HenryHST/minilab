@@ -1,6 +1,6 @@
 ---
 title: Quellen
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Quellen
@@ -15,3 +15,6 @@ book_version: "1.0.0"
 - Architektur: [`docs/diagrams/archify/longhorn-architektur.html`](../../../diagrams/archify/longhorn-architektur.html)
 - Onboarding: [`docs/diagrams/archify/longhorn-volume-onboarding.html`](../../../diagrams/archify/longhorn-volume-onboarding.html)
 - Erstes Snapshot-Volume: Buch **CloudNativePG** und Buch **Termix**
+- ADR-0036 RustFS Backup pi7cl
+- Infra_LAB Role `henryhst.k3s.rustfs`
+- Diagramm: Infra_LAB `docs/diagrams/archify/longhorn-rustfs-backup`

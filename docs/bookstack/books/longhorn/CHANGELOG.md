@@ -1,13 +1,16 @@
 # Changelog — Buch Longhorn
 
+## [1.1.0] - 2026-10-16
+
+### Added
+
+- Kapitel **RustFS Backup Store** (pi7cl, S3, Gatus `/health`)
+- ADR-0036: Longhorn BackupTarget → RustFS
+
+### Changed
+
+- Snapshots/Backup und Architektur: Target von NFS auf RustFS S3; NFS als Rollback
+
 ## [1.0.3] - 2026-10-13
 
-### Changed
-
-- Architektur/Metriken: NetPol Allow aus `monitoring` auf Port 9500 (`networkpolicy-prometheus-metrics.yaml`), damit ServiceMonitor Targets up sind
-
-## [1.0.2] - 2026-10-11
-
-### Changed
-
-- Baseline vor Prometheus-Metrics-NetPol
+- Vorheriger Stand (NFS BackupTarget, Snapshots, Onboarding)

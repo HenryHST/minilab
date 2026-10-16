@@ -31,8 +31,11 @@ defaultSettings:
   nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
 
 defaultBackupStore:
-  # UniFi NAS export requires NFSv3 (v4 returns "No such file or directory").
-  backupTarget: nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups?nfsOptions=nfsvers=3,nolock
+  # RustFS on pi7cl (S3). Rollback NFS:
+  # nfs://192.168.0.25:/var/nfs/shared/infra01/longhorn-backups?nfsOptions=nfsvers=3,nolock
+  backupTarget: s3://longhorn-backups@us-east-1/
+  backupTargetCredentialSecret: longhorn-backup-s3
+
 
 metrics:
   serviceMonitor:

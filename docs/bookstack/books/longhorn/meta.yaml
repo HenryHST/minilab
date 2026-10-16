@@ -1,6 +1,6 @@
 book: Longhorn
 cover: cover.png
-book_version: "1.0.3"
-updated: "2026-10-13"
-description: Longhorn — Default-Storage, Snapshots, Vorlage für das nächste Volume
+book_version: "1.1.0"
+updated: "2026-10-16"
+description: Longhorn — Default-Storage, Snapshots, RustFS S3 Backup auf pi7cl
 shelf: Plattform

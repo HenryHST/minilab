@@ -16,7 +16,8 @@ Format angelehnt an [Michael Nygard](https://cognitect.com/blog/2011/11/15/docum
 | [0006](0006-appproject-infrastruktur.md) | AppProject `infrastruktur` für Plattform-Apps | Superseded by 0022 |
 | [0007](0007-sync-waves.md) | Sync Waves für Bootstrap-Reihenfolge | Accepted |
 | [0008](0008-cert-manager-hetzner-dns01.md) | TLS via cert-manager und Hetzner DNS-01 | Accepted |
-| [0009](0009-longhorn-nfs-backups.md) | Longhorn als Default-Storage und NFS-Backups | Accepted |
+| [0009](0009-longhorn-nfs-backups.md) | Longhorn als Default-Storage und NFS-Backups | Accepted (BackupTarget superseded by 0036) |
+| [0036](0036-longhorn-rustfs-backup-pi7cl.md) | Longhorn BackupTarget → RustFS auf pi7cl | Accepted |
 | [0010](0010-authentik-idp.md) | Authentik als zentrales IdP | Accepted |
 | [0011](0011-pangolin-public-exposure.md) | Selektive Public Exposure über Pangolin | Accepted |
 | [0012](0012-uptime-kuma-sqlite-local-pv.md) | Uptime Kuma: SQLite und Local PV | Superseded by 0034 |

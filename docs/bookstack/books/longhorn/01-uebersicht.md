@@ -1,6 +1,6 @@
 ---
 title: Übersicht
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Übersicht
@@ -31,3 +31,5 @@ flowchart LR
 | UI | `longhorn.stadthagen.dev` |
 
 ADR: [0009-longhorn-nfs-backups](../../../adr/0009-longhorn-nfs-backups.md). Nächstes Volume: Kapitel **Onboarding**. Snapshot und NAS-Backup: Kapitel **Snapshots und Backup**.
+
+Backup-Store: **RustFS** auf `pi7cl` (S3). Details: Kapitel **RustFS Backup Store**.

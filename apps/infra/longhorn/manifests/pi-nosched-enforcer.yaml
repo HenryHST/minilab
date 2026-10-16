@@ -1,4 +1,4 @@
-# Keep Longhorn replica scheduling off Raspberry Pi agents (pi1cl/pi2cl/pi4cl).
+# Keep Longhorn replica scheduling off Raspberry Pi agents (pi1cl/pi2cl/pi4cl/pi7cl).
 # Engines still follow pods — pair with hard worker=true pins on RWO workloads.
 apiVersion: v1
 kind: ServiceAccount
@@ -49,7 +49,7 @@ data:
   enforce.sh: |
     #!/bin/sh
     set -eu
-    NODES="${PI_LONGHORN_NODES:-pi1cl pi2cl pi4cl}"
+    NODES="${PI_LONGHORN_NODES:-pi1cl pi2cl pi4cl pi7cl}"
     for n in $NODES; do
       if ! kubectl get nodes.longhorn.io "$n" >/dev/null 2>&1; then
         echo "skip: nodes.longhorn.io/$n not found"
@@ -97,7 +97,7 @@ spec:
               command: ["/bin/sh", "/scripts/enforce.sh"]
               env:
                 - name: PI_LONGHORN_NODES
-                  value: "pi1cl pi2cl pi4cl"
+                  value: "pi1cl pi2cl pi4cl pi7cl"
               volumeMounts:
                 - name: scripts
                   mountPath: /scripts

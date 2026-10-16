@@ -1,0 +1,18 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: rustfs-console
+  namespace: rustfs
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`rustfs.stadthagen.dev`)
+      kind: Rule
+      services:
+        - name: rustfs-console
+          port: 9001
+  tls:
+    secretName: rustfs-tls

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rustfs
+  labels:
+    app.kubernetes.io/name: rustfs
+    app.kubernetes.io/part-of: nxk3-storage

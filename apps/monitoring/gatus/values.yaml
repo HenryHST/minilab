@@ -317,6 +317,13 @@ config:
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
+    - name: rustfs-console-oidc
+      group: storage
+      url: https://rustfs.stadthagen.dev/rustfs/admin/v3/oidc/providers
+      interval: 2m
+      conditions:
+        - "[STATUS] == 200"
+      alerts: *pushover
     - name: pangolin
       group: extern
       url: https://pangolin.stadthagen.dev

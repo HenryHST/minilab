@@ -76,6 +76,10 @@ spec:
             helmReleaseName: error-pages
             helmValuesFile: apps/infra/error-pages/values.yaml
             extras: true
+          - app: rustfs
+            path: apps/infra/rustfs
+            namespace: rustfs
+            syncWave: "2"
   template:
     metadata:
       name: "{{ .app }}"

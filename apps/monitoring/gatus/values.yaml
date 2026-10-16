@@ -307,7 +307,8 @@ config:
       client:
         ignore-redirect: true
       conditions:
-        - "[STATUS] == 401"
+        # ForwardAuth (Authentik outpost) redirects unauthenticated clients to IdP
+        - "[STATUS] == 302"
       alerts: *pushover
     - name: pangolin
       group: extern

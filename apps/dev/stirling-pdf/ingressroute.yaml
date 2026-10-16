@@ -30,5 +30,7 @@ spec:
         - name: stirling-pdf
           port: 8080
           serversTransport: stirling-pdf
+      middlewares:
+        - name: stirling-pdf-authentik
   tls:
     secretName: stirling-pdf-tls

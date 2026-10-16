@@ -4,6 +4,10 @@ PDF toolkit on `https://stirling-pdf.stadthagen.dev` (Argo app `stirling-pdf`).
 
 Homepage-Eintrag siehe [`apps/dev/web/config/services.yaml`](https://github.com/HenryHST/minilab/blob/main/apps/dev/web/config/services.yaml).
 
+## Auth (ForwardAuth)
+
+SSO via Authentik Outpost `ak-outpost-stirling-pdf` (Day-0 blueprint `day0-stirling-pdf`). Traefik Middleware `stirling-pdf-authentik`. Access groups `stirling_pdf_admins` / `stirling_pdf_users` (Infra_LAB Terraform). Gatus SSO check expects **302** when unauthenticated.
+
 ## Configuration (GitOps)
 
 - Locale / UI: `de-DE` / `de_DE` via ConfigMap `stirling-pdf-settings` → `/configs/custom_settings.yml`

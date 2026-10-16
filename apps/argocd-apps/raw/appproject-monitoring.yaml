@@ -23,6 +23,8 @@ spec:
       namespace: unpoller
     - server: "*"
       namespace: kromgo
+    - server: "*"
+      namespace: otel-collector
   clusterResourceWhitelist:
     - group: "*"
       kind: "*"

@@ -139,28 +139,19 @@ spec:
             - -c
             - |
               set -euo pipefail
-              # #region agent log
-              # debug-session b3e950 — temporary instrumentation (do not remove until verified)
-              echo "DBG_b3e950 HYP_C RESTORE_ENABLED=${RESTORE_ENABLED:-unset}"
-              echo "DBG_b3e950 HYP_E preinstalled:"; command -v tar; command -v gzip; command -v psql || true
-              # #endregion
 
-              # Skip before apk: PostSync must succeed when restore is disabled.
-              # Evidence b3e950: enabled=false but apk DNS failure still failed the Job.
+              # Skip before apk so PostSync succeeds when restore is disabled
+              # (transient Alpine CDN DNS must not fail the hook).
               if [[ "${RESTORE_ENABLED}" != "true" ]]; then
-                echo "DBG_b3e950 post-fix skip_without_apk"
                 echo "authentik-restore.enabled!=true — skip"
                 exit 0
               fi
 
-              # alpine/k8s already has tar+gzip; only pg client needs apk (with DNS retry).
-              echo "DBG_b3e950 post-fix apk_install_start"
+              # alpine/k8s already has tar+gzip; only pg client needs apk (retry for DNS blips).
               for i in 1 2 3 4 5; do
                 if apk add --no-cache postgresql17-client; then
-                  echo "DBG_b3e950 post-fix apk_install_ok attempt=${i}"
                   break
                 fi
-                echo "DBG_b3e950 post-fix apk_install_retry attempt=${i}" >&2
                 if [[ "${i}" -eq 5 ]]; then
                   echo "apk add postgresql17-client failed after retries" >&2
                   exit 1

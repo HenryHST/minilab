@@ -25,6 +25,16 @@ Ops-/Architektur (Admin): [`../../../home-assistant/ha02.md`](../../../home-assi
 
 ## Changelog
 
+### 1.4.0 — 2026-10-17
+
+- Kapitel **Matter**: Matter Server & OTBR inkl. App-Konfig, Integrationen Matter/Thread, Geräte-Rollen, Automation Neustart Border Router
+- Kapitel **Systemübersicht**: Matter-Gerätetabelle (9 Geräte) ergänzt
+
+### 1.3.0 — 2026-10-17
+
+- Kapitel **Homematic**: OpenCCU-App, Integration `homematicip_local`, Funk (HmIP/BidCoS), Rollen-Übersicht, HA-Automationen (Klingel2HA, Rollo-WZ auf/zu)
+- Kapitel **Systemübersicht**: Homematic-Gerätetabelle aus Live-Abfrage aktualisiert (14 Geräte)
+
 ### 1.2.0 — 2026-10-17
 
 - Kapitel **Dashboard Home**: alle Tabs des Dashboards `dashboard-home` inkl. Screenshots unter `media/dashboard-home/`

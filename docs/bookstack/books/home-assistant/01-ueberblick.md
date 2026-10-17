@@ -41,11 +41,11 @@ Sie müssen **nichts installieren oder programmieren**, um Alltagsfunktionen zu 
 | Klima & Heizung | Temperatur lesen und stellen |
 | Szenen & Automationen | Fertige Abläufe starten |
 | Zigbee | Funklampen, Sensoren, Mesh |
-| Matter | Herstellerübergreifende Geräte |
-| Homematic | Heizung, Taster, Kontakte (DE) |
+| Matter | Matter Server & OTBR (Konfig), Geräte, Thread-Automationen |
+| Homematic | OpenCCU & Integration, Geräte, Automationen (Klingel, Rollos) |
 | Bluetooth | BLE-Sensoren und Reichweite |
 | Wenn etwas nicht klappt | Häufige Probleme |
-| Systemübersicht | Alltagsgeräte, Zigbee- & Homematic-Listen |
+| Systemübersicht | Alltagsgeräte, Zigbee-, Homematic- & Matter-Listen |
 | Dashboard Home | Tabs & Screenshots des Home-Dashboards |
 
 ## Hilfe

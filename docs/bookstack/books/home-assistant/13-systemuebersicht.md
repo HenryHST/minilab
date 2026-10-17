@@ -4,7 +4,7 @@
 
 ## Was Sie erreichen
 
-Sie sehen die **wichtigsten Alltagsgeräte** sowie die **Zigbee-** und **Homematic**-Gerätelisten — ohne die komplette Entity-Menge der Instanz (~6000 Entities, viele Sensoren/Netz-Internals).
+Sie sehen die **wichtigsten Alltagsgeräte** sowie die **Zigbee-**, **Homematic-** und **Matter**-Gerätelisten — ohne die komplette Entity-Menge der Instanz (~6000 Entities, viele Sensoren/Netz-Internals).
 
 ## Kurzprofil
 
@@ -16,8 +16,9 @@ Sie sehen die **wichtigsten Alltagsgeräte** sowie die **Zigbee-** und **Homemat
 | Zeitzone / Sprache | Europe/Berlin · de |
 | Zigbee | Zigbee2MQTT (Bridge im Kontrollraum) |
 | Homematic | Homematic(IP) Local / OpenCCU |
+| Matter / Thread | Matter Server + OpenThread Border Router (SkyConnect) |
 
-Bedienung der Oberfläche: Kapitel *Übersicht lesen*, *Lichter & Schalter*, *Klima & Heizung*. Technik-Hinweise: *Zigbee*, *Homematic*.
+Bedienung der Oberfläche: Kapitel *Übersicht lesen*, *Lichter & Schalter*, *Klima & Heizung*. Technik-Hinweise: *Zigbee*, *Homematic*, *Matter*.
 
 ---
 
@@ -171,21 +172,46 @@ Unten die **Geräte** (nicht jede Hilfs-Entity wie Linkqualität). Namen ohne Ar
 
 ## Homematic-Geräte (Homematic IP Local)
 
-Integration: **homematicip_local** an **OpenCCU** (`e886462b-openccu`, Kontrollraum). Bedienung: Kapitel *Homematic*.
+> Stand Abfrage: **2026-10-17** · 14 Geräte · Integration **homematicip_local** (Eintrag `e886462b-openccu`, geladen) · App **OpenCCU** `e886462b_openccu` v3.89.11.20260919 (gestartet)
+
+Installation, Rollen und Automationen: Kapitel *Homematic*.
 
 | Gerät | Modell | Raum | Rolle |
 |-------|--------|------|-------|
 | e886462b-openccu | OpenCCU | Kontrollraum | Zentrale |
-| HmIP-RFUSB … | HmIP-RFUSB | Arbeitszimmer | Funk-Stick |
-| HmIP-RCV-50 / HM-RCV-50 BidCoS-RF | Virtual Receiver | — | Virtuelle Empfänger |
+| HmIP-RFUSB 000425A98C6FFE | HmIP-RFUSB | Arbeitszimmer | Funk-Stick |
+| HmIP-RCV-50 HmIP-RCV-1 | HmIP-RCV-50 | — | Virtueller Empfänger (HmIP) |
+| HM-RCV-50 BidCoS-RF | HM-RCV-50 | — | Virtueller Empfänger (BidCoS) |
 | Klingel | HmIP-DSD-PCB | Flur | Klingel |
 | Flurtaster | HMIP-WRC2 | Eingangsflur | Wandtaster |
-| Rollo-Mitte-Links / -Rechts | HmIP-HDM1 | Wohnzimmer | Rollladen |
-| Rollo-RE-LI / Rollo-RE-RE | HmIP-HDM1 | Wohnzimmer | Rollladen |
+| Rollo-Mitte-Links | HmIP-HDM1 | Wohnzimmer | Rollladen (`cover.neu`) |
+| Rollo-Mitte-Rechts | HmIP-HDM1 | Wohnzimmer | Rollladen (`cover.test`) |
+| Rollo-RE-LI | HmIP-HDM1 | Wohnzimmer | Rollladen |
+| Rollo-RE-RE | HmIP-HDM1 | Wohnzimmer | Rollladen |
 | Balkon-Tür-WZ | HmIP-SWDO-I | Wohnzimmer | Türkontakt |
 | AZ-Fenster-klein | HMIP-SWDO | Arbeitszimmer | Fensterkontakt |
 | Temp-Balkon | HmIP-STHO | Balkon | Außen-Temp/Feuchte |
 | Kühlschrank | HmIP-WTH-2 | Küche | Wandthermostat |
+
+---
+
+## Matter-Geräte
+
+> Stand Abfrage: **2026-10-17** · 9 Geräte · Integration **Matter** (geladen) · Apps **Matter Server** `core_matter_server` v9.2.0 · **OTBR** `core_openthread_border_router` v3.3.0 (beide gestartet)
+
+Installation, App-Konfig und Automationen: Kapitel *Matter*.
+
+| Gerät (Anzeige) | Hersteller | Modell | Raum | Rolle |
+|-----------------|------------|--------|------|-------|
+| Strip-li | Nanoleaf | NL68 | Wohnzimmer | LED-Strip |
+| Strip-re | Nanoleaf | NL68 | Wohnzimmer | LED-Strip |
+| Strip-tv | Nanoleaf | NL68 | Wohnzimmer | LED-Strip |
+| Strip-bett | Nanoleaf | NL68 | Schlafzimmer | LED-Strip |
+| AZ-Temp / AZ-Feucht | IKEA | TIMMERFLOTTE | Arbeitszimmer | Temp/Feuchte |
+| Flur-Temp / Flur-Feucht | IKEA | TIMMERFLOTTE | Eingangsflur | Temp/Feuchte |
+| Küche-Temp / Küche-Feucht | IKEA | TIMMERFLOTTE | Küche | Temp/Feuchte |
+| AIR-WZ | IKEA | ALPSTUGA | Wohnzimmer | Luftqualität |
+| AIR-SZ | IKEA | ALPSTUGA | Schlafzimmer | Luftqualität |
 
 ---
 
@@ -197,6 +223,7 @@ Integration: **homematicip_local** an **OpenCCU** (`e886462b-openccu`, Kontrollr
 | Licht / Steckdose tippen | *Lichter & Schalter* |
 | Zigbee-Bedienung & Pairing | *Zigbee* |
 | Homematic-Bedienung | *Homematic* |
+| Matter / Thread | *Matter* |
 | Störungen | *Wenn etwas nicht klappt* |
 | Admin / Host ha02 | Ops-Doku `ha02.md` (minilab) |
 

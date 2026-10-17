@@ -57,6 +57,10 @@ Selbst pairen sollten Sie nur, wenn der Admin das freigegeben hat:
 | Pairing klappt nicht | Abstand zum Stick, frische Batterie, Admin-Anleitung folgen |
 | Nur ein Raum betroffen | Oft Funkloch — Admin |
 
+## Geräteliste
+
+Aktuelle Zigbee2MQTT-Geräte nach Raum: Kapitel *Systemübersicht*.
+
 ## Hilfe
 
 - Allgemeine Störungen: Kapitel *Wenn etwas nicht klappt*

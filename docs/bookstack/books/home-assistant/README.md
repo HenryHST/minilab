@@ -18,8 +18,15 @@ BookStack: Shelf **Anleitungen** → Buch **Home Assistant**. Kapitel in dieser 
 | 10 | [`10-homematic.md`](10-homematic.md) | Homematic |
 | 11 | [`11-bluetooth.md`](11-bluetooth.md) | Bluetooth |
 | 12 | [`12-stoerungen.md`](12-stoerungen.md) | Wenn etwas nicht klappt |
+| 13 | [`13-systemuebersicht.md`](13-systemuebersicht.md) | Systemübersicht |
 
 Ops-/Architektur (Admin): [`../../../home-assistant/ha02.md`](../../../home-assistant/ha02.md).
+
+## Changelog
+
+### 1.1.0 — 2026-10-17
+
+- Kapitel **Systemübersicht**: Alltags-Entities (Auswahl), Zigbee2MQTT- und Homematic(IP)-Local-Gerätelisten
 
 Vorlage: [`../../templates/vorlage-anleitung-nicht-it.md`](../../templates/vorlage-anleitung-nicht-it.md). Screenshots später in BookStack ergänzen.
 

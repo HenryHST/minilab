@@ -62,6 +62,10 @@ Einrichtung der CCU/Integration: **Admin**.
 | Taster schaltet lokal, HA nicht | Verbindung HA ↔ CCU — Admin |
 | Zeiten / Programme stimmen nicht | Oft CCU- oder HA-Automation — Admin, nicht beides wild ändern |
 
+## Geräteliste
+
+Aktuelle Homematic(IP)-Local-Geräte (OpenCCU): Kapitel *Systemübersicht*.
+
 ## Hilfe
 
 - Kapitel *Klima & Heizung* und *Szenen & Automationen*

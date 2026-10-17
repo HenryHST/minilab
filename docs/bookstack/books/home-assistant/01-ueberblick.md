@@ -45,6 +45,7 @@ Sie müssen **nichts installieren oder programmieren**, um Alltagsfunktionen zu 
 | Homematic | Heizung, Taster, Kontakte (DE) |
 | Bluetooth | BLE-Sensoren und Reichweite |
 | Wenn etwas nicht klappt | Häufige Probleme |
+| Systemübersicht | Alltagsgeräte, Zigbee- & Homematic-Listen |
 
 ## Hilfe
 

@@ -18,7 +18,7 @@ Wiki / Wissensdatenbank:
 | DB | MariaDB 11.4 (`mariadb.yaml`, hostPath `/var/lib/bookstack-mariadb` @ `nxk3-w01`) |
 | Auth | Authentik OIDC (`AUTH_METHOD=oidc`) |
 | Theme | `APP_THEME=custom` — Modules/Fonts via Argo PostSync Job |
-| PDF | `EXPORT_PAGE_SIZE=a4`, dompdf + Noto Sans (GitOps; extra TTFs source-only) |
+| PDF | `EXPORT_PAGE_SIZE=a4`, dompdf + Noto Sans; `memory_limit=512M` in `/config/php/php-local.ini` (image-heavy pages OOM at 128M) |
 | SMTP | `mail.henrystadthagen.de:465`, Secret `bookstack-smtp` (Passwort = SecretSpec `AUTHENTIK_EMAIL_PASSWORD`) |
 | Backup | CronJob 04:00 UTC → NFS `…/bookstack-backups` (DB + `/config`, Retention 7) |
 
@@ -85,6 +85,8 @@ Routen: `/books/{slug}/export/offline-zip` (auch chapter/page). Menü: **Offline
 
 - `EXPORT_PAGE_SIZE=a4` ([Doku](https://www.bookstackapp.com/docs/admin/pdf-rendering/#export-page-size))
 - Engine: Standard **dompdf**
+- PHP `memory_limit=512M` via PVC `/config/php/php-local.ini` (dompdf + many gallery PNGs needs >128M)
+- Shelf-Permissions: CronJob [`copy-shelf-permissions-cronjob.yaml`](copy-shelf-permissions-cronjob.yaml) (`kubectl exec` into the app pod — Helm `shelfPermissionsCron` is off because the config PVC is RWO)
 - Fonts: hinted `NotoSans.ttf` / `NotoSans-Bold.ttf` → PVC `/config/www/fonts/dompdf/` + ephemeral `/app/www/storage/fonts/dompdf/` (PostSync Job)
 - CSS (Theme-Root): `pdf-fonts-head.blade.php` + `functions.php` (`renderBefore` base-body-start) — Sans für Fließtext; `code`/`pre` mit Mono-Stack (Fallback DejaVu, bis Mono separat geliefert wird)
 

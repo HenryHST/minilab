@@ -41,6 +41,9 @@ $gitopsPermissions = [
     'page-view-all',
     'page-create-all',
     'page-update-all',
+    // Inline chapter screenshots (import_books.py → POST /api/image-gallery)
+    'image-create-all',
+    'image-update-all',
     // Content ACL for Regal Familie (import_books.py → /api/content-permissions)
     'restrictions-manage-all',
     // List roles for ACL role_id lookup (/api/roles)

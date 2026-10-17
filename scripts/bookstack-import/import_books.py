@@ -40,10 +40,41 @@ except ImportError:
 FRONTMATTER_RE = re.compile(r"^---\r?\n.*?\r?\n---\r?\n", re.DOTALL)
 H1_RE = re.compile(r"^#\s+(.+)$", re.MULTILINE)
 CHAPTER_MD_RE = re.compile(r"^\d{2}-.+\.md$")
+# Relative markdown images: ![alt](media/foo.png) — not http(s)/data:/absolute uploads
+MD_IMAGE_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
 
 # Content ACL: only these roles see/edit shelf Familie (+ its books).
 FAMILIE_SHELF_NAME = "Familie"
 FAMILIE_ACL_ROLE_NAMES = ("BookStack Admin", "BookStack Familie")
+
+# region agent log
+_DEBUG_LOG = os.environ.get(
+    "INFRA_LAB_DEBUG_LOG",
+    "/Users/henry/Infra_LAB/.cursor/debug-1ae980.log",
+)
+
+
+def _debug_log(hypothesis_id: str, location: str, message: str, data: dict[str, Any]) -> None:
+    """NDJSON debug line (local file + stdout for cluster job logs)."""
+    row = {
+        "sessionId": "1ae980",
+        "runId": os.environ.get("DEBUG_RUN_ID", "bs-img-fix"),
+        "hypothesisId": hypothesis_id,
+        "location": location,
+        "message": message,
+        "data": data,
+        "timestamp": int(__import__("time").time() * 1000),
+    }
+    line = json.dumps(row, ensure_ascii=False)
+    print(f"DEBUG_JSON:{line}", flush=True)
+    try:
+        with open(_DEBUG_LOG, "a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except OSError:
+        pass
+
+
+# endregion
 
 
 def die(msg: str, code: int = 1) -> None:
@@ -298,6 +329,127 @@ class BookStackClient:
             },
             {"image": (cover_path.name, data, mime)},
         )
+
+    def upload_gallery_image(self, page_id: int, image_path: Path) -> dict:
+        """Upload a page gallery image (multipart POST /api/image-gallery)."""
+        data = image_path.read_bytes()
+        mime = mimetypes.guess_type(image_path.name)[0] or "image/png"
+        print(
+            f"      gallery upload: {image_path.name} ({len(data)} bytes) → page {page_id}",
+            flush=True,
+        )
+        return self._req_multipart(
+            "POST",
+            "/api/image-gallery",
+            {
+                "type": "gallery",
+                "uploaded_to": str(page_id),
+                "name": image_path.name[:180],
+            },
+            {"image": (image_path.name, data, mime)},
+        )
+
+
+def _is_remote_or_data_image(src: str) -> bool:
+    s = src.strip()
+    return (
+        s.startswith("http://")
+        or s.startswith("https://")
+        or s.startswith("data:")
+        or s.startswith("/uploads/")
+    )
+
+
+def embed_local_images(
+    client: BookStackClient,
+    page_id: int,
+    markdown: str,
+    book_dir: Path,
+) -> str:
+    """Upload relative ![alt](path) files to the gallery and rewrite markdown URLs.
+
+    BookStack page HTML otherwise keeps broken relative src like media/foo.png
+    (404 on book-ext). Covers are handled separately; this is for chapter body images.
+    """
+    if page_id <= 0:
+        return markdown
+
+    matches = list(MD_IMAGE_RE.finditer(markdown))
+    if not matches:
+        return markdown
+
+    # region agent log
+    _debug_log(
+        "A",
+        "import_books.py:embed_local_images",
+        "scanning markdown images",
+        {
+            "page_id": page_id,
+            "book_dir": str(book_dir),
+            "match_count": len(matches),
+            "remote_or_uploads": sum(1 for m in matches if _is_remote_or_data_image(m.group(2))),
+        },
+    )
+    # endregion
+
+    out = markdown
+    uploaded = 0
+    missing = 0
+    # Replace from end so offsets stay valid
+    for m in reversed(matches):
+        alt, src = m.group(1), m.group(2).strip()
+        if _is_remote_or_data_image(src):
+            continue
+        # strip optional title: path "title"
+        path_part = src.split()[0].strip("\"'")
+        img_path = (book_dir / path_part).resolve()
+        try:
+            img_path.relative_to(book_dir.resolve())
+        except ValueError:
+            print(f"      WARN: skip image outside book dir: {path_part}", file=sys.stderr)
+            missing += 1
+            continue
+        if not img_path.is_file():
+            print(f"      WARN: image not found: {path_part}", file=sys.stderr)
+            missing += 1
+            continue
+        if client.dry_run:
+            replacement = f"![{alt}](/uploads/images/gallery/dry-run/{img_path.name})"
+            out = out[: m.start()] + replacement + out[m.end() :]
+            uploaded += 1
+            continue
+        resp = client.upload_gallery_image(page_id, img_path)
+        url = (resp.get("url") or "").strip()
+        md_snippet = ((resp.get("content") or {}).get("markdown") or "").strip()
+        if md_snippet:
+            replacement = md_snippet
+        elif url:
+            replacement = f"![{alt}]({url})"
+        else:
+            print(
+                f"      WARN: gallery upload returned no url for {img_path.name}: {list(resp)[:8]}",
+                file=sys.stderr,
+            )
+            missing += 1
+            continue
+        out = out[: m.start()] + replacement + out[m.end() :]
+        uploaded += 1
+
+    # region agent log
+    _debug_log(
+        "A",
+        "import_books.py:embed_local_images",
+        "embed finished",
+        {
+            "page_id": page_id,
+            "uploaded": uploaded,
+            "missing": missing,
+            "changed": out != markdown,
+            "still_has_media_rel": "media/" in out and "![" in out,
+        },
+    )
+    # endregion
+    return out
 
 
 def discover_book_dirs(books_dir: Path) -> list[Path]:
@@ -614,16 +766,46 @@ def ensure_page(
     name: str,
     markdown: str,
     priority: int,
+    book_dir: Path | None = None,
 ) -> None:
     existing = client.find_by_name(pages, name)
     body = {"book_id": book_id, "name": name, "markdown": markdown, "priority": priority}
     if existing:
         print(f"    update page: {name}")
         client._req("PUT", f"/api/pages/{existing['id']}", body)
+        page_id = int(existing["id"])
     else:
         print(f"    create page: {name}")
         created = client._req("POST", "/api/pages", body)
         pages.append(created)
+        page_id = int(created.get("id") or 0)
+
+    # Upload local relative images and rewrite markdown to /uploads/... URLs.
+    if book_dir is not None and page_id > 0:
+        rewritten = embed_local_images(client, page_id, markdown, book_dir)
+        if rewritten != markdown:
+            print(f"    rewrite images: {name}")
+            body_img = {
+                "book_id": book_id,
+                "name": name,
+                "markdown": rewritten,
+                "priority": priority,
+            }
+            client._req("PUT", f"/api/pages/{page_id}", body_img)
+            # region agent log
+            _debug_log(
+                "B",
+                "import_books.py:ensure_page",
+                "page rewritten with gallery URLs",
+                {
+                    "page_id": page_id,
+                    "name": name,
+                    "before_media_refs": markdown.count("media/"),
+                    "after_media_refs": rewritten.count("media/"),
+                    "after_uploads_refs": rewritten.count("/uploads/"),
+                },
+            )
+            # endregion
 
 
 def chapter_files(book_dir: Path) -> list[Path]:
@@ -730,7 +912,15 @@ def import_standard_book(
         raw = path.read_text(encoding="utf-8")
         title = page_title(raw, path.stem)
         md = strip_frontmatter(raw)
-        ensure_page(client, pages, int(book["id"]), title, md, priority=i * 10)
+        ensure_page(
+            client,
+            pages,
+            int(book["id"]),
+            title,
+            md,
+            priority=i * 10,
+            book_dir=book_dir,
+        )
     if shelf_name.strip() == FAMILIE_SHELF_NAME:
         apply_familie_acl(client, shelf, book)
     return dirty
@@ -797,7 +987,15 @@ def import_files_as_books(
             print(f"  STATE {cover_key}={state[cover_key][:12]}…")
         attach_book_to_shelf(client, shelf, int(book["id"]))
         pages = list_pages_for_book(client, int(book["id"])) if not client.dry_run else []
-        ensure_page(client, pages, int(book["id"]), title, md, priority=10)
+        ensure_page(
+            client,
+            pages,
+            int(book["id"]),
+            title,
+            md,
+            priority=10,
+            book_dir=book_dir,
+        )
     return dirty
 
 

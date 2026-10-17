@@ -5,6 +5,9 @@
     {{- $_ := merge $ctx.Values (include "bookstack.harcodedValues" $ | fromYaml) -}}
     {{- $_ = mergeOverwrite $ctx.Values . }}
     {{- $_ = set $ctx.Values "service" dict }}
+    {{/* No persistence here: config PVC is RWO and already mounted by the Deployment.
+         Mounting it on this CronJob causes Multi-Attach. Use apps/dev/bookstack/
+         copy-shelf-permissions-cronjob.yaml (kubectl exec into the app pod) instead. */}}
     {{- $_ = set $ctx.Values "persistence" dict }}
     {{- include "bjw-s.common.class.cronjob" $ctx }}
   {{- end }}

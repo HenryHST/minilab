@@ -25,6 +25,8 @@ env:
   APP_LANG: de
   APP_THEME: custom
   EXPORT_PAGE_SIZE: a4
+  # dompdf needs headroom for pages with many inline screenshots (default 128M OOMs).
+  # Applied via /config/php/php-local.ini (PHP_INI_SCAN_DIR); keep in sync with theme PostSync if set there.
   APP_KEY:
     secretKeyRef:
       name: bookstack-app
@@ -80,8 +82,10 @@ persistence:
 mariadb:
   enabled: false
 
+# Disabled: chart CronJob cannot mount RWO /config while the Deployment holds it
+# (Multi-Attach). Replacement: copy-shelf-permissions-cronjob.yaml (exec into app pod).
 shelfPermissionsCron:
-  enabled: true
+  enabled: false
 
 podSecurityContext:
   fsGroup: 911

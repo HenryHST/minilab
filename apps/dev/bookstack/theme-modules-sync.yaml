@@ -162,5 +162,13 @@ spec:
               kubectl -n "$NS" exec "$POD" -- sh -c \
                 'mkdir -p /config/www/uploads/images/cover_book && chown -R abc:abc /config/www/uploads && chmod -R u+rwX,g+rwX /config/www/uploads'
 
+              # PDF/dompdf: default 128M OOMs on pages with many gallery screenshots.
+              echo "Ensure php-local.ini memory_limit=512M..."
+              kubectl -n "$NS" exec "$POD" -- sh -c \
+                'f=/config/php/php-local.ini; mkdir -p /config/php; touch "$f";
+                 if grep -q "^memory_limit" "$f"; then sed -i "s/^memory_limit.*/memory_limit = 512M/" "$f";
+                 else printf "\n; BookStack PDF/dompdf\nmemory_limit = 512M\n" >> "$f"; fi;
+                 grep memory_limit "$f"'
+
               kubectl -n "$NS" exec "$POD" -- sh -c 'cd /app/www && php artisan view:clear'
               echo "theme-modules-sync done"

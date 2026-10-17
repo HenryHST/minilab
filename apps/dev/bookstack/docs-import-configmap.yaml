@@ -130,9 +130,9 @@ data:
     def resolve_script() -> Path:
         for candidate in (
             Path(os.environ.get("SCRIPT_DIR") or "") / "import_books.py",
-            Path("/config/import_books.py"),
             work / "clones/infra-lab-platform/scripts/bookstack-import/import_books.py",
             work / "clones/minilab-docs/scripts/bookstack-import/import_books.py",
+            Path("/config/import_books.py"),
         ):
             if candidate.is_file():
                 return candidate
@@ -1237,6 +1237,9 @@ data:
         'page-view-all',
         'page-create-all',
         'page-update-all',
+    // Inline chapter screenshots (import_books.py → POST /api/image-gallery)
+    'image-create-all',
+    'image-update-all',
         // Content ACL for Regal Familie (import_books.py → /api/content-permissions)
         'restrictions-manage-all',
         // List roles for ACL role_id lookup (/api/roles)

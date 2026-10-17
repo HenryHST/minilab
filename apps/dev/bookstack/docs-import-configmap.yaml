@@ -1265,6 +1265,8 @@ data:
         'attachment-update-all',
         'comment-create-all',
         'comment-update-all',
+        // PDF/HTML/Markdown/ZIP export from the UI (view alone is not enough)
+        'content-export',
     ];
     
     $roleName = 'GitOps Import';
@@ -1301,14 +1303,14 @@ data:
     if ($familieRole === null) {
         $familieRole = $permsRepo->saveNewRole([
             'display_name' => $familieRoleName,
-            'description' => 'OIDC group BookStack Familie — Regal Familie (view/create/update, no delete)',
+            'description' => 'OIDC group BookStack Familie — view/create/update + export, no delete',
             'permissions' => $familiePermissions,
             'mfa_enforced' => false,
         ]);
         echo "ROLE created id={$familieRole->id} display_name={$familieRoleName}\n";
     } else {
         $permsRepo->updateRole($familieRole->id, [
-            'description' => 'OIDC group BookStack Familie — Regal Familie (view/create/update, no delete)',
+            'description' => 'OIDC group BookStack Familie — view/create/update + export, no delete',
             'permissions' => $familiePermissions,
             'mfa_enforced' => false,
         ]);

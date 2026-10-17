@@ -1,0 +1,5 @@
+book: BookStack
+book_version: "1.0.0"
+updated: "2026-10-17"
+description: BookStack Wiki — Deploy, PDF-Export Fehleranalyse (FPM memory/timeout, Fonts, content-export), Quellen
+shelf: Plattform

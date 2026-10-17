@@ -18,7 +18,7 @@ Wiki / Wissensdatenbank:
 | DB | MariaDB 11.4 (`mariadb.yaml`, hostPath `/var/lib/bookstack-mariadb` @ `nxk3-w01`) |
 | Auth | Authentik OIDC (`AUTH_METHOD=oidc`) |
 | Theme | `APP_THEME=custom` — Modules/Fonts via Argo PostSync Job |
-| PDF | `EXPORT_PAGE_SIZE=a4`, dompdf + Noto Sans; `memory_limit=512M` in `/config/php/php-local.ini` (image-heavy pages OOM at 128M) |
+| PDF | `EXPORT_PAGE_SIZE=a4`, dompdf + Noto Sans; FPM `memory_limit=512M` + `max_execution_time=300` via `www2.conf`; font dir `abc`-writable |
 | SMTP | `mail.henrystadthagen.de:465`, Secret `bookstack-smtp` (Passwort = SecretSpec `AUTHENTIK_EMAIL_PASSWORD`) |
 | Backup | CronJob 04:00 UTC → NFS `…/bookstack-backups` (DB + `/config`, Retention 7) |
 
@@ -83,11 +83,15 @@ Routen: `/books/{slug}/export/offline-zip` (auch chapter/page). Menü: **Offline
 
 ### PDF export
 
+Fehleranalyse (Incident 2026-10-17, Hypothesen/Evidenz/Verify): BookStack-Buch [`docs/bookstack/books/bookstack/02-pdf-export-fehleranalyse.md`](../../docs/bookstack/books/bookstack/02-pdf-export-fehleranalyse.md).
+
 - `EXPORT_PAGE_SIZE=a4` ([Doku](https://www.bookstackapp.com/docs/admin/pdf-rendering/#export-page-size))
 - Engine: Standard **dompdf**
-- PHP `memory_limit=512M` via PVC `/config/php/php-local.ini` (dompdf + many gallery PNGs needs >128M)
+- PHP `memory_limit=512M` + `max_execution_time=300`: CLI via `/config/php/php-local.ini`; **FPM/UI** via `/config/php/www2.conf` `php_admin_value[...]` (FPM does not load `php-local.ini`; heavy pages need >30s). Nach INI-Änderung FPM **hard** restarten (USR2 kann alte Worker behalten)
+- nginx `fastcgi_read_timeout`/`fastcgi_send_timeout` 300s in `site-confs/default.conf` (kept in sync by PostSync)
 - Shelf-Permissions: CronJob [`copy-shelf-permissions-cronjob.yaml`](copy-shelf-permissions-cronjob.yaml) (`kubectl exec` into the app pod — Helm `shelfPermissionsCron` is off because the config PVC is RWO)
-- Fonts: hinted `NotoSans.ttf` / `NotoSans-Bold.ttf` → PVC `/config/www/fonts/dompdf/` + ephemeral `/app/www/storage/fonts/dompdf/` (PostSync Job)
+- Fonts: hinted `NotoSans.ttf` / `NotoSans-Bold.ttf` → PVC `/config/www/fonts/dompdf/` + ephemeral `/app/www/storage/fonts/dompdf/` (PostSync Job). **Must be writable by `abc`** (`.ufm` + `installed-fonts.json`); root-owned metrics from CLI `artisan` PDF break UI export until `chown -R abc:abc` that dir
+- Rollen: UI-Export braucht System-Permission **`content-export`** (Rolle **BookStack Familie** enthält sie seit Bootstrap/`docs-import-configmap.yaml`)
 - CSS (Theme-Root): `pdf-fonts-head.blade.php` + `functions.php` (`renderBefore` base-body-start) — Sans für Fließtext; `code`/`pre` mit Mono-Stack (Fallback DejaVu, bis Mono separat geliefert wird)
 
 ## Helm neu rendern

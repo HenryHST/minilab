@@ -20,6 +20,10 @@ Kein `kustomization.yaml` in App-Pfaden — Plain Directory oder committed Helm-
 - Redirect-URIs und Client-Secret prüfen
 - BookStack: Secret `bookstack-oauth`, Issuer-URL mit trailing `/`
 
+## BookStack PDF-Export
+
+UI-PDF bricht ab, Timeout ~30 s, Font-Fehler oder „Keine Zugriffsberechtigung“ trotz sichtbarer Seite → Buch **BookStack**, Kapitel **PDF-Export Fehleranalyse** (FPM `www2.conf`, Fonts `abc`, Rolle `content-export`).
+
 ## Backup schlägt fehl
 
 - NFS-Mount / Ordner auf NAS vorhanden?

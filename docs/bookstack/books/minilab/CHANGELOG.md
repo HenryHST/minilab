@@ -1,5 +1,11 @@
 # Changelog — Buch Minilab
 
+## [1.1.5] - 2026-10-17
+
+### Added
+
+- Troubleshooting: Verweis auf Buch **BookStack** → PDF-Export Fehleranalyse
+
 ## [1.1.2] - 2026-10-09
 
 ### Changed

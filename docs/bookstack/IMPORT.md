@@ -54,7 +54,17 @@ Buch **Vaultwarden** — Reihenfolge aus `books/vaultwarden/`:
 
 URL (kanonisch): `https://vw-ext.stadthagen.dev` · Manifeste: `apps/dev/vaultwarden/`.
 
-## 4b. Home Assistant
+## 4b. BookStack (Wiki-App)
+
+Buch **BookStack** — Reihenfolge aus `books/bookstack/`:
+
+1. Übersicht
+2. PDF-Export Fehleranalyse (Incident 2026-10-17)
+3. Quellen
+
+Manifeste: `apps/dev/bookstack/`.
+
+## 4c. Home Assistant
 
 Buch **Home Assistant** — Reihenfolge aus `books/home-assistant/`:
 

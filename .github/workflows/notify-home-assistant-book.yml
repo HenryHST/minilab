@@ -78,18 +78,49 @@ jobs:
           echo "to=${TO}" >> "$GITHUB_OUTPUT"
           echo "Empfänger: ${TO}"
 
+      # Defaults match BENACHRICHTIGUNGEN.md (Relay ohne Auth). Secrets override when set.
+      - name: Resolve SMTP settings
+        id: smtp
+        if: steps.changes.outputs.skip != 'true'
+        shell: bash
+        env:
+          # Do not echo these; only lengths/flags for debug
+          SECRET_SERVER: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_SERVER }}
+          SECRET_PORT: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_PORT }}
+          SECRET_FROM: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_FROM }}
+          SECRET_USER: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_USERNAME }}
+          SECRET_PASS: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          # #region agent log
+          {
+            echo "smtp_secret_flags server_set=$([ -n "${SECRET_SERVER}" ] && echo 1 || echo 0) port_set=$([ -n "${SECRET_PORT}" ] && echo 1 || echo 0) from_set=$([ -n "${SECRET_FROM}" ] && echo 1 || echo 0) user_set=$([ -n "${SECRET_USER}" ] && echo 1 || echo 0) pass_set=$([ -n "${SECRET_PASS}" ] && echo 1 || echo 0)"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          # #endregion
+          SERVER="${SECRET_SERVER:-mail.henrystadthagen.de}"
+          PORT="${SECRET_PORT:-25}"
+          FROM="${SECRET_FROM:-auto@henrystadthagen.de}"
+          {
+            echo "server=${SERVER}"
+            echo "port=${PORT}"
+            echo "from=${FROM}"
+          } >> "$GITHUB_OUTPUT"
+          # #region agent log
+          echo "smtp_resolved server=${SERVER} port=${PORT} from=${FROM}" | tee -a "$GITHUB_STEP_SUMMARY"
+          # #endregion
+
       - name: Send email
         if: steps.changes.outputs.skip != 'true'
         uses: dawidd6/action-send-mail@v22
         with:
-          server_address: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_SERVER }}
-          server_port: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_PORT }}
+          server_address: ${{ steps.smtp.outputs.server }}
+          server_port: ${{ steps.smtp.outputs.port }}
           secure: false
           # Leer ok, wenn Relay ohne Auth (wie Alertmanager Port 25)
           username: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_USERNAME }}
           password: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_PASSWORD }}
           ignore_cert: true
-          from: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_FROM }}
+          from: ${{ steps.smtp.outputs.from }}
           to: ${{ steps.recipients.outputs.to }}
           subject: ${{ steps.changes.outputs.subject }}
           body: |

@@ -71,6 +71,7 @@ Buch **Home Assistant** — Reihenfolge aus `books/home-assistant/`:
 11. Bluetooth
 12. Wenn etwas nicht klappt
 13. Systemübersicht (Alltagsgeräte, Zigbee, Homematic)
+14. Dashboard Home (Tabs & Screenshots)
 
 URL der Instanz: `https://ha02.stadthagen.dev`  
 Ops-Doku (Admin): [`../home-assistant/ha02.md`](../home-assistant/ha02.md)

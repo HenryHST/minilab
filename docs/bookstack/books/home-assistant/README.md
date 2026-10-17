@@ -19,10 +19,15 @@ BookStack: Shelf **Anleitungen** → Buch **Home Assistant**. Kapitel in dieser 
 | 11 | [`11-bluetooth.md`](11-bluetooth.md) | Bluetooth |
 | 12 | [`12-stoerungen.md`](12-stoerungen.md) | Wenn etwas nicht klappt |
 | 13 | [`13-systemuebersicht.md`](13-systemuebersicht.md) | Systemübersicht |
+| 14 | [`14-dashboard-home.md`](14-dashboard-home.md) | Dashboard Home |
 
 Ops-/Architektur (Admin): [`../../../home-assistant/ha02.md`](../../../home-assistant/ha02.md).
 
 ## Changelog
+
+### 1.2.0 — 2026-10-17
+
+- Kapitel **Dashboard Home**: alle Tabs des Dashboards `dashboard-home` inkl. Screenshots unter `media/dashboard-home/`
 
 ### 1.1.0 — 2026-10-17
 

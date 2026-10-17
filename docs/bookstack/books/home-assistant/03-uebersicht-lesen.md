@@ -21,9 +21,11 @@ Jede Karte zeigt den aktuellen Zustand — z. B. an/aus, Temperatur, geöffnet
 ## Navigation
 
 1. **Menü** (oben links) öffnen
-2. **Übersicht** = Haupt-Dashboard
-3. Weitere Dashboards erscheinen im Menü, falls der Admin welche angelegt hat (z. B. „Erdgeschoss“, „Garten“)
-4. Mit dem **Pfeil zurück** oder erneut „Übersicht“ zur Startseite
+2. **Übersicht** / **Start** = ein Dashboard; das Haus-Dashboard mit Raum-Tabs heißt in der Sidebar oft **Home**
+3. Weitere Dashboards erscheinen im Menü (z. B. Finanzen, Karte)
+4. Mit dem **Pfeil zurück** oder erneut „Home“ / „Start“ zur gewünschten Startseite
+
+Ausführliche Tab-Liste und Screenshots: Kapitel *Dashboard Home*.
 
 ## Status verstehen (typisch)
 

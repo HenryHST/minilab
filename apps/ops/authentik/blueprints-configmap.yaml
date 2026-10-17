@@ -243,6 +243,8 @@ data:
           slug: registry-ui
           provider: !KeyOf registry-ui-provider
           meta_launch_url: https://registry-ui.stadthagen.dev
+          meta_icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/docker.png
+          meta_description: Browser-UI für die lokale Docker-Registry (Images und Tags).
           open_in_new_tab: true
 
       - model: authentik_policies.policybinding

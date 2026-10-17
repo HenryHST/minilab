@@ -86,6 +86,10 @@ data:
             href: https://drawio.stadthagen.dev
             icon: si-diagramsdotnet-#F08705
             description: Diagram editor
+        - ExcaliDash:
+            href: https://excalidash.stadthagen.dev
+            icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/excalidraw.png
+            description: Excalidraw workspaces (OIDC)
         - Termix:
             href: https://termix.stadthagen.dev
             icon: si-gnubash-#4EAA25

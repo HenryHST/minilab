@@ -1,0 +1,78 @@
+# Joxit docker-registry-ui (replaces helm chart docker-registry-ui 1.1.4).
+# Registry htpasswd is injected via Secret registry-ui-proxy-auth (Infra_LAB k3s_secrets).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry-ui-user-interface
+  namespace: registry-ui
+  labels:
+    app.kubernetes.io/name: docker-registry-ui
+    app.kubernetes.io/instance: registry-ui
+    app.kubernetes.io/component: user-interface
+    app.kubernetes.io/part-of: registry-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: docker-registry-ui
+      app.kubernetes.io/instance: registry-ui
+      app.kubernetes.io/component: user-interface
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: docker-registry-ui
+        app.kubernetes.io/instance: registry-ui
+        app.kubernetes.io/component: user-interface
+        app.kubernetes.io/part-of: registry-ui
+    spec:
+      containers:
+        - name: registry-ui
+          image: joxit/docker-registry-ui:2.6.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: registry-ui-proxy-auth
+          env:
+            - name: REGISTRY_TITLE
+              value: minilab Registry
+            - name: DELETE_IMAGES
+              value: "true"
+            - name: NGINX_PROXY_PASS_URL
+              value: http://kube-registry.kube-system.svc.cluster.local:5000
+            - name: SHOW_CATALOG_NB_TAGS
+              value: "true"
+            - name: SHOW_CONTENT_DIGEST
+              value: "true"
+            - name: SINGLE_REGISTRY
+              value: "true"
+            - name: CATALOG_ELEMENTS_LIMIT
+              value: "1000"
+            - name: NGINX_LISTEN_PORT
+              value: "80"
+            - name: USE_CONTROL_CACHE_HEADER
+              value: "false"
+            - name: TAGLIST_ORDER
+              value: alpha-asc;num-desc
+            - name: CATALOG_DEFAULT_EXPANDED
+              value: "false"
+            - name: CATALOG_MIN_BRANCHES
+              value: "1"
+            - name: CATALOG_MAX_BRANCHES
+              value: "1"
+            - name: TAGLIST_PAGE_SIZE
+              value: "100"
+            # No browser Basic prompt; Authorization comes from registry-ui-proxy-auth
+            - name: REGISTRY_SECURED
+              value: "false"
+            - name: THEME
+              value: auto
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi

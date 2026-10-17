@@ -31,7 +31,7 @@ entries:
       slug: vw-restore
       provider: !KeyOf vw-restore-provider
       meta_launch_url: https://vw-restore.stadthagen.dev
-      meta_icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/vaultwarden-light.svg
+      meta_icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/vaultwarden.png
       meta_description: Vaultwarden NFS backup restore UI (admins only).
       open_in_new_tab: true
 

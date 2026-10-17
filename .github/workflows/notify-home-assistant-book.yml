@@ -84,30 +84,16 @@ jobs:
         if: steps.changes.outputs.skip != 'true'
         shell: bash
         env:
-          # Do not echo these; only lengths/flags for debug
           SECRET_SERVER: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_SERVER }}
           SECRET_PORT: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_PORT }}
           SECRET_FROM: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_FROM }}
-          SECRET_USER: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_USERNAME }}
-          SECRET_PASS: ${{ secrets.BOOKSTACK_NOTIFY_SMTP_PASSWORD }}
         run: |
           set -euo pipefail
-          # #region agent log
           {
-            echo "smtp_secret_flags server_set=$([ -n "${SECRET_SERVER}" ] && echo 1 || echo 0) port_set=$([ -n "${SECRET_PORT}" ] && echo 1 || echo 0) from_set=$([ -n "${SECRET_FROM}" ] && echo 1 || echo 0) user_set=$([ -n "${SECRET_USER}" ] && echo 1 || echo 0) pass_set=$([ -n "${SECRET_PASS}" ] && echo 1 || echo 0)"
-          } | tee -a "$GITHUB_STEP_SUMMARY"
-          # #endregion
-          SERVER="${SECRET_SERVER:-mail.henrystadthagen.de}"
-          PORT="${SECRET_PORT:-25}"
-          FROM="${SECRET_FROM:-auto@henrystadthagen.de}"
-          {
-            echo "server=${SERVER}"
-            echo "port=${PORT}"
-            echo "from=${FROM}"
+            echo "server=${SECRET_SERVER:-mail.henrystadthagen.de}"
+            echo "port=${SECRET_PORT:-25}"
+            echo "from=${SECRET_FROM:-auto@henrystadthagen.de}"
           } >> "$GITHUB_OUTPUT"
-          # #region agent log
-          echo "smtp_resolved server=${SERVER} port=${PORT} from=${FROM}" | tee -a "$GITHUB_STEP_SUMMARY"
-          # #endregion
 
       - name: Send email
         if: steps.changes.outputs.skip != 'true'

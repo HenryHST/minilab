@@ -18,5 +18,6 @@ User-facing tooling and apps.
 | karakeep | 3 | karakeep |
 | paperless | 3 | paperless |
 | audiobookshelf | 3 | audiobookshelf |
+| excalidash | 3 | excalidash |
 
 Managed by ApplicationSet `dev` / AppProject `dev`. See [ADR-0022](../../docs/adr/0022-apps-bucket-applicationsets.md).

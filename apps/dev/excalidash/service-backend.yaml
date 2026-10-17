@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: excalidash-backend
+  namespace: excalidash
+  labels:
+    app: excalidash-backend
+    app.kubernetes.io/name: excalidash
+spec:
+  selector:
+    app: excalidash-backend
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

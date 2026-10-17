@@ -1,0 +1,53 @@
+# excalidash: Traefik → frontend; frontend → backend (same-ns). LAN only (no Newt).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: excalidash-frontend-ingress
+  namespace: excalidash
+  labels:
+    app.kubernetes.io/name: excalidash
+    app.kubernetes.io/component: frontend
+spec:
+  podSelector:
+    matchLabels:
+      app: excalidash-frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: excalidash
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: excalidash-backend-ingress
+  namespace: excalidash
+  labels:
+    app.kubernetes.io/name: excalidash
+    app.kubernetes.io/component: backend
+spec:
+  podSelector:
+    matchLabels:
+      app: excalidash-backend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: excalidash
+      ports:
+        - protocol: TCP
+          port: 8000

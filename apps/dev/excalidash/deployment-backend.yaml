@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: excalidash-backend
+  namespace: excalidash
+  labels:
+    app: excalidash-backend
+    app.kubernetes.io/name: excalidash
+    app.kubernetes.io/component: backend
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: excalidash-backend
+  template:
+    metadata:
+      labels:
+        app: excalidash-backend
+        app.kubernetes.io/name: excalidash
+        app.kubernetes.io/component: backend
+    spec:
+      nodeSelector:
+        worker: "true"
+      securityContext:
+        fsGroup: 1001
+      containers:
+        - name: backend
+          image: zimengxiong/excalidash-backend:0.6.5
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: DATABASE_PROVIDER
+              value: sqlite
+            - name: DATABASE_URL
+              value: file:/app/prisma/dev.db
+            - name: PORT
+              value: "8000"
+            - name: NODE_ENV
+              value: production
+            - name: AUTH_MODE
+              value: oidc_enforced
+            - name: FRONTEND_URL
+              value: https://excalidash.stadthagen.dev
+            - name: TRUST_PROXY
+              value: "1"
+            - name: OIDC_PROVIDER_NAME
+              value: authentik
+            - name: OIDC_ISSUER_URL
+              value: https://idp.stadthagen.dev/application/o/excalidash/
+            - name: OIDC_CLIENT_ID
+              value: excalidash
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: excalidash-oauth
+                  key: client-secret
+            - name: OIDC_REDIRECT_URI
+              value: https://excalidash.stadthagen.dev/api/auth/oidc/callback
+            - name: OIDC_SCOPES
+              value: openid profile email
+            - name: OIDC_GROUPS_CLAIM
+              value: groups
+            - name: OIDC_ADMIN_GROUPS
+              value: excalidash_admins
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: excalidash-app
+                  key: JWT_SECRET
+            - name: CSRF_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: excalidash-app
+                  key: CSRF_SECRET
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /app/prisma
+          securityContext:
+            runAsUser: 1001
+            runAsGroup: 1001
+            allowPrivilegeEscalation: false
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: excalidash-data

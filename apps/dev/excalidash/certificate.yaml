@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: excalidash-stadthagen-dev
+  namespace: excalidash
+spec:
+  secretName: excalidash-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - excalidash.stadthagen.dev

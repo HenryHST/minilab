@@ -1,0 +1,18 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: excalidash
+  namespace: excalidash
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`excalidash.stadthagen.dev`)
+      kind: Rule
+      services:
+        - name: excalidash-frontend
+          port: 8080
+  tls:
+    secretName: excalidash-tls

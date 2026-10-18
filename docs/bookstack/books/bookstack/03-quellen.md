@@ -1,12 +1,12 @@
 ---
 title: Quellen
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 
 # Quellen
 
-> **Buch** v1.0.0 · Stand: 2026-10-17
+> **Buch** v1.1.0 · Stand: 2026-10-18
 
 - App: [`apps/dev/bookstack/`](../../../../apps/dev/bookstack/)
 - README: [`apps/dev/bookstack/README.md`](../../../../apps/dev/bookstack/README.md)

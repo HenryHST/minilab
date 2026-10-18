@@ -19,6 +19,7 @@ Wiki / Wissensdatenbank:
 | Auth | Authentik OIDC (`AUTH_METHOD=oidc`) |
 | Theme | `APP_THEME=custom` — Modules/Fonts via Argo PostSync Job |
 | PDF | `EXPORT_PAGE_SIZE=a4`, dompdf + Noto Sans; FPM `memory_limit=512M` + `max_execution_time=300` via `www2.conf`; font dir `abc`-writable |
+| Comments | **Disabled** globally (`app-disable-comments=true` via docs-import `gitops-bootstrap.php`; no `.env`) |
 | SMTP | `mail.henrystadthagen.de:465`, Secret `bookstack-smtp` (Passwort = SecretSpec `AUTHENTIK_EMAIL_PASSWORD`) |
 | Backup | CronJob 04:00 UTC → NFS `…/bookstack-backups` (DB + `/config`, Retention 7) |
 

@@ -5,6 +5,7 @@
  * Creates/updates:
  *   - role "GitOps Import" + user gitops-import@localhost + API token "docs-import"
  *   - role "BookStack Familie" (OIDC group display_name; content ACL for Regal Familie)
+ *   - app setting app-disable-comments=true (global comments off)
  */
 declare(strict_types=1);
 
@@ -67,8 +68,8 @@ $familiePermissions = [
     'image-update-all',
     'attachment-create-all',
     'attachment-update-all',
-    'comment-create-all',
-    'comment-update-all',
+    // PDF/HTML/Markdown/ZIP export from the UI (view alone is not enough)
+    'content-export',
 ];
 
 $roleName = 'GitOps Import';
@@ -105,14 +106,14 @@ $familieRole = Role::query()->where('display_name', $familieRoleName)->first();
 if ($familieRole === null) {
     $familieRole = $permsRepo->saveNewRole([
         'display_name' => $familieRoleName,
-        'description' => 'OIDC group BookStack Familie — Regal Familie (view/create/update, no delete)',
+        'description' => 'OIDC group BookStack Familie — view/create/update + export, no delete',
         'permissions' => $familiePermissions,
         'mfa_enforced' => false,
     ]);
     echo "ROLE created id={$familieRole->id} display_name={$familieRoleName}\n";
 } else {
     $permsRepo->updateRole($familieRole->id, [
-        'description' => 'OIDC group BookStack Familie — Regal Familie (view/create/update, no delete)',
+        'description' => 'OIDC group BookStack Familie — view/create/update + export, no delete',
         'permissions' => $familiePermissions,
         'mfa_enforced' => false,
     ]);
@@ -159,4 +160,8 @@ $token->forceFill([
 ]);
 $token->save();
 echo "TOKEN upserted id={$token->id} token_id={$tokenId}\n";
+
+setting()->put('app-disable-comments', 'true');
+echo "SETTING app-disable-comments=true\n";
+
 echo "OK\n";

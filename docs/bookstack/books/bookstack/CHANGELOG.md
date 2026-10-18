@@ -1,5 +1,11 @@
 # Changelog — Buch BookStack
 
+## [1.1.0] - 2026-10-18
+
+### Added
+
+- Übersicht: Kommentare global deaktiviert (`app-disable-comments` via GitOps-Bootstrap)
+
 ## [1.0.0] - 2026-10-17
 
 ### Added

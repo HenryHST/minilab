@@ -1201,6 +1201,7 @@ data:
      * Creates/updates:
      *   - role "GitOps Import" + user gitops-import@localhost + API token "docs-import"
      *   - role "BookStack Familie" (OIDC group display_name; content ACL for Regal Familie)
+     *   - app setting app-disable-comments=true (global comments off)
      */
     declare(strict_types=1);
     
@@ -1263,8 +1264,6 @@ data:
         'image-update-all',
         'attachment-create-all',
         'attachment-update-all',
-        'comment-create-all',
-        'comment-update-all',
         // PDF/HTML/Markdown/ZIP export from the UI (view alone is not enough)
         'content-export',
     ];
@@ -1357,6 +1356,10 @@ data:
     ]);
     $token->save();
     echo "TOKEN upserted id={$token->id} token_id={$tokenId}\n";
+
+    setting()->put('app-disable-comments', 'true');
+    echo "SETTING app-disable-comments=true\n";
+
     echo "OK\n";
   gitops-bootstrap.sh: |
     #!/bin/sh

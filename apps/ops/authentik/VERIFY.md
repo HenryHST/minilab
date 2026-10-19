@@ -59,6 +59,13 @@ cd apps/ops/authentik
 # 4) Login again with the same TOTP/Passkey
 ```
 
-## HPA note
+## HPA
 
-If `HorizontalPodAutoscaler` for `authentik-server` / `authentik-worker` exists, backup pauses it (`minReplicas`/`maxReplicas`=0) for the window, then restores. Enabling chart HPA (min 2 / max 5) is an optional follow-up — see https://docs.goauthentik.io/sys-mgmt/ops/autoscaling/hpa/
+Server Chart HPA is enabled (min 2 / max 5, CPU 75%). Backup pauses it (`minReplicas`/`maxReplicas`=0) for the window, then restores. Worker has no HPA (fixed replicas 2). Upstream: https://docs.goauthentik.io/sys-mgmt/ops/autoscaling/hpa/
+
+```bash
+kubectl get apiservice v1beta1.metrics.k8s.io
+kubectl -n kube-system get deploy metrics-server
+kubectl -n authentik get hpa authentik-server
+kubectl -n authentik describe hpa authentik-server
+```

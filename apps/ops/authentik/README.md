@@ -7,11 +7,12 @@ GitOps install for `idp.stadthagen.dev`. Day-0 blueprints: [BLUEPRINTS.md](BLUEP
 - **No** hard `nodeSelector: worker=true` and **no** hostname pin (`nodeName` / required affinity).
 - Soft `nodeAffinity` prefers Proxmox (`worker=true`); Pi agents are a valid fallback (multi-arch images).
 - Do **not** label Pis with `worker=true` (Traefik / Longhorn-disk stay Proxmox-only).
-- server/worker **replicas: 2**, `RollingUpdate`, PDB `minAvailable: 1` (`pdb.yaml`). Media PVC is **RWX**.
+- server: Chart **HPA** min 2 / max 5 (CPU 75%, scaleDown stabilization 300s); worker **replicas: 2** (fixed). `RollingUpdate`, PDB `minAvailable: 1` (`pdb.yaml`). Media PVC is **RWX**.
 - Runtime/HA narrative: Infra_LAB BookStack **Authentik Runtime** + `docs/diagrams/authentik/authentik-{scheduling,fail-domains,failover}.html`.
+- Upstream HPA: https://docs.goauthentik.io/sys-mgmt/ops/autoscaling/hpa/
 
 ```bash
-kubectl -n authentik get deploy,pods,pdb -o wide
+kubectl -n authentik get deploy,pods,pdb,hpa -o wide
 kubectl -n authentik get deploy authentik-server -o yaml | grep -A25 affinity
 ```
 
@@ -90,7 +91,7 @@ Each run: HPA pause if present (`minReplicas`/`maxReplicas` → 0) → scale ser
 | **NFS** | PVC `authentik-backups` → `192.168.0.25:…/authentik-backups` |
 | **S3** | RustFS pi7cl `http://192.168.0.107:9000`, bucket `authentik-backups`, Secret `authentik-backup-s3` |
 
-Retention **30 days** per target. Job fails if either upload fails. Chart HPA is typically off today (`server/worker.autoscaling.enabled: false`); backup logic is HPA-aware for when it is enabled later (optional follow-up: min 2 / max 5 per [upstream HPA](https://docs.goauthentik.io/sys-mgmt/ops/autoscaling/hpa/)).
+Retention **30 days** per target. Job fails if either upload fails. Server Chart HPA is **on** (`server.autoscaling`: min 2 / max 5, CPU 75%); worker stays fixed at 2 replicas. Backup pauses any HPA (`minReplicas`/`maxReplicas` → 0) for the window, then restores — see [upstream HPA](https://docs.goauthentik.io/sys-mgmt/ops/autoscaling/hpa/).
 
 ```bash
 # NAS once

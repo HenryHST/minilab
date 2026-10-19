@@ -428,31 +428,6 @@ async function refreshData() {
   state.me = await api("/api/v1/me");
   state.schedule = await api("/api/v1/schedule");
   state.workloads = await api("/api/v1/workloads");
-  // #region agent log
-  fetch("http://127.0.0.1:7458/ingest/617307a5-b9d4-4557-ad01-d7ba8d199fa8", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "e03b97" },
-    body: JSON.stringify({
-      sessionId: "e03b97",
-      runId: "icon-status",
-      hypothesisId: "H2-H3",
-      location: "app.js:refreshData",
-      message: "workloads loaded for UI",
-      data: {
-        version: state.me?.version || null,
-        count: state.workloads?.length || 0,
-        rows: (state.workloads || []).map((w) => ({
-          id: w.id,
-          icon: !!w.icon,
-          phase: w.phase || null,
-          rs: w.replicaset?.name || null,
-          pods: (w.pods || []).map((p) => p.phase),
-        })),
-      },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
 }
 
 async function boot() {

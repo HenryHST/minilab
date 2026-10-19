@@ -173,36 +173,6 @@ def get_status(spec: WorkloadSpec) -> WorkloadStatus:
     rs = _active_replicaset(api, spec.namespace, spec.deployment, dep.metadata.uid)
     pods = _list_pods(core, spec.namespace, match_labels)
     phase = _compute_phase(desired, ready, pods)
-    # #region agent log
-    try:
-        import json
-        import time
-        from pathlib import Path
-
-        log_path = Path("/tmp/podcraft-debug-e03b97.ndjson")
-        payload = {
-            "sessionId": "e03b97",
-            "runId": "icon-status",
-            "hypothesisId": "H3-H4",
-            "location": "k8s.py:get_status",
-            "message": "workload status enriched",
-            "data": {
-                "id": spec.id,
-                "desired": desired,
-                "ready": ready,
-                "phase": phase,
-                "rs": rs.name if rs else None,
-                "rs_ready": rs.ready if rs else None,
-                "pod_count": len(pods),
-                "pod_phases": [p.phase for p in pods],
-            },
-            "timestamp": int(time.time() * 1000),
-        }
-        with log_path.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(payload) + "\n")
-    except OSError:
-        pass
-    # #endregion
     return WorkloadStatus(
         id=spec.id,
         namespace=spec.namespace,

@@ -31,7 +31,7 @@ entries:
       slug: podcraft
       provider: !KeyOf podcraft-provider
       meta_launch_url: https://podcraft.stadthagen.dev
-      meta_icon: https://podcraft.stadthagen.dev/static/brand/logo.png
+      meta_icon: https://podcraft.stadthagen.dev/static/brand/logo-dark.svg
       meta_description: minilab k3s workload control plane (admins only).
       open_in_new_tab: true
 

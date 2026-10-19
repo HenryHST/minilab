@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="podcraft">
+  <!-- Light UI: mint tile + forest sailboat -->
+  <rect width="64" height="64" rx="14" fill="#ecfdf5"/>
+  <path fill="#166534" d="M18 38h28l-3 8H21l-3-8z"/>
+  <path fill="#166534" d="M22 36 30 18l4 10 6-8 3 16H22z"/>
+  <path fill="none" stroke="#166534" stroke-width="2.25" stroke-linecap="round" d="M16 50h32"/>
+</svg>

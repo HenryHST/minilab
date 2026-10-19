@@ -16,6 +16,22 @@ const state = {
 function applyChrome() {
   document.documentElement.dataset.theme = state.theme;
   document.documentElement.lang = state.locale;
+  const icon = document.querySelector('link[rel="icon"][data-theme-icon]');
+  if (icon) {
+    icon.href = brandLogoSrc();
+  }
+}
+
+function brandLogoSrc() {
+  return state.theme === "light" ? "/static/brand/logo-light.svg" : "/static/brand/logo-dark.svg";
+}
+
+function brandMarkHtml(size = 36) {
+  return `<img class="brand-mark" src="${brandLogoSrc()}" alt="" width="${size}" height="${size}" />`;
+}
+
+function miniPulseSvg() {
+  return `<svg class="mini-pulse" viewBox="0 0 28 12" aria-hidden="true"><path d="M1 6 H6 L8 3 L11 9 L14 2 L17 8 L19 6 H27" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
 function headers(json = true) {
@@ -117,32 +133,56 @@ function statusDotClass(phase) {
 function workloadIconHtml(w) {
   const letter = escapeHtml((w.id || "?").slice(0, 2).toUpperCase());
   if (w.icon) {
-    return `<img class="workload-icon" src="${escapeHtml(w.icon)}" alt="" width="40" height="40" loading="lazy" onerror="this.onerror=null;this.outerHTML='<div class=&quot;workload-icon fallback&quot; aria-hidden=&quot;true&quot;>${letter}</div>'" />`;
+    return `<img class="workload-icon" src="${escapeHtml(w.icon)}" alt="" width="44" height="44" loading="lazy" onerror="this.onerror=null;this.outerHTML='<div class=&quot;workload-icon fallback&quot; aria-hidden=&quot;true&quot;>${letter}</div>'" />`;
   }
   return `<div class="workload-icon fallback" aria-hidden="true">${letter}</div>`;
 }
 
-function workloadStatusHtml(w) {
-  const rs = w.replicaset;
-  const rsLine = rs
-    ? `${t(state.locale, "replicaset")}: <code>${escapeHtml(rs.name)}</code> · ${rs.ready}/${rs.desired}`
-    : `${t(state.locale, "replicaset")}: —`;
-  const pods = Array.isArray(w.pods) ? w.pods : [];
-  const podsLine = pods.length
-    ? `${t(state.locale, "pods")}: ${pods
-        .map(
-          (p) =>
-            `<code>${escapeHtml(p.name)}</code> ${escapeHtml(p.phase)}${p.ready ? "" : " !"}${
-              p.restarts ? ` · ${p.restarts} ${t(state.locale, "restarts")}` : ""
-            }`,
-        )
-        .join(" · ")}`
-    : `${t(state.locale, "pods")}: —`;
+function liveBadgeHtml(phase) {
+  const live = phase === "Running";
+  const cls = phaseClass(phase);
   return `
-    <div class="workload-status">
-      <span>${rsLine}</span>
-      <span>${podsLine}</span>
+    <span class="live-badge ${cls}">
+      ${live ? miniPulseSvg() : `<span class="status-dot ${statusDotClass(phase)}"></span>`}
+      ${escapeHtml(phaseLabel(phase))}
+    </span>`;
+}
+
+function scheduleColsHtml(w) {
+  if (!w.schedule) {
+    return `<div class="time-cols muted-cols"><div class="time-col"><span class="time-label">${t(state.locale, "scheduleOff")}</span><span class="time-value">—</span></div></div>`;
+  }
+  const start = state.schedule?.start || "—";
+  const end = state.schedule?.end || "—";
+  const day = t(state.locale, "today");
+  return `
+    <div class="time-cols">
+      <div class="time-col">
+        <span class="time-label">${t(state.locale, "started")}</span>
+        <span class="time-value">${escapeHtml(start)} · ${day}</span>
+      </div>
+      <div class="time-col">
+        <span class="time-label">${t(state.locale, "stopAt")}</span>
+        <span class="time-value">${escapeHtml(end)} · ${day}</span>
+      </div>
     </div>`;
+}
+
+function workloadDetailHtml(w) {
+  const rs = w.replicaset;
+  const pods = Array.isArray(w.pods) ? w.pods : [];
+  const rsText = rs ? `${escapeHtml(rs.name)} · ${rs.ready}/${rs.desired}` : "—";
+  const podText = pods.length
+    ? pods.map((p) => `${escapeHtml(p.name)} (${escapeHtml(p.phase)})`).join(", ")
+    : "—";
+  return `
+    <details class="workload-details">
+      <summary>${t(state.locale, "details")}</summary>
+      <div class="workload-status">
+        <span>${t(state.locale, "replicaset")}: <code>${rsText}</code></span>
+        <span>${t(state.locale, "pods")}: <code>${podText}</code></span>
+      </div>
+    </details>`;
 }
 
 function renderLogin() {
@@ -154,9 +194,7 @@ function renderLogin() {
       <div class="login-top">${topControls()}</div>
       <div class="login-bg">${pulseSvg(true)}</div>
       <div class="login-card">
-        <div class="brand">
-          <img src="/static/brand/logo.png" alt="" width="64" height="64" onerror="this.src='/static/brand/logo.svg'" />
-        </div>
+        <div class="brand">${brandMarkHtml(64)}</div>
         <h1>podcraft</h1>
         <p>${t(state.locale, "tagline")}</p>
         <div class="login-actions">
@@ -200,7 +238,7 @@ function renderApp() {
       <div class="app-shell">
         <header class="topbar">
           <a class="brand" href="/">
-            <img src="/static/brand/logo.png" alt="" width="36" height="36" onerror="this.src='/static/brand/logo.svg'" />
+            ${brandMarkHtml(36)}
             <span class="brand-name">podcraft</span>
           </a>
           ${topControls()}
@@ -252,23 +290,22 @@ function renderApp() {
     .map((w) => {
       const on = w.desired > 0;
       const phase = w.phase || (on ? "Running" : "Stopped");
+      const meta = w.description || `${w.namespace}/${w.deployment}`;
       return `
         <div class="workload-row" data-id="${escapeHtml(w.id)}">
           ${workloadIconHtml(w)}
-          <div>
-            <h2>
-              <span class="status-dot ${statusDotClass(phase)}"></span>
-              ${escapeHtml(w.id)}
-              <span class="phase-pill ${phaseClass(phase)}">${escapeHtml(phaseLabel(phase))}</span>
-            </h2>
-            <p class="workload-meta">${escapeHtml(w.namespace)}/${escapeHtml(w.deployment)} · ${t(state.locale, "ready")} ${w.ready}/${w.desired} · ${escapeHtml(w.description || "")}</p>
-            ${workloadStatusHtml(w)}
+          <div class="workload-id">
+            <h2>${escapeHtml(w.id)}</h2>
+            <p class="workload-meta">${escapeHtml(meta)} · ${t(state.locale, "ready")} ${w.ready}/${w.desired}</p>
+            ${workloadDetailHtml(w)}
           </div>
-          <div>
+          ${liveBadgeHtml(phase)}
+          ${scheduleColsHtml(w)}
+          <div class="workload-actions">
             ${
               on
-                ? `<button class="btn danger" data-action="stop" data-id="${escapeHtml(w.id)}" type="button">${t(state.locale, "stop")}</button>`
-                : `<button class="btn" data-action="start" data-id="${escapeHtml(w.id)}" type="button">${t(state.locale, "start")}</button>`
+                ? `<button class="icon-btn danger" data-action="stop" data-id="${escapeHtml(w.id)}" type="button" title="${t(state.locale, "stop")}" aria-label="${t(state.locale, "stop")}"><span class="icon-stop"></span></button>`
+                : `<button class="icon-btn primary" data-action="start" data-id="${escapeHtml(w.id)}" type="button" title="${t(state.locale, "start")}" aria-label="${t(state.locale, "start")}"><span class="icon-play"></span></button>`
             }
           </div>
         </div>`;
@@ -281,20 +318,22 @@ function renderApp() {
     <div class="app-shell">
       <header class="topbar">
         <a class="brand" href="/">
-          <img src="/static/brand/logo.png" alt="" width="36" height="36" onerror="this.src='/static/brand/logo.svg'" />
+          ${brandMarkHtml(36)}
           <span class="brand-name">podcraft</span>
         </a>
         ${topControls()}
       </header>
       <main class="main">
         ${state.error ? `<div class="error-banner">${escapeHtml(state.error)}</div>` : ""}
-        <section class="schedule-band">
-          <h1>${title}</h1>
-          <p class="schedule-meta">${t(state.locale, "scheduleWindow", {
-            start: state.schedule?.start || "—",
-            end: state.schedule?.end || "—",
-            tz: state.schedule?.timezone || "—",
-          })}</p>
+        <section class="schedule-band ${active ? "is-live" : "is-idle"}">
+          <div class="schedule-band-copy">
+            <h1>${title}</h1>
+            <p class="schedule-meta">${t(state.locale, "scheduleWindow", {
+              start: state.schedule?.start || "—",
+              end: state.schedule?.end || "—",
+              tz: state.schedule?.timezone || "—",
+            })}</p>
+          </div>
           ${pulseSvg(active)}
         </section>
         <section>

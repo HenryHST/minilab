@@ -46,6 +46,7 @@ Sie müssen **nichts installieren oder programmieren**, um Alltagsfunktionen zu 
 | Bluetooth | BLE-Sensoren und Reichweite |
 | Wenn etwas nicht klappt | Häufige Probleme |
 | Systemübersicht | Alltagsgeräte, Zigbee-, Homematic- & Matter-Listen |
+| Geräteübersicht | Hardware je Raum (Zigbee/Hm/Matter/Bluetooth, Typ, Batterie, Bild) |
 | Dashboard Home | Tabs & Screenshots des Home-Dashboards |
 
 ## Hilfe

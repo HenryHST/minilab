@@ -20,10 +20,19 @@ BookStack: Shelf **Anleitungen** → Buch **Home Assistant**. Kapitel in dieser 
 | 12 | [`12-stoerungen.md`](12-stoerungen.md) | Wenn etwas nicht klappt |
 | 13 | [`13-systemuebersicht.md`](13-systemuebersicht.md) | Systemübersicht |
 | 14 | [`14-dashboard-home.md`](14-dashboard-home.md) | Dashboard Home |
+| 15 | [`15-geraeteuebersicht.md`](15-geraeteuebersicht.md) | Geräteübersicht (Hardware je Raum) |
 
 Ops-/Architektur (Admin): [`../../../home-assistant/ha02.md`](../../../home-assistant/ha02.md).
 
 ## Changelog
+
+### 1.7.0 — 2026-10-19
+
+- Kapitel **Geräteübersicht**: Bluetooth-Endgeräte ergänzt (WZ-Rollo / BTHome); Proxies weiterhin ausgeschlossen (~93 Endgeräte)
+
+### 1.6.0 — 2026-10-19
+
+- Kapitel **Geräteübersicht**: pro Raum Hardware-Tabellen (Zigbee/Homematic/Matter), Spalten inkl. Gerätetyp, Produktbild-URL, Stromversorgung, Batterieformfaktor (~92 Endgeräte)
 
 ### 1.5.0 — 2026-10-19
 

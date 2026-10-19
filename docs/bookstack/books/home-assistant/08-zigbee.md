@@ -50,7 +50,7 @@ Rollen auf einen Blick:
 | Licht | **TV Licht**, **Spot1/Spot2**, **Küchenlicht**, **Mauslicht**, **Schranklampe**, **Balkonlicht03**, … |
 | Steckdosen / Plugs | **AV Verstärker**, **Stern**, **Jura**, **Modem**, **Nachttisch**, … (IKEA ASKVADER, OSRAM, Innr, …) |
 | Sensoren | Wassermelder (z. B. **WZM-Wasser**), Rauch (**RM-WZ**, **RM-SZ**), Temp (**BZ-Temp**, **Serverschank**) |
-| Taster / Dimmer | **WZ-Rollo** (Smart Button, 4 Tasten), **Schalter Küche**, **Maus Schalter**, **Drehknopf**, Hue-Dimmer SZ |
+| Taster / Dimmer | **Schalter Küche**, **Maus Schalter**, **Drehknopf**, Hue-Dimmer SZ (WZ-Rollo = Bluetooth, siehe *Geräteübersicht* / *Bluetooth*) |
 | Cover / Aktoren | u. a. Shelly über Zigbee2MQTT (**SZ-Tür**, **SZ-Fenster**, **Küche-LI/RE**, **WZ-Tür**) — siehe Systemübersicht |
 
 > Hinweis: Manche Cover-Namen in der Entity-ID sind historisch (`cover.sz_door` = Schlafzimmer-Gruppe o. Ä.). Anzeigenamen in der UI sind maßgeblich.
@@ -63,14 +63,14 @@ Nur Automationen in Home Assistant, die Zigbee-Entities/Events **auslösen** ode
 
 | Automation | Auslöser | Wirkung | Zigbee-Bezug |
 |------------|----------|---------|--------------|
-| **Rollo-WZ auf** | **WZ-Rollo Taste 2** (`event.wohnzimmer_sbbt_…_button_2`, press) | Öffnet Homematic-Rollos Mitte-Links, Mitte-Rechts, RE-LI | Zigbee-Taster → Homematic-Cover |
-| **Rollo-WZ zu** | **WZ-Rollo Taste 3** | Setzt Positionen der vier Wohnzimmer-Rollos (teilweise zu) | Zigbee-Taster → Homematic-Cover |
-| **WZ-Tür-oben** | **WZ-Rollo Taste 1** | Öffnet die WZ-Tür (Cover) | Zigbee-Taster → Cover |
-| **WZ-Tür schließen** | **WZ-Rollo Taste 4** | Schließt `cover.wz_tur_2` | Zigbee-Taster → Cover |
+| **Rollo-WZ auf** | **WZ-Rollo Taste 2** (Bluetooth/BTHome, press) | Öffnet Homematic-Rollos Mitte-Links, Mitte-Rechts, RE-LI | BT-Taster → Homematic-Cover |
+| **Rollo-WZ zu** | **WZ-Rollo Taste 3** | Setzt Positionen der vier Wohnzimmer-Rollos (teilweise zu) | BT-Taster → Homematic-Cover |
+| **WZ-Tür-oben** | **WZ-Rollo Taste 1** | Öffnet die WZ-Tür (Cover) | BT-Taster → Cover |
+| **WZ-Tür schließen** | **WZ-Rollo Taste 4** | Schließt `cover.wz_tur_2` | BT-Taster → Cover |
 | **Mauslicht an / aus** | MQTT-Aktion am **Maus Schalter** (press) | Schaltet **Mauslicht** (Hue Strip, Bad) | Zigbee-Taster → Zigbee-Licht |
 | **Küchenlicht ein-aus** | MQTT on/off am Küchen-Schalter | Schaltet **Waschbeckenlicht** | Zigbee-Taster → Zigbee-Licht |
 
-**WZ-Rollo-Taster:** physischer 4-Tasten-Button im Wohnzimmer; Tasten 2/3 steuern Homematic-Rollos (siehe auch Kapitel *Homematic*). Batterie/Signal: Sensoren **WZ-Rollo Batterie** / **WZ-Rollo Signalstärke**.
+**WZ-Rollo-Taster:** physischer 4-Tasten-Button im Wohnzimmer (**Bluetooth/BTHome**, nicht Zigbee); Tasten 2/3 steuern Homematic-Rollos (siehe *Homematic*, *Geräteübersicht*). Batterie/Signal: **WZ-Rollo Batterie** / **WZ-Rollo Signalstärke**.
 
 Allgemeine Bedienung von Szenen/Automationen: Kapitel *Szenen & Automationen*.
 

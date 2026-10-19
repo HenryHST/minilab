@@ -20,6 +20,8 @@ Sie sehen die **wichtigsten Alltagsgeräte** sowie die **Zigbee-**, **Homematic-
 
 Bedienung der Oberfläche: Kapitel *Übersicht lesen*, *Lichter & Schalter*, *Klima & Heizung*. Technik-Hinweise: *Zigbee*, *Homematic*, *Matter*.
 
+**Hardware-Tabellen mit Produktbild, Gerätetyp und Batterie** (physische Zigbee-/Homematic-/Matter-/Bluetooth-Endgeräte; ohne Proxies): Kapitel *Geräteübersicht*.
+
 ---
 
 ## Alltags-Entities (Auswahl)

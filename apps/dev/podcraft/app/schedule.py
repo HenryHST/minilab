@@ -49,35 +49,6 @@ async def apply_schedule(actor: str = "scheduler", *, force: bool = False) -> No
     """Apply Day/Night scale on window transitions (or force=True for boot/reconcile)."""
     global _last_want_on
     want_on = schedule_active()
-    # #region agent log
-    try:
-        import json
-        import time
-        from pathlib import Path
-
-        Path("/tmp/podcraft-debug-e03b97.ndjson").open("a").write(
-            json.dumps(
-                {
-                    "sessionId": "e03b97",
-                    "runId": "post-fix",
-                    "hypothesisId": "H1-H2",
-                    "location": "schedule.py:apply_schedule",
-                    "message": "scheduler tick",
-                    "data": {
-                        "want_on": want_on,
-                        "last_want_on": _last_want_on,
-                        "force": force,
-                        "enabled": state.schedule.enabled,
-                        "will_scale": force or _last_want_on is None or _last_want_on != want_on,
-                    },
-                    "timestamp": int(time.time() * 1000),
-                }
-            )
-            + "\n"
-        )
-    except OSError:
-        pass
-    # #endregion
     if not force and _last_want_on is not None and _last_want_on == want_on:
         return
     _last_want_on = want_on
@@ -86,41 +57,10 @@ async def apply_schedule(actor: str = "scheduler", *, force: bool = False) -> No
             continue
         try:
             status = k8s.get_status(spec)
-            action = None
             if want_on and status.desired == 0:
-                action = "start"
                 k8s.start(spec, actor=actor)
             elif not want_on and status.desired > 0:
-                action = "stop"
                 k8s.stop(spec, actor=actor)
-            # #region agent log
-            try:
-                import json
-                import time
-                from pathlib import Path
-
-                Path("/tmp/podcraft-debug-e03b97.ndjson").open("a").write(
-                    json.dumps(
-                        {
-                            "sessionId": "e03b97",
-                            "runId": "post-fix",
-                            "hypothesisId": "H2",
-                            "location": "schedule.py:workload",
-                            "message": "scheduler workload decision",
-                            "data": {
-                                "id": spec.id,
-                                "desired": status.desired,
-                                "want_on": want_on,
-                                "action": action,
-                            },
-                            "timestamp": int(time.time() * 1000),
-                        }
-                    )
-                    + "\n"
-                )
-            except OSError:
-                pass
-            # #endregion
         except Exception as exc:  # noqa: BLE001 — keep loop alive
             ring.emit(f"scheduler {spec.id}: {exc}", "ERROR")
 

@@ -1,13 +1,27 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.auth import Principal, require_user
 from app.config import state
 from app import k8s
 
 router = APIRouter()
+
+
+class PodOut(BaseModel):
+    name: str
+    phase: str
+    ready: bool
+    restarts: int = 0
+
+
+class ReplicaSetOut(BaseModel):
+    name: str
+    desired: int
+    current: int
+    ready: int
 
 
 class WorkloadOut(BaseModel):
@@ -19,10 +33,22 @@ class WorkloadOut(BaseModel):
     available: int
     schedule: bool
     description: str
+    icon: str = ""
+    phase: str = "Unknown"
+    replicaset: ReplicaSetOut | None = None
+    pods: list[PodOut] = Field(default_factory=list)
     dry_run: bool = False
 
 
 def _out(status: k8s.WorkloadStatus) -> WorkloadOut:
+    rs = None
+    if status.replicaset:
+        rs = ReplicaSetOut(
+            name=status.replicaset.name,
+            desired=status.replicaset.desired,
+            current=status.replicaset.current,
+            ready=status.replicaset.ready,
+        )
     return WorkloadOut(
         id=status.id,
         namespace=status.namespace,
@@ -32,6 +58,13 @@ def _out(status: k8s.WorkloadStatus) -> WorkloadOut:
         available=status.available,
         schedule=status.schedule,
         description=status.description,
+        icon=status.icon,
+        phase=status.phase,
+        replicaset=rs,
+        pods=[
+            PodOut(name=p.name, phase=p.phase, ready=p.ready, restarts=p.restarts)
+            for p in status.pods
+        ],
         dry_run=status.dry_run,
     )
 

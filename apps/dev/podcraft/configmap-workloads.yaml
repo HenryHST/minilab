@@ -15,7 +15,8 @@ data:
           "deployment": "drawio",
           "target_replicas": 1,
           "schedule": true,
-          "description": "diagrams.net"
+          "description": "diagrams.net",
+          "icon": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/diagramsnet.png"
         },
         {
           "id": "it-tools",
@@ -23,7 +24,8 @@ data:
           "deployment": "it-tools",
           "target_replicas": 1,
           "schedule": true,
-          "description": "IT Tools"
+          "description": "IT Tools",
+          "icon": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/it-tools.png"
         }
       ]
     }

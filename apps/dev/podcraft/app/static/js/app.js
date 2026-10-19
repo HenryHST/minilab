@@ -91,6 +91,60 @@ function escapeHtml(s) {
     .replaceAll('"', "&quot;");
 }
 
+function phaseLabel(phase) {
+  const key = {
+    Running: "phaseRunning",
+    Stopped: "phaseStopped",
+    Starting: "phaseStarting",
+    Degraded: "phaseDegraded",
+    Failed: "phaseFailed",
+    Unknown: "phaseUnknown",
+  }[phase] || "phaseUnknown";
+  return t(state.locale, key);
+}
+
+function phaseClass(phase) {
+  return String(phase || "unknown").toLowerCase();
+}
+
+function statusDotClass(phase) {
+  if (phase === "Running") return "on";
+  if (phase === "Degraded" || phase === "Starting") return "warn";
+  if (phase === "Failed") return "err";
+  return "";
+}
+
+function workloadIconHtml(w) {
+  const letter = escapeHtml((w.id || "?").slice(0, 2).toUpperCase());
+  if (w.icon) {
+    return `<img class="workload-icon" src="${escapeHtml(w.icon)}" alt="" width="40" height="40" loading="lazy" onerror="this.onerror=null;this.outerHTML='<div class=&quot;workload-icon fallback&quot; aria-hidden=&quot;true&quot;>${letter}</div>'" />`;
+  }
+  return `<div class="workload-icon fallback" aria-hidden="true">${letter}</div>`;
+}
+
+function workloadStatusHtml(w) {
+  const rs = w.replicaset;
+  const rsLine = rs
+    ? `${t(state.locale, "replicaset")}: <code>${escapeHtml(rs.name)}</code> · ${rs.ready}/${rs.desired}`
+    : `${t(state.locale, "replicaset")}: —`;
+  const pods = Array.isArray(w.pods) ? w.pods : [];
+  const podsLine = pods.length
+    ? `${t(state.locale, "pods")}: ${pods
+        .map(
+          (p) =>
+            `<code>${escapeHtml(p.name)}</code> ${escapeHtml(p.phase)}${p.ready ? "" : " !"}${
+              p.restarts ? ` · ${p.restarts} ${t(state.locale, "restarts")}` : ""
+            }`,
+        )
+        .join(" · ")}`
+    : `${t(state.locale, "pods")}: —`;
+  return `
+    <div class="workload-status">
+      <span>${rsLine}</span>
+      <span>${podsLine}</span>
+    </div>`;
+}
+
 function renderLogin() {
   const root = document.getElementById("app");
   root.innerHTML = "";
@@ -197,11 +251,18 @@ function renderApp() {
   const rows = state.workloads
     .map((w) => {
       const on = w.desired > 0;
+      const phase = w.phase || (on ? "Running" : "Stopped");
       return `
         <div class="workload-row" data-id="${escapeHtml(w.id)}">
+          ${workloadIconHtml(w)}
           <div>
-            <h2><span class="status-dot ${on ? "on" : ""}"></span>${escapeHtml(w.id)}</h2>
+            <h2>
+              <span class="status-dot ${statusDotClass(phase)}"></span>
+              ${escapeHtml(w.id)}
+              <span class="phase-pill ${phaseClass(phase)}">${escapeHtml(phaseLabel(phase))}</span>
+            </h2>
             <p class="workload-meta">${escapeHtml(w.namespace)}/${escapeHtml(w.deployment)} · ${t(state.locale, "ready")} ${w.ready}/${w.desired} · ${escapeHtml(w.description || "")}</p>
+            ${workloadStatusHtml(w)}
           </div>
           <div>
             ${
@@ -367,6 +428,31 @@ async function refreshData() {
   state.me = await api("/api/v1/me");
   state.schedule = await api("/api/v1/schedule");
   state.workloads = await api("/api/v1/workloads");
+  // #region agent log
+  fetch("http://127.0.0.1:7458/ingest/617307a5-b9d4-4557-ad01-d7ba8d199fa8", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "e03b97" },
+    body: JSON.stringify({
+      sessionId: "e03b97",
+      runId: "icon-status",
+      hypothesisId: "H2-H3",
+      location: "app.js:refreshData",
+      message: "workloads loaded for UI",
+      data: {
+        version: state.me?.version || null,
+        count: state.workloads?.length || 0,
+        rows: (state.workloads || []).map((w) => ({
+          id: w.id,
+          icon: !!w.icon,
+          phase: w.phase || null,
+          rs: w.replicaset?.name || null,
+          pods: (w.pods || []).map((p) => p.phase),
+        })),
+      },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
 }
 
 async function boot() {

@@ -17,6 +17,7 @@ class WorkloadSpec(BaseModel):
     target_replicas: int = 1
     schedule: bool = True
     description: str = ""
+    icon: str = ""
 
 
 class ScheduleConfig(BaseModel):
@@ -57,12 +58,14 @@ class AppState:
                     namespace="drawio",
                     deployment="drawio",
                     description="diagrams.net",
+                    icon="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/diagramsnet.png",
                 ),
                 WorkloadSpec(
                     id="it-tools",
                     namespace="it-tools",
                     deployment="it-tools",
                     description="IT Tools",
+                    icon="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/it-tools.png",
                 ),
             ]
             self.workloads = {w.id: w for w in defaults}

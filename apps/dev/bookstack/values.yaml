@@ -40,7 +40,9 @@ env:
       name: bookstack-db
       key: MARIADB_PASSWORD
   AUTH_METHOD: oidc
-  AUTH_AUTO_INITIATE: "true"
+  # false: auto-submit on /login races OIDC state (session()->pull oidc_state) when
+  # Authentik returns quickly → oidc_fail_authed toast + callback↔login loop.
+  AUTH_AUTO_INITIATE: "false"
   OIDC_NAME: Authentik
   OIDC_DISPLAY_NAME_CLAIMS: name
   OIDC_CLIENT_ID: bookstack

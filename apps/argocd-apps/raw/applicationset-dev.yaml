@@ -141,6 +141,25 @@ spec:
         repoURL: https://github.com/HenryHST/minilab
         targetRevision: main
         path: {{ .path }}
+    {{- else if eq .app "podcraft" }}
+    spec:
+      # Live hotfix ConfigMap/mounts until image 0.1.9 is mirrored; do not self-heal them away.
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jqPathExpressions:
+            - .spec.template.metadata.annotations
+            - .spec.template.spec.volumes
+            - .spec.template.spec.containers[].volumeMounts
+        - group: ""
+          kind: ConfigMap
+          name: podcraft-hotfix-0-1-3
+          jsonPointers:
+            - /data
+      source:
+        repoURL: https://github.com/HenryHST/minilab
+        targetRevision: main
+        path: {{ .path }}
     {{- else if dig "helmChart" "" . }}
     spec:
       sources:

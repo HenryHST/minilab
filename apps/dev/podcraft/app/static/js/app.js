@@ -54,24 +54,6 @@ function logoutHref() {
 }
 
 function doLogout() {
-  // #region agent log
-  fetch("http://127.0.0.1:7458/ingest/617307a5-b9d4-4557-ad01-d7ba8d199fa8", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "e03b97" },
-    body: JSON.stringify({
-      sessionId: "e03b97",
-      runId: "logout-ui",
-      hypothesisId: "L",
-      location: "app.js:doLogout",
-      message: "logout clicked",
-      data: {
-        authMode: state.me?.auth_mode || state.me?.configured_auth_mode || null,
-        hasBasic: Boolean(state.basicAuth),
-      },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
   localStorage.removeItem("podcraft.basic");
   state.basicAuth = "";
   state.me = null;

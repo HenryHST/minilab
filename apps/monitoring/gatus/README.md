@@ -18,7 +18,7 @@ OIDC issuer `https://idp.stadthagen.dev/application/o/gatus/`. Redirect `https:/
 
 Interval 1m, Pushover after 3 failures. Group `homelab` stays HTTP 200: Authentik, IT Tools, Paperless, BookStack. Group `apps` is HTTP 200 on the app itself. Group `plattform` hits health paths. Group `sso` sets `ignore-redirect` and expects 302 (n8n, Hubble, Registry UI) or 401 (Stirling PDF), so a redirect to the Authentik login page is not counted as healthy. Group `extern` is Pangolin (HTTP 200) plus mail (`https://mail.henrystadthagen.de` and `tcp://mail.henrystadthagen.de:465`).
 
-NFS backup CronJobs get a 30-minute maintenance window from the cron minute, timezone UTC. In that window Gatus sends no Pushover alert. Longhorn snapshots are not a window.
+NFS backup CronJobs get a 30-minute maintenance window from the cron minute (timezone UTC for most apps). Authentik uses two Europe/Berlin windows (`02:30` and `11:50`, 30m each) matching scale-to-0 backup CronJobs. In those windows Gatus sends no Pushover alert. Longhorn snapshots are not a window.
 
 `https://status.stadthagen.dev/uebersicht` is anonymous and shows health badges (`manifests/overview.yaml`). The dashboard and its history stay behind OIDC. A new Gatus check needs an `<img>` there; the badge key is `group_name`.
 

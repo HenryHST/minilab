@@ -32,7 +32,7 @@ Das CSS steht in `modules/brand/assets/custom.css.tpl`. Es setzt die Patternfly-
 
 Die ausgelieferte Kopie liegt auf dem NAS unter `/var/nfs/shared/infra01/media/public/branding/`. PostSync-Job `authentik-media-sync-bootstrap` kopiert sie nach PVC `authentik-media`. CronJob `authentik-media-sync` wiederholt das alle 6 Stunden. Ein manuelles Job-Objekt heißt `media-sync-manual`.
 
-Dieser Sync ist nicht das Backup. `authentik-backup-cron` archiviert Datenbank und das ganze Media-PVC.
+Dieser Sync ist nicht das Backup. `authentik-backup-0230` / `-1150` archivieren Datenbank und das ganze Media-PVC (NFS + S3).
 
 ## Flows an der Brand
 

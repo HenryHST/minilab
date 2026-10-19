@@ -23,7 +23,7 @@ Longhorn-Volume-Backups decken nicht alle App-Semantiken ab (SQLite-Dateien, `pg
 | vaultwarden | 02:00 | tar `/data` |
 | termix | 03:00 | `pg_dump` |
 | bookstack | 04:00 | MariaDB + `/config` |
-| **authentik** | **05:00** | `pg_dump` + `/media` |
+| **authentik** | **02:30 + 11:50 Europe/Berlin** (scale-to-0) | `pg_dump` + `/media` → NFS **and** RustFS S3 `authentik-backups` (retention 30d) |
 | **bytestash** | **06:00** | tar `/data/snippets` |
 | **n8n** | **03:30** | `pg_dump` + tar `.n8n` |
 
@@ -53,5 +53,5 @@ Details in den App-READMEs / Root-README / BookStack `minilab/05-backup-restore`
 
 - NAS-Ordner müssen existieren; NFSv3-Kompatibilität beachten.
 - Restore ist bewusst manuell getoggelt (kein stilles Überschreiben).
-- Authentik: Branding-Media-Sync (NFS → `/media/public/branding`) bleibt separat; Backup deckt zusätzlich Uploads/Icons auf der Media-PVC ab. Secrets nicht im Archive.
+- Authentik: Branding-Media-Sync (NFS → `/media/public/branding`) bleibt separat; Backup deckt zusätzlich Uploads/Icons auf der Media-PVC ab. Secrets nicht im Archive. Dual-Ziel NFS+S3; Wartungsfenster mit HPA-Pause falls HPA aktiv ([upstream HPA](https://docs.goauthentik.io/sys-mgmt/ops/autoscaling/hpa/)). MFA: Full-Restore + `scripts/restore-user-mfa.sh`; `AUTHENTIK_SECRET_KEY` muss zum Backup passen.
 - Ergänzt, ersetzt aber nicht Longhorn-Backup-Target ([ADR-0009](0009-longhorn-nfs-backups.md)).

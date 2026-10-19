@@ -78,10 +78,14 @@ config:
       group: homelab
       url: https://idp.stadthagen.dev
       interval: 1m
-      maintenance: &maint-0500
-        start: "05:00"
-        duration: 30m
-        timezone: UTC
+      # Scale-to-0 backup windows (CronJobs authentik-backup-0230 / -1150)
+      maintenance-windows:
+        - start: "02:30"
+          duration: 30m
+          timezone: Europe/Berlin
+        - start: "11:50"
+          duration: 30m
+          timezone: Europe/Berlin
       conditions:
         - "[STATUS] == 200"
       alerts: &pushover
@@ -100,7 +104,11 @@ config:
       group: homelab
       url: https://paperless.stadthagen.dev
       interval: 1m
-      maintenance: *maint-0500
+      # Own window (decoupled from Authentik Berlin backup slots)
+      maintenance:
+        start: "05:00"
+        duration: 30m
+        timezone: UTC
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover

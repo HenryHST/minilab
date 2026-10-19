@@ -1,4 +1,9 @@
 ---
+# Authentik full backup: scale IdP to 0 (Traefik app-down) → pg_dump + media PVC
+# → combined archive written in parallel to NFS and RustFS S3.
+# Schedules: 02:30 and 11:50 Europe/Berlin. Retention: 30 days per target.
+# Upstream: https://docs.goauthentik.io/sys-mgmt/ops/backup-restore/
+# HPA: https://docs.goauthentik.io/sys-mgmt/ops/autoscaling/hpa/
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -13,14 +18,13 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["pods"]
-    verbs: ["get", "list"]
-  - apiGroups: [""]
-    resources: ["pods/exec"]
-    verbs: ["create"]
-  # Needed for: kubectl exec deploy/authentik-server (resolves Ready replica)
+    verbs: ["get", "list", "watch"]
   - apiGroups: ["apps"]
-    resources: ["deployments"]
-    verbs: ["get"]
+    resources: ["deployments", "deployments/scale"]
+    verbs: ["get", "list", "patch", "update"]
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "patch", "update"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -69,25 +73,197 @@ spec:
     requests:
       storage: 20Gi
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentik-backup-script
+  namespace: authentik
+data:
+  backup.sh: |
+    #!/bin/bash
+    set -euo pipefail
+
+    apk add --no-cache postgresql17-client tar gzip aws-cli coreutils >/dev/null
+
+    NS="authentik"
+    SERVER="authentik-server"
+    WORKER="authentik-worker"
+    RETENTION_DAYS="${RETENTION_DAYS:-30}"
+    S3_BUCKET="${S3_BUCKET:-authentik-backups}"
+    AWS_ENDPOINT_URL="${AWS_ENDPOINT_URL:-http://192.168.0.107:9000}"
+
+    STAMP="$(TZ=Europe/Berlin date +%Y%m%d-%H%M%S)"
+    WORK="/tmp/authentik-${STAMP}"
+    ARCHIVE_NAME="authentik-${STAMP}.tar.gz"
+    OUT_NFS="/backup/${ARCHIVE_NAME}"
+    mkdir -p "${WORK}"
+
+    SERVER_REPLICAS="$(kubectl -n "${NS}" get deploy "${SERVER}" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo 2)"
+    WORKER_REPLICAS="$(kubectl -n "${NS}" get deploy "${WORKER}" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo 2)"
+    [[ -z "${SERVER_REPLICAS}" || "${SERVER_REPLICAS}" == "0" ]] && SERVER_REPLICAS=2
+    [[ -z "${WORKER_REPLICAS}" || "${WORKER_REPLICAS}" == "0" ]] && WORKER_REPLICAS=2
+
+    HPA_SERVER_MIN=""; HPA_SERVER_MAX=""; HPA_WORKER_MIN=""; HPA_WORKER_MAX=""
+    HPA_SERVER_PRESENT=0; HPA_WORKER_PRESENT=0
+
+    save_hpa() {
+      local name="$1" prefix="$2"
+      if kubectl -n "${NS}" get hpa "${name}" >/dev/null 2>&1; then
+        eval "${prefix}_PRESENT=1"
+        eval "${prefix}_MIN=\"$(kubectl -n "${NS}" get hpa "${name}" -o jsonpath='{.spec.minReplicas}')\""
+        eval "${prefix}_MAX=\"$(kubectl -n "${NS}" get hpa "${name}" -o jsonpath='{.spec.maxReplicas}')\""
+        echo "HPA ${name}: min=$(eval echo \$${prefix}_MIN) max=$(eval echo \$${prefix}_MAX)"
+      fi
+    }
+
+    pause_hpa() {
+      local name="$1"
+      if kubectl -n "${NS}" get hpa "${name}" >/dev/null 2>&1; then
+        echo "Pausing HPA ${name} (minReplicas=0 maxReplicas=0)..."
+        kubectl -n "${NS}" patch hpa "${name}" --type=merge \
+          -p '{"spec":{"minReplicas":0,"maxReplicas":0}}'
+      fi
+    }
+
+    restore_hpa() {
+      local name="$1" min="$2" max="$3" present="$4"
+      if [[ "${present}" == "1" ]]; then
+        echo "Restoring HPA ${name} min=${min} max=${max}..."
+        kubectl -n "${NS}" patch hpa "${name}" --type=merge \
+          -p "{\"spec\":{\"minReplicas\":${min},\"maxReplicas\":${max}}}" || true
+      fi
+    }
+
+    scale_up() {
+      restore_hpa "${SERVER}" "${HPA_SERVER_MIN:-1}" "${HPA_SERVER_MAX:-2}" "${HPA_SERVER_PRESENT}"
+      restore_hpa "${WORKER}" "${HPA_WORKER_MIN:-1}" "${HPA_WORKER_MAX:-2}" "${HPA_WORKER_PRESENT}"
+      if [[ "${HPA_SERVER_PRESENT}" != "1" ]]; then
+        kubectl -n "${NS}" scale deploy/"${SERVER}" --replicas="${SERVER_REPLICAS}" || true
+      fi
+      if [[ "${HPA_WORKER_PRESENT}" != "1" ]]; then
+        kubectl -n "${NS}" scale deploy/"${WORKER}" --replicas="${WORKER_REPLICAS}" || true
+      fi
+      # With HPA restored, nudge scale if still at 0 (HPA may take a moment).
+      if [[ "${HPA_SERVER_PRESENT}" == "1" ]]; then
+        local cur
+        cur="$(kubectl -n "${NS}" get deploy "${SERVER}" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo 0)"
+        if [[ "${cur}" == "0" || -z "${cur}" ]]; then
+          kubectl -n "${NS}" scale deploy/"${SERVER}" --replicas="${HPA_SERVER_MIN:-1}" || true
+        fi
+      fi
+      if [[ "${HPA_WORKER_PRESENT}" == "1" ]]; then
+        local cur
+        cur="$(kubectl -n "${NS}" get deploy "${WORKER}" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo 0)"
+        if [[ "${cur}" == "0" || -z "${cur}" ]]; then
+          kubectl -n "${NS}" scale deploy/"${WORKER}" --replicas="${HPA_WORKER_MIN:-1}" || true
+        fi
+      fi
+    }
+
+    cleanup() {
+      echo "Cleanup: restoring IdP scale / HPA..."
+      scale_up
+      kubectl -n "${NS}" wait --for=condition=available deploy/"${SERVER}" --timeout=180s || true
+      kubectl -n "${NS}" wait --for=condition=available deploy/"${WORKER}" --timeout=180s || true
+    }
+    trap cleanup EXIT
+
+    save_hpa "${SERVER}" HPA_SERVER
+    save_hpa "${WORKER}" HPA_WORKER
+    pause_hpa "${SERVER}"
+    pause_hpa "${WORKER}"
+
+    echo "Scaling ${SERVER}+${WORKER} to 0 (saved replicas ${SERVER_REPLICAS}/${WORKER_REPLICAS})..."
+    kubectl -n "${NS}" scale deploy/"${SERVER}" --replicas=0
+    kubectl -n "${NS}" scale deploy/"${WORKER}" --replicas=0
+    for i in $(seq 1 90); do
+      N="$(kubectl -n "${NS}" get pods -l 'app.kubernetes.io/name=authentik,app.kubernetes.io/component in (server,worker)' \
+        --field-selector=status.phase!=Succeeded,status.phase!=Failed -o name 2>/dev/null | wc -l | tr -d ' ')"
+      [[ "${N}" == "0" ]] && break
+      sleep 2
+    done
+    echo "IdP pods drained (ready for Traefik app-down page)."
+
+    echo "Waiting for postgres..."
+    until pg_isready -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -q; do sleep 2; done
+
+    echo "Dumping ${PGDATABASE}@${PGHOST} -> db.sql.gz"
+    pg_dump --no-owner --no-acl | gzip -c > "${WORK}/db.sql.gz"
+
+    echo "Archiving /media (PVC mount) -> media.tar.gz"
+    tar czf "${WORK}/media.tar.gz" -C /media .
+
+    tar czf "${OUT_NFS}" -C "${WORK}" .
+    ls -lh "${OUT_NFS}"
+    rm -rf "${WORK}"
+
+    echo "Uploading to S3 s3://${S3_BUCKET}/${ARCHIVE_NAME} @ ${AWS_ENDPOINT_URL}"
+    aws configure set default.s3.addressing_style path
+    aws --endpoint-url "${AWS_ENDPOINT_URL}" s3 cp "${OUT_NFS}" "s3://${S3_BUCKET}/${ARCHIVE_NAME}"
+    echo "S3 upload OK"
+
+    echo "NFS retention: delete archives older than ${RETENTION_DAYS} days"
+    find /backup -maxdepth 1 -type f -name 'authentik-*.tar.gz' -mtime "+${RETENTION_DAYS}" -print -delete || true
+
+    echo "S3 retention: delete objects older than ${RETENTION_DAYS} days"
+    # Prefer GNU date from coreutils (apk); fall back to epoch math via awk if needed.
+    CUTOFF_DATE=""
+    if CUTOFF_DATE="$(date -u -d "${RETENTION_DAYS} days ago" +%Y-%m-%d 2>/dev/null)"; then
+      :
+    elif command -v python3 >/dev/null 2>&1; then
+      CUTOFF_DATE="$(python3 -c "from datetime import datetime,timedelta,timezone; print((datetime.now(timezone.utc)-timedelta(days=int('${RETENTION_DAYS}'))).strftime('%Y-%m-%d'))")"
+    else
+      echo "WARN: cannot compute S3 cutoff date; skipping S3 retention"
+    fi
+    if [[ -n "${CUTOFF_DATE}" ]]; then
+      aws --endpoint-url "${AWS_ENDPOINT_URL}" s3 ls "s3://${S3_BUCKET}/" | while read -r DATE TIME SIZE KEY; do
+        [[ -z "${KEY:-}" ]] && continue
+        case "${KEY}" in
+          authentik-*.tar.gz) ;;
+          *) continue ;;
+        esac
+        if [[ "${DATE}" < "${CUTOFF_DATE}" ]]; then
+          echo "Deleting s3://${S3_BUCKET}/${KEY} (${DATE} < ${CUTOFF_DATE})"
+          aws --endpoint-url "${AWS_ENDPOINT_URL}" s3 rm "s3://${S3_BUCKET}/${KEY}"
+        fi
+      done
+    fi
+
+    echo "Done. NFS archives:"
+    ls -1t /backup/authentik-*.tar.gz 2>/dev/null || true
+    echo "S3 objects:"
+    aws --endpoint-url "${AWS_ENDPOINT_URL}" s3 ls "s3://${S3_BUCKET}/" || true
+
+    # Probe health after scale-up (cleanup trap runs on exit)
+    echo "Backup complete; trap will scale IdP back up."
+---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: authentik-backup-cron
+  name: authentik-backup-0230
   namespace: authentik
+  labels:
+    app.kubernetes.io/name: authentik-backup
+    app.kubernetes.io/component: backup-0230
 spec:
-  schedule: "0 5 * * *" # 05:00 UTC ≈ 07:00 CEST (after bookstack)
+  timeZone: Europe/Berlin
+  schedule: "30 2 * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
       backoffLimit: 1
+      activeDeadlineSeconds: 1800
       template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: authentik-backup
         spec:
           serviceAccountName: backup-runner
           restartPolicy: Never
           containers:
-            - name: trigger-backup
+            - name: backup
               image: alpine/k8s:1.37.1
               env:
                 - name: PGHOST
@@ -100,51 +276,147 @@ spec:
                   value: authentik
                 - name: PGSSLMODE
                   value: require
+                - name: RETENTION_DAYS
+                  value: "30"
                 - name: PGPASSWORD
                   valueFrom:
                     secretKeyRef:
                       name: authentik-credentials
                       key: password
-              command:
-                - /bin/bash
-                - -c
-                - |
-                  set -euo pipefail
-                  apk add --no-cache postgresql17-client tar gzip >/dev/null
-
-                  STAMP="$(date -u +%Y%m%d-%H%M%S)"
-                  WORK="/tmp/authentik-${STAMP}"
-                  OUT="/backup/authentik-${STAMP}.tar.gz"
-                  mkdir -p "${WORK}"
-
-                  echo "Waiting for postgres..."
-                  until pg_isready -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -q; do sleep 2; done
-
-                  echo "Dumping ${PGDATABASE}@${PGHOST} -> db.sql.gz"
-                  pg_dump --no-owner --no-acl | gzip -c > "${WORK}/db.sql.gz"
-
-                  # Prefer deploy/ so kubectl picks a Ready Running replica.
-                  # Bare label + items[0] can hit Succeeded/Terminating pods during
-                  # rollouts or node pressure ("cannot exec into a completed pod").
-                  if ! kubectl -n authentik get deploy authentik-server >/dev/null 2>&1; then
-                    echo "deploy/authentik-server not found" >&2
-                    exit 1
-                  fi
-                  echo "Archiving deploy/authentik-server /media -> media.tar.gz"
-                  kubectl -n authentik exec deploy/authentik-server -c server -- tar czf - -C /media . > "${WORK}/media.tar.gz"
-
-                  tar czf "${OUT}" -C "${WORK}" .
-                  ls -lh "${OUT}"
-                  rm -rf "${WORK}"
-
-                  # Retention: keep last 7 archives
-                  ls -1t /backup/authentik-*.tar.gz 2>/dev/null | tail -n +8 | xargs -r rm -f
-                  echo "Done. Archives:"
-                  ls -1t /backup/authentik-*.tar.gz 2>/dev/null || true
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: authentik-backup-s3
+                      key: AWS_ACCESS_KEY_ID
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: authentik-backup-s3
+                      key: AWS_SECRET_ACCESS_KEY
+                - name: AWS_ENDPOINT_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: authentik-backup-s3
+                      key: AWS_ENDPOINT_URL
+                - name: AWS_DEFAULT_REGION
+                  valueFrom:
+                    secretKeyRef:
+                      name: authentik-backup-s3
+                      key: AWS_DEFAULT_REGION
+                - name: S3_BUCKET
+                  valueFrom:
+                    secretKeyRef:
+                      name: authentik-backup-s3
+                      key: S3_BUCKET
+              command: ["/bin/bash", "/scripts/backup.sh"]
               volumeMounts:
                 - name: backup
                   mountPath: /backup
+                - name: media
+                  mountPath: /media
+                  readOnly: true
+                - name: scripts
+                  mountPath: /scripts
           volumes:
             - name: backup
               persistentVolumeClaim:
                 claimName: authentik-backups
+            - name: media
+              persistentVolumeClaim:
+                claimName: authentik-media
+            - name: scripts
+              configMap:
+                name: authentik-backup-script
+                defaultMode: 0755
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: authentik-backup-1150
+  namespace: authentik
+  labels:
+    app.kubernetes.io/name: authentik-backup
+    app.kubernetes.io/component: backup-1150
+spec:
+  timeZone: Europe/Berlin
+  schedule: "50 11 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: authentik-backup
+        spec:
+          serviceAccountName: backup-runner
+          restartPolicy: Never
+          containers:
+            - name: backup
+              image: alpine/k8s:1.37.1
+              env:
+                - name: PGHOST
+                  value: authentik-pg-rw
+                - name: PGPORT
+                  value: "5432"
+                - name: PGUSER
+                  value: authentik
+                - name: PGDATABASE
+                  value: authentik
+                - name: PGSSLMODE
+                  value: require
+                - name: RETENTION_DAYS
+                  value: "30"
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: authentik-credentials
+                      key: password
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: authentik-backup-s3
+                      key: AWS_ACCESS_KEY_ID
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: authentik-backup-s3
+                      key: AWS_SECRET_ACCESS_KEY
+                - name: AWS_ENDPOINT_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: authentik-backup-s3
+                      key: AWS_ENDPOINT_URL
+                - name: AWS_DEFAULT_REGION
+                  valueFrom:
+                    secretKeyRef:
+                      name: authentik-backup-s3
+                      key: AWS_DEFAULT_REGION
+                - name: S3_BUCKET
+                  valueFrom:
+                    secretKeyRef:
+                      name: authentik-backup-s3
+                      key: S3_BUCKET
+              command: ["/bin/bash", "/scripts/backup.sh"]
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                - name: media
+                  mountPath: /media
+                  readOnly: true
+                - name: scripts
+                  mountPath: /scripts
+          volumes:
+            - name: backup
+              persistentVolumeClaim:
+                claimName: authentik-backups
+            - name: media
+              persistentVolumeClaim:
+                claimName: authentik-media
+            - name: scripts
+              configMap:
+                name: authentik-backup-script
+                defaultMode: 0755

@@ -1,8 +1,13 @@
-# Bootstrap restore from NFS (cluster rebuild). Default is off — set ConfigMap enabled=true
-# (and force=true if DB/media already have data) then Argo Sync; set enabled=false after.
+# Bootstrap restore from NFS and/or RustFS S3. Default is off — set ConfigMap
+# enabled=true (and force=true if DB/media already have data) then Argo Sync;
+# set enabled=false after.
 #
-# Restores PostgreSQL dump + /media from combined archive authentik-*.tar.gz
-# (produced by authentik-backup-cron). Branding NFS sync remains separate.
+# Restores PostgreSQL dump + /media (= upstream /data) from combined archive
+# authentik-*.tar.gz. Official order: Postgres first, then media, then scale IdP up.
+# https://docs.goauthentik.io/sys-mgmt/ops/backup-restore/
+#
+# MFA (TOTP/WebAuthn) is in Postgres and requires AUTHENTIK_SECRET_KEY unchanged
+# since the backup (SecretSpec / authentik-credentials).
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,9 +16,11 @@ metadata:
 data:
   enabled: "false"
   archive: "latest"
+  # auto | nfs | s3 — auto prefers NFS when the archive exists, else S3
+  source: "auto"
   force: "false"
-  serverReplicas: "1"
-  workerReplicas: "1"
+  serverReplicas: "2"
+  workerReplicas: "2"
   worker.sh: |
     #!/bin/sh
     set -euo pipefail
@@ -52,6 +59,9 @@ metadata:
 rules:
   - apiGroups: ["apps"]
     resources: ["deployments", "deployments/scale"]
+    verbs: ["get", "list", "patch", "update"]
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
     verbs: ["get", "list", "patch", "update"]
   - apiGroups: [""]
     resources: ["pods"]
@@ -119,6 +129,11 @@ spec:
                 configMapKeyRef:
                   name: authentik-restore
                   key: archive
+            - name: RESTORE_SOURCE
+              valueFrom:
+                configMapKeyRef:
+                  name: authentik-restore
+                  key: source
             - name: RESTORE_FORCE
               valueFrom:
                 configMapKeyRef:
@@ -134,6 +149,36 @@ spec:
                 configMapKeyRef:
                   name: authentik-restore
                   key: workerReplicas
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-backup-s3
+                  key: AWS_ACCESS_KEY_ID
+                  optional: true
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-backup-s3
+                  key: AWS_SECRET_ACCESS_KEY
+                  optional: true
+            - name: AWS_ENDPOINT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-backup-s3
+                  key: AWS_ENDPOINT_URL
+                  optional: true
+            - name: AWS_DEFAULT_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-backup-s3
+                  key: AWS_DEFAULT_REGION
+                  optional: true
+            - name: S3_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-backup-s3
+                  key: S3_BUCKET
+                  optional: true
           command:
             - /bin/bash
             - -c
@@ -147,13 +192,12 @@ spec:
                 exit 0
               fi
 
-              # alpine/k8s already has tar+gzip; only pg client needs apk (retry for DNS blips).
               for i in 1 2 3 4 5; do
-                if apk add --no-cache postgresql17-client; then
+                if apk add --no-cache postgresql17-client aws-cli; then
                   break
                 fi
                 if [[ "${i}" -eq 5 ]]; then
-                  echo "apk add postgresql17-client failed after retries" >&2
+                  echo "apk add failed after retries" >&2
                   exit 1
                 fi
                 sleep $((i * 3))
@@ -163,10 +207,39 @@ spec:
               SERVER="authentik-server"
               WORKER="authentik-worker"
               MEDIA_WORKER="authentik-restore-media"
+              S3_BUCKET="${S3_BUCKET:-authentik-backups}"
+              AWS_ENDPOINT_URL="${AWS_ENDPOINT_URL:-http://192.168.0.107:9000}"
+              RESTORE_SOURCE="${RESTORE_SOURCE:-auto}"
+
+              HPA_SERVER_MIN=""; HPA_SERVER_MAX=""; HPA_WORKER_MIN=""; HPA_WORKER_MAX=""
+              HPA_SERVER_PRESENT=0; HPA_WORKER_PRESENT=0
+
+              if kubectl -n "${NS}" get hpa "${SERVER}" >/dev/null 2>&1; then
+                HPA_SERVER_PRESENT=1
+                HPA_SERVER_MIN="$(kubectl -n "${NS}" get hpa "${SERVER}" -o jsonpath='{.spec.minReplicas}')"
+                HPA_SERVER_MAX="$(kubectl -n "${NS}" get hpa "${SERVER}" -o jsonpath='{.spec.maxReplicas}')"
+                kubectl -n "${NS}" patch hpa "${SERVER}" --type=merge -p '{"spec":{"minReplicas":0,"maxReplicas":0}}'
+              fi
+              if kubectl -n "${NS}" get hpa "${WORKER}" >/dev/null 2>&1; then
+                HPA_WORKER_PRESENT=1
+                HPA_WORKER_MIN="$(kubectl -n "${NS}" get hpa "${WORKER}" -o jsonpath='{.spec.minReplicas}')"
+                HPA_WORKER_MAX="$(kubectl -n "${NS}" get hpa "${WORKER}" -o jsonpath='{.spec.maxReplicas}')"
+                kubectl -n "${NS}" patch hpa "${WORKER}" --type=merge -p '{"spec":{"minReplicas":0,"maxReplicas":0}}'
+              fi
 
               scale_up() {
-                kubectl -n "${NS}" scale deploy/"${SERVER}" --replicas="${SERVER_REPLICAS}" || true
-                kubectl -n "${NS}" scale deploy/"${WORKER}" --replicas="${WORKER_REPLICAS}" || true
+                if [[ "${HPA_SERVER_PRESENT}" == "1" ]]; then
+                  kubectl -n "${NS}" patch hpa "${SERVER}" --type=merge \
+                    -p "{\"spec\":{\"minReplicas\":${HPA_SERVER_MIN},\"maxReplicas\":${HPA_SERVER_MAX}}}" || true
+                else
+                  kubectl -n "${NS}" scale deploy/"${SERVER}" --replicas="${SERVER_REPLICAS}" || true
+                fi
+                if [[ "${HPA_WORKER_PRESENT}" == "1" ]]; then
+                  kubectl -n "${NS}" patch hpa "${WORKER}" --type=merge \
+                    -p "{\"spec\":{\"minReplicas\":${HPA_WORKER_MIN},\"maxReplicas\":${HPA_WORKER_MAX}}}" || true
+                else
+                  kubectl -n "${NS}" scale deploy/"${WORKER}" --replicas="${WORKER_REPLICAS}" || true
+                fi
               }
 
               echo "Scaling server+worker to 0..."
@@ -180,22 +253,70 @@ spec:
                 sleep 2
               done
 
-              if [[ "${RESTORE_ARCHIVE}" == "latest" ]]; then
-                ARCHIVE="$(ls -1t /backup/authentik-*.tar.gz 2>/dev/null | head -n1 || true)"
-              else
-                ARCHIVE="/backup/${RESTORE_ARCHIVE}"
-              fi
+              resolve_nfs() {
+                if [[ "${RESTORE_ARCHIVE}" == "latest" ]]; then
+                  ls -1t /backup/authentik-*.tar.gz 2>/dev/null | head -n1 || true
+                else
+                  local p="/backup/${RESTORE_ARCHIVE}"
+                  [[ -f "${p}" ]] && echo "${p}" || true
+                fi
+              }
+
+              resolve_s3_key() {
+                if [[ "${RESTORE_ARCHIVE}" == "latest" ]]; then
+                  aws --endpoint-url "${AWS_ENDPOINT_URL}" s3 ls "s3://${S3_BUCKET}/" \
+                    | awk '{print $4}' | grep -E '^authentik-.*\.tar\.gz$' | sort -r | head -n1 || true
+                else
+                  echo "${RESTORE_ARCHIVE}"
+                fi
+              }
+
+              ARCHIVE=""
+              USED_SOURCE=""
+              case "${RESTORE_SOURCE}" in
+                nfs)
+                  ARCHIVE="$(resolve_nfs)"
+                  USED_SOURCE="nfs"
+                  ;;
+                s3)
+                  KEY="$(resolve_s3_key)"
+                  if [[ -n "${KEY}" ]]; then
+                    ARCHIVE="/tmp/${KEY}"
+                    echo "Downloading s3://${S3_BUCKET}/${KEY}..."
+                    aws configure set default.s3.addressing_style path
+                    aws --endpoint-url "${AWS_ENDPOINT_URL}" s3 cp "s3://${S3_BUCKET}/${KEY}" "${ARCHIVE}"
+                    USED_SOURCE="s3"
+                  fi
+                  ;;
+                auto|*)
+                  ARCHIVE="$(resolve_nfs)"
+                  if [[ -n "${ARCHIVE}" && -f "${ARCHIVE}" ]]; then
+                    USED_SOURCE="nfs"
+                  else
+                    KEY="$(resolve_s3_key)"
+                    if [[ -n "${KEY}" ]]; then
+                      ARCHIVE="/tmp/${KEY}"
+                      echo "NFS miss; downloading s3://${S3_BUCKET}/${KEY}..."
+                      aws configure set default.s3.addressing_style path
+                      aws --endpoint-url "${AWS_ENDPOINT_URL}" s3 cp "s3://${S3_BUCKET}/${KEY}" "${ARCHIVE}"
+                      USED_SOURCE="s3"
+                    fi
+                  fi
+                  ;;
+              esac
+
               if [[ -z "${ARCHIVE}" || ! -f "${ARCHIVE}" ]]; then
-                echo "No backup archive found (archive=${RESTORE_ARCHIVE})" >&2
+                echo "No backup archive found (archive=${RESTORE_ARCHIVE} source=${RESTORE_SOURCE})" >&2
                 scale_up
                 exit 1
               fi
+              echo "Restoring from ${ARCHIVE} (source=${USED_SOURCE})"
+              echo "SECRET_KEY guard: MFA devices only work if AUTHENTIK_SECRET_KEY matches the backup era."
 
               WORK="/tmp/restore-work"
               rm -rf "${WORK}"
               mkdir -p "${WORK}"
               tar xzf "${ARCHIVE}" -C "${WORK}"
-              echo "Restoring from ${ARCHIVE}"
 
               echo "Waiting for postgres..."
               until pg_isready -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -q; do sleep 2; done
@@ -213,7 +334,7 @@ spec:
                 psql -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -v ON_ERROR_STOP=1 -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO authentik; GRANT ALL ON SCHEMA public TO public;"
               fi
 
-              echo "Importing db.sql.gz..."
+              echo "Importing db.sql.gz (Postgres first per upstream docs)..."
               gunzip -c "${WORK}/db.sql.gz" | psql -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -v ON_ERROR_STOP=1
 
               # Stage media.tar.gz on NFS (avoids ConfigMap 1MiB limit), then extract via worker
@@ -297,6 +418,7 @@ spec:
               kubectl -n "${NS}" rollout status deploy/"${SERVER}" --timeout=180s
               kubectl -n "${NS}" rollout status deploy/"${WORKER}" --timeout=180s
               echo "Done. Set authentik-restore.enabled=false in Git immediately."
+              echo "Post-restore smoke: login + TOTP/Passkey for a known user (SECRET_KEY must match backup)."
           volumeMounts:
             - name: backup
               mountPath: /backup

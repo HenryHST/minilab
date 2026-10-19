@@ -68,10 +68,60 @@ Brand paths in Infra_LAB Terraform: `branding/{favicon,key_transparent,website-w
 
 ## Backup / Restore
 
-- NAS: `mkdir -p /var/nfs/shared/infra01/authentik-backups`
-- CronJob `authentik-backup-cron` (05:00 UTC): `pg_dump` gegen `authentik-pg-rw` (DB/User `authentik`, `PGSSLMODE=require`) + tar `/media` → combined `authentik-*.tar.gz` (Retention 7)
-- Manuell: `kubectl -n authentik create job --from=cronjob/authentik-backup-cron authentik-backup-manual`
-- Bootstrap-Restore: ConfigMap `authentik-restore` → `enabled=true` (bei vorhandener DB/Media zusätzlich `force=true`), Argo Sync (skaliert server+worker auf 0, stellt DB + Media wieder her); danach sofort `enabled=false` committen
+Upstream: [Backup and restore](https://docs.goauthentik.io/sys-mgmt/ops/backup-restore/) · HPA: [Autoscaling](https://docs.goauthentik.io/sys-mgmt/ops/autoscaling/hpa/).
+
+| Upstream | Lab | In archive? |
+|----------|-----|-------------|
+| PostgreSQL (users, flows, **TOTP/WebAuthn**) | CNPG `authentik-pg` / `pg_dump` | Yes — `db.sql.gz` |
+| `/data` (icons, uploads) | PVC `authentik-media` → `/media` | Yes — `media.tar.gz` |
+| `/certs`, `/custom-templates`, `/blueprints` | N/A or GitOps ConfigMap | No |
+
+### Schedule (Europe/Berlin, maintenance / scale-to-0)
+
+| CronJob | Schedule | Downtime |
+|---------|----------|----------|
+| `authentik-backup-0230` | `30 2 * * *` | ~15–25 min (Traefik app-down) |
+| `authentik-backup-1150` | `50 11 * * *` | same |
+
+Each run: HPA pause if present (`minReplicas`/`maxReplicas` → 0) → scale server+worker to 0 → `pg_dump` + media PVC mount → combined `authentik-YYYYMMDD-HHMMSS.tar.gz` written **in parallel** to:
+
+| Target | Details |
+|--------|---------|
+| **NFS** | PVC `authentik-backups` → `192.168.0.25:…/authentik-backups` |
+| **S3** | RustFS pi7cl `http://192.168.0.107:9000`, bucket `authentik-backups`, Secret `authentik-backup-s3` |
+
+Retention **30 days** per target. Job fails if either upload fails. Chart HPA is typically off today (`server/worker.autoscaling.enabled: false`); backup logic is HPA-aware for when it is enabled later (optional follow-up: min 2 / max 5 per [upstream HPA](https://docs.goauthentik.io/sys-mgmt/ops/autoscaling/hpa/)).
+
+```bash
+# NAS once
+mkdir -p /var/nfs/shared/infra01/authentik-backups
+
+# Manual backup (either slot)
+kubectl -n authentik create job --from=cronjob/authentik-backup-0230 authentik-backup-manual
+kubectl -n authentik logs -f job/authentik-backup-manual -c backup
+```
+
+### Full restore (bootstrap)
+
+ConfigMap `authentik-restore`:
+
+| Key | Values |
+|-----|--------|
+| `enabled` | `true` to run PostSync Job |
+| `archive` | `latest` or filename |
+| `source` | `auto` (default; prefer NFS) \| `nfs` \| `s3` |
+| `force` | `true` if DB/media already populated |
+| `serverReplicas` / `workerReplicas` | default `2` |
+
+Order: scale 0 → Postgres import → `/media` → scale up. **MFA guarantee:** TOTP/Passkeys return only if `AUTHENTIK_SECRET_KEY` is unchanged since the backup (SecretSpec / `authentik-credentials` / secret `authentik`). After success, set `enabled=false` immediately.
+
+### Selective MFA restore
+
+```bash
+apps/ops/authentik/scripts/restore-user-mfa.sh latest <username|email> auto --i-know-secret-key-matches
+```
+
+Replaces that user’s TOTP + WebAuthn rows from the archive into the live DB (same SECRET_KEY guard).
 
 Siehe [ADR-0015](../../docs/adr/0015-backup-restore-cronjobs.md).
 

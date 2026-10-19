@@ -129,11 +129,14 @@ spec:
         path: {{ .path }}
     {{- else if or (eq .app "drawio") (eq .app "it-tools") }}
     spec:
+      # podcraft scales these Deployments; git must not pin replicas (see apps/dev/*/deployment.yaml).
       ignoreDifferences:
         - group: apps
           kind: Deployment
           jsonPointers:
             - /spec/replicas
+          jqPathExpressions:
+            - .spec.replicas
       source:
         repoURL: https://github.com/HenryHST/minilab
         targetRevision: main

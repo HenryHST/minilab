@@ -4,7 +4,8 @@ metadata:
   name: it-tools
   namespace: it-tools
 spec:
-  replicas: 1
+  # replicas owned by podcraft (Day/Night + UI). Omit so Argo self-heal cannot reset scale.
+  # AppSet ignoreDifferences also covers /spec/replicas.
   selector:
     matchLabels:
       app: it-tools

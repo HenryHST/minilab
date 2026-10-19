@@ -349,6 +349,21 @@ function renderApp() {
       const id = btn.dataset.id;
       const action = btn.dataset.action;
       btn.disabled = true;
+      // #region agent log
+      fetch("http://127.0.0.1:7458/ingest/617307a5-b9d4-4557-ad01-d7ba8d199fa8", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "e03b97" },
+        body: JSON.stringify({
+          sessionId: "e03b97",
+          runId: "argo-vs-scheduler",
+          hypothesisId: "H2",
+          location: "app.js:scale-click",
+          message: "user scale action",
+          data: { id, action },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
       try {
         await api(`/api/v1/workloads/${id}/${action}`, { method: "POST" });
         await refreshData();

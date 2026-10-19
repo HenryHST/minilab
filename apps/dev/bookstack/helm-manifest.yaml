@@ -102,7 +102,7 @@ spec:
             - name: APP_URL
               value: https://book-ext.stadthagen.dev
             - name: AUTH_AUTO_INITIATE
-              value: "true"
+              value: "false"
             - name: AUTH_METHOD
               value: oidc
             - name: DB_DATABASE

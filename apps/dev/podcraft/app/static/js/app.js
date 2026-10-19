@@ -9,6 +9,7 @@ const state = {
   basicAuth: localStorage.getItem("podcraft.basic") || "",
   logPaused: false,
   logMinimized: false,
+  guideOpen: localStorage.getItem("podcraft.guideDismissed") !== "1",
   route: location.pathname,
   error: "",
 };
@@ -77,17 +78,45 @@ function doLogout() {
   window.location.href = logoutHref();
 }
 
-function topControls() {
+function tip(key) {
+  return `data-tip="${escapeHtml(t(state.locale, key))}" title="${escapeHtml(t(state.locale, key))}"`;
+}
+
+function topControls({ showHelp = false } = {}) {
   return `
     <div class="top-actions">
-      <button class="chip ${state.theme === "light" ? "active" : ""}" data-action="theme-light" type="button">☀</button>
-      <button class="chip ${state.theme === "dark" ? "active" : ""}" data-action="theme-dark" type="button">☾</button>
-      <button class="chip ${state.locale === "de" ? "active" : ""}" data-action="lang-de" type="button">DE</button>
-      <button class="chip ${state.locale === "en" ? "active" : ""}" data-action="lang-en" type="button">EN</button>
+      <button class="chip ${state.theme === "light" ? "active" : ""}" data-action="theme-light" type="button" ${tip("tipThemeLight")} aria-label="${t(state.locale, "tipThemeLight")}">☀</button>
+      <button class="chip ${state.theme === "dark" ? "active" : ""}" data-action="theme-dark" type="button" ${tip("tipThemeDark")} aria-label="${t(state.locale, "tipThemeDark")}">☾</button>
+      <button class="chip ${state.locale === "de" ? "active" : ""}" data-action="lang-de" type="button" ${tip("tipLangDe")}>DE</button>
+      <button class="chip ${state.locale === "en" ? "active" : ""}" data-action="lang-en" type="button" ${tip("tipLangEn")}>EN</button>
+      ${showHelp ? `<button class="chip ${state.guideOpen ? "active" : ""}" data-action="toggle-guide" type="button" ${tip("tipHelp")}>?</button>` : ""}
       ${state.me ? `<span class="user-pill">${t(state.locale, "user")}: ${escapeHtml(state.me.username)}</span>` : ""}
-      ${state.me ? `<a class="chip" href="/settings">${t(state.locale, "settings")}</a>` : ""}
-      ${state.me ? `<button class="chip" data-action="logout" type="button">${t(state.locale, "logout")}</button>` : ""}
+      ${state.me ? `<a class="chip" href="/settings" ${tip("tipSettings")}>${t(state.locale, "settings")}</a>` : ""}
+      ${state.me ? `<button class="chip" data-action="logout" type="button" ${tip("tipLogout")}>${t(state.locale, "logout")}</button>` : ""}
     </div>`;
+}
+
+function guideHtml() {
+  if (!state.guideOpen) return "";
+  return `
+    <section class="guide-card" id="guide-card" aria-label="${t(state.locale, "guideTitle")}">
+      <div class="guide-head">
+        <div>
+          <h2>${t(state.locale, "guideTitle")}</h2>
+          <p class="guide-lead">${t(state.locale, "guideLead")}</p>
+        </div>
+        <button class="btn ghost" type="button" data-action="dismiss-guide" ${tip("tipHelp")}>✕</button>
+      </div>
+      <ol class="guide-steps">
+        <li><span class="guide-step-num">1</span><span>${t(state.locale, "guideStep1")}</span></li>
+        <li><span class="guide-step-num">2</span><span>${t(state.locale, "guideStep2")}</span></li>
+        <li><span class="guide-step-num">3</span><span>${t(state.locale, "guideStep3")}</span></li>
+        <li><span class="guide-step-num">4</span><span>${t(state.locale, "guideStep4")}</span></li>
+      </ol>
+      <div class="guide-actions">
+        <button class="btn" type="button" data-action="dismiss-guide">${t(state.locale, "guideDismiss")}</button>
+      </div>
+    </section>`;
 }
 
 function pulseSvg(active) {
@@ -142,7 +171,7 @@ function liveBadgeHtml(phase) {
   const live = phase === "Running";
   const cls = phaseClass(phase);
   return `
-    <span class="live-badge ${cls}">
+    <span class="live-badge ${cls}" ${tip("tipLive")}>
       ${live ? miniPulseSvg() : `<span class="status-dot ${statusDotClass(phase)}"></span>`}
       ${escapeHtml(phaseLabel(phase))}
     </span>`;
@@ -241,7 +270,7 @@ function renderApp() {
             ${brandMarkHtml(36)}
             <span class="brand-name">podcraft</span>
           </a>
-          ${topControls()}
+          ${topControls({ showHelp: false })}
         </header>
         <main class="main">
           <div class="settings-card">
@@ -304,8 +333,8 @@ function renderApp() {
           <div class="workload-actions">
             ${
               on
-                ? `<button class="icon-btn danger" data-action="stop" data-id="${escapeHtml(w.id)}" type="button" title="${t(state.locale, "stop")}" aria-label="${t(state.locale, "stop")}"><span class="icon-stop"></span></button>`
-                : `<button class="icon-btn primary" data-action="start" data-id="${escapeHtml(w.id)}" type="button" title="${t(state.locale, "start")}" aria-label="${t(state.locale, "start")}"><span class="icon-play"></span></button>`
+                ? `<button class="icon-btn danger" data-action="stop" data-id="${escapeHtml(w.id)}" type="button" ${tip("tipStop")} aria-label="${t(state.locale, "stop")}"><span class="icon-stop"></span></button>`
+                : `<button class="icon-btn primary" data-action="start" data-id="${escapeHtml(w.id)}" type="button" ${tip("tipStart")} aria-label="${t(state.locale, "start")}"><span class="icon-play"></span></button>`
             }
           </div>
         </div>`;
@@ -321,10 +350,11 @@ function renderApp() {
           ${brandMarkHtml(36)}
           <span class="brand-name">podcraft</span>
         </a>
-        ${topControls()}
+        ${topControls({ showHelp: true })}
       </header>
       <main class="main">
         ${state.error ? `<div class="error-banner">${escapeHtml(state.error)}</div>` : ""}
+        ${guideHtml()}
         <section class="schedule-band ${active ? "is-live" : "is-idle"}">
           <div class="schedule-band-copy">
             <h1>${title}</h1>
@@ -337,6 +367,14 @@ function renderApp() {
           ${pulseSvg(active)}
         </section>
         <section>
+          <div class="section-head">
+            <h2>${t(state.locale, "workloads")}</h2>
+            ${
+              !state.guideOpen
+                ? `<button class="chip" type="button" data-action="toggle-guide" ${tip("tipHelp")}>${t(state.locale, "guideShow")}</button>`
+                : ""
+            }
+          </div>
           <div class="workload-list">${rows || `<p class="hint">${t(state.locale, "loading")}</p>`}</div>
         </section>
       </main>
@@ -383,6 +421,22 @@ function bindChrome(root) {
     const a = btn.dataset.action;
     if (a === "logout") {
       btn.addEventListener("click", () => doLogout());
+      return;
+    }
+    if (a === "dismiss-guide") {
+      btn.addEventListener("click", () => {
+        state.guideOpen = false;
+        localStorage.setItem("podcraft.guideDismissed", "1");
+        renderApp();
+      });
+      return;
+    }
+    if (a === "toggle-guide") {
+      btn.addEventListener("click", () => {
+        state.guideOpen = !state.guideOpen;
+        localStorage.setItem("podcraft.guideDismissed", state.guideOpen ? "0" : "1");
+        renderApp();
+      });
       return;
     }
     if (!a?.startsWith("theme") && !a?.startsWith("lang")) return;

@@ -1,6 +1,5 @@
 book: BookStack
-book_version: "1.1.0"
-updated: "2026-10-18"
-description: BookStack Wiki — Deploy, Kommentare global aus, PDF-Export Fehleranalyse, Quellen
+book_version: "1.2.0"
+updated: "2026-10-19"
+description: BookStack Wiki — Deploy, Kommentare, PDF-Export & OIDC-Login Fehleranalyse, Quellen
 shelf: Plattform
-

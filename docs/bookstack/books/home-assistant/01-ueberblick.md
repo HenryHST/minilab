@@ -40,7 +40,7 @@ Sie müssen **nichts installieren oder programmieren**, um Alltagsfunktionen zu 
 | Lichter & Schalter | Ein-/Ausschalten, Dimmen |
 | Klima & Heizung | Temperatur lesen und stellen |
 | Szenen & Automationen | Fertige Abläufe starten |
-| Zigbee | Funklampen, Sensoren, Mesh |
+| Zigbee | Zigbee2MQTT & Bridge, Geräte-Rollen, Automationen (WZ-Rollo, Licht) |
 | Matter | Matter Server & OTBR (Konfig), Geräte, Thread-Automationen |
 | Homematic | OpenCCU & Integration, Geräte, Automationen (Klingel, Rollos) |
 | Bluetooth | BLE-Sensoren und Reichweite |

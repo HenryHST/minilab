@@ -16,7 +16,7 @@ Wiki / Wissensdatenbank:
 | Chart | [gabe565/bookstack](https://charts.gabe565.com/charts/bookstack/) (vendored) → committed `helm-manifest.yaml` |
 | Image | `lscr.io/linuxserver/bookstack:version-v26.05.5` |
 | DB | MariaDB 11.4 (`mariadb.yaml`, hostPath `/var/lib/bookstack-mariadb` @ `nxk3-w01`) |
-| Auth | Authentik OIDC (`AUTH_METHOD=oidc`) |
+| Auth | Authentik OIDC (`AUTH_METHOD=oidc`, `AUTH_AUTO_INITIATE=false`) |
 | Theme | `APP_THEME=custom` — Modules/Fonts via Argo PostSync Job |
 | PDF | `EXPORT_PAGE_SIZE=a4`, dompdf + Noto Sans; FPM `memory_limit=512M` + `max_execution_time=300` via `www2.conf`; font dir `abc`-writable |
 | Comments | **Disabled** globally (`app-disable-comments=true` via docs-import `gitops-bootstrap.php`; no `.env`) |
@@ -44,6 +44,8 @@ Vor dem ersten Sync SecretSpecs / Ansible anlegen — Vorlage: [`secret.example.
 5. Client-Secret → SecretSpec `bookstack-oauth`
 
 Siehe [Authentik ↔ BookStack](https://integrations.goauthentik.io/documentation/bookstack/). Pangolin publish: `apps/ops/pangolin-publish` (niceId `book-ext`).
+
+Login-Incidents (State-Race, `external_auth_id` nach Authentik-Restore): Buch **BookStack** → Kapitel [OIDC-Login Fehleranalyse](../../../docs/bookstack/books/bookstack/03-oidc-login-fehleranalyse.md).
 
 ## Theme modules & PDF fonts (GitOps)
 

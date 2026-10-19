@@ -1,5 +1,11 @@
 # Changelog — Buch BookStack
 
+## [1.2.0] - 2026-10-19
+
+### Added
+
+- **OIDC-Login Fehleranalyse** (Incident 2026-10-19): Auto-Initiate State-Race + `external_auth_id`-Drift nach Authentik-Restore; Mermaid-Sequenzen/Flowcharts
+
 ## [1.1.0] - 2026-10-18
 
 ### Added

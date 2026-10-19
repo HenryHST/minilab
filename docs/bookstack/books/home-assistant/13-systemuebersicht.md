@@ -97,7 +97,7 @@ Nur häufig genutzte Steuerungs- und Anzeige-Entities. `entity_id` hilft dem Adm
 
 ## Zigbee-Geräte (Zigbee2MQTT)
 
-Bridge: **Zigbee2MQTT Bridge** (Kontrollraum), Software **2.14.2**. Bedienung: Kapitel *Zigbee*.
+Bridge: **Zigbee2MQTT Bridge** (Kontrollraum), Software **2.14.2** (Stand Abfrage 2026-10-19, Verbindung an). Installation, Rollen und Automationen: Kapitel *Zigbee*.
 
 Unten die **Geräte** (nicht jede Hilfs-Entity wie Linkqualität). Namen ohne Area stehen am Ende.
 

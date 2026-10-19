@@ -13,7 +13,7 @@ BookStack: Shelf **Anleitungen** → Buch **Home Assistant**. Kapitel in dieser 
 | 5 | [`04-lichter-schalter.md`](04-lichter-schalter.md) | Lichter & Schalter |
 | 6 | [`05-klima-heizung.md`](05-klima-heizung.md) | Klima & Heizung |
 | 7 | [`06-szenen-automationen.md`](06-szenen-automationen.md) | Szenen & Automationen |
-| 8 | [`08-zigbee.md`](08-zigbee.md) | Zigbee |
+| 8 | [`08-zigbee.md`](08-zigbee.md) | Zigbee (Z2M, Rollen, Automationen) |
 | 9 | [`09-matter.md`](09-matter.md) | Matter |
 | 10 | [`10-homematic.md`](10-homematic.md) | Homematic |
 | 11 | [`11-bluetooth.md`](11-bluetooth.md) | Bluetooth |
@@ -24,6 +24,10 @@ BookStack: Shelf **Anleitungen** → Buch **Home Assistant**. Kapitel in dieser 
 Ops-/Architektur (Admin): [`../../../home-assistant/ha02.md`](../../../home-assistant/ha02.md).
 
 ## Changelog
+
+### 1.5.0 — 2026-10-19
+
+- Kapitel **Zigbee**: Homematic-Parität — Zigbee2MQTT-Stack (Bridge 2.14.2, Coordinator), Geräte-Rollen, HA-Automationen (WZ-Rollo-Taster, Mauslicht, Küchenlicht)
 
 ### 1.4.0 — 2026-10-17
 

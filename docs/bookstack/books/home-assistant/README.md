@@ -20,11 +20,25 @@ BookStack: Shelf **Anleitungen** → Buch **Home Assistant**. Kapitel in dieser 
 | 12 | [`12-stoerungen.md`](12-stoerungen.md) | Wenn etwas nicht klappt |
 | 13 | [`13-systemuebersicht.md`](13-systemuebersicht.md) | Systemübersicht |
 | 14 | [`14-dashboard-home.md`](14-dashboard-home.md) | Dashboard Home |
-| 15 | [`15-geraeteuebersicht.md`](15-geraeteuebersicht.md) | Geräteübersicht (Hardware je Raum) |
+| 15 | [`15-geraeteuebersicht.md`](15-geraeteuebersicht.md) | Geräteübersicht (Index + TOC) |
+| 16 | [`16-wohnzimmer.md`](16-wohnzimmer.md) | Wohnzimmer |
+| 17 | [`17-schlafzimmer.md`](17-schlafzimmer.md) | Schlafzimmer |
+| 18 | [`18-kueche.md`](18-kueche.md) | Küche |
+| 19 | [`19-eingangsflur.md`](19-eingangsflur.md) | Eingangsflur |
+| 20 | [`20-flur.md`](20-flur.md) | Flur |
+| 21 | [`21-badezimmer.md`](21-badezimmer.md) | Badezimmer |
+| 22 | [`22-gaeste-wc.md`](22-gaeste-wc.md) | Gäste WC |
+| 23 | [`23-balkon.md`](23-balkon.md) | Balkon |
+| 24 | [`24-arbeitszimmer.md`](24-arbeitszimmer.md) | Arbeitszimmer |
+| 25 | [`25-serverschrank.md`](25-serverschrank.md) | Serverschrank |
 
 Ops-/Architektur (Admin): [`../../../home-assistant/ha02.md`](../../../home-assistant/ha02.md).
 
 ## Changelog
+
+### 1.8.0 — 2026-10-19
+
+- **Geräteübersicht** aufgeteilt: Index mit Inhaltsverzeichnis; eigene Seiten pro Zimmer (16–25); „Ohne Raum“ bleibt auf dem Index
 
 ### 1.7.0 — 2026-10-19
 

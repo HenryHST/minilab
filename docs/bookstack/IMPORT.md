@@ -83,7 +83,8 @@ Buch **Home Assistant** — Reihenfolge aus `books/home-assistant/`:
 12. Wenn etwas nicht klappt
 13. Systemübersicht (Alltagsgeräte, Zigbee, Homematic, Matter)
 14. Dashboard Home (Tabs & Screenshots)
-15. Geräteübersicht (Hardware je Raum: Zigbee / Homematic / Matter / Bluetooth)
+15. Geräteübersicht (Index + TOC; Ohne Raum / Statistik)
+16.–25. Zimmerseiten (Wohnzimmer … Serverschrank)
 
 URL der Instanz: `https://ha02.stadthagen.dev`  
 Ops-Doku (Admin): [`../home-assistant/ha02.md`](../home-assistant/ha02.md)

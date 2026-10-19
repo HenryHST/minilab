@@ -1,0 +1,30 @@
+# Allows podcraft SA (namespace podcraft) to scale the it-tools Deployment.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: podcraft-scaler
+  namespace: it-tools
+  labels:
+    app: it-tools
+    app.kubernetes.io/component: podcraft
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale"]
+    verbs: ["get", "list", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: podcraft-scaler
+  namespace: it-tools
+  labels:
+    app: it-tools
+    app.kubernetes.io/component: podcraft
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: podcraft-scaler
+subjects:
+  - kind: ServiceAccount
+    name: podcraft
+    namespace: podcraft

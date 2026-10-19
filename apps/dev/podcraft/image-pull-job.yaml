@@ -1,0 +1,52 @@
+# PreSync: pull/verify lab registry image before Deploy applies.
+# Keep image: in sync with deployment.yaml.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: podcraft-image-pull
+  namespace: podcraft
+  labels:
+    app: podcraft
+    app.kubernetes.io/component: image-pull
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 180
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app: podcraft-image-pull
+    spec:
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: registry-pull
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: pull
+          # Keep in sync with deployment.yaml
+          # semver: 0.1.0 (ghcr.io/henryhst/podcraft:0.1.0)
+          image: registry.stadthagen.dev/dev/podcraft:0.1.0
+          imagePullPolicy: Always
+          command: ["true"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

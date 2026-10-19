@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: podcraft
+  namespace: podcraft
+  labels:
+    app: podcraft
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: podcraft
+  template:
+    metadata:
+      labels:
+        app: podcraft
+    spec:
+      serviceAccountName: podcraft
+      imagePullSecrets:
+        - name: registry-pull
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: podcraft
+          # Pin digest after first CI + crane mirror — see README.md
+          # semver: 0.1.0 (ghcr.io/henryhst/podcraft:0.1.0)
+          image: registry.stadthagen.dev/dev/podcraft:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: HOME
+              value: /tmp
+            - name: APP_VERSION
+              value: "0.1.0"
+            - name: PODCRAFT_AUTH_MODE
+              value: "oidc"
+            - name: PODCRAFT_WORKLOADS_FILE
+              value: /config/workloads.json
+            - name: PODCRAFT_SCHEDULE_ENABLED
+              value: "true"
+            - name: PODCRAFT_SCHEDULE_START
+              value: "06:30"
+            - name: PODCRAFT_SCHEDULE_END
+              value: "23:45"
+            - name: PODCRAFT_SCHEDULE_TIMEZONE
+              value: "Europe/Berlin"
+          volumeMounts:
+            - name: workloads
+              mountPath: /config
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: workloads
+          configMap:
+            name: podcraft-workloads
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: podcraft
+  namespace: podcraft
+  labels:
+    app: podcraft
+spec:
+  selector:
+    app: podcraft
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

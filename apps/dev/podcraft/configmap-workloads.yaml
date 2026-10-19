@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: podcraft-workloads
+  namespace: podcraft
+  labels:
+    app: podcraft
+data:
+  workloads.json: |
+    {
+      "workloads": [
+        {
+          "id": "drawio",
+          "namespace": "drawio",
+          "deployment": "drawio",
+          "target_replicas": 1,
+          "schedule": true,
+          "description": "diagrams.net"
+        },
+        {
+          "id": "it-tools",
+          "namespace": "it-tools",
+          "deployment": "it-tools",
+          "target_replicas": 1,
+          "schedule": true,
+          "description": "IT Tools"
+        }
+      ]
+    }

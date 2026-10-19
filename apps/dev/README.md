@@ -19,5 +19,6 @@ User-facing tooling and apps.
 | paperless | 3 | paperless |
 | audiobookshelf | 3 | audiobookshelf |
 | excalidash | 3 | excalidash |
+| podcraft | 3 | podcraft |
 
 Managed by ApplicationSet `dev` / AppProject `dev`. See [ADR-0022](../../docs/adr/0022-apps-bucket-applicationsets.md).

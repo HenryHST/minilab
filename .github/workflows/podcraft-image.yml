@@ -1,0 +1,155 @@
+name: podcraft image
+
+# Image: ghcr.io/henryhst/podcraft (multi-arch: linux/amd64, linux/arm64)
+# SemVer source of truth: apps/dev/podcraft/VERSION
+# Optional override: workflow_dispatch input tag, or git tag podcraft-vX.Y.Z
+# Secure build: BuildKit provenance + SBOM, Trivy CRITICAL/HIGH gate, Cosign keyless OIDC
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/dev/podcraft/**"
+      - ".github/workflows/podcraft-image.yml"
+    tags:
+      - "podcraft-v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: SemVer override (empty = VERSION file)
+        required: false
+        default: ""
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ghcr.io/henryhst/podcraft
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write # keyless cosign (GitHub OIDC → Fulcio/Rekor)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve version
+        id: version
+        run: |
+          set -euo pipefail
+          FILE_VER="$(tr -d '[:space:]' < apps/dev/podcraft/VERSION)"
+          VER=""
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.tag }}" ]; then
+            VER="${{ github.event.inputs.tag }}"
+          elif [[ "${{ github.ref }}" == refs/tags/podcraft-v* ]]; then
+            VER="${GITHUB_REF_NAME#podcraft-v}"
+          else
+            VER="${FILE_VER}"
+          fi
+          if ! [[ "${VER}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-].*)?$ ]]; then
+            echo "::error::Invalid SemVer '${VER}' (expected X.Y.Z from VERSION, dispatch, or tag podcraft-v*)"
+            exit 1
+          fi
+          MAJOR="${VER%%.*}"
+          REST="${VER#*.}"
+          MINOR="${REST%%.*}"
+          echo "version=${VER}" >> "$GITHUB_OUTPUT"
+          echo "major=${MAJOR}" >> "$GITHUB_OUTPUT"
+          echo "minor=${MAJOR}.${MINOR}" >> "$GITHUB_OUTPUT"
+          echo "sha=$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
+          echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=${{ steps.version.outputs.minor }}
+            type=raw,value=${{ steps.version.outputs.major }}
+            type=raw,value=latest
+            type=sha,prefix=sha-,format=short
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: apps/dev/podcraft
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ steps.version.outputs.date }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+      - name: Install crane
+        uses: imjasonh/setup-crane@v0.7
+
+      # #region agent log
+      # BuildKit OCI SBOM attestations make `trivy image` report phantom packages
+      # (FilePath=null: msgpack@1.1.2, setuptools@70.3.0, urllib3@2.7.0 while on-disk
+      # urllib3 is 2.8.0). Scan extracted rootfs instead; attestations stay on the image.
+      - name: Export rootfs for Trivy (avoid OCI SBOM false positives)
+        id: rootfs
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          ROOTFS="${{ runner.temp }}/podcraft-rootfs"
+          mkdir -p "$ROOTFS"
+          crane export --platform linux/amd64 "${{ env.IMAGE }}@${DIGEST}" - | tar -x -C "$ROOTFS"
+          echo "rootfs=${ROOTFS}" >> "$GITHUB_OUTPUT"
+          # Structured debug line for post-fix log correlation
+          echo "::notice::debug_session=1ae980 hypothesisId=C scan_mode=fs digest=${DIGEST}"
+      # #endregion
+
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: ${{ steps.rootfs.outputs.rootfs }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+          scanners: vuln
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4.1.2
+
+      - name: Sign image (keyless OIDC)
+        if: steps.build.outputs.digest != ''
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          # Keyless signing via GitHub OIDC → Fulcio/Rekor (no long-lived key in repo).
+          while IFS= read -r image; do
+            [[ -z "${image}" ]] && continue
+            cosign sign --yes "${image}@${DIGEST}"
+          done <<< "${{ steps.meta.outputs.tags }}"

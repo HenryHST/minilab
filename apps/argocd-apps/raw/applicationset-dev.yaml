@@ -75,6 +75,10 @@ spec:
             path: apps/dev/excalidash
             namespace: excalidash
             syncWave: "3"
+          - app: podcraft
+            path: apps/dev/podcraft
+            namespace: podcraft
+            syncWave: "3"
   template:
     metadata:
       name: "{{ .app }}"
@@ -119,6 +123,17 @@ spec:
           name: bookstack-import-state
           jsonPointers:
             - /data
+      source:
+        repoURL: https://github.com/HenryHST/minilab
+        targetRevision: main
+        path: {{ .path }}
+    {{- else if or (eq .app "drawio") (eq .app "it-tools") }}
+    spec:
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
       source:
         repoURL: https://github.com/HenryHST/minilab
         targetRevision: main

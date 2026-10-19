@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="podcraft">
+  <rect width="64" height="64" rx="12" fill="#0f172a"/>
+  <path fill="#22d3ee" d="M18 38h28l-3 8H21l-3-8zm4-2 8-18 4 10 6-8 3 16H22z"/>
+  <path stroke="#22d3ee" stroke-width="2" stroke-linecap="round" d="M16 48h32"/>
+</svg>

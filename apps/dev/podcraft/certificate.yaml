@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: podcraft-stadthagen-dev
+  namespace: podcraft
+spec:
+  secretName: podcraft-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - podcraft.stadthagen.dev

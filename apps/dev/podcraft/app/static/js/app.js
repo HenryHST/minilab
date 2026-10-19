@@ -48,6 +48,37 @@ function el(html) {
   return t.content.firstElementChild;
 }
 
+function logoutHref() {
+  // Authentik ForwardAuth outpost (single-app); Ingress is managed by the outpost.
+  return "/outpost.goauthentik.io/sign_out";
+}
+
+function doLogout() {
+  // #region agent log
+  fetch("http://127.0.0.1:7458/ingest/617307a5-b9d4-4557-ad01-d7ba8d199fa8", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "e03b97" },
+    body: JSON.stringify({
+      sessionId: "e03b97",
+      runId: "logout-ui",
+      hypothesisId: "L",
+      location: "app.js:doLogout",
+      message: "logout clicked",
+      data: {
+        authMode: state.me?.auth_mode || state.me?.configured_auth_mode || null,
+        hasBasic: Boolean(state.basicAuth),
+      },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
+  localStorage.removeItem("podcraft.basic");
+  state.basicAuth = "";
+  state.me = null;
+  // Always hit Authentik sign_out when OIDC/both; harmless redirect if already logged out.
+  window.location.href = logoutHref();
+}
+
 function topControls() {
   return `
     <div class="top-actions">
@@ -57,6 +88,7 @@ function topControls() {
       <button class="chip ${state.locale === "en" ? "active" : ""}" data-action="lang-en" type="button">EN</button>
       ${state.me ? `<span class="user-pill">${t(state.locale, "user")}: ${escapeHtml(state.me.username)}</span>` : ""}
       ${state.me ? `<a class="chip" href="/settings">${t(state.locale, "settings")}</a>` : ""}
+      ${state.me ? `<button class="chip" data-action="logout" type="button">${t(state.locale, "logout")}</button>` : ""}
     </div>`;
 }
 
@@ -267,6 +299,10 @@ function logPanelHtml() {
 function bindChrome(root) {
   root.querySelectorAll("[data-action]").forEach((btn) => {
     const a = btn.dataset.action;
+    if (a === "logout") {
+      btn.addEventListener("click", () => doLogout());
+      return;
+    }
     if (!a?.startsWith("theme") && !a?.startsWith("lang")) return;
     btn.addEventListener("click", () => {
       if (a === "theme-light") state.theme = "light";

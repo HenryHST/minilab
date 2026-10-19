@@ -33,6 +33,7 @@ const STRINGS = {
     loading: "Laden…",
     error: "Fehler",
     user: "Benutzer",
+    logout: "Abmelden",
   },
   en: {
     tagline: "Control workloads in minilab",
@@ -68,6 +69,7 @@ const STRINGS = {
     loading: "Loading…",
     error: "Error",
     user: "User",
+    logout: "Log out",
   },
 };
 

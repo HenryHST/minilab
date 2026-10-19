@@ -27,9 +27,9 @@ spec:
           type: RuntimeDefault
       containers:
         - name: podcraft
-          # Pin digest after first CI + crane mirror — see README.md
-          # semver: 0.1.0 (ghcr.io/henryhst/podcraft:0.1.0)
-          image: registry.stadthagen.dev/dev/podcraft:0.1.0
+          # Pin digest after CI + crane mirror — see README.md
+          # semver: 0.1.1 (ghcr.io/henryhst/podcraft:0.1.1)
+          image: registry.stadthagen.dev/dev/podcraft:0.1.1
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -38,7 +38,7 @@ spec:
             - name: HOME
               value: /tmp
             - name: APP_VERSION
-              value: "0.1.0"
+              value: "0.1.1"
             - name: PODCRAFT_AUTH_MODE
               value: "oidc"
             - name: PODCRAFT_WORKLOADS_FILE

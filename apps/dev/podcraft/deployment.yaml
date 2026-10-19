@@ -20,16 +20,17 @@ spec:
         - name: registry-pull
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: podcraft
           # Pin digest after CI + crane mirror — see README.md
-          # semver: 0.1.8 (ghcr.io/henryhst/podcraft:0.1.8)
-          image: registry.stadthagen.dev/dev/podcraft:0.1.8
+          # VERSION file is 0.1.9; use mirrored tag available on the cluster until rebuild.
+          # semver: 0.1.6 (bump image when 0.1.9 is mirrored)
+          image: registry.stadthagen.dev/dev/podcraft:0.1.6
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -38,9 +39,23 @@ spec:
             - name: HOME
               value: /tmp
             - name: APP_VERSION
-              value: "0.1.8"
+              value: "0.1.9"
             - name: PODCRAFT_AUTH_MODE
-              value: "oidc"
+              value: "both"
+            - name: PODCRAFT_HA_BASIC_SECRET
+              value: "podcraft-ha-basic"
+            - name: PODCRAFT_BASIC_USER
+              valueFrom:
+                secretKeyRef:
+                  name: podcraft-ha-basic
+                  key: username
+                  optional: true
+            - name: PODCRAFT_BASIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: podcraft-ha-basic
+                  key: password
+                  optional: true
             - name: PODCRAFT_WORKLOADS_FILE
               value: /config/workloads.json
             - name: PODCRAFT_SCHEDULE_ENABLED

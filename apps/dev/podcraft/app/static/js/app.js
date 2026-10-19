@@ -1,5 +1,8 @@
 import { normalizeLocale, t } from "./i18n.js";
 
+const narrowViewport =
+  typeof matchMedia === "function" && matchMedia("(max-width: 640px)").matches;
+
 const state = {
   locale: normalizeLocale(localStorage.getItem("podcraft.locale") || navigator.language?.slice(0, 2)),
   theme: localStorage.getItem("podcraft.theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"),
@@ -8,10 +11,15 @@ const state = {
   workloads: [],
   basicAuth: localStorage.getItem("podcraft.basic") || "",
   logPaused: false,
-  logMinimized: false,
-  guideOpen: localStorage.getItem("podcraft.guideDismissed") !== "1",
+  // Narrow: always start minimized (ignore sticky localStorage "0" from older sessions).
+  logMinimized: narrowViewport || localStorage.getItem("podcraft.logMinimized") === "1",
+  // Narrow: keep guide closed so workload rows fit the first screen (short-vh probe H6).
+  guideOpen: !narrowViewport && localStorage.getItem("podcraft.guideDismissed") !== "1",
   route: location.pathname,
   error: "",
+  /** One-time HA basic credentials after rotate (client-only). */
+  haBasicOnce: null,
+  haPassVisible: false,
 };
 
 function applyChrome() {
@@ -32,7 +40,8 @@ function brandMarkHtml(size = 36) {
 }
 
 function miniPulseSvg() {
-  return `<svg class="mini-pulse" viewBox="0 0 28 12" aria-hidden="true"><path d="M1 6 H6 L8 3 L11 9 L14 2 L17 8 L19 6 H27" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  // Explicit end tags — self-closing SVG nodes have broken HTML nesting on iOS Safari.
+  return `<svg class="mini-pulse" viewBox="0 0 28 12" aria-hidden="true"><path d="M1 6 H6 L8 3 L11 9 L14 2 L17 8 L19 6 H27" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>`;
 }
 
 function headers(json = true) {
@@ -112,6 +121,7 @@ function guideHtml() {
         <li><span class="guide-step-num">2</span><span>${t(state.locale, "guideStep2")}</span></li>
         <li><span class="guide-step-num">3</span><span>${t(state.locale, "guideStep3")}</span></li>
         <li><span class="guide-step-num">4</span><span>${t(state.locale, "guideStep4")}</span></li>
+        <li><span class="guide-step-num">5</span><span>${t(state.locale, "guideStep5")}</span></li>
       </ol>
       <div class="guide-actions">
         <button class="btn" type="button" data-action="dismiss-guide">${t(state.locale, "guideDismiss")}</button>
@@ -123,7 +133,7 @@ function pulseSvg(active) {
   return `
     <div class="pulse-wrap ${active ? "pulse-active" : "pulse-idle"}">
       <svg class="pulse-svg" viewBox="0 0 600 60" preserveAspectRatio="none" aria-hidden="true">
-        <path class="pulse-path" d="M0 30 H80 L100 30 L115 10 L130 50 L145 20 L160 30 H240 L255 30 L270 8 L285 52 L300 18 L315 30 H400 L415 30 L430 12 L445 48 L460 22 L475 30 H600" />
+        <path class="pulse-path" d="M0 30 H80 L100 30 L115 10 L130 50 L145 20 L160 30 H240 L255 30 L270 8 L285 52 L300 18 L315 30 H400 L415 30 L430 12 L445 48 L460 22 L475 30 H600"></path>
       </svg>
     </div>`;
 }
@@ -162,9 +172,29 @@ function statusDotClass(phase) {
 function workloadIconHtml(w) {
   const letter = escapeHtml((w.id || "?").slice(0, 2).toUpperCase());
   if (w.icon) {
-    return `<img class="workload-icon" src="${escapeHtml(w.icon)}" alt="" width="44" height="44" loading="lazy" onerror="this.onerror=null;this.outerHTML='<div class=&quot;workload-icon fallback&quot; aria-hidden=&quot;true&quot;>${letter}</div>'" />`;
+    // No inline onerror HTML — attribute payloads with </div> corrupt the tree on WebKit.
+    return `<img class="workload-icon" src="${escapeHtml(w.icon)}" alt="" width="44" height="44" loading="lazy" data-fallback="${letter}" />`;
   }
   return `<div class="workload-icon fallback" aria-hidden="true">${letter}</div>`;
+}
+
+function bindWorkloadIcons(root) {
+  root.querySelectorAll("img.workload-icon[data-fallback]").forEach((img) => {
+    img.addEventListener("error", () => {
+      const d = document.createElement("div");
+      d.className = "workload-icon fallback";
+      d.setAttribute("aria-hidden", "true");
+      d.textContent = img.dataset.fallback || "?";
+      img.replaceWith(d);
+    });
+  });
+}
+
+/** WebKit can nest the list under <svg> when markup is misparsed; put it back. */
+function repairWorkloadDom(root) {
+  const list = root.querySelector(".workload-list");
+  const section = root.querySelector(".section-head")?.parentElement;
+  if (list?.closest("svg") && section) section.appendChild(list);
 }
 
 function liveBadgeHtml(phase) {
@@ -261,6 +291,8 @@ function renderApp() {
     : t(state.locale, "scheduleOfflineUntil", { start: state.schedule?.start || "—" });
 
   if (state.route.startsWith("/settings")) {
+    const once = state.haBasicOnce;
+    const passShown = state.haPassVisible && once?.password;
     root.innerHTML = "";
     root.append(
       el(`
@@ -290,6 +322,33 @@ function renderApp() {
               <p class="hint">${t(state.locale, "authHint")}: ${escapeHtml(state.me?.configured_auth_mode || "—")} · ${t(state.locale, "version")}: ${escapeHtml(state.me?.version || "—")}</p>
               <button class="btn" type="submit">${t(state.locale, "save")}</button>
             </form>
+            <section class="ha-api-block" aria-label="${t(state.locale, "haApiTitle")}">
+              <h2>${t(state.locale, "haApiTitle")}</h2>
+              <p class="hint">${t(state.locale, "haApiHelp")}</p>
+              <p class="hint">${t(state.locale, "haApiDocsHint")}</p>
+              <button class="btn secondary" type="button" data-action="ha-rotate" id="ha-rotate-btn">${t(state.locale, "haApiRotate")}</button>
+              ${
+                once
+                  ? `<div class="ha-api-once">
+                      <p class="hint">${t(state.locale, "haApiOnceHint")}</p>
+                      <label><span>${t(state.locale, "username")}</span>
+                        <div class="ha-api-row">
+                          <input readonly value="${escapeHtml(once.username)}" id="ha-basic-user" />
+                          <button class="chip" type="button" data-action="ha-copy-user">${t(state.locale, "haApiCopyUser")}</button>
+                        </div>
+                      </label>
+                      <label><span>${t(state.locale, "password")}</span>
+                        <div class="ha-api-row">
+                          <input readonly type="${passShown ? "text" : "password"}" value="${escapeHtml(once.password)}" id="ha-basic-pass" class="mono" />
+                          <button class="chip" type="button" data-action="ha-toggle-pass">${passShown ? t(state.locale, "haApiHidePass") : t(state.locale, "haApiShowPass")}</button>
+                          <button class="chip" type="button" data-action="ha-copy-pass">${t(state.locale, "haApiCopyPass")}</button>
+                        </div>
+                      </label>
+                    </div>`
+                  : ""
+              }
+              ${state.error && state.route.startsWith("/settings") ? `<p class="error-banner">${escapeHtml(state.error)}</p>` : ""}
+            </section>
           </div>
         </main>
         ${logPanelHtml()}
@@ -309,6 +368,46 @@ function renderApp() {
         }),
       });
       await boot();
+    });
+    root.querySelector("[data-action=ha-rotate]")?.addEventListener("click", async (ev) => {
+      const btn = ev.currentTarget;
+      btn.disabled = true;
+      btn.textContent = t(state.locale, "haApiRotating");
+      state.error = "";
+      try {
+        const data = await api("/api/v1/auth/ha-basic/rotate", { method: "POST" });
+        state.haBasicOnce = { username: data.username, password: data.password };
+        state.haPassVisible = false;
+      } catch (err) {
+        state.error = String(err.message || err);
+      }
+      renderApp();
+    });
+    root.querySelector("[data-action=ha-toggle-pass]")?.addEventListener("click", () => {
+      state.haPassVisible = !state.haPassVisible;
+      renderApp();
+    });
+    const copyField = async (id, labelBtn) => {
+      const elInput = root.querySelector(id);
+      if (!elInput) return;
+      try {
+        await navigator.clipboard.writeText(elInput.value);
+        if (labelBtn) {
+          const prev = labelBtn.textContent;
+          labelBtn.textContent = t(state.locale, "haApiCopied");
+          setTimeout(() => {
+            labelBtn.textContent = prev;
+          }, 1200);
+        }
+      } catch {
+        elInput.select();
+      }
+    };
+    root.querySelector("[data-action=ha-copy-user]")?.addEventListener("click", (e) => {
+      copyField("#ha-basic-user", e.currentTarget);
+    });
+    root.querySelector("[data-action=ha-copy-pass]")?.addEventListener("click", (e) => {
+      copyField("#ha-basic-pass", e.currentTarget);
     });
     bindChrome(root);
     bindLog(root);
@@ -399,6 +498,8 @@ function renderApp() {
   });
   bindChrome(root);
   bindLog(root);
+  bindWorkloadIcons(root);
+  repairWorkloadDom(root);
 }
 
 function logPanelHtml() {
@@ -467,6 +568,7 @@ function bindLog(root) {
         if (body) body.textContent = "";
       } else if (a === "minmax") {
         state.logMinimized = !state.logMinimized;
+        localStorage.setItem("podcraft.logMinimized", state.logMinimized ? "1" : "0");
         renderApp();
       }
     });

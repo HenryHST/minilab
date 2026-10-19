@@ -1,12 +1,29 @@
 from __future__ import annotations
 
+import base64
+import os
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
 from app.config import WorkloadSpec, state
 from app.logs import ring
+
+
+def _pod_namespace() -> str:
+    env = os.environ.get("PODCRAFT_NAMESPACE", "").strip()
+    if env:
+        return env
+    path = Path("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+    try:
+        text = path.read_text(encoding="utf-8").strip()
+        if text:
+            return text
+    except OSError:
+        pass
+    return "podcraft"
 
 
 @dataclass
@@ -216,3 +233,37 @@ def start(spec: WorkloadSpec, actor: str = "system") -> WorkloadStatus:
 
 def stop(spec: WorkloadSpec, actor: str = "system") -> WorkloadStatus:
     return scale(spec, 0, actor=actor)
+
+
+def upsert_ha_basic_secret(username: str, password: str) -> str:
+    """Create or patch the HA Basic Secret. Returns secret name."""
+    name = (state.settings.ha_basic_secret or "podcraft-ha-basic").strip()
+    if state.settings.dry_run:
+        ring.emit(f"dry-run: upsert secret {name} (HA basic)", "INFO")
+        return name
+    ns = _pod_namespace()
+    core = _core_api()
+    data = {
+        "username": base64.b64encode(username.encode("utf-8")).decode("ascii"),
+        "password": base64.b64encode(password.encode("utf-8")).decode("ascii"),
+    }
+    meta = client.V1ObjectMeta(
+        name=name,
+        namespace=ns,
+        labels={"app": "podcraft", "app.kubernetes.io/component": "ha-basic"},
+    )
+    body = client.V1Secret(metadata=meta, type="Opaque", data=data)
+    try:
+        core.read_namespaced_secret(name, ns)
+        core.patch_namespaced_secret(name, ns, body)
+    except ApiException as exc:
+        if exc.status == 404:
+            try:
+                core.create_namespaced_secret(ns, body)
+            except ApiException as create_exc:
+                ring.emit(f"create secret {ns}/{name}: {create_exc.reason}", "ERROR")
+                raise
+        else:
+            ring.emit(f"patch secret {ns}/{name}: {exc.reason}", "ERROR")
+            raise
+    return name

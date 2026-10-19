@@ -9,8 +9,19 @@ spec:
   entryPoints:
     - websecure
   routes:
+    # HA / machine clients (Basic in-app): workload API only, no Authentik ForwardAuth
+    - match: Host(`podcraft.stadthagen.dev`) && PathPrefix(`/api/v1/workloads`)
+      kind: Rule
+      priority: 20
+      middlewares:
+        - name: podcraft-api-allowlist
+      services:
+        - name: podcraft
+          port: 8080
+    # Browser UI + admin APIs (rotate, schedule, me, logs): Authentik ForwardAuth
     - match: Host(`podcraft.stadthagen.dev`)
       kind: Rule
+      priority: 10
       middlewares:
         - name: podcraft-authentik
       services:

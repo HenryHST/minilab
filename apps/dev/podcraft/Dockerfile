@@ -26,7 +26,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN useradd --create-home --uid 1000 --shell /usr/sbin/nologin app \
+RUN groupadd --gid 10001 app \
+  && useradd --create-home --uid 10001 --gid 10001 --shell /usr/sbin/nologin app \
   && mkdir -p /tmp /config \
   && chown -R app:app /app /tmp /config
 
@@ -36,7 +37,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --chown=app:app VERSION .
 COPY --chown=app:app app/ app/
 
-USER 1000:1000
+USER 10001:10001
 EXPOSE 8080
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

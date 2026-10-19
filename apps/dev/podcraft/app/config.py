@@ -31,8 +31,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="PODCRAFT_", extra="ignore")
 
     auth_mode: str = Field(default="oidc")  # oidc | basic | both | none
-    basic_user: str = Field(default="admin")
+    basic_user: str = Field(default="ha")
     basic_password: str = Field(default="")
+    ha_basic_secret: str = Field(default="podcraft-ha-basic")
     dry_run: bool = Field(default=False)
     workloads_file: str = Field(default="/config/workloads.json")
     log_level: str = Field(default="INFO")
@@ -47,6 +48,11 @@ class AppState:
     settings: Settings = field(default_factory=Settings)
     workloads: dict[str, WorkloadSpec] = field(default_factory=dict)
     schedule: ScheduleConfig = field(default_factory=ScheduleConfig)
+
+    def set_basic_credentials(self, username: str, password: str) -> None:
+        """Hot-update Basic credentials (env mounts do not refresh in-process)."""
+        self.settings.basic_user = username
+        self.settings.basic_password = password
 
     def reload_workloads(self) -> None:
         path = Path(self.settings.workloads_file)

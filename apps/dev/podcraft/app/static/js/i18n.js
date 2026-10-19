@@ -66,8 +66,22 @@ const STRINGS = {
     guideStep2: "Pro Workload: Status, Zeitplan und Start/Stop. Details zeigen ReplicaSet und Pods.",
     guideStep3: "Manuelles Stoppen bleibt bis zum nächsten Fensterwechsel erhalten (Argo heilt Replicas nicht zurück).",
     guideStep4: "Logs unten rechts; Theme und Sprache über die Chips in der Topbar.",
+    guideStep5:
+      "Home Assistant nutzt die Workload-API mit HTTP Basic. Passwort unter Systemeinstellungen rotieren; Details in der BookStack-Doku „Home Assistant“.",
     guideDismiss: "Verstanden",
     guideShow: "Anleitung",
+    haApiTitle: "Home Assistant API",
+    haApiHelp:
+      "Erzeugt Credentials für HA rest_command (secrets.yaml: podcraft_basic_user / podcraft_basic_password). Das Passwort wird nur einmal angezeigt.",
+    haApiRotate: "HA-Passwort rotieren",
+    haApiRotating: "Rotieren…",
+    haApiOnceHint: "Klartext nur jetzt sichtbar — nach Reload weg. In HA secrets.yaml eintragen.",
+    haApiCopyUser: "User kopieren",
+    haApiCopyPass: "Passwort kopieren",
+    haApiCopied: "Kopiert",
+    haApiShowPass: "Anzeigen",
+    haApiHidePass: "Verbergen",
+    haApiDocsHint: "Ausführliche Schritte: BookStack → podcraft → Home Assistant.",
   },
   en: {
     tagline: "Control workloads in minilab",
@@ -136,8 +150,22 @@ const STRINGS = {
     guideStep2: "Each workload shows status, schedule, and start/stop. Details list ReplicaSet and pods.",
     guideStep3: "A manual stop sticks until the next schedule window change (Argo will not reset replicas).",
     guideStep4: "Logs sit bottom-right; use the top chips for theme and language.",
+    guideStep5:
+      "Home Assistant uses the workload API with HTTP Basic. Rotate the password under System settings; see the BookStack “Home Assistant” page for details.",
     guideDismiss: "Got it",
     guideShow: "Guide",
+    haApiTitle: "Home Assistant API",
+    haApiHelp:
+      "Creates credentials for HA rest_command (secrets.yaml: podcraft_basic_user / podcraft_basic_password). The password is shown only once.",
+    haApiRotate: "Rotate HA password",
+    haApiRotating: "Rotating…",
+    haApiOnceHint: "Plaintext is visible only now — gone after reload. Put it in HA secrets.yaml.",
+    haApiCopyUser: "Copy user",
+    haApiCopyPass: "Copy password",
+    haApiCopied: "Copied",
+    haApiShowPass: "Show",
+    haApiHidePass: "Hide",
+    haApiDocsHint: "Full steps: BookStack → podcraft → Home Assistant.",
   },
 };
 

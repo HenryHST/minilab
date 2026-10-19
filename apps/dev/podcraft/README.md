@@ -13,15 +13,18 @@ k3s workload control plane for minilab (Pulse UI).
 - Scale registered Deployments (`drawio`, `it-tools`) via OpenAPI
 - Day/Night scheduler (default 06:30–23:45 `Europe/Berlin`)
 - Pulse Web UI: login, settings, light/dark, DE/EN, floating logs, animated heartbeat
-- Auth: Authentik ForwardAuth (OIDC) and/or Basic (`PODCRAFT_AUTH_MODE`)
+- Auth: Authentik ForwardAuth (OIDC) for UI; HTTP Basic for HA (`PODCRAFT_AUTH_MODE=both`)
+- HA credentials: Settings → **Rotate HA password** (writes Secret `podcraft-ha-basic`, shown once in UI)
+- Runs as UID/GID `10001` (avoids host uid/gid clashes)
 
 ## Env
 
 | Variable | Default | Meaning |
 |----------|---------|---------|
-| `PODCRAFT_AUTH_MODE` | `oidc` | `oidc` \| `basic` \| `both` \| `none` |
-| `PODCRAFT_BASIC_USER` | `admin` | Basic auth user |
-| `PODCRAFT_BASIC_PASSWORD` | _(empty)_ | Basic auth password |
+| `PODCRAFT_AUTH_MODE` | `oidc` | `oidc` \| `basic` \| `both` \| `none` (deploy uses `both`) |
+| `PODCRAFT_BASIC_USER` | `ha` | Basic auth user (from Secret) |
+| `PODCRAFT_BASIC_PASSWORD` | _(empty)_ | Basic auth password (from Secret; rotate in UI) |
+| `PODCRAFT_HA_BASIC_SECRET` | `podcraft-ha-basic` | Secret name for HA Basic |
 | `PODCRAFT_WORKLOADS_FILE` | `/config/workloads.json` | Workload registry |
 | `PODCRAFT_SCHEDULE_*` | see Deployment | Schedule window |
 | `PODCRAFT_DRY_RUN` | `false` | In-memory scale (local) |
@@ -45,7 +48,11 @@ PODCRAFT_AUTH_MODE=none PODCRAFT_DRY_RUN=true uvicorn app.main:app --reload --po
 
 ## Home Assistant
 
-See [docs/bookstack/books/podcraft/02-home-assistant.md](../../../docs/bookstack/books/podcraft/02-home-assistant.md).
+1. Open Pulse **System settings** → **Rotate HA password**
+2. Copy user/password into HA `secrets.yaml` on pi5cl
+3. Add `rest_command` for `/api/v1/workloads/{id}/start|stop` (see docs)
+
+Full guide: [docs/bookstack/books/podcraft/02-home-assistant.md](../../../docs/bookstack/books/podcraft/02-home-assistant.md).
 
 ## Argo / replicas
 

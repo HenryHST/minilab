@@ -5,13 +5,35 @@ chapter: home-assistant
 
 # Home Assistant → podcraft
 
-HA läuft auf pi5cl (Config unter `/opt/homelab/data/homeassistant/config`, nicht in Git). podcraft exponiert OpenAPI unter `https://podcraft.stadthagen.dev`.
+HA läuft auf **pi5cl** (Config unter `/opt/homelab/data/homeassistant/config`, nicht in Git).  
+podcraft: `https://podcraft.stadthagen.dev`
 
-Der Day/Night-Scheduler läuft **in podcraft**. HA wird für manuelle Overrides und Sensoren genutzt.
+Der Day/Night-Scheduler läuft **in podcraft**. HA dient für manuelle Overrides und optionale Status-Sensoren.
 
-## rest_command (Beispiel)
+## Voraussetzungen (podcraft)
 
-In `configuration.yaml` (oder `packages/podcraft.yaml`):
+1. `PODCRAFT_AUTH_MODE=both` (Browser OIDC + HA Basic)
+2. Ingress: `PathPrefix(/api/v1/workloads)` **ohne** Authentik-ForwardAuth, mit Traefik-IP-Allowlist (LAN/Privatnetze)
+3. UI / Admin-APIs (inkl. Passwort-Rotate) weiter mit ForwardAuth
+4. NetworkPolicy: nur Traefik → podcraft-Pods (unverändert)
+
+## Credentials holen
+
+1. Als Authentik-User in der Pulse-UI anmelden: `https://podcraft.stadthagen.dev`
+2. **Systemeinstellungen** öffnen
+3. **HA-Passwort rotieren** — Username und Passwort erscheinen **einmalig** in der Settings-Card (Copy-Buttons)
+4. Werte sofort in HA `secrets.yaml` übernehmen (nach Reload der Settings-Seite ist der Klartext weg)
+
+## Auf pi5cl: secrets.yaml
+
+```yaml
+podcraft_basic_user: ha
+podcraft_basic_password: "<einmalig angezeigtes Passwort>"
+```
+
+## rest_command
+
+In `configuration.yaml` oder besser `packages/podcraft.yaml`:
 
 ```yaml
 rest_command:
@@ -37,11 +59,6 @@ rest_command:
     password: !secret podcraft_basic_password
 ```
 
-Hinweise:
-
-- Mit ForwardAuth allein reichen Browser-Cookies nicht für `rest_command`. Für HA entweder `PODCRAFT_AUTH_MODE=both` + Basic-Secret, oder einen internen Cluster-Service/`rest_command` gegen den Service-DNS mit Network-Pfad.
-- Alternativ: long-lived token / App-Password hinter Basic (Secret in HA `secrets.yaml`).
-
 ## Sensor (optional)
 
 ```yaml
@@ -55,9 +72,13 @@ rest:
         value_template: "{{ value_json.desired }}"
 ```
 
-## Automation (manuell)
+## Automation (optional)
 
 ```yaml
+input_boolean:
+  podcraft_drawio:
+    name: podcraft drawio
+
 automation:
   - alias: "podcraft drawio on demand"
     trigger:
@@ -66,6 +87,33 @@ automation:
         to: "on"
     action:
       - service: rest_command.podcraft_start_drawio
+  - alias: "podcraft drawio off"
+    trigger:
+      - platform: state
+        entity_id: input_boolean.podcraft_drawio
+        to: "off"
+    action:
+      - service: rest_command.podcraft_stop_drawio
 ```
+
+## Aktivieren
+
+Entwicklerwerkzeuge → YAML-Konfiguration neu laden (oder Core neu starten).  
+Service prüfen: `rest_command.podcraft_start_drawio`.
+
+## Netz
+
+- pi5cl muss `podcraft.stadthagen.dev` erreichen (LAN → Traefik VIP).
+- Kein Authentik-Login in HA nötig — nur HTTP Basic.
+- k8s-NetworkPolicy steuert nur Traefik→Pod; die HA-spezifische Einschränkung ist die Traefik-Allowlist auf `/api/v1/workloads`.
+
+## Troubleshooting
+
+| Symptom | Ursache / Fix |
+|---------|----------------|
+| 401 / Redirect zu Authentik | Request geht nicht über die Workloads-Route oder Basic falsch |
+| 403 von Traefik | Client-IP nicht in `podcraft-api-allowlist` |
+| 401 von podcraft | Passwort nicht rotiert / falsche Secrets / Mode nicht `both` |
+| Rotate in UI schlägt fehl | Nicht per OIDC eingeloggt, oder Secret-RBAC fehlt |
 
 Custom Integration (OpenAPI-Client) ist bewusst später — Spec zuerst stabil halten.

@@ -1,4 +1,4 @@
-# wud — What's up Docker 9.3.0
+# wud — What's up Docker 9.5.0
 
 [WUD](https://getwud.app) reports new image versions for every workload in the nXk3 cluster. **Notify only**: no update triggers, because Argo CD owns the workloads from Git.
 
@@ -6,7 +6,7 @@
 |---|---|
 | Namespace | `wud` |
 | URL | `https://wupd.stadthagen.dev` (Traefik TLS, cert-manager) |
-| Image | `getwud/wud:9.3.0` (digest-pinned) |
+| Image | `getwud/wud:9.5.0` (digest-pinned) |
 | Auth | WUD-native OIDC → Authentik provider `wupd`; `wupd_admins` = admin, `wupd_users` = read-only, everyone else denied |
 | Watcher | `kubernetes.nxk3` — in-cluster ServiceAccount, all namespaces, daily 06:00 (Europe/Berlin) |
 | Registries | Docker Hub/GHCR/Quay (built-in) + `custom.nxk3` → `https://registry.stadthagen.dev` (user `registry`) |

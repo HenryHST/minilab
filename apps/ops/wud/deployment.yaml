@@ -1,4 +1,4 @@
-# WUD 9.3.0 — notify-only: Kubernetes watcher + registries → Pushover (NXK3) + MQTT (Home Assistant).
+# WUD 9.5.0 — notify-only: Kubernetes watcher + registries → Pushover (NXK3) + MQTT (Home Assistant).
 # Secrets (Secret wud-env, Infra_LAB k3s_secrets): OIDC client secret, Pushover token/user, MQTT + registry password.
 apiVersion: apps/v1
 kind: Deployment
@@ -29,7 +29,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: wud
-          image: getwud/wud:9.4.1@sha256:cf429f3a95b5ece811088d0d220741ea0b0460de6743197d26c590d1904e3af9
+          image: getwud/wud:9.5.0@sha256:2dcc930828ce983b1c3b0373e3ca8ee67759835e4a7eb2f78af9ada45eb1a1f9
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

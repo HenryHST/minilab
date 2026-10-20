@@ -5,7 +5,7 @@ Eclipse Mosquitto MQTT broker with Authentik LDAP auth (go-auth). LAN LoadBalanc
 | | |
 |--|--|
 | Argo | ApplicationSet `infra`, sync wave `1`, namespace `mosquitto` |
-| Image | `ghcr.io/henryhst/mosquitto-custom:1.1.2` (Mosquitto 2.1.2 glibc; [mosquitto-custom](https://github.com/HenryHST/mosquitto-custom); **amd64** `nodeSelector`) |
+| Image | `registry.stadthagen.dev/infra/mosquitto-custom:1.1.2` (mirror of `ghcr.io/henryhst/mosquitto-custom`; Mosquitto 2.1.2 glibc; [mosquitto-custom](https://github.com/HenryHST/mosquitto-custom); **amd64** `nodeSelector`; Pull-Secret `registry-pull`) |
 | Conf | `/mosquitto/config/mosquitto.conf` (bind pw via init `tls-bootstrap`; init `ldap-preflight` waits for the outpost and checks the bind) |
 | Host | `mqtt-pro.stadthagen.dev` → LB `192.168.0.218` (manual Hetzner A) |
 | Ports | `1883` MQTT, `8883` MQTTS, `9001` WebSockets (TLS) |
@@ -15,6 +15,20 @@ Eclipse Mosquitto MQTT broker with Authentik LDAP auth (go-auth). LAN LoadBalanc
 | Metrics | `sapcc/mosquitto-exporter` digest-pinned → `:9234/metrics` (`ServiceMonitor`); broker `sys_interval 10`; image is **amd64-only** (`nodeSelector: kubernetes.io/arch=amd64`) |
 | Smoke | Deployment `mqtt-tools` + CronJob `mqtt-smoke` (every 15 min) |
 
+
+## Image mirror (lab registry)
+
+Build/sign stays on GHCR (`ghcr.io/henryhst/mosquitto-custom`). Mirror into the cluster registry before bumping the Deployment:
+
+```bash
+VER=1.1.2
+crane copy \
+  "ghcr.io/henryhst/mosquitto-custom:${VER}" \
+  "registry.stadthagen.dev/infra/mosquitto-custom:${VER}"
+crane tag "registry.stadthagen.dev/infra/mosquitto-custom:${VER}" latest
+```
+
+Pull-Secret `registry-pull` in NS `mosquitto` comes from Infra_LAB `k3s_secrets` (`REGISTRY_DOCKERCONFIG`).
 
 ## Secrets (before sync)
 

@@ -53,7 +53,7 @@ spec:
         worker: "true"
       containers:
         - name: redis
-          image: redis:7-alpine
+          image: redis:8-alpine3.23
           imagePullPolicy: IfNotPresent
           args:
             - redis-server

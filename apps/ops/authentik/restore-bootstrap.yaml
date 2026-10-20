@@ -193,7 +193,7 @@ spec:
               fi
 
               for i in 1 2 3 4 5; do
-                if apk add --no-cache postgresql17-client aws-cli; then
+                if apk add --no-cache postgresql17-client aws-cli jq; then
                   break
                 fi
                 if [[ "${i}" -eq 5 ]]; then
@@ -213,33 +213,38 @@ spec:
 
               HPA_SERVER_MIN=""; HPA_SERVER_MAX=""; HPA_WORKER_MIN=""; HPA_WORKER_MAX=""
               HPA_SERVER_PRESENT=0; HPA_WORKER_PRESENT=0
+              HPA_SNAP_DIR="/tmp/authentik-restore-hpa-$$"
+              mkdir -p "${HPA_SNAP_DIR}"
 
-              if kubectl -n "${NS}" get hpa "${SERVER}" >/dev/null 2>&1; then
-                HPA_SERVER_PRESENT=1
-                HPA_SERVER_MIN="$(kubectl -n "${NS}" get hpa "${SERVER}" -o jsonpath='{.spec.minReplicas}')"
-                HPA_SERVER_MAX="$(kubectl -n "${NS}" get hpa "${SERVER}" -o jsonpath='{.spec.maxReplicas}')"
-                kubectl -n "${NS}" patch hpa "${SERVER}" --type=merge -p '{"spec":{"minReplicas":0,"maxReplicas":0}}'
-              fi
-              if kubectl -n "${NS}" get hpa "${WORKER}" >/dev/null 2>&1; then
-                HPA_WORKER_PRESENT=1
-                HPA_WORKER_MIN="$(kubectl -n "${NS}" get hpa "${WORKER}" -o jsonpath='{.spec.minReplicas}')"
-                HPA_WORKER_MAX="$(kubectl -n "${NS}" get hpa "${WORKER}" -o jsonpath='{.spec.maxReplicas}')"
-                kubectl -n "${NS}" patch hpa "${WORKER}" --type=merge -p '{"spec":{"minReplicas":0,"maxReplicas":0}}'
-              fi
+              snap_delete_hpa() {
+                local name="$1" prefix="$2"
+                if kubectl -n "${NS}" get hpa "${name}" >/dev/null 2>&1; then
+                  eval "${prefix}_PRESENT=1"
+                  eval "${prefix}_MIN=\"$(kubectl -n "${NS}" get hpa "${name}" -o jsonpath='{.spec.minReplicas}')\""
+                  eval "${prefix}_MAX=\"$(kubectl -n "${NS}" get hpa "${name}" -o jsonpath='{.spec.maxReplicas}')\""
+                  kubectl -n "${NS}" get hpa "${name}" -o json \
+                    | jq 'del(.status, .metadata.resourceVersion, .metadata.uid, .metadata.creationTimestamp, .metadata.generation, .metadata.managedFields)' \
+                    > "${HPA_SNAP_DIR}/${name}.json"
+                  echo "Pausing HPA ${name} (delete; Resource metrics forbid minReplicas=0)..."
+                  kubectl -n "${NS}" delete hpa "${name}" --wait=true
+                fi
+              }
+
+              snap_delete_hpa "${SERVER}" HPA_SERVER
+              snap_delete_hpa "${WORKER}" HPA_WORKER
 
               scale_up() {
-                if [[ "${HPA_SERVER_PRESENT}" == "1" ]]; then
-                  kubectl -n "${NS}" patch hpa "${SERVER}" --type=merge \
-                    -p "{\"spec\":{\"minReplicas\":${HPA_SERVER_MIN},\"maxReplicas\":${HPA_SERVER_MAX}}}" || true
+                if [[ "${HPA_SERVER_PRESENT}" == "1" && -f "${HPA_SNAP_DIR}/${SERVER}.json" ]]; then
+                  kubectl -n "${NS}" apply -f "${HPA_SNAP_DIR}/${SERVER}.json" || true
                 else
                   kubectl -n "${NS}" scale deploy/"${SERVER}" --replicas="${SERVER_REPLICAS}" || true
                 fi
-                if [[ "${HPA_WORKER_PRESENT}" == "1" ]]; then
-                  kubectl -n "${NS}" patch hpa "${WORKER}" --type=merge \
-                    -p "{\"spec\":{\"minReplicas\":${HPA_WORKER_MIN},\"maxReplicas\":${HPA_WORKER_MAX}}}" || true
+                if [[ "${HPA_WORKER_PRESENT}" == "1" && -f "${HPA_SNAP_DIR}/${WORKER}.json" ]]; then
+                  kubectl -n "${NS}" apply -f "${HPA_SNAP_DIR}/${WORKER}.json" || true
                 else
                   kubectl -n "${NS}" scale deploy/"${WORKER}" --replicas="${WORKER_REPLICAS}" || true
                 fi
+                rm -rf "${HPA_SNAP_DIR}" || true
               }
 
               echo "Scaling server+worker to 0..."

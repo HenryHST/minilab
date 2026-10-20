@@ -61,7 +61,7 @@ cd apps/ops/authentik
 
 ## HPA
 
-Server Chart HPA is enabled (min 2 / max 5, CPU 75%). Backup pauses it (`minReplicas`/`maxReplicas`=0) for the window, then restores. Worker has no HPA (fixed replicas 2). Upstream: https://docs.goauthentik.io/sys-mgmt/ops/autoscaling/hpa/
+Server Chart HPA is enabled (min 2 / max 5, CPU 75%). Backup **deletes** the HPA for the window (Resource-metric HPAs cannot use `minReplicas=0`), after suspending Argo automated sync on Application `authentik` so self-heal does not recreate it mid-backup; then restores the HPA snapshot and re-enables sync. Worker has no HPA (fixed replicas 2). Upstream: https://docs.goauthentik.io/sys-mgmt/ops/autoscaling/hpa/
 
 ```bash
 kubectl get apiservice v1beta1.metrics.k8s.io

@@ -21,10 +21,12 @@ rules:
     verbs: ["get", "list", "watch"]
   - apiGroups: ["apps"]
     resources: ["deployments", "deployments/scale"]
-    verbs: ["get", "list", "patch", "update"]
+    # watch: kubectl wait --for=condition=available uses the watch API
+    verbs: ["get", "list", "watch", "patch", "update"]
   - apiGroups: ["autoscaling"]
     resources: ["horizontalpodautoscalers"]
-    verbs: ["get", "list", "patch", "update"]
+    # create/delete: Resource-metric HPAs cannot be patched to min/max=0 (K8s validation)
+    verbs: ["get", "list", "watch", "patch", "update", "create", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -38,6 +40,32 @@ subjects:
 roleRef:
   kind: Role
   name: backup-runner-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Pause Argo self-heal while HPA is deleted for the backup window (ns argocd).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: backup-runner-argocd-app
+  namespace: argocd
+rules:
+  - apiGroups: ["argoproj.io"]
+    resources: ["applications"]
+    resourceNames: ["authentik"]
+    verbs: ["get", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: backup-runner-argocd-app
+  namespace: argocd
+subjects:
+  - kind: ServiceAccount
+    name: backup-runner
+    namespace: authentik
+roleRef:
+  kind: Role
+  name: backup-runner-argocd-app
   apiGroup: rbac.authorization.k8s.io
 ---
 # PV carries mountOptions (core Pod nfs volumes cannot); UniFi NAS needs NFSv3 + nolock.
@@ -83,7 +111,7 @@ data:
     #!/bin/bash
     set -euo pipefail
 
-    apk add --no-cache postgresql17-client tar gzip aws-cli coreutils >/dev/null
+    apk add --no-cache postgresql17-client tar gzip aws-cli coreutils jq >/dev/null
 
     NS="authentik"
     SERVER="authentik-server"
@@ -105,32 +133,61 @@ data:
 
     HPA_SERVER_MIN=""; HPA_SERVER_MAX=""; HPA_WORKER_MIN=""; HPA_WORKER_MAX=""
     HPA_SERVER_PRESENT=0; HPA_WORKER_PRESENT=0
+    ARGO_APP="authentik"
+    ARGO_NS="argocd"
+    ARGO_AUTOMATED_SUSPENDED=0
+    HPA_SNAP_DIR="/tmp/authentik-hpa-snap-$$"
+    mkdir -p "${HPA_SNAP_DIR}"
 
-    save_hpa() {
+    # Resource-metric HPAs cannot use minReplicas=0 (API forbids). Snapshot + delete instead.
+    snap_hpa() {
       local name="$1" prefix="$2"
       if kubectl -n "${NS}" get hpa "${name}" >/dev/null 2>&1; then
         eval "${prefix}_PRESENT=1"
         eval "${prefix}_MIN=\"$(kubectl -n "${NS}" get hpa "${name}" -o jsonpath='{.spec.minReplicas}')\""
         eval "${prefix}_MAX=\"$(kubectl -n "${NS}" get hpa "${name}" -o jsonpath='{.spec.maxReplicas}')\""
         echo "HPA ${name}: min=$(eval echo \$${prefix}_MIN) max=$(eval echo \$${prefix}_MAX)"
+        kubectl -n "${NS}" get hpa "${name}" -o json \
+          | jq 'del(.status, .metadata.resourceVersion, .metadata.uid, .metadata.creationTimestamp, .metadata.generation, .metadata.managedFields)' \
+          > "${HPA_SNAP_DIR}/${name}.json"
+      fi
+    }
+
+    suspend_argo_automated() {
+      if kubectl -n "${ARGO_NS}" get application "${ARGO_APP}" >/dev/null 2>&1; then
+        if kubectl -n "${ARGO_NS}" get application "${ARGO_APP}" -o jsonpath='{.spec.syncPolicy.automated}' 2>/dev/null | grep -q .; then
+          echo "Suspending Argo automated sync on ${ARGO_NS}/${ARGO_APP} (avoid HPA self-heal)..."
+          kubectl -n "${ARGO_NS}" patch application "${ARGO_APP}" --type=json \
+            -p='[{"op":"remove","path":"/spec/syncPolicy/automated"}]'
+          ARGO_AUTOMATED_SUSPENDED=1
+        fi
+      else
+        echo "WARN: Argo Application ${ARGO_NS}/${ARGO_APP} not found; continuing without suspend"
+      fi
+    }
+
+    resume_argo_automated() {
+      if [[ "${ARGO_AUTOMATED_SUSPENDED}" == "1" ]]; then
+        echo "Restoring Argo automated sync on ${ARGO_NS}/${ARGO_APP}..."
+        kubectl -n "${ARGO_NS}" patch application "${ARGO_APP}" --type=merge \
+          -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}' || true
+        ARGO_AUTOMATED_SUSPENDED=0
       fi
     }
 
     pause_hpa() {
       local name="$1"
-      if kubectl -n "${NS}" get hpa "${name}" >/dev/null 2>&1; then
-        echo "Pausing HPA ${name} (minReplicas=0 maxReplicas=0)..."
-        kubectl -n "${NS}" patch hpa "${name}" --type=merge \
-          -p '{"spec":{"minReplicas":0,"maxReplicas":0}}'
+      if [[ -f "${HPA_SNAP_DIR}/${name}.json" ]]; then
+        echo "Pausing HPA ${name} (delete for backup window; Resource metrics cannot scale to zero)..."
+        kubectl -n "${NS}" delete hpa "${name}" --wait=true
       fi
     }
 
     restore_hpa() {
       local name="$1" min="$2" max="$3" present="$4"
-      if [[ "${present}" == "1" ]]; then
-        echo "Restoring HPA ${name} min=${min} max=${max}..."
-        kubectl -n "${NS}" patch hpa "${name}" --type=merge \
-          -p "{\"spec\":{\"minReplicas\":${min},\"maxReplicas\":${max}}}" || true
+      if [[ "${present}" == "1" && -f "${HPA_SNAP_DIR}/${name}.json" ]]; then
+        echo "Restoring HPA ${name} (saved min=${min} max=${max})..."
+        kubectl -n "${NS}" apply -f "${HPA_SNAP_DIR}/${name}.json" || true
       fi
     }
 
@@ -158,6 +215,7 @@ data:
           kubectl -n "${NS}" scale deploy/"${WORKER}" --replicas="${HPA_WORKER_MIN:-1}" || true
         fi
       fi
+      resume_argo_automated
     }
 
     cleanup() {
@@ -165,11 +223,17 @@ data:
       scale_up
       kubectl -n "${NS}" wait --for=condition=available deploy/"${SERVER}" --timeout=180s || true
       kubectl -n "${NS}" wait --for=condition=available deploy/"${WORKER}" --timeout=180s || true
+      rm -rf "${HPA_SNAP_DIR}" || true
     }
     trap cleanup EXIT
 
-    save_hpa "${SERVER}" HPA_SERVER
-    save_hpa "${WORKER}" HPA_WORKER
+    # #region agent log
+    echo "debug: HPA pause strategy=delete+restore (Resource metrics forbid minReplicas=0)"
+    # #endregion
+
+    suspend_argo_automated
+    snap_hpa "${SERVER}" HPA_SERVER
+    snap_hpa "${WORKER}" HPA_WORKER
     pause_hpa "${SERVER}"
     pause_hpa "${WORKER}"
 

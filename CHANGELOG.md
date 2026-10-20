@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **Trivy Operator** — Helm-Chart **0.37.0** (app **0.35.0**), Trivy-Server-Image **0.76.0** (`trivy.image.tag`); BookStack-Buch v1.2.0 mit Upgrade-Kapitel.
 - **Longhorn CSI** — `longhornio/csi-provisioner` **v6.3.0**.
 - **Longhorn CSI** — `longhornio/csi-attacher` **v4.13.0** (image pin in values).
 - **Image bumps (batch 2)** — Newt `1.18.1`, Gatus `v5.37.0`, Vaultwarden `1.37.4`, Paperless `3.3.0`, k8s-sidecar `2.14.1`, MariaDB `11.8.9`, alpine/openssl `3.5.9`.

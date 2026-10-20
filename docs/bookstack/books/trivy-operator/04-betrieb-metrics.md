@@ -1,6 +1,6 @@
 ---
 title: Betrieb und Metrics
-book_version: "1.1.0"
+book_version: "1.2.0"
 ---
 
 # Betrieb und Metrics
@@ -41,6 +41,6 @@ Fallback ohne Pull-Secret am Workload: Secret out-of-band anlegen (Vorlage `apps
 
 ## Pflege
 
-- Chart-Pin in ApplicationSet bumpen (SemVer).
+- Versionen bumpen und verifizieren: [Upgrade](06-upgrade.md) (Chart-Pin + ggf. `trivy.image.tag`).
 - CRDs bei Deinstall **nicht** blind löschen — löscht alle Reports (siehe Upstream Helm-Docs).
 - Alerts sind nicht vordefiniert — bei Bedarf Rules analog `homelab-alerts` ergänzen.

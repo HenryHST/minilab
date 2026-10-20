@@ -1,6 +1,6 @@
 ---
 title: Architektur
-book_version: "1.1.0"
+book_version: "1.2.0"
 ---
 
 # Architektur
@@ -12,7 +12,11 @@ book_version: "1.1.0"
 | ApplicationSet | `ops` |
 | Sync-Wave | `1` |
 | Namespace | `trivy-system` |
-| Chart | `trivy-operator` 0.32.1 (`https://aquasecurity.github.io/helm-charts/`) |
+| Chart | `trivy-operator` **0.37.0** (`https://aquasecurity.github.io/helm-charts/`) |
+| Operator (`appVersion`) | **0.35.0** |
+| Trivy-Server-Image | **0.76.0** (`trivy.image.tag`) |
+
+Chart-Version ≠ Operator-Version — Mapping und Upgrade-Schritte: [Upgrade](06-upgrade.md).
 
 ## Scan-Scope
 

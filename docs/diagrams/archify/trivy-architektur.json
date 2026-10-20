@@ -61,7 +61,7 @@
       "id": "chart",
       "type": "backend",
       "label": "Helm Chart",
-      "sublabel": "trivy-operator 0.32.1",
+      "sublabel": "trivy-operator 0.37.0",
       "tag": "aqua charts",
       "pos": [
         260,
@@ -287,7 +287,7 @@
       "title": "GitOps",
       "items": [
         "ApplicationSet ops \u00b7 Wave 1 \u00b7 ns trivy-system",
-        "Chart aqua/trivy-operator 0.32.1 \u00b7 builtInTrivyServer"
+        "Chart aqua/trivy-operator 0.37.0 \u00b7 builtInTrivyServer \u00b7 Trivy 0.76.0"
       ]
     },
     {

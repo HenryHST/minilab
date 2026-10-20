@@ -1,12 +1,13 @@
 ---
 title: Quellen
-book_version: "1.1.0"
+book_version: "1.2.0"
 ---
 
 # Quellen
 
 - App-README: [`apps/ops/trivy-operator/README.md`](../../../../apps/ops/trivy-operator/README.md)
 - ADR-0031: [`docs/adr/0031-trivy-operator.md`](../../../adr/0031-trivy-operator.md)
+- Upgrade (selbst durchführen): [06-upgrade.md](06-upgrade.md)
 - Archify: [`docs/diagrams/archify/trivy-architektur.html`](../../../diagrams/archify/trivy-architektur.html)
 - Helm: [Trivy Operator Helm install](https://aquasecurity.github.io/trivy-operator/latest/getting-started/installation/helm/)
 - Grafana Dashboard: [Aqua tutorial](https://aquasecurity.github.io/trivy-operator/latest/tutorials/grafana-dashboard/) (gnetId 17813)

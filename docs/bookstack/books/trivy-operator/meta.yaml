@@ -1,6 +1,6 @@
 book: trivy-operator
 cover: cover.png
-book_version: "1.1.0"
-updated: "2026-10-03"
-description: Trivy Operator — built-in Server, ServiceMonitor, Grafana 17813, private registry
+book_version: "1.2.0"
+updated: "2026-10-20"
+description: Trivy Operator — Chart 0.37.0 / app 0.35.0, Trivy Server 0.76.0, Upgrade-Runbook, ServiceMonitor, Grafana 17813
 shelf: Plattform

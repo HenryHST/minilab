@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "d47c639a-5194-41e3-9895-a28802328718",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/henry/Projects/minilab/docs/diagrams/archify/trivy-architektur.json",
+  "output": "/Users/henry/Projects/minilab/docs/diagrams/archify/trivy-architektur.html",
+  "specification": {
+    "sha256": "5510f96e5cfa635ce75d9872fd47cd436f87745b15c8755163786905322a3e6e",
+    "bytes": 5948
+  },
+  "artifact": {
+    "sha256": "dd3df97f6a5ef13181dc656a24a8a66feb913fad9e1d606c1fd38e679d202445",
+    "bytes": 830494
+  }
+}

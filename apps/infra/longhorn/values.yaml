@@ -29,6 +29,12 @@ defaultSettings:
   # On node death, force-delete Deployment/STS pods so RWO VolumeAttachments release
   # (trade-off: abrupt pod kill; prefer Proxmox-only scheduling for stateful workloads).
   nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
+  # Percent of node allocatable CPU reserved for each Instance Manager (v1).
+  # Keep low on 3-allocatable-CPU Proxmox workers so IM can schedule under request pressure
+  # (incident 2026-10-21: 150m Guaranteed failed OutOfcpu). Plain integer string — JSON
+  # {"v1":"5","v2":"5"} stays applied=false on Longhorn 1.12.1.
+  # Per-node override: manifests/im-cpu-enforcer.yaml sets instanceManagerCPURequest=50.
+  guaranteedInstanceManagerCPU: "5"
 
 defaultBackupStore:
   # RustFS on pi7cl (S3). Rollback NFS:

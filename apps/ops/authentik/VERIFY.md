@@ -6,23 +6,25 @@ Upstream: https://docs.goauthentik.io/sys-mgmt/ops/backup-restore/
 
 - Secret `authentik/authentik-backup-s3` present (Infra_LAB `k3s_secrets` + RustFS keys)
 - Bucket `authentik-backups` on pi7cl (`ansible-playbook site.yaml --tags rustfs --limit pi7cl`)
+- Bucket `authentik-pg-wal` (PreSync Job `authentik-pg-wal-bucket` or manual `aws s3 mb`)
 - NFS dir `…/authentik-backups` exists
-- CronJobs synced: `authentik-backup-0230`, `authentik-backup-1150` (old `authentik-backup-cron` removed)
+- CronJobs synced: `authentik-backup-0230`, `authentik-backup-1150`
+- CNPG `instances: 2`, Redis STS `authentik-redis` Ready
 
-## Manual backup smoke
+## Manual backup smoke (online — IdP stays up)
 
 ```bash
 kubectl -n authentik create job --from=cronjob/authentik-backup-0230 authentik-backup-manual
 kubectl -n authentik logs -f job/authentik-backup-manual -c backup
+# In parallel: curl -sk -o /dev/null -w '%{http_code}\n' https://idp.stadthagen.dev/-/health/ready/
 ```
 
 Expect:
 
-1. Scale server+worker to 0 → Traefik app-down / 5xx on `https://idp.stadthagen.dev`
+1. **No** scale-to-0 — IdP health stays ≈ 200 during the job
 2. `db.sql.gz` + `media.tar.gz` packed
 3. Same `authentik-YYYYMMDD-HHMMSS.tar.gz` on NFS (`/backup`) **and** `s3://authentik-backups/`
-4. Scale-up → `kubectl wait --for=condition=available` succeeds; health `/-/health/ready/` ≈ 200
-5. Job fails if either NFS or S3 write fails
+4. Job fails if either NFS or S3 write fails
 
 ```bash
 # NFS listing via a throwaway pod, or NAS ls
@@ -30,15 +32,14 @@ kubectl -n authentik get job authentik-backup-manual -o wide
 aws --endpoint-url http://192.168.0.107:9000 s3 ls s3://authentik-backups/
 ```
 
-### Lab smoke (2026-10-19)
+### Lab smoke
 
-- Bucket `authentik-backups` created on pi7cl; Secret `authentik-backup-s3` present.
-- Job `authentik-backup-manual` **Complete** (~110s): archive `authentik-20261019-131325.tar.gz` on NFS and S3 (~9.3 MiB); server/worker restored to 2/2.
-- Until minilab `main` contains these manifests, Argo ApplicationSet `ops` self-heal may recreate `authentik-backup-cron` and the old `backup-runner-role` — push/sync minilab before relying on the schedule.
+- **2026-10-19:** scale-to-0 backup path (superseded by online backup 2026-10-21).
+- **2026-10-21:** HA roadmap — CNPG×2, dedicated Redis, online backup, Longhorn IM CPU enforcer.
 
 ## Gatus
 
-During Berlin `02:30` and `11:50` (±30m): no Pushover for endpoint `authentik`. Paperless keeps its own `05:00` UTC window.
+Online backups no longer take IdP down. Gatus still depends on Authentik OIDC at **startup** (panic on IdP 503) — restore IdP before Gatus if both are down (`GatusDependsOnAuthentikDown` alert).
 
 ## Full restore smoke (lab only)
 

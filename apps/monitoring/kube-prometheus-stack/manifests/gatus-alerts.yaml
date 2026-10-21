@@ -48,3 +48,24 @@ spec:
             description: |
               CloudNativePG cluster `status/gatus` expects 2 instances (primary + replica).
               Check: kubectl -n status get cluster gatus; kubectl -n status get pods -l cnpg.io/cluster=gatus
+
+        # Gatus panics at startup if IdP OIDC returns 503 (createRouter). Fix IdP first.
+        - alert: GatusDependsOnAuthentikDown
+          expr: |
+            (
+              kube_deployment_status_replicas_available{namespace="authentik", deployment="authentik-server"} == 0
+            )
+            and
+            (
+              kube_deployment_status_replicas_available{namespace="status", deployment="gatus"} == 0
+            )
+          for: 5m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Gatus and Authentik both unavailable — restore IdP before Gatus'
+            description: |
+              Gatus OIDC requires a healthy IdP. Authentik-server and Gatus are both at 0 ready replicas.
+              Restore Authentik first (media RWX share / CNPG / Redis), then restart Gatus.
+              See BookStack Authentik Runtime → Troubleshooting Media RWX / IM OutOfcpu.

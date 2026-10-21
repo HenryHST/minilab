@@ -35,6 +35,10 @@ Grafana (Datasource Alertmanager, UI) ─┘
 | Quelle | Artefakt |
 |--------|----------|
 | Metrics / Workload / Proxmox / Cilium | `manifests/homelab-alerts.yaml` |
+| Node / Longhorn manager stability | `manifests/nxk3-node-stability.yaml` |
+| Longhorn RWX share / IM OutOfcpu | `manifests/longhorn-share-alerts.yaml` |
+| Authentik IdP / CNPG / Redis | `manifests/authentik-alerts.yaml` |
+| Gatus meta (+ IdP dependency) | `manifests/gatus-alerts.yaml` |
 | Cilium scrape (agent/operator/hubble) | `manifests/cilium-podmonitors.yaml` |
 | Chart defaults (Node CPU/RAM/Disk, kube apps, …) | `values.yaml` → `defaultRules` |
 | Alertmanager Routing | `values.yaml` → `alertmanager.config` |

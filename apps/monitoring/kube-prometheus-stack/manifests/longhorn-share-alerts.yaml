@@ -1,0 +1,84 @@
+# Longhorn RWX share / Instance Manager health (Authentik media incident 2026-10-21).
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: longhorn-share-alerts
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: longhorn.share
+      rules:
+        - alert: LonghornInstanceManagerOutOfcpu
+          expr: |
+            max_over_time(
+              kube_pod_container_status_waiting_reason{
+                namespace="longhorn-system",
+                pod=~"instance-manager-.*",
+                reason="OutOfcpu"
+              }[10m]
+            ) == 1
+          for: 5m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'Longhorn Instance Manager OutOfcpu on {{ $labels.pod }}'
+            description: |
+              Pod `longhorn-system/{{ $labels.pod }}` cannot schedule (OutOfcpu).
+              RWX share-managers and engines on that node will stall (Waiting for volume share).
+              Check: kubectl -n longhorn-system get instancemanagers.longhorn.io -o wide;
+              nodes.longhorn.io instanceManagerCPURequest; BookStack Authentik → Media RWX Share incident.
+
+        - alert: LonghornInstanceManagerNotRunning
+          expr: |
+            (
+              kube_pod_status_phase{namespace="longhorn-system", pod=~"instance-manager-.*", phase!="Running"} == 1
+            )
+            or
+            (
+              kube_pod_status_ready{namespace="longhorn-system", pod=~"instance-manager-.*", condition="true"} == 0
+            )
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Longhorn Instance Manager {{ $labels.pod }} not Running/Ready'
+            description: |
+              Instance Manager pod is not healthy for >10m. Engines/replicas on that node fail.
+              Check: kubectl -n longhorn-system get pods -l longhorn.io/component=instance-manager -o wide
+
+        - alert: LonghornShareManagerNotReady
+          expr: |
+            kube_pod_status_ready{
+              namespace="longhorn-system",
+              pod=~"share-manager-.*",
+              condition="true"
+            } == 0
+          for: 10m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'Longhorn Share Manager {{ $labels.pod }} not Ready'
+            description: |
+              RWX NFS share is down — CSI mounts fail with "Waiting for volume share to be available".
+              Check: kubectl -n longhorn-system get sharemanagers.longhorn.io;
+              logs of {{ $labels.pod }}; IM on the share owner node.
+
+        - alert: AuthentikMediaPVCPendingAttach
+          expr: |
+            kube_pod_status_phase{namespace="authentik", phase="Pending"} == 1
+            and on(namespace, pod)
+            kube_pod_labels{namespace="authentik", label_app_kubernetes_io_name="authentik"}
+          for: 15m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Authentik pod {{ $labels.pod }} Pending >15m (often FailedAttachVolume)'
+            description: |
+              Authentik workload stuck Pending. Common cause: media RWX share / PG RWO attach.
+              Check: kubectl -n authentik get events --field-selector reason=FailedAttachVolume;
+              kubectl -n authentik get pvc authentik-media authentik-pg-1

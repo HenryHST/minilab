@@ -1,0 +1,66 @@
+# Ensure RustFS bucket for CNPG WAL / barmanObjectStore exists (idempotent).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: authentik-pg-wal-bucket
+  namespace: authentik
+  labels:
+    app.kubernetes.io/name: authentik
+    app.kubernetes.io/component: cnpg-wal-bucket
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: authentik
+        app.kubernetes.io/component: cnpg-wal-bucket
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        worker: "true"
+      containers:
+        - name: mb
+          image: amazon/aws-cli:2.17.56
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-backup-s3
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-backup-s3
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: AWS_ENDPOINT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-backup-s3
+                  key: AWS_ENDPOINT_URL
+            - name: AWS_DEFAULT_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-backup-s3
+                  key: AWS_DEFAULT_REGION
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              aws configure set default.s3.addressing_style path
+              if aws --endpoint-url "${AWS_ENDPOINT_URL}" s3 ls "s3://authentik-pg-wal" >/dev/null 2>&1; then
+                echo "bucket authentik-pg-wal exists"
+              else
+                echo "creating bucket authentik-pg-wal"
+                aws --endpoint-url "${AWS_ENDPOINT_URL}" s3 mb "s3://authentik-pg-wal"
+              fi
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 256Mi

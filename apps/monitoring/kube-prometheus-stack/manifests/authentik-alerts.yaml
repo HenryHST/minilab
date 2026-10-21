@@ -1,0 +1,69 @@
+# Authentik IdP + dependencies (CNPG HA, dedicated Redis, Longhorn media).
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: authentik-alerts
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: authentik.availability
+      rules:
+        - alert: AuthentikServerUnavailable
+          expr: |
+            (kube_deployment_status_replicas_available{namespace="authentik", deployment="authentik-server"} == 0)
+              and on(namespace, deployment)
+            (kube_deployment_spec_replicas{namespace="authentik", deployment="authentik-server"} > 0)
+          for: 5m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'Authentik server has 0 ready replicas'
+            description: |
+              IdP `idp.stadthagen.dev` is down. Dependent apps (Gatus OIDC, ForwardAuth) fail.
+              Check: kubectl -n authentik get deploy,pods; describe FailedAttachVolume events.
+
+        - alert: AuthentikWorkerUnavailable
+          expr: |
+            (kube_deployment_status_replicas_available{namespace="authentik", deployment="authentik-worker"} == 0)
+              and on(namespace, deployment)
+            (kube_deployment_spec_replicas{namespace="authentik", deployment="authentik-worker"} > 0)
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Authentik worker has 0 ready replicas'
+            description: |
+              Background tasks / blueprints stalled. Check: kubectl -n authentik get deploy authentik-worker
+
+        - alert: AuthentikPostgresInstancesMissing
+          expr: |
+            count(cnpg_collector_up{namespace="authentik"} == 1) < 2
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Authentik CNPG cluster has fewer than 2 healthy instances'
+            description: |
+              Cluster `authentik/authentik-pg` expects primary + replica.
+              Check: kubectl -n authentik get cluster authentik-pg; kubectl -n authentik get pods -l cnpg.io/cluster=authentik-pg
+
+        - alert: AuthentikRedisPrimaryDown
+          expr: |
+            kube_pod_status_ready{
+              namespace="authentik",
+              pod="authentik-redis-0",
+              condition="true"
+            } == 0
+          for: 5m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'Authentik Redis primary (authentik-redis-0) not Ready'
+            description: |
+              Sessions/cache/broker unavailable — login latency spikes or IdP errors.
+              Check: kubectl -n authentik get sts,pods -l app.kubernetes.io/component=redis

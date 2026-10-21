@@ -16,9 +16,10 @@ authentik:
   # Existing installs: set once in Admin → System → Settings if still blank.
   web:
     base_url: "https://idp.stadthagen.dev"
-  # Shared cluster Redis (apps/infra/redis) — required for cache/sessions/broker.
+  # Dedicated Authentik Redis (redis.yaml StatefulSet primary+replica) — cache/sessions/broker.
+  # Shared apps/infra/redis remains for other apps (paperless).
   redis:
-    host: redis.redis.svc.cluster.local
+    host: authentik-redis.authentik.svc.cluster.local
   postgresql:
     host: authentik-pg-rw
     name: authentik

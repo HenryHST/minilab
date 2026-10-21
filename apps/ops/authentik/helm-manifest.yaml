@@ -46,7 +46,7 @@ data:
   AUTHENTIK_POSTGRESQL__NAME: "YXV0aGVudGlr"
   AUTHENTIK_POSTGRESQL__PORT: "NTQzMg=="
   AUTHENTIK_POSTGRESQL__USER: "YXV0aGVudGlr"
-  AUTHENTIK_REDIS__HOST: "cmVkaXMucmVkaXMuc3ZjLmNsdXN0ZXIubG9jYWw="
+  AUTHENTIK_REDIS__HOST: "YXV0aGVudGlrLXJlZGlzLmF1dGhlbnRpay5zdmMuY2x1c3Rlci5sb2NhbA=="
   AUTHENTIK_WEB__BASE_URL: "aHR0cHM6Ly9pZHAuc3RhZHRoYWdlbi5kZXY="
   AUTHENTIK_WEB__PATH: "Lw=="
 
@@ -318,7 +318,7 @@ spec:
         app.kubernetes.io/part-of: "authentik"
         app.kubernetes.io/version: "2026.8.4"
       annotations:
-        checksum/secret: 62a6bef67a6ab03a871220d20da8bd9c7bcaaa6dd37eb904a4b2125f4b5f6e31
+        checksum/secret: f1e8ef7e1b985b36fcbf26ea817010481f4032c081bfd090c898c3e892b2c964
     spec:
       securityContext:
         fsGroup: 1000
@@ -465,7 +465,7 @@ spec:
         app.kubernetes.io/part-of: "authentik"
         app.kubernetes.io/version: "2026.8.4"
       annotations:
-        checksum/secret: 62a6bef67a6ab03a871220d20da8bd9c7bcaaa6dd37eb904a4b2125f4b5f6e31
+        checksum/secret: f1e8ef7e1b985b36fcbf26ea817010481f4032c081bfd090c898c3e892b2c964
     spec:
       serviceAccountName: "authentik"
       securityContext:

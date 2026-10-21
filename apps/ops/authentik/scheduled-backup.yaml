@@ -1,5 +1,6 @@
-# Six-field cron (seconds first). Every 6 hours, :15. RPO is that interval.
-# Longhorn VolumeSnapshot — not WAL PITR. pg_dump CronJob stays the off-cluster copy.
+# Six-field cron (seconds first). VolumeSnapshot every 6h + barman base backup daily.
+# WAL streams continuously via Cluster.spec.backup.barmanObjectStore (RustFS).
+# Online pg_dump CronJob remains the portable off-cluster copy (NFS + S3 archive).
 apiVersion: postgresql.cnpg.io/v1
 kind: ScheduledBackup
 metadata:
@@ -17,3 +18,21 @@ spec:
     name: authentik-pg
   target: primary
   online: true
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: authentik-pg-barman
+  namespace: authentik
+  labels:
+    app.kubernetes.io/name: authentik
+    app.kubernetes.io/part-of: authentik
+    app.kubernetes.io/component: barman-backup
+spec:
+  schedule: "0 30 3 * * *"
+  immediate: false
+  method: barmanObjectStore
+  backupOwnerReference: cluster
+  cluster:
+    name: authentik-pg
+  target: primary

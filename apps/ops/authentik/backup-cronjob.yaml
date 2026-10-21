@@ -1,9 +1,8 @@
 ---
-# Authentik full backup: scale IdP to 0 (Traefik app-down) → pg_dump + media PVC
-# → combined archive written in parallel to NFS and RustFS S3.
+# Authentik full backup (online): pg_dump + media PVC → NFS + RustFS S3.
+# No scale-to-0 / HPA delete / Argo suspend — IdP stays up (HA roadmap Phase 4).
 # Schedules: 02:30 and 11:50 Europe/Berlin. Retention: 30 days per target.
 # Upstream: https://docs.goauthentik.io/sys-mgmt/ops/backup-restore/
-# HPA: https://docs.goauthentik.io/sys-mgmt/ops/autoscaling/hpa/
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -18,15 +17,7 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["pods"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["apps"]
-    resources: ["deployments", "deployments/scale"]
-    # watch: kubectl wait --for=condition=available uses the watch API
-    verbs: ["get", "list", "watch", "patch", "update"]
-  - apiGroups: ["autoscaling"]
-    resources: ["horizontalpodautoscalers"]
-    # create/delete: Resource-metric HPAs cannot be patched to min/max=0 (K8s validation)
-    verbs: ["get", "list", "watch", "patch", "update", "create", "delete"]
+    verbs: ["get", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -40,32 +31,6 @@ subjects:
 roleRef:
   kind: Role
   name: backup-runner-role
-  apiGroup: rbac.authorization.k8s.io
----
-# Pause Argo self-heal while HPA is deleted for the backup window (ns argocd).
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: backup-runner-argocd-app
-  namespace: argocd
-rules:
-  - apiGroups: ["argoproj.io"]
-    resources: ["applications"]
-    resourceNames: ["authentik"]
-    verbs: ["get", "patch", "update"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: backup-runner-argocd-app
-  namespace: argocd
-subjects:
-  - kind: ServiceAccount
-    name: backup-runner
-    namespace: authentik
-roleRef:
-  kind: Role
-  name: backup-runner-argocd-app
   apiGroup: rbac.authorization.k8s.io
 ---
 # PV carries mountOptions (core Pod nfs volumes cannot); UniFi NAS needs NFSv3 + nolock.
@@ -111,11 +76,8 @@ data:
     #!/bin/bash
     set -euo pipefail
 
-    apk add --no-cache postgresql17-client tar gzip aws-cli coreutils jq >/dev/null
+    apk add --no-cache postgresql17-client tar gzip aws-cli coreutils >/dev/null
 
-    NS="authentik"
-    SERVER="authentik-server"
-    WORKER="authentik-worker"
     RETENTION_DAYS="${RETENTION_DAYS:-30}"
     S3_BUCKET="${S3_BUCKET:-authentik-backups}"
     AWS_ENDPOINT_URL="${AWS_ENDPOINT_URL:-http://192.168.0.107:9000}"
@@ -126,135 +88,13 @@ data:
     OUT_NFS="/backup/${ARCHIVE_NAME}"
     mkdir -p "${WORK}"
 
-    SERVER_REPLICAS="$(kubectl -n "${NS}" get deploy "${SERVER}" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo 2)"
-    WORKER_REPLICAS="$(kubectl -n "${NS}" get deploy "${WORKER}" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo 2)"
-    [[ -z "${SERVER_REPLICAS}" || "${SERVER_REPLICAS}" == "0" ]] && SERVER_REPLICAS=2
-    [[ -z "${WORKER_REPLICAS}" || "${WORKER_REPLICAS}" == "0" ]] && WORKER_REPLICAS=2
-
-    HPA_SERVER_MIN=""; HPA_SERVER_MAX=""; HPA_WORKER_MIN=""; HPA_WORKER_MAX=""
-    HPA_SERVER_PRESENT=0; HPA_WORKER_PRESENT=0
-    ARGO_APP="authentik"
-    ARGO_NS="argocd"
-    ARGO_AUTOMATED_SUSPENDED=0
-    HPA_SNAP_DIR="/tmp/authentik-hpa-snap-$$"
-    mkdir -p "${HPA_SNAP_DIR}"
-
-    # Resource-metric HPAs cannot use minReplicas=0 (API forbids). Snapshot + delete instead.
-    snap_hpa() {
-      local name="$1" prefix="$2"
-      if kubectl -n "${NS}" get hpa "${name}" >/dev/null 2>&1; then
-        eval "${prefix}_PRESENT=1"
-        eval "${prefix}_MIN=\"$(kubectl -n "${NS}" get hpa "${name}" -o jsonpath='{.spec.minReplicas}')\""
-        eval "${prefix}_MAX=\"$(kubectl -n "${NS}" get hpa "${name}" -o jsonpath='{.spec.maxReplicas}')\""
-        echo "HPA ${name}: min=$(eval echo \$${prefix}_MIN) max=$(eval echo \$${prefix}_MAX)"
-        kubectl -n "${NS}" get hpa "${name}" -o json \
-          | jq 'del(.status, .metadata.resourceVersion, .metadata.uid, .metadata.creationTimestamp, .metadata.generation, .metadata.managedFields)' \
-          > "${HPA_SNAP_DIR}/${name}.json"
-      fi
-    }
-
-    suspend_argo_automated() {
-      if kubectl -n "${ARGO_NS}" get application "${ARGO_APP}" >/dev/null 2>&1; then
-        if kubectl -n "${ARGO_NS}" get application "${ARGO_APP}" -o jsonpath='{.spec.syncPolicy.automated}' 2>/dev/null | grep -q .; then
-          echo "Suspending Argo automated sync on ${ARGO_NS}/${ARGO_APP} (avoid HPA self-heal)..."
-          kubectl -n "${ARGO_NS}" patch application "${ARGO_APP}" --type=json \
-            -p='[{"op":"remove","path":"/spec/syncPolicy/automated"}]'
-          ARGO_AUTOMATED_SUSPENDED=1
-        fi
-      else
-        echo "WARN: Argo Application ${ARGO_NS}/${ARGO_APP} not found; continuing without suspend"
-      fi
-    }
-
-    resume_argo_automated() {
-      if [[ "${ARGO_AUTOMATED_SUSPENDED}" == "1" ]]; then
-        echo "Restoring Argo automated sync on ${ARGO_NS}/${ARGO_APP}..."
-        kubectl -n "${ARGO_NS}" patch application "${ARGO_APP}" --type=merge \
-          -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}' || true
-        ARGO_AUTOMATED_SUSPENDED=0
-      fi
-    }
-
-    pause_hpa() {
-      local name="$1"
-      if [[ -f "${HPA_SNAP_DIR}/${name}.json" ]]; then
-        echo "Pausing HPA ${name} (delete for backup window; Resource metrics cannot scale to zero)..."
-        kubectl -n "${NS}" delete hpa "${name}" --wait=true
-      fi
-    }
-
-    restore_hpa() {
-      local name="$1" min="$2" max="$3" present="$4"
-      if [[ "${present}" == "1" && -f "${HPA_SNAP_DIR}/${name}.json" ]]; then
-        echo "Restoring HPA ${name} (saved min=${min} max=${max})..."
-        kubectl -n "${NS}" apply -f "${HPA_SNAP_DIR}/${name}.json" || true
-      fi
-    }
-
-    scale_up() {
-      restore_hpa "${SERVER}" "${HPA_SERVER_MIN:-1}" "${HPA_SERVER_MAX:-2}" "${HPA_SERVER_PRESENT}"
-      restore_hpa "${WORKER}" "${HPA_WORKER_MIN:-1}" "${HPA_WORKER_MAX:-2}" "${HPA_WORKER_PRESENT}"
-      if [[ "${HPA_SERVER_PRESENT}" != "1" ]]; then
-        kubectl -n "${NS}" scale deploy/"${SERVER}" --replicas="${SERVER_REPLICAS}" || true
-      fi
-      if [[ "${HPA_WORKER_PRESENT}" != "1" ]]; then
-        kubectl -n "${NS}" scale deploy/"${WORKER}" --replicas="${WORKER_REPLICAS}" || true
-      fi
-      # With HPA restored, nudge scale if still at 0 (HPA may take a moment).
-      if [[ "${HPA_SERVER_PRESENT}" == "1" ]]; then
-        local cur
-        cur="$(kubectl -n "${NS}" get deploy "${SERVER}" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo 0)"
-        if [[ "${cur}" == "0" || -z "${cur}" ]]; then
-          kubectl -n "${NS}" scale deploy/"${SERVER}" --replicas="${HPA_SERVER_MIN:-1}" || true
-        fi
-      fi
-      if [[ "${HPA_WORKER_PRESENT}" == "1" ]]; then
-        local cur
-        cur="$(kubectl -n "${NS}" get deploy "${WORKER}" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo 0)"
-        if [[ "${cur}" == "0" || -z "${cur}" ]]; then
-          kubectl -n "${NS}" scale deploy/"${WORKER}" --replicas="${HPA_WORKER_MIN:-1}" || true
-        fi
-      fi
-      resume_argo_automated
-    }
-
-    cleanup() {
-      echo "Cleanup: restoring IdP scale / HPA..."
-      scale_up
-      kubectl -n "${NS}" wait --for=condition=available deploy/"${SERVER}" --timeout=180s || true
-      kubectl -n "${NS}" wait --for=condition=available deploy/"${WORKER}" --timeout=180s || true
-      rm -rf "${HPA_SNAP_DIR}" || true
-    }
-    trap cleanup EXIT
-
-    # #region agent log
-    echo "debug: HPA pause strategy=delete+restore (Resource metrics forbid minReplicas=0)"
-    # #endregion
-
-    suspend_argo_automated
-    snap_hpa "${SERVER}" HPA_SERVER
-    snap_hpa "${WORKER}" HPA_WORKER
-    pause_hpa "${SERVER}"
-    pause_hpa "${WORKER}"
-
-    echo "Scaling ${SERVER}+${WORKER} to 0 (saved replicas ${SERVER_REPLICAS}/${WORKER_REPLICAS})..."
-    kubectl -n "${NS}" scale deploy/"${SERVER}" --replicas=0
-    kubectl -n "${NS}" scale deploy/"${WORKER}" --replicas=0
-    for i in $(seq 1 90); do
-      N="$(kubectl -n "${NS}" get pods -l 'app.kubernetes.io/name=authentik,app.kubernetes.io/component in (server,worker)' \
-        --field-selector=status.phase!=Succeeded,status.phase!=Failed -o name 2>/dev/null | wc -l | tr -d ' ')"
-      [[ "${N}" == "0" ]] && break
-      sleep 2
-    done
-    echo "IdP pods drained (ready for Traefik app-down page)."
-
-    echo "Waiting for postgres..."
+    echo "Waiting for postgres (online dump; IdP stays up)..."
     until pg_isready -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -q; do sleep 2; done
 
     echo "Dumping ${PGDATABASE}@${PGHOST} -> db.sql.gz"
     pg_dump --no-owner --no-acl | gzip -c > "${WORK}/db.sql.gz"
 
-    echo "Archiving /media (PVC mount) -> media.tar.gz"
+    echo "Archiving /media (RWX PVC, read-only mount) -> media.tar.gz"
     tar czf "${WORK}/media.tar.gz" -C /media .
 
     tar czf "${OUT_NFS}" -C "${WORK}" .
@@ -270,7 +110,6 @@ data:
     find /backup -maxdepth 1 -type f -name 'authentik-*.tar.gz' -mtime "+${RETENTION_DAYS}" -print -delete || true
 
     echo "S3 retention: delete objects older than ${RETENTION_DAYS} days"
-    # Prefer GNU date from coreutils (apk); fall back to epoch math via awk if needed.
     CUTOFF_DATE=""
     if CUTOFF_DATE="$(date -u -d "${RETENTION_DAYS} days ago" +%Y-%m-%d 2>/dev/null)"; then
       :
@@ -297,9 +136,6 @@ data:
     ls -1t /backup/authentik-*.tar.gz 2>/dev/null || true
     echo "S3 objects:"
     aws --endpoint-url "${AWS_ENDPOINT_URL}" s3 ls "s3://${S3_BUCKET}/" || true
-
-    # Probe health after scale-up (cleanup trap runs on exit)
-    echo "Backup complete; trap will scale IdP back up."
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -326,6 +162,8 @@ spec:
         spec:
           serviceAccountName: backup-runner
           restartPolicy: Never
+          nodeSelector:
+            worker: "true"
           containers:
             - name: backup
               image: alpine/k8s:1.37.1
@@ -381,6 +219,12 @@ spec:
                   readOnly: true
                 - name: scripts
                   mountPath: /scripts
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 256Mi
+                limits:
+                  memory: 1Gi
           volumes:
             - name: backup
               persistentVolumeClaim:
@@ -418,6 +262,8 @@ spec:
         spec:
           serviceAccountName: backup-runner
           restartPolicy: Never
+          nodeSelector:
+            worker: "true"
           containers:
             - name: backup
               image: alpine/k8s:1.37.1
@@ -473,6 +319,12 @@ spec:
                   readOnly: true
                 - name: scripts
                   mountPath: /scripts
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 256Mi
+                limits:
+                  memory: 1Gi
           volumes:
             - name: backup
               persistentVolumeClaim:

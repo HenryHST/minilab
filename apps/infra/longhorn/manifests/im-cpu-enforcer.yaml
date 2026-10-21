@@ -1,0 +1,174 @@
+# Cap Instance Manager CPU request on Proxmox workers so IM pods can schedule when
+# kubelet reports near-full CPU requests (incident 2026-10-21: authentik-media RWX share).
+# Pis stay allowScheduling=false via pi-nosched-enforcer; this Job only touches nxk3-w0x.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: longhorn-im-cpu
+  namespace: longhorn-system
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/component: im-cpu-enforcer
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: longhorn-im-cpu
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/component: im-cpu-enforcer
+rules:
+  - apiGroups: ["longhorn.io"]
+    resources: ["nodes"]
+    verbs: ["get", "list", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: longhorn-im-cpu
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/component: im-cpu-enforcer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: longhorn-im-cpu
+subjects:
+  - kind: ServiceAccount
+    name: longhorn-im-cpu
+    namespace: longhorn-system
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: longhorn-im-cpu
+  namespace: longhorn-system
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/component: im-cpu-enforcer
+data:
+  enforce.sh: |
+    #!/bin/sh
+    set -eu
+    NODES="${PROXMOX_LONGHORN_NODES:-nxk3-w01 nxk3-w02 nxk3-w03 nxk3-w04}"
+    WANT="${IM_CPU_REQUEST_MILLICORES:-50}"
+    for n in $NODES; do
+      if ! kubectl get nodes.longhorn.io "$n" >/dev/null 2>&1; then
+        echo "skip: nodes.longhorn.io/$n not found"
+        continue
+      fi
+      cur="$(kubectl get nodes.longhorn.io "$n" -o jsonpath='{.spec.instanceManagerCPURequest}')"
+      if [ "${cur:-0}" = "$WANT" ]; then
+        echo "ok: $n instanceManagerCPURequest=$WANT"
+        continue
+      fi
+      echo "patch: $n instanceManagerCPURequest=$WANT (was ${cur:-unset})"
+      kubectl patch nodes.longhorn.io "$n" --type merge \
+        -p "{\"spec\":{\"instanceManagerCPURequest\":${WANT}}}"
+    done
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: longhorn-im-cpu
+  namespace: longhorn-system
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/component: im-cpu-enforcer
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: longhorn
+            app.kubernetes.io/component: im-cpu-enforcer
+        spec:
+          serviceAccountName: longhorn-im-cpu
+          restartPolicy: Never
+          nodeSelector:
+            worker: "true"
+          containers:
+            - name: enforce
+              image: alpine/k8s:1.37.1
+              imagePullPolicy: IfNotPresent
+              command: ["/bin/sh", "/scripts/enforce.sh"]
+              env:
+                - name: PROXMOX_LONGHORN_NODES
+                  value: "nxk3-w01 nxk3-w02 nxk3-w03 nxk3-w04"
+                - name: IM_CPU_REQUEST_MILLICORES
+                  value: "50"
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+          volumes:
+            - name: scripts
+              configMap:
+                name: longhorn-im-cpu
+                defaultMode: 0555
+---
+# One-shot Job so Argo sync applies the override immediately (Cron waits up to 15m).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: longhorn-im-cpu-bootstrap
+  namespace: longhorn-system
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/component: im-cpu-enforcer
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: longhorn
+        app.kubernetes.io/component: im-cpu-enforcer
+    spec:
+      serviceAccountName: longhorn-im-cpu
+      restartPolicy: Never
+      nodeSelector:
+        worker: "true"
+      containers:
+        - name: enforce
+          image: alpine/k8s:1.37.1
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "/scripts/enforce.sh"]
+          env:
+            - name: PROXMOX_LONGHORN_NODES
+              value: "nxk3-w01 nxk3-w02 nxk3-w03 nxk3-w04"
+            - name: IM_CPU_REQUEST_MILLICORES
+              value: "50"
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      volumes:
+        - name: scripts
+          configMap:
+            name: longhorn-im-cpu
+            defaultMode: 0555

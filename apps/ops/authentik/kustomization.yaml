@@ -7,10 +7,12 @@ namespace: authentik
 resources:
   - helm-manifest.yaml
   - namespace.yaml
+  - redis.yaml
   - media-pvc.yaml
   - media-sync-cronjob.yaml
   - media-sync-bootstrap-job.yaml
   - cnpg-certificates.yaml
+  - cnpg-wal-bucket-job.yaml
   - cnpg-cluster.yaml
   - scheduled-backup.yaml
   - podmonitor.yaml

@@ -1,7 +1,7 @@
 # Authentik Postgres on CloudNativePG. Import from Bitnami is done and removed:
 # a recreated volume must not dial authentik-postgresql again.
-# Recovery: Longhorn VolumeSnapshot (ScheduledBackup authentik-pg-snapshot)
-# plus pg_dump CronJob to NFS.
+# Recovery: Longhorn VolumeSnapshot (ScheduledBackup authentik-pg-snapshot),
+# continuous WAL to RustFS (barmanObjectStore), plus online pg_dump CronJob to NFS/S3.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -15,7 +15,7 @@ metadata:
     app.kubernetes.io/part-of: authentik
     app.kubernetes.io/component: postgresql
 spec:
-  instances: 1
+  instances: 2
   imageName: ghcr.io/cloudnative-pg/postgresql:17
   # Server TLS from cert-manager (cnpg-certificates.yaml); client/replication stay operator-managed.
   certificates:
@@ -33,6 +33,8 @@ spec:
   affinity:
     nodeSelector:
       worker: "true"
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
   monitoring:
     enablePodMonitor: false
   resources:
@@ -43,7 +45,26 @@ spec:
       memory: 1Gi
   backup:
     target: primary
+    retentionPolicy: "7d"
     volumeSnapshot:
       className: longhorn
       online: true
       snapshotOwnerReference: backup
+    # Continuous WAL + base backups to RustFS (pi7cl). Bucket must exist:
+    #   aws --endpoint-url http://192.168.0.107:9000 s3 mb s3://authentik-pg-wal
+    # Credentials reuse authentik-backup-s3 (same RustFS user as app archives).
+    barmanObjectStore:
+      destinationPath: s3://authentik-pg-wal/
+      endpointURL: http://192.168.0.107:9000
+      s3Credentials:
+        accessKeyId:
+          name: authentik-backup-s3
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: authentik-backup-s3
+          key: AWS_SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+        maxParallel: 2
+      data:
+        compression: gzip

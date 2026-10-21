@@ -13,9 +13,23 @@ Der Day/Night-Scheduler läuft **in podcraft**. HA dient für manuelle Overrides
 ## Voraussetzungen (podcraft)
 
 1. `PODCRAFT_AUTH_MODE=both` (Browser OIDC + HA Basic)
-2. Ingress: `PathPrefix(/api/v1/workloads)` **ohne** Authentik-ForwardAuth, mit Traefik-IP-Allowlist (LAN/Privatnetze)
+2. Ingress: `/api/v1/workloads` **nur mit** `Authorization: Basic …` ohne ForwardAuth (+ Traefik-IP-Allowlist). Browser ohne Basic → Authentik.
 3. UI / Admin-APIs (inkl. Passwort-Rotate) weiter mit ForwardAuth
 4. NetworkPolicy: nur Traefik → podcraft-Pods (unverändert)
+
+## Fertiges Beispiel-Package
+
+Vollständige Dateien im Repo:
+
+- [`examples/homeassistant/podcraft.yaml`](../../../apps/dev/podcraft/examples/homeassistant/podcraft.yaml) → nach `config/packages/podcraft.yaml`
+- [`examples/homeassistant/secrets.yaml.example`](../../../apps/dev/podcraft/examples/homeassistant/secrets.yaml.example) → Keys in `secrets.yaml`
+
+`configuration.yaml` (falls Packages noch fehlen):
+
+```yaml
+homeassistant:
+  packages: !include_dir_named packages
+```
 
 ## Credentials holen
 
@@ -29,71 +43,6 @@ Der Day/Night-Scheduler läuft **in podcraft**. HA dient für manuelle Overrides
 ```yaml
 podcraft_basic_user: ha
 podcraft_basic_password: "<einmalig angezeigtes Passwort>"
-```
-
-## rest_command
-
-In `configuration.yaml` oder besser `packages/podcraft.yaml`:
-
-```yaml
-rest_command:
-  podcraft_start_drawio:
-    url: "https://podcraft.stadthagen.dev/api/v1/workloads/drawio/start"
-    method: POST
-    username: !secret podcraft_basic_user
-    password: !secret podcraft_basic_password
-  podcraft_stop_drawio:
-    url: "https://podcraft.stadthagen.dev/api/v1/workloads/drawio/stop"
-    method: POST
-    username: !secret podcraft_basic_user
-    password: !secret podcraft_basic_password
-  podcraft_start_it_tools:
-    url: "https://podcraft.stadthagen.dev/api/v1/workloads/it-tools/start"
-    method: POST
-    username: !secret podcraft_basic_user
-    password: !secret podcraft_basic_password
-  podcraft_stop_it_tools:
-    url: "https://podcraft.stadthagen.dev/api/v1/workloads/it-tools/stop"
-    method: POST
-    username: !secret podcraft_basic_user
-    password: !secret podcraft_basic_password
-```
-
-## Sensor (optional)
-
-```yaml
-rest:
-  - resource: https://podcraft.stadthagen.dev/api/v1/workloads/drawio
-    username: !secret podcraft_basic_user
-    password: !secret podcraft_basic_password
-    scan_interval: 60
-    sensor:
-      - name: Podcraft drawio desired
-        value_template: "{{ value_json.desired }}"
-```
-
-## Automation (optional)
-
-```yaml
-input_boolean:
-  podcraft_drawio:
-    name: podcraft drawio
-
-automation:
-  - alias: "podcraft drawio on demand"
-    trigger:
-      - platform: state
-        entity_id: input_boolean.podcraft_drawio
-        to: "on"
-    action:
-      - service: rest_command.podcraft_start_drawio
-  - alias: "podcraft drawio off"
-    trigger:
-      - platform: state
-        entity_id: input_boolean.podcraft_drawio
-        to: "off"
-    action:
-      - service: rest_command.podcraft_stop_drawio
 ```
 
 ## Aktivieren

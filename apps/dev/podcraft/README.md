@@ -50,9 +50,10 @@ PODCRAFT_AUTH_MODE=none PODCRAFT_DRY_RUN=true uvicorn app.main:app --reload --po
 
 1. Open Pulse **System settings** → **Rotate HA password**
 2. Copy user/password into HA `secrets.yaml` on pi5cl
-3. Add `rest_command` for `/api/v1/workloads/{id}/start|stop` (see docs)
+3. Copy HA package from [`examples/homeassistant/`](examples/homeassistant/) (see docs)
 
-Full guide: [docs/bookstack/books/podcraft/02-home-assistant.md](../../../docs/bookstack/books/podcraft/02-home-assistant.md).
+Full guide: [docs/bookstack/books/podcraft/02-home-assistant.md](../../../docs/bookstack/books/podcraft/02-home-assistant.md).  
+Example package: [`examples/homeassistant/podcraft.yaml`](examples/homeassistant/podcraft.yaml).
 
 ## Argo / replicas
 

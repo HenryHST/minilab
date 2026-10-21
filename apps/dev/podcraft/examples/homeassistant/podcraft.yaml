@@ -1,0 +1,103 @@
+# Home Assistant package: podcraft start/stop + optional status
+# Install:
+#   1. Copy this file to config/packages/podcraft.yaml
+#   2. Ensure configuration.yaml has:
+#        homeassistant:
+#          packages: !include_dir_named packages
+#   3. Add secrets from secrets.yaml.example
+#   4. Developer tools → YAML → Reload REST commands / automations (or restart)
+#
+# Auth: HTTP Basic only (Authorization: Basic …). Browser SSO is separate.
+# Ingress allows /api/v1/workloads without Authentik when Basic is present + LAN allowlist.
+
+input_boolean:
+  podcraft_drawio:
+    name: podcraft drawio
+    icon: mdi:graph
+  podcraft_it_tools:
+    name: podcraft it-tools
+    icon: mdi:toolbox
+
+rest_command:
+  podcraft_start_drawio:
+    url: "https://podcraft.stadthagen.dev/api/v1/workloads/drawio/start"
+    method: POST
+    username: !secret podcraft_basic_user
+    password: !secret podcraft_basic_password
+    verify_ssl: true
+  podcraft_stop_drawio:
+    url: "https://podcraft.stadthagen.dev/api/v1/workloads/drawio/stop"
+    method: POST
+    username: !secret podcraft_basic_user
+    password: !secret podcraft_basic_password
+    verify_ssl: true
+  podcraft_start_it_tools:
+    url: "https://podcraft.stadthagen.dev/api/v1/workloads/it-tools/start"
+    method: POST
+    username: !secret podcraft_basic_user
+    password: !secret podcraft_basic_password
+    verify_ssl: true
+  podcraft_stop_it_tools:
+    url: "https://podcraft.stadthagen.dev/api/v1/workloads/it-tools/stop"
+    method: POST
+    username: !secret podcraft_basic_user
+    password: !secret podcraft_basic_password
+    verify_ssl: true
+
+rest:
+  - resource: https://podcraft.stadthagen.dev/api/v1/workloads/drawio
+    username: !secret podcraft_basic_user
+    password: !secret podcraft_basic_password
+    scan_interval: 60
+    sensor:
+      - name: Podcraft drawio desired
+        unique_id: podcraft_drawio_desired
+        value_template: "{{ value_json.desired }}"
+      - name: Podcraft drawio ready
+        unique_id: podcraft_drawio_ready
+        value_template: "{{ value_json.ready }}"
+  - resource: https://podcraft.stadthagen.dev/api/v1/workloads/it-tools
+    username: !secret podcraft_basic_user
+    password: !secret podcraft_basic_password
+    scan_interval: 60
+    sensor:
+      - name: Podcraft it-tools desired
+        unique_id: podcraft_it_tools_desired
+        value_template: "{{ value_json.desired }}"
+      - name: Podcraft it-tools ready
+        unique_id: podcraft_it_tools_ready
+        value_template: "{{ value_json.ready }}"
+
+automation:
+  - id: podcraft_drawio_on
+    alias: "podcraft drawio on"
+    trigger:
+      - platform: state
+        entity_id: input_boolean.podcraft_drawio
+        to: "on"
+    action:
+      - service: rest_command.podcraft_start_drawio
+  - id: podcraft_drawio_off
+    alias: "podcraft drawio off"
+    trigger:
+      - platform: state
+        entity_id: input_boolean.podcraft_drawio
+        to: "off"
+    action:
+      - service: rest_command.podcraft_stop_drawio
+  - id: podcraft_it_tools_on
+    alias: "podcraft it-tools on"
+    trigger:
+      - platform: state
+        entity_id: input_boolean.podcraft_it_tools
+        to: "on"
+    action:
+      - service: rest_command.podcraft_start_it_tools
+  - id: podcraft_it_tools_off
+    alias: "podcraft it-tools off"
+    trigger:
+      - platform: state
+        entity_id: input_boolean.podcraft_it_tools
+        to: "off"
+    action:
+      - service: rest_command.podcraft_stop_it_tools

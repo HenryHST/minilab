@@ -1,5 +1,8 @@
-# Gatus history on CloudNativePG.
-# 2026-10-21: recover from VolumeSnapshot after primary PVC stuck on nxk3-w02.
+# Gatus history on CloudNativePG. Recovery point is a Longhorn VolumeSnapshot
+# (ScheduledBackup gatus-snapshot). The pg_dump CronJob remains the off-cluster copy.
+#
+# 2026-10-21: primary recreated on healthy workers after nxk3-w02 Longhorn
+# instance-manager could not schedule (OutOfcpu / stale kubelet accounting).
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -12,28 +15,24 @@ metadata:
     app.kubernetes.io/name: gatus
     app.kubernetes.io/part-of: gatus
 spec:
-  instances: 1
+  instances: 2
   imageName: ghcr.io/cloudnative-pg/postgresql:16
   certificates:
     serverCASecret: gatus-server-tls
     serverTLSSecret: gatus-server-tls
   bootstrap:
-    recovery:
-      volumeSnapshots:
-        storage:
-          apiGroup: snapshot.storage.k8s.io
-          kind: VolumeSnapshot
-          name: gatus-snapshot-20261021061500
+    initdb:
       database: gatus
       owner: gatus
       secret:
         name: gatus-db
   storage:
-    size: 1Gi
+    size: 2Gi
     storageClass: longhorn
   affinity:
     nodeSelector:
       worker: "true"
+    # Avoid nxk3-w02 while kubelet still reports stale OutOfcpu for instance-managers.
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:

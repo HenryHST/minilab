@@ -18,12 +18,14 @@ spec:
         worker: "true"
       containers:
         - name: rsync
-          image: instrumentisto/rsync-ssh:alpine
+          # alpine:3.22 ships OpenSSL ≥ 3.5.6 (clears CVE-2026-31789 vs rsync-ssh:alpine)
+          image: alpine:3.22
           command:
             - /bin/sh
             - -c
             - |
               set -euo pipefail
+              apk add --no-cache rsync openssh-client
               SRC="/nfs/public/branding"
               DST="/media/public/branding"
               if [[ ! -d "${SRC}" ]]; then

@@ -87,7 +87,7 @@ spec:
       enableServiceLinks: true
       containers:
         - name: bookstack
-          image: lscr.io/linuxserver/bookstack:version-v26.09.1
+          image: lscr.io/linuxserver/bookstack:version-v26.09.2
           imagePullPolicy: IfNotPresent
           env:
             - name: APP_KEY

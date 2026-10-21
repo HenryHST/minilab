@@ -7,6 +7,7 @@ Prometheus metric badges on `https://kromgo.stadthagen.dev` (Argo app `kromgo`, 
 - Image pin: `ghcr.io/home-operations/kromgo:0.16.1`
 - ConfigMap `kromgo-config` → `/config/config.yaml`
 - Env `KROMGO_PROMETHEUS_URL` → `kube-prometheus-stack-prometheus.monitoring.svc:9090`
+- `nodeSelector: worker=true` (Proxmox only — Pis cannot sustain Prometheus; empty Endpoints → badge “query error”)
 - TLS: cert-manager → Secret `kromgo-tls`
 - DNS: Hetzner A `kromgo` → Traefik LB `192.168.0.215` (LAN; not pangolin-publish)
 

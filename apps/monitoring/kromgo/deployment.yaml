@@ -13,6 +13,9 @@ spec:
       labels:
         app: kromgo
     spec:
+      # Same pin as Gatus/Grafana — avoid Pis (Prometheus reachability + ARM pressure).
+      nodeSelector:
+        worker: "true"
       containers:
         - name: kromgo
           image: ghcr.io/home-operations/kromgo:0.16.1

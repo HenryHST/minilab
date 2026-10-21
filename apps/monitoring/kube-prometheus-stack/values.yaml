@@ -6,6 +6,9 @@ prometheus:
     enabled: false
   prometheusSpec:
     replicas: 1
+    # Proxmox only — Pis OOM during WAL replay (1Gi) → empty Endpoints → Kromgo "query error".
+    nodeSelector:
+      worker: "true"
     retention: 9d
     retentionSize: 2GB
     storageSpec:
@@ -19,9 +22,9 @@ prometheus:
     resources:
       requests:
         cpu: 100m
-        memory: 256Mi
+        memory: 512Mi
       limits:
-        memory: 1Gi
+        memory: 2Gi
     scrapeInterval: 30s
     evaluationInterval: 30s
     serviceMonitorNamespaceSelector: {}

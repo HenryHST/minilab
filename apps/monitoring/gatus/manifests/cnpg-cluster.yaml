@@ -14,7 +14,8 @@ metadata:
     app.kubernetes.io/name: gatus
     app.kubernetes.io/part-of: gatus
 spec:
-  instances: 1
+  # Primary + hot standby across workers (CNPG default anti-affinity).
+  instances: 2
   imageName: ghcr.io/cloudnative-pg/postgresql:16
   certificates:
     serverCASecret: gatus-server-tls
@@ -26,11 +27,13 @@ spec:
       secret:
         name: gatus-db
   storage:
-    size: 1Gi
+    size: 2Gi
     storageClass: longhorn
   affinity:
     nodeSelector:
       worker: "true"
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
   monitoring:
     enablePodMonitor: false
   resources:

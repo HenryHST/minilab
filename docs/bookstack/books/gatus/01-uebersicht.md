@@ -18,9 +18,9 @@ flowchart LR
 | Chart | `gatus` 1.5.0, App v5.37.0 |
 | Namespace | `status` |
 | URL | https://status.stadthagen.dev |
-| Datenbank | CloudNativePG `gatus-rw`, PostgreSQL 16, 1Gi Longhorn |
+| Datenbank | CloudNativePG `gatus-rw`, PostgreSQL 16, 2 Instanzen, 2Gi Longhorn |
 | Auth | Authentik-Slug `gatus`, Gruppe `gatus_admins` |
-| Alerts | Pushover nach 3 Fehlschlägen |
+| Alerts | Pushover nach 4 Fehlschlägen; Meta-Alerts PrometheusRule `gatus-alerts` |
 
 Diagramm: [gatus-architektur](../../../diagrams/archify/gatus-architektur.html).
 

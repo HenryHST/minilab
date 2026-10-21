@@ -80,11 +80,15 @@ data:
       <img alt="alertmanager" src="/api/v1/endpoints/plattform_alertmanager/health/badge.svg">
       <img alt="loki" src="/api/v1/endpoints/plattform_loki/health/badge.svg">
       <img alt="argocd" src="/api/v1/endpoints/plattform_argocd/health/badge.svg">
+      <img alt="wud" src="/api/v1/endpoints/plattform_wud/health/badge.svg">
       <h2>sso</h2>
       <img alt="n8n" src="/api/v1/endpoints/sso_n8n/health/badge.svg">
       <img alt="hubble" src="/api/v1/endpoints/sso_hubble/health/badge.svg">
       <img alt="registry-ui" src="/api/v1/endpoints/sso_registry-ui/health/badge.svg">
       <img alt="stirling-pdf" src="/api/v1/endpoints/sso_stirling-pdf/health/badge.svg">
+      <h2>storage</h2>
+      <img alt="rustfs" src="/api/v1/endpoints/storage_rustfs/health/badge.svg">
+      <img alt="rustfs-console-oidc" src="/api/v1/endpoints/storage_rustfs-console-oidc/health/badge.svg">
       <h2>extern</h2>
       <img alt="pangolin" src="/api/v1/endpoints/extern_pangolin/health/badge.svg">
       <img alt="mail" src="/api/v1/endpoints/extern_mail/health/badge.svg">

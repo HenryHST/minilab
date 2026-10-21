@@ -1,0 +1,50 @@
+# Meta-monitoring for the status page itself (not individual endpoint HTTP checks — those use Pushover).
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: gatus-alerts
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: gatus
+      rules:
+        - alert: GatusDeploymentUnavailable
+          expr: |
+            (kube_deployment_status_replicas_available{namespace="status", deployment="gatus"} == 0)
+              and on(namespace, deployment)
+            (kube_deployment_spec_replicas{namespace="status", deployment="gatus"} > 0)
+          for: 5m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'Gatus deployment has 0 ready replicas'
+            description: |
+              Deployment `status/gatus` has been unavailable for over 5 minutes — status.stadthagen.dev and Pushover checks are down.
+              Check: kubectl -n status get deploy,pods; kubectl -n status describe deploy gatus
+
+        - alert: GatusScrapeDown
+          expr: up{namespace="status", job="gatus"} == 0
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Prometheus cannot scrape Gatus /metrics for 10m'
+            description: |
+              ServiceMonitor scrape for Gatus is failing. Dashboard `gatus` and meta-alerts may be stale.
+              Check: kubectl -n status get svc,servicemonitor; kubectl -n status logs deploy/gatus
+
+        - alert: GatusPostgresInstancesMissing
+          expr: |
+            count(cnpg_collector_up{namespace="status"} == 1) < 2
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Gatus CNPG cluster has fewer than 2 healthy instances'
+            description: |
+              CloudNativePG cluster `status/gatus` expects 2 instances (primary + replica).
+              Check: kubectl -n status get cluster gatus; kubectl -n status get pods -l cnpg.io/cluster=gatus

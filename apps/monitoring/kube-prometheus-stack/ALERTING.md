@@ -148,6 +148,7 @@ Nach Deploy:
 | Alert | Erste Schritte |
 |-------|----------------|
 | DeploymentUnavailable / PodCrashLooping | `kubectl -n <ns> describe` / logs `--previous`; Image/Probe/Limits |
+| GatusDeploymentUnavailable / GatusScrapeDown / GatusPostgresInstancesMissing | `kubectl -n status get deploy,pods,cluster`; Secrets `gatus-env`/`gatus-db`; README Runbook |
 | ContainerOOMKilled | Memory Limit erhöhen; Leak prüfen |
 | PVENodeDown / PVEExporterDown | Node/Exporter-Host erreichbar? Credentials? |
 | PVEStorageAlmostFull | Storage aufräumen / erweitern auf Proxmox |

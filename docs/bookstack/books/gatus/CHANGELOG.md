@@ -1,5 +1,14 @@
 # Changelog — Buch Gatus
 
+## [1.2.0] - 2026-10-21
+
+### Changed
+
+- Stabilität: RollingUpdate, Ressourcen, Intervalle (1m/2m/5m), Pushover nach 4 Fehlern
+- SSO: Stirling erwartet 302 (wie übrige ForwardAuth-Dienste)
+- CNPG: 2 Instanzen, 2Gi; Overview-Badges für WUD und RustFS
+- Betrieb: Runbook-Verweis, Meta-Alerts, kein Multi-Replica für die App
+
 ## [1.1.1] - 2026-10-13
 
 ### Changed

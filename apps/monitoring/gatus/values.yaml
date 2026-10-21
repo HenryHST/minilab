@@ -2,13 +2,24 @@
 # Secrets stay in Secret gatus-env (Infra_LAB SecretSpec). Gatus substitutes ${VAR} at startup.
 # Chart ingress and sqlite persistence stay off: Traefik IngressRoute + CloudNativePG.
 
+# Chart hardcodes replicas: 1 (TwiN/helm-charts). Gatus has no leader election yet
+# (upstream #176 open) — do not scale the Deployment; duplicate checks/alerts.
 deployment:
-  strategy: Recreate
+  strategy: RollingUpdate
 
 image:
   repository: twinproduction/gatus
   tag: v5.37.0
   pullPolicy: IfNotPresent
+
+# Prefer Gatus under node pressure (PriorityClass in manifests/priorityclass.yaml).
+priorityClassName: gatus-prefer
+
+readinessProbe:
+  enabled: true
+
+livenessProbe:
+  enabled: true
 
 nodeSelector:
   worker: "true"
@@ -31,9 +42,9 @@ securityContext:
 resources:
   requests:
     cpu: 50m
-    memory: 128Mi
+    memory: 256Mi
   limits:
-    memory: 512Mi
+    memory: 768Mi
 
 ingress:
   enabled: false
@@ -56,6 +67,8 @@ envFrom:
 
 config:
   metrics: true
+  # Cap parallel checks so slow endpoints do not stampede the single replica.
+  concurrency: 5
   storage:
     type: postgres
     path: ${GATUS_DATABASE_URL}
@@ -78,6 +91,8 @@ config:
       group: homelab
       url: https://idp.stadthagen.dev
       interval: 1m
+      client:
+        timeout: 10s
       # Scale-to-0 backup windows (CronJobs authentik-backup-0230 / -1150)
       maintenance-windows:
         - start: "02:30"
@@ -90,13 +105,15 @@ config:
         - "[STATUS] == 200"
       alerts: &pushover
         - type: pushover
-          failure-threshold: 3
+          failure-threshold: 4
           success-threshold: 2
           send-on-resolved: true
     - name: it-tools
       group: homelab
       url: https://it-tools.stadthagen.dev
-      interval: 1m
+      interval: 2m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
@@ -104,6 +121,8 @@ config:
       group: homelab
       url: https://paperless.stadthagen.dev
       interval: 1m
+      client:
+        timeout: 10s
       # Own window (decoupled from Authentik Berlin backup slots)
       maintenance:
         start: "05:00"
@@ -116,6 +135,8 @@ config:
       group: homelab
       url: https://book.stadthagen.dev
       interval: 1m
+      client:
+        timeout: 10s
       maintenance:
         start: "04:00"
         duration: 30m
@@ -126,28 +147,36 @@ config:
     - name: omni-tools
       group: apps
       url: https://omni-tools.stadthagen.dev
-      interval: 1m
+      interval: 2m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
     - name: searxng
       group: apps
       url: https://searxng.stadthagen.dev
-      interval: 1m
+      interval: 2m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
     - name: drawio
       group: apps
       url: https://drawio.stadthagen.dev
-      interval: 1m
+      interval: 2m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
     - name: termix
       group: apps
       url: https://termix.stadthagen.dev
-      interval: 1m
+      interval: 2m
+      client:
+        timeout: 10s
       maintenance: &maint-0300
         start: "03:00"
         duration: 30m
@@ -158,7 +187,9 @@ config:
     - name: bytestash
       group: apps
       url: https://bytestash.stadthagen.dev
-      interval: 1m
+      interval: 2m
+      client:
+        timeout: 10s
       maintenance:
         start: "06:00"
         duration: 30m
@@ -169,7 +200,9 @@ config:
     - name: audiobookshelf
       group: apps
       url: https://audiobookshelf.stadthagen.dev
-      interval: 1m
+      interval: 2m
+      client:
+        timeout: 10s
       maintenance: *maint-0300
       conditions:
         - "[STATUS] == 200"
@@ -177,14 +210,18 @@ config:
     - name: homepage
       group: apps
       url: https://web.stadthagen.dev
-      interval: 1m
+      interval: 2m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
     - name: pgweb
       group: apps
       url: https://pgweb.stadthagen.dev/
-      interval: 1m
+      interval: 2m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
@@ -192,6 +229,8 @@ config:
       group: apps
       url: https://vaultwarden.stadthagen.dev/alive
       interval: 1m
+      client:
+        timeout: 10s
       maintenance-windows:
         - start: "02:00"
           duration: 30m
@@ -205,7 +244,9 @@ config:
     - name: karakeep
       group: apps
       url: https://karakeep.stadthagen.dev
-      interval: 1m
+      interval: 2m
+      client:
+        timeout: 10s
       maintenance:
         start: "07:00"
         duration: 30m
@@ -216,21 +257,27 @@ config:
     - name: kromgo
       group: apps
       url: https://kromgo.stadthagen.dev
-      interval: 1m
+      interval: 2m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
     - name: longhorn
       group: apps
       url: https://longhorn.stadthagen.dev
-      interval: 1m
+      interval: 2m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
     - name: headlamp
       group: apps
       url: https://headlamp.stadthagen.dev
-      interval: 1m
+      interval: 2m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
@@ -238,6 +285,8 @@ config:
       group: plattform
       url: https://grafana.stadthagen.dev/api/health
       interval: 1m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
@@ -245,6 +294,8 @@ config:
       group: plattform
       url: https://prometheus.stadthagen.dev/-/healthy
       interval: 1m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
@@ -252,6 +303,8 @@ config:
       group: plattform
       url: https://alert-manager.stadthagen.dev/-/healthy
       interval: 1m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
@@ -259,6 +312,8 @@ config:
       group: plattform
       url: https://loki.stadthagen.dev/loki/api/v1/status/buildinfo
       interval: 1m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
@@ -266,13 +321,17 @@ config:
       group: plattform
       url: https://argocd.stadthagen.dev/healthz
       interval: 1m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
     - name: wud
       group: plattform
       url: https://wupd.stadthagen.dev/health
-      interval: 1m
+      interval: 2m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
         - "has([BODY].uptime) == true"
@@ -280,12 +339,13 @@ config:
     - name: n8n
       group: sso
       url: https://n8n.stadthagen.dev
-      interval: 1m
+      interval: 2m
       maintenance:
         start: "03:30"
         duration: 30m
         timezone: UTC
       client:
+        timeout: 10s
         ignore-redirect: true
       conditions:
         - "[STATUS] == 302"
@@ -293,8 +353,9 @@ config:
     - name: hubble
       group: sso
       url: https://hubble.stadthagen.dev
-      interval: 1m
+      interval: 2m
       client:
+        timeout: 10s
         ignore-redirect: true
       conditions:
         - "[STATUS] == 302"
@@ -302,8 +363,9 @@ config:
     - name: registry-ui
       group: sso
       url: https://registry-ui.stadthagen.dev
-      interval: 1m
+      interval: 2m
       client:
+        timeout: 10s
         ignore-redirect: true
       conditions:
         - "[STATUS] == 302"
@@ -311,8 +373,9 @@ config:
     - name: stirling-pdf
       group: sso
       url: https://stirling-pdf.stadthagen.dev
-      interval: 1m
+      interval: 2m
       client:
+        timeout: 10s
         ignore-redirect: true
       conditions:
         # ForwardAuth (Authentik outpost) redirects unauthenticated clients to IdP
@@ -321,7 +384,9 @@ config:
     - name: rustfs
       group: storage
       url: http://192.168.0.107:9000/health
-      interval: 1m
+      interval: 2m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
@@ -329,27 +394,35 @@ config:
       group: storage
       url: https://rustfs.stadthagen.dev/rustfs/admin/v3/oidc/providers
       interval: 2m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
     - name: pangolin
       group: extern
       url: https://pangolin.stadthagen.dev
-      interval: 1m
+      interval: 5m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
     - name: mail
       group: extern
       url: https://mail.henrystadthagen.de
-      interval: 1m
+      interval: 5m
+      client:
+        timeout: 10s
       conditions:
         - "[STATUS] == 200"
       alerts: *pushover
     - name: mail-smtp
       group: extern
       url: tcp://mail.henrystadthagen.de:465
-      interval: 1m
+      interval: 5m
+      client:
+        timeout: 10s
       conditions:
         - "[CONNECTED] == true"
       alerts: *pushover

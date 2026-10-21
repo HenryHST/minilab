@@ -1,13 +1,13 @@
 ---
 title: Betrieb & Metrics
-book_version: "1.2.0"
+book_version: "1.3.0"
 ---
 
 # Betrieb & Metrics
 
 ## Exporter
 
-`sapcc/mosquitto-exporter` subscribed `$SYS/#` (User `mqtt-exporter` ∈ `mqtt_admins`) und exposiert `:9234/metrics`.
+`jryberg/mosquitto-exporter` (multi-arch amd64/arm64) subscribed `$SYS/#` (User `mqtt-exporter` ∈ `mqtt_admins`) und exposiert `:9234/metrics`. Hard Pod-Anti-Affinity: Exporter und Broker (`app=mosquitto`) laufen nicht auf demselben Node.
 
 Wichtige Prometheus-Namen (Topic → Gauge/Counter):
 

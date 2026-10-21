@@ -27,7 +27,7 @@ Service-Accounts (Authentik, Terraform): `mqtt-grafana`, `mqtt-exporter`, `mqtt-
 Zwei getrennte Grafana-Dashboards:
 
 1. **Mosquitto MQTT** — MQTT-Datasource, Live-Topics.
-2. **Mosquitto Broker ($SYS)** — Prometheus-Metriken `broker_*` vom sapcc-Exporter.
+2. **Mosquitto Broker ($SYS)** — Prometheus-Metriken `broker_*` vom jryberg/mosquitto-exporter (nicht auf Broker-Node).
 
 ## Smoke
 

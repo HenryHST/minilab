@@ -1,5 +1,6 @@
-# sapcc/mosquitto-exporter — scrapes Mosquitto $SYS/# → Prometheus :9234/metrics.
+# jryberg/mosquitto-exporter (sapcc fork, multi-arch amd64+arm64) — $SYS/# → :9234/metrics.
 # Needs mqtt-exporter LDAP user in mqtt_admins (superuser → $SYS) and sys_interval on the broker.
+# Hard anti-affinity: never co-locate with broker pods (app=mosquitto).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,13 +18,17 @@ spec:
       labels:
         app: mosquitto-exporter
     spec:
-      # sapcc/mosquitto-exporter is linux/amd64 only (no multi-arch manifest).
-      # No semver tag on the registry; pin the digest that was running as :latest.
-      nodeSelector:
-        kubernetes.io/arch: amd64
+      # Index digest for jryberg/mosquitto-exporter:v0.7.9 (linux/amd64 + linux/arm64).
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: mosquitto
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: exporter
-          image: sapcc/mosquitto-exporter@sha256:241570341cd144c27ca0952255a2726a4964b7397bfed93a98707b32eb06858c
+          image: jryberg/mosquitto-exporter@sha256:a68104c040a398426ee1f93187bdf9f66f482092cfcd51333462907d25c03550
           imagePullPolicy: IfNotPresent
           env:
             - name: BROKER_ENDPOINT

@@ -1,9 +1,11 @@
-# Cluster-scoped. Keeps the status page schedulable under mild node pressure.
-# Chart value: priorityClassName: gatus-prefer
+# Cluster-scoped. Must sync BEFORE the Helm Deployment references it
+# (multi-source Argo: Helm and extras apply in parallel without a wave).
 apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
 metadata:
   name: gatus-prefer
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
   labels:
     app.kubernetes.io/name: gatus
     app.kubernetes.io/part-of: gatus

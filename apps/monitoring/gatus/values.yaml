@@ -12,9 +12,9 @@ image:
   tag: v5.37.0
   pullPolicy: IfNotPresent
 
-# Prefer Gatus under node pressure (PriorityClass in manifests/priorityclass.yaml).
-priorityClassName: gatus-prefer
-
+# PriorityClass gatus-prefer exists (manifests/priorityclass.yaml, sync-wave -1) but is NOT
+# referenced here: multi-source Argo applied Helm before the PC existed → FailedCreate.
+# Re-enable priorityClassName only after confirming PC sync-wave ordering is reliable.
 readinessProbe:
   enabled: true
 

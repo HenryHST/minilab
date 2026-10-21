@@ -9,7 +9,9 @@ metadata:
   namespace: authentik
   annotations:
     argocd.argoproj.io/sync-options: Prune=false
-    argocd.argoproj.io/sync-wave: "1"
+    # Must precede Helm Deployments (wave 0). Wave 1 deadlocks: Argo waits for
+    # server/worker healthy, but they need authentik-pg-rw from this Cluster.
+    argocd.argoproj.io/sync-wave: "-1"
   labels:
     app.kubernetes.io/name: authentik
     app.kubernetes.io/part-of: authentik

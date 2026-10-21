@@ -4,5 +4,5 @@
 
 | Name | Home Assistant Name | Gerätetyp | Hersteller | Produktbild | Funkstandard | Stromversorgung | Batterie Formfaktor |
 |------|------|------|------|------|------|------|------|
-| GästeLicht | GästeLicht | Licht | SONOFF | — | Zigbee | Stromnetz | — |
-| Spiegellicht | Spiegellicht | Licht | Philips | — | Zigbee | Stromnetz | — |
+| GästeLicht | GästeLicht | Licht | SONOFF | ![GästeLicht](media/devices/sonoff-zbminil2.png) | Zigbee | Stromnetz | — |
+| Spiegellicht | Spiegellicht | Licht | Philips | ![Spiegellicht](media/devices/philips-hue-white-bulb.png) | Zigbee | Stromnetz | — |

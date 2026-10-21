@@ -36,6 +36,10 @@ Ops-/Architektur (Admin): [`../../../home-assistant/ha02.md`](../../../home-assi
 
 ## Changelog
 
+### 1.9.0 — 2026-10-21
+
+- **Produktbilder** lokal unter `media/devices/` (128px-PNG-Thumbnails); Tabellen 15–25 auf relative Pfade umgestellt (BookStack-Gallery-Import). Fehlende CDN-URLs ersetzt; zuvor bildlose Geräte ergänzt (außer WZ-Rollo/BTHome)
+
 ### 1.8.0 — 2026-10-19
 
 - **Geräteübersicht** aufgeteilt: Index mit Inhaltsverzeichnis; eigene Seiten pro Zimmer (16–25); „Ohne Raum“ bleibt auf dem Index

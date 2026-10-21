@@ -4,4 +4,4 @@
 
 | Name | Home Assistant Name | Gerätetyp | Hersteller | Produktbild | Funkstandard | Stromversorgung | Batterie Formfaktor |
 |------|------|------|------|------|------|------|------|
-| Serverschrank | Serverschrank | Sensor Temperatur/Feuchte | Aqara | ![Serverschrank](https://cdn.shopify.com/s/files/1/0511/3255/8216/products/aqara-temperature-humidity-sensor.png) | Zigbee | Batterie | CR2032 |
+| Serverschrank | Serverschrank | Sensor Temperatur/Feuchte | Aqara | ![Serverschrank](media/devices/aqara-temperature-humidity-sensor.png) | Zigbee | Batterie | CR2032 |

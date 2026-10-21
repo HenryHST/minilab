@@ -4,4 +4,4 @@
 
 | Name | Home Assistant Name | Gerätetyp | Hersteller | Produktbild | Funkstandard | Stromversorgung | Batterie Formfaktor |
 |------|------|------|------|------|------|------|------|
-| Klingel | Klingel | Klingel | eQ-3 | ![Klingel](https://www.eq-3.de/media/product/image/hmip-dsd-pcb.png) | Homematic | Stromnetz | — |
+| Klingel | Klingel | Klingel | eQ-3 | ![Klingel](media/devices/eq3-hmip-dsd-pcb.png) | Homematic | Stromnetz | — |

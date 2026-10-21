@@ -5,7 +5,7 @@
 
 image:
   repository: lscr.io/linuxserver/bookstack
-  tag: version-v26.09.1
+  tag: version-v26.09.2
   pullPolicy: IfNotPresent
 
 controller:

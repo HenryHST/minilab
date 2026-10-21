@@ -457,7 +457,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "count(longhorn_node_status{condition=\"ready\"} == 1) or vector(0)",
+              "expr": "count((longhorn_node_status{condition=\"ready\"} == 1) * on(node) group_left() (kube_node_labels{label_worker=\"true\"} == 1)) or vector(0)",
               "refId": "A",
               "instant": true,
               "range": false

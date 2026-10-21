@@ -46,11 +46,16 @@ NFS-Backup-CronJobs haben ein Fenster von 30 Minuten ab der Cron-Minute, Zeitzon
 
 Ein neuer Gatus-Check braucht ein Bild auf dieser Seite. Der Badge-Schlüssel ist `gruppe_name`, zum Beispiel `extern_mail-smtp`. Abschnitte: homelab, apps, plattform (inkl. WUD), sso, **storage** (RustFS), extern.
 
-### nXk3 cluster (Kromgo)
+### nXk3 cluster / pis (Kromgo)
 
-Oben auf der Übersicht: Abschnitt **nXk3 cluster** mit SVG-Badges von `kromgo.stadthagen.dev` (PromQL wie Grafana **nXk3 Node Health**): `nodes_ready`, `nodes_notready`, `disk_pressure`, `memory_pressure`, `root_free_min`, `longhorn_ready`, `cilium_unavailable`.
+Oben auf der Übersicht:
 
-Das sind **keine** Gatus-Endpoints — nur Einbettung. Kromgo ist LAN-only (ADR-0019). Alerts bleiben bei PrometheusRule `nxk3-node-stability`. Details: Infra_LAB Buch K3s → Observability Phase 4.
+| Abschnitt | Badges |
+|-----------|--------|
+| **nXk3 cluster** | `nodes_ready`, `nodes_notready`, `disk_pressure`, `memory_pressure`, `root_free_min`, `longhorn_ready`, `cilium_unavailable` |
+| **nXk3 pis** | `pi1cl_ready`, `pi2cl_ready`, `pi4cl_ready`, `pi7cl_ready` |
+
+`longhorn_ready` zählt nur Proxmox-Disk-Nodes (`worker=true`). Pis sind keine Longhorn-Disks und **keine** Gatus-HTTP-/ICMP-Endpoints (ADR-0034). Kromgo ist LAN-only (ADR-0019). Alerts: PrometheusRule `nxk3-node-stability`. Details: Infra_LAB Buch K3s → Observability Phase 4.
 
 ## Login
 

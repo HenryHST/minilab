@@ -59,9 +59,10 @@ data:
         valueExpr: string(result) + "%"
         colorExpr: 'colorScale(result, [20.0, 30.0], ["red", "orange", "green"])'
         icon: mdi:harddisk
+      # Proxmox disk nodes only (label worker=true). Pis are allowScheduling=false — exclude so a dead Pi does not turn LH red.
       - id: longhorn_ready
         title: LH Ready
-        query: 'count(longhorn_node_status{condition="ready"} == 1) or vector(0)'
+        query: 'count((longhorn_node_status{condition="ready"} == 1) * on(node) group_left() (kube_node_labels{label_worker="true"} == 1)) or vector(0)'
         valueExpr: string(int(result))
         colorExpr: 'colorScale(result, [1.0], ["red", "green"])'
         icon: mdi:database
@@ -71,3 +72,28 @@ data:
         valueExpr: string(int(result))
         colorExpr: 'colorScale(result, [1.0], ["green", "orange"])'
         icon: si:cilium
+      # Per-Pi Ready (not Gatus HTTP — Kromgo PromQL). 1=Ready, 0=NotReady/Unknown/missing.
+      - id: pi1cl_ready
+        title: pi1cl
+        query: 'max(kube_node_status_condition{node="pi1cl",condition="Ready",status="true"}) or vector(0)'
+        valueExpr: string(int(result))
+        colorExpr: 'colorScale(result, [1.0], ["red", "green"])'
+        icon: mdi:raspberry-pi
+      - id: pi2cl_ready
+        title: pi2cl
+        query: 'max(kube_node_status_condition{node="pi2cl",condition="Ready",status="true"}) or vector(0)'
+        valueExpr: string(int(result))
+        colorExpr: 'colorScale(result, [1.0], ["red", "green"])'
+        icon: mdi:raspberry-pi
+      - id: pi4cl_ready
+        title: pi4cl
+        query: 'max(kube_node_status_condition{node="pi4cl",condition="Ready",status="true"}) or vector(0)'
+        valueExpr: string(int(result))
+        colorExpr: 'colorScale(result, [1.0], ["red", "green"])'
+        icon: mdi:raspberry-pi
+      - id: pi7cl_ready
+        title: pi7cl
+        query: 'max(kube_node_status_condition{node="pi7cl",condition="Ready",status="true"}) or vector(0)'
+        valueExpr: string(int(result))
+        colorExpr: 'colorScale(result, [1.0], ["red", "green"])'
+        icon: mdi:harddisk

@@ -1,5 +1,15 @@
 # Changelog — Buch Gatus
 
+## [1.2.1] - 2026-10-21
+
+### Added
+
+- `/uebersicht` Abschnitt **nXk3 pis** (Kromgo `pi1cl_ready`…`pi7cl_ready`)
+
+### Changed
+
+- `longhorn_ready` auf Proxmox-Disk-Nodes beschränkt; Betriebstext zu Pi vs Longhorn
+
 ## [1.2.0] - 2026-10-21
 
 ### Changed

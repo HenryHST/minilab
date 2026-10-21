@@ -23,10 +23,11 @@ Prometheus metric badges on `https://kromgo.stadthagen.dev` (Argo app `kromgo`, 
 | `nodes_ready` / `nodes_notready` | kube-state Ready conditions (Phase 4) |
 | `disk_pressure` / `memory_pressure` | Node pressure counts |
 | `root_free_min` | Min root filesystem free % (alert threshold 20 %) |
-| `longhorn_ready` | Longhorn nodes with `longhorn_node_status{condition="ready"}` |
+| `longhorn_ready` | Longhorn Ready count on Proxmox disk nodes only (`worker=true`) |
 | `cilium_unavailable` | Cilium DaemonSet unavailable pods (`kube-system/cilium`) |
+| `pi1cl_ready` / `pi2cl_ready` / `pi4cl_ready` / `pi7cl_ready` | Per-Pi kube Ready (1=Ready / 0=Down) |
 
-Embedded on Gatus anonymous overview (`https://status.stadthagen.dev/uebersicht` → section **nXk3 cluster**). Kromgo is LAN-only (ADR-0019).
+Embedded on Gatus anonymous overview (`https://status.stadthagen.dev/uebersicht` → sections **nXk3 cluster** + **nXk3 pis**). Kromgo is LAN-only (ADR-0019). Pis are not Gatus HTTP/ICMP endpoints (ADR-0034).
 
 ## Verify
 
@@ -39,6 +40,8 @@ curl -kI https://kromgo.stadthagen.dev/badges/nodes_ready
 curl -kI https://kromgo.stadthagen.dev/badges/disk_pressure
 curl -kI https://kromgo.stadthagen.dev/badges/longhorn_ready
 curl -kI https://kromgo.stadthagen.dev/badges/cilium_unavailable
+curl -kI https://kromgo.stadthagen.dev/badges/pi1cl_ready
+curl -kI https://kromgo.stadthagen.dev/badges/pi7cl_ready
 ```
 
 After ConfigMap changes: `kubectl -n kromgo rollout restart deploy/kromgo` (subPath mount).

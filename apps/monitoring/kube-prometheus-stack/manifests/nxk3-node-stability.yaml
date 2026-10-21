@@ -84,19 +84,38 @@ spec:
               Often follows DiskPressure (managers Evicted). Check:
               kubectl -n longhorn-system get pods -l app=longhorn-manager -o wide
 
+        # Proxmox disk nodes only (label worker=true). Pis have allowScheduling=false and must
+        # not turn the Longhorn storage amp red when kubelet is down (NodeStatusUnknown).
         - alert: NXk3LonghornNodeNotReady
           expr: |
-            longhorn_node_status{condition="ready"} == 0
+            (longhorn_node_status{condition="ready"} == 0)
+              * on(node) group_left()
+              (kube_node_labels{label_worker="true"} == 1)
           for: 10m
           labels:
             severity: warning
             source: prometheus
           annotations:
-            summary: "Longhorn node {{ $labels.node }} not ready"
+            summary: "Longhorn disk node {{ $labels.node }} not ready"
             description: >-
-              Longhorn reports node {{ $labels.node }} condition ready=0.
-              Cross-check Kubernetes DiskPressure / ManagerPodDown:
+              Longhorn reports Proxmox worker {{ $labels.node }} condition ready=0.
+              Pis are excluded (no Longhorn disks). Cross-check DiskPressure / ManagerPodDown:
               kubectl -n longhorn-system get nodes.longhorn.io
+
+        # Pi agents (compute + pi7cl RustFS host) — separate from Longhorn disk amp.
+        - alert: NXk3PiNodeNotReady
+          expr: |
+            kube_node_status_condition{condition="Ready",status="true",node=~"pi[1247]cl"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: "Pi node {{ $labels.node }} not Ready"
+            description: >-
+              Raspberry Pi agent {{ $labels.node }} NotReady/Unknown >5m (power, net, or
+              k3s-agent). Not a Longhorn disk node. Runbook: node-stability.md;
+              identity fix: fix-pi-node-identity.yaml. pi7cl down also blocks RustFS backups.
 
         # Phase 2 — control-plane quorum (embedded etcd needs ≥2 Ready CPs under load)
         - alert: NXk3ControlPlaneQuorumRisk

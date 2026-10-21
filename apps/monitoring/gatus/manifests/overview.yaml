@@ -55,6 +55,12 @@ data:
       <img alt="root_free_min" src="https://kromgo.stadthagen.dev/badges/root_free_min">
       <img alt="longhorn_ready" src="https://kromgo.stadthagen.dev/badges/longhorn_ready">
       <img alt="cilium_unavailable" src="https://kromgo.stadthagen.dev/badges/cilium_unavailable">
+      <!-- Pi agents: Kromgo only (ADR-0034: no ICMP/node HTTP in Gatus). -->
+      <h2>nXk3 pis</h2>
+      <img alt="pi1cl_ready" src="https://kromgo.stadthagen.dev/badges/pi1cl_ready">
+      <img alt="pi2cl_ready" src="https://kromgo.stadthagen.dev/badges/pi2cl_ready">
+      <img alt="pi4cl_ready" src="https://kromgo.stadthagen.dev/badges/pi4cl_ready">
+      <img alt="pi7cl_ready" src="https://kromgo.stadthagen.dev/badges/pi7cl_ready">
       <h2>homelab</h2>
       <img alt="authentik" src="/api/v1/endpoints/homelab_authentik/health/badge.svg">
       <img alt="it-tools" src="/api/v1/endpoints/homelab_it-tools/health/badge.svg">

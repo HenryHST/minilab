@@ -4,26 +4,29 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-10-22
+
+**k8s-toolbox**, Cluster-weite **CVE-Hygiene** (Helper/CNPG/MariaDB), **cert-manager v1.21.2**, Trivy **0.37.0**, Authentik/Gatus HA-Härte, Podcraft, Image-Bumps. Begleit-Release Plattform: [Infra_LAB v1.16.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.16.0).
+
 ### Added
 
 - **k8s-toolbox** — `apps/ops/k8s-toolbox` (VERSION **1.0.0**, Dockerfile, GHA `k8s-toolbox-image.yml` → `ghcr.io/henryhst/k8s-toolbox`; lab mirror `registry.stadthagen.dev/ops/k8s-toolbox`).
+- **Podcraft** — k3s Workload-Control-Plane mit Pulse UI; HA-Beispielpaket; Authentik SSO für Browser-Workloads-API.
+- **Mosquitto** — multi-arch Exporter, Lab-Registry-Pull, Broker Anti-Affinity.
+- **Authentik** — dual NFS+S3 Backups; CNPG×2 / Redis STS / IM CPU; server HPA.
 
 ### Fixed
 
-- **CVE hygiene (GHSA-6q48-6c7w-9gw2 / CVE-2025-68121)** — replace `alpine/k8s:1.37.1` with `registry.stadthagen.dev/ops/k8s-toolbox:1.0.0` cluster-wide; pin CNPG Postgres to dated Oct-19 `standard-bookworm` tags (16/17/18); BookStack MariaDB / n8n Postgres gosu rebuilds (`*-gosu1`); backup CronJobs use CNPG image for `pg_dump`.
+- **CVE hygiene (GHSA-6q48-6c7w-9gw2 / CVE-2025-68121)** — `alpine/k8s` → `k8s-toolbox:1.0.0`; CNPG dated Oct-19 tags; BookStack MariaDB / n8n Postgres gosu rebuilds; backup CronJobs CNPG `pg_dump`.
+- CNPG/Authentik kritische CVEs; Gatus CNPG recover / PriorityClass; BookStack `AUTH_AUTO_INITIATE` OIDC-Race; Prometheus/Kromgo auf Proxmox-Workern.
 
 ### Changed
 
-- **cert-manager** — Helm **v1.21.2** (grpc **1.83.2**, clears CVE-2026-84304).
-- **Trivy Operator** — Helm-Chart **0.37.0** (app **0.35.0**), Trivy-Server-Image **0.76.0** (`trivy.image.tag`); BookStack-Buch v1.2.0 mit Upgrade-Kapitel.
-- **Longhorn CSI** — `longhornio/csi-provisioner` **v6.3.0**.
-- **Longhorn CSI** — `longhornio/csi-attacher` **v4.13.0** (image pin in values).
-- **Image bumps (batch 2)** — Newt `1.18.1`, Gatus `v5.37.0`, Vaultwarden `1.37.4`, Paperless `3.3.0`, k8s-sidecar `2.14.1`, MariaDB `11.8.9`, alpine/openssl `3.5.9`.
-- **Image bumps** — `jgraph/drawio:32.4.1`, Homepage `v2.5.0`, Audiobookshelf `2.37.1`, `alpine/k8s:1.37.1` (Jobs/GC/kubeconfig-user), kube-prometheus-stack Helm **92.0.0** (Operator `v0.94.1`, Grafana `13.2.3`).
-- **Grafana dashboards** — UniFi-Poller gnet Revisions `10` → `1` (grafana.com 404 auf init download-dashboards).
-- **Vaultwarden Restore-UI** — Image `vw-restore` **1.0.6** (Job-Image `alpine/k8s:1.37.1`).
-- **Vaultwarden Restore-UI** — Image `vw-restore` **1.0.5** (`VERSION` + Deployment `registry.stadthagen.dev/dev/vw-restore:1.0.5`); BookStack-Kapitel Backup/Restore mit Screenshots.
-- **Vaultwarden Restore-UI** — Starlette 1.7 `TemplateResponse` request-first (Fix Internal Server Error auf `/`).
+- **cert-manager** — Helm **v1.21.2** (grpc **1.83.2**, CVE-2026-84304).
+- **Trivy Operator** — Chart **0.37.0** / Trivy-Server **0.76.0**.
+- **Longhorn CSI** — provisioner **v6.3.0**, attacher **v4.13.0**.
+- Image bumps — Newt, Gatus, Vaultwarden, Paperless, drawio, Homepage, Audiobookshelf, WUD **9.5.0**, BookStack **v26.09.2**, kube-prometheus-stack **92.0.0**, u. a.
+- Vaultwarden Restore-UI `vw-restore` **1.0.5**/**1.0.6**.
 
 ## [0.14.0] - 2026-10-11
 

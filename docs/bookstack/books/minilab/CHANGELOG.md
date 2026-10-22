@@ -1,5 +1,12 @@
 # Changelog — Buch Minilab
 
+## [1.2.0] - 2026-10-22
+
+### Added
+
+- Apps & Hosts / Troubleshooting: **k8s-toolbox**, Cluster-CVE-Hygiene, cert-manager **v1.21.2**
+- Release-Verweis minilab **v0.15.0** · Infra_LAB **v1.16.0**
+
 ## [1.1.5] - 2026-10-17
 
 ### Added

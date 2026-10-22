@@ -1,9 +1,12 @@
 ---
 title: Apps & Hosts
-book_version: "1.1.2"
+book_version: "1.2.0"
+updated: "2026-10-22"
 ---
 
 # Apps & Hosts
+
+> **Buch** v1.2.0 · Stand: 2026-10-22
 
 Kurzübersicht der User-Apps (Details und Sync Waves: Root-README im Git-Repo).
 
@@ -31,4 +34,13 @@ Kurzübersicht der User-Apps (Details und Sync Waves: Root-README im Git-Repo).
 
 Workloads liegen unter `apps/{infra,monitoring,ops,dev}/` und werden von vier ApplicationSets verwaltet (ADR-0022). Ops-Notiz HA: [`../../../home-assistant/ha02.md`](../../../home-assistant/ha02.md).
 
-Release: minilab **v0.8.0** · Plattform Infra_LAB **v1.6.0**.
+## Ops-Images (Helper)
+
+| Image | Verwendung |
+|-------|------------|
+| `registry.stadthagen.dev/ops/k8s-toolbox:1.0.0` | Backup-/Restore-/GC-Jobs (ersetzt `alpine/k8s`) |
+| Jetstack cert-manager **v1.21.2** | TLS / DNS-01 (CVE-2026-84304 / grpc) |
+
+Build/CI: `apps/ops/k8s-toolbox/` · GHCR `ghcr.io/henryhst/k8s-toolbox`.
+
+Release: minilab **v0.15.0** · Plattform Infra_LAB **v1.16.0**.

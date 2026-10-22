@@ -16,6 +16,9 @@ spec:
         app: vaultwarden-restore-ui
     spec:
       serviceAccountName: vaultwarden-restore
+      # Image is amd64-only (Forgejo Actions on w06)
+      nodeSelector:
+        kubernetes.io/arch: amd64
       imagePullSecrets:
         - name: registry-pull
       securityContext:
@@ -27,8 +30,8 @@ spec:
           type: RuntimeDefault
       containers:
         - name: restore-ui
-          # semver: 1.0.9 (ghcr.io/henryhst/vw-restore:1.0.9)
-          image: git.stadthagen.dev/dev/vw-restore@sha256:4a251ce4ea047262b051b8e061b268037ed3a71e0a7c1c5584daee8a7fb80385
+          # semver: 1.0.9 (git.stadthagen.dev/dev/vw-restore:1.0.9)
+          image: git.stadthagen.dev/dev/vw-restore@sha256:88e7f27568d982660813b13a073d8e04948ff71aae91e8e302486c8de78c98c9
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

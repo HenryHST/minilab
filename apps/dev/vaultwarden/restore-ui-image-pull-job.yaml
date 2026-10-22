@@ -1,6 +1,6 @@
 # PreSync: pull/verify lab registry image before restore-ui Deploy applies.
 # Keep image: in sync with restore-ui-deployment.yaml (same digest).
-# Mirror from GHCR first — see restore-ui/README.md ("Mirror to lab registry").
+# SoT build: https://git.stadthagen.dev/dev/vw-restore (linux/amd64).
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -23,6 +23,9 @@ spec:
         app: vw-restore-image-pull
     spec:
       restartPolicy: Never
+      # Image is amd64-only (Forgejo Actions on w06); avoid Pi arm64 ImagePullBackOff
+      nodeSelector:
+        kubernetes.io/arch: amd64
       imagePullSecrets:
         - name: registry-pull
       securityContext:
@@ -35,8 +38,8 @@ spec:
       containers:
         - name: pull
           # Keep in sync with restore-ui-deployment.yaml
-          # semver: 1.0.9 (ghcr.io/henryhst/vw-restore:1.0.9)
-          image: git.stadthagen.dev/dev/vw-restore@sha256:4a251ce4ea047262b051b8e061b268037ed3a71e0a7c1c5584daee8a7fb80385
+          # semver: 1.0.9 (git.stadthagen.dev/dev/vw-restore:1.0.9)
+          image: git.stadthagen.dev/dev/vw-restore@sha256:88e7f27568d982660813b13a073d8e04948ff71aae91e8e302486c8de78c98c9
           imagePullPolicy: Always
           command: ["true"]
           resources:

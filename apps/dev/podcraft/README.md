@@ -2,11 +2,14 @@
 
 k3s workload control plane for minilab (Pulse UI).
 
-- Image: `ghcr.io/henryhst/podcraft:<semver>` (GHCR — lab registry is LAN-only)
-- SemVer: file [`VERSION`](VERSION); optional git tag `podcraft-vX.Y.Z` or workflow_dispatch override
+- Lab image (SoT): `git.stadthagen.dev/dev/podcraft:<semver>`
+- Forgejo repo: https://git.stadthagen.dev/dev/podcraft (`.forgejo/workflows/image.yml`)
+- Optional GHCR: `ghcr.io/henryhst/podcraft` (dispatch-only GHA)
+- SemVer: file [`VERSION`](VERSION); Forgejo tag `vX.Y.Z` or workflow_dispatch override
 - Runtime host: `https://podcraft.stadthagen.dev`
-- Build: GitHub Actions [podcraft-image.yml](../../../.github/workflows/podcraft-image.yml)
 - OpenAPI: `/openapi.json`, Swagger `/docs` (behind ForwardAuth)
+
+App sources + Dockerfile live in the Forgejo repo; K8s manifests stay here under `apps/dev/podcraft/`.
 
 ## Features
 
@@ -28,14 +31,6 @@ k3s workload control plane for minilab (Pulse UI).
 | `PODCRAFT_WORKLOADS_FILE` | `/config/workloads.json` | Workload registry |
 | `PODCRAFT_SCHEDULE_*` | see Deployment | Schedule window |
 | `PODCRAFT_DRY_RUN` | `false` | In-memory scale (local) |
-
-## Mirror to lab registry
-
-```bash
-VER=$(tr -d '[:space:]' < VERSION)
-crane copy "ghcr.io/henryhst/podcraft:${VER}" "registry.stadthagen.dev/dev/podcraft:${VER}"
-# Prefer digest pin in deployment.yaml + image-pull-job.yaml after first release
-```
 
 ## Local dry-run
 

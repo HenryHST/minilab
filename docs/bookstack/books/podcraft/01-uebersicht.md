@@ -11,7 +11,7 @@ Control plane für k3s-Workloads im minilab (Issue [#146](https://github.com/Hen
 |---|---|
 | Host | `https://podcraft.stadthagen.dev` |
 | Namespace | `podcraft` |
-| Image | `ghcr.io/henryhst/podcraft` → `registry.stadthagen.dev/dev/podcraft` |
+| Image | `ghcr.io/henryhst/podcraft` → `git.stadthagen.dev/dev/podcraft` |
 | UI | Pulse (Schedule-Band, Hell/Dunkel, DE/EN, Log-Widget, animierter Herzschlag) |
 | Auth | Authentik ForwardAuth (UI) + HTTP Basic für HA (`PODCRAFT_AUTH_MODE=both`), Gruppe `podcraft_admins` |
 

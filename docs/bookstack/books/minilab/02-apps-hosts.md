@@ -38,7 +38,7 @@ Workloads liegen unter `apps/{infra,monitoring,ops,dev}/` und werden von vier Ap
 
 | Image | Verwendung |
 |-------|------------|
-| `registry.stadthagen.dev/ops/k8s-toolbox:1.0.0` | Backup-/Restore-/GC-Jobs (ersetzt `alpine/k8s`) |
+| `git.stadthagen.dev/ops/k8s-toolbox:1.0.0` | Backup-/Restore-/GC-Jobs (ersetzt `alpine/k8s`) |
 | Jetstack cert-manager **v1.21.2** | TLS / DNS-01 (CVE-2026-84304 / grpc) |
 
 Build/CI: `apps/ops/k8s-toolbox/` · GHCR `ghcr.io/henryhst/k8s-toolbox`.

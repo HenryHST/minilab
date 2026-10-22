@@ -1,18 +1,9 @@
 name: vw-restore image
 
-# Image: ghcr.io/henryhst/vw-restore (multi-arch: linux/amd64, linux/arm64)
-# SemVer source of truth: apps/dev/vaultwarden/restore-ui/VERSION
-# Optional override: workflow_dispatch input tag, or git tag vw-restore-vX.Y.Z
-# Secure build: BuildKit provenance + SBOM, Trivy CRITICAL/HIGH gate, Cosign keyless OIDC
+# Lab SoT: https://git.stadthagen.dev/dev/vw-restore (.forgejo/workflows/image.yml)
+# → git.stadthagen.dev/dev/vw-restore. This GHA workflow is dispatch-only (optional GHCR).
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "apps/dev/vaultwarden/restore-ui/**"
-      - ".github/workflows/vw-restore-image.yml"
-    tags:
-      - "vw-restore-v*"
   workflow_dispatch:
     inputs:
       tag:

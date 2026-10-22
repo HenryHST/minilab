@@ -7,7 +7,13 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - **Forgejo** — `apps/dev/forgejo` (Helm chart 17.3.1, app **16.0.6**): Git + Lab OCI registry, Traefik IngressRoute `git.stadthagen.dev`, backup CronJob → RustFS, Actions runner on `nxk3-w06`, Affinity w05/w06; AppSet `dev` wave 3.
+- **Image repos (Forgejo)** — SoT builds: `dev/vw-restore`, `ops/k8s-toolbox`, `dev/podcraft` → `git.stadthagen.dev/{dev,ops}/…` via Actions (label `docker`).
 - **pangolin-publish** — `git-ext` resource prepared with `enabled: false`.
+
+### Changed
+
+- **Image refs** — consumers of `k8s-toolbox`, `vw-restore`, `podcraft` pull from `git.stadthagen.dev/…` (was `registry.stadthagen.dev/…`).
+- **GHA image workflows** — `k8s-toolbox-image`, `vw-restore-image`, `podcraft-image` are `workflow_dispatch` only (lab SoT = Forgejo).
 
 ### Removed
 
@@ -19,7 +25,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **k8s-toolbox** — `apps/ops/k8s-toolbox` (VERSION **1.0.0**, Dockerfile, GHA `k8s-toolbox-image.yml` → `ghcr.io/henryhst/k8s-toolbox`; lab mirror `registry.stadthagen.dev/ops/k8s-toolbox`).
+- **k8s-toolbox** — `apps/ops/k8s-toolbox` (VERSION **1.0.0**, Dockerfile, GHA `k8s-toolbox-image.yml` → `ghcr.io/henryhst/k8s-toolbox`; lab mirror `git.stadthagen.dev/ops/k8s-toolbox`).
 - **Podcraft** — k3s Workload-Control-Plane mit Pulse UI; HA-Beispielpaket; Authentik SSO für Browser-Workloads-API.
 - **Mosquitto** — multi-arch Exporter, Lab-Registry-Pull, Broker Anti-Affinity.
 - **Authentik** — dual NFS+S3 Backups; CNPG×2 / Redis STS / IM CPU; server HPA.

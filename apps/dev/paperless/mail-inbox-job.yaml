@@ -19,7 +19,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: mail-inbox
-          image: registry.stadthagen.dev/ops/k8s-toolbox:1.0.0
+          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.0
           env:
             - name: IMAP_PASSWORD
               valueFrom:

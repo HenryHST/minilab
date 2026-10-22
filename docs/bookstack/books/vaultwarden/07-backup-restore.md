@@ -46,7 +46,7 @@ kubectl -n vaultwarden logs -f job/vw-backup-manual
 |--|--|
 | URL | https://vw-restore.stadthagen.dev (LAN, kein Pangolin) |
 | Auth | Authentik ForwardAuth, Gruppe `vaultwarden_admins` |
-| Image | Digest-Pin Lab-Registry `registry.stadthagen.dev/dev/vw-restore@sha256:…` (SemVer `1.0.6`; GHCR `ghcr.io/henryhst/vw-restore`) |
+| Image | Digest-Pin Lab-Registry `git.stadthagen.dev/dev/vw-restore@sha256:…` (SemVer `1.0.6`; GHCR `ghcr.io/henryhst/vw-restore`) |
 | Quelle | `apps/dev/vaultwarden/restore-ui/` (Dockerfile + OCI Labels) |
 | Build | GHA → Tags `X.Y.Z`, `X.Y`, `X`, `latest`, `sha-*`; Provenance + SBOM; Cosign keyless; Trivy CRITICAL/HIGH |
 | Default | Archiv **latest** (neuestes nach mtime) |

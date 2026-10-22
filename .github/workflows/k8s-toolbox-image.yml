@@ -1,18 +1,9 @@
 name: k8s-toolbox image
 
-# Image: ghcr.io/henryhst/k8s-toolbox (multi-arch: linux/amd64, linux/arm64)
-# SemVer source of truth: apps/ops/k8s-toolbox/VERSION
-# Optional override: workflow_dispatch input tag, or git tag k8s-toolbox-vX.Y.Z
-# Mirror to lab registry after CI: crane copy → registry.stadthagen.dev/ops/k8s-toolbox
+# Lab SoT: https://git.stadthagen.dev/ops/k8s-toolbox (.forgejo/workflows/image.yml)
+# → git.stadthagen.dev/ops/k8s-toolbox. This GHA workflow is dispatch-only (optional GHCR).
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "apps/ops/k8s-toolbox/**"
-      - ".github/workflows/k8s-toolbox-image.yml"
-    tags:
-      - "k8s-toolbox-v*"
   workflow_dispatch:
     inputs:
       tag:

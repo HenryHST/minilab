@@ -28,7 +28,7 @@ spec:
       containers:
         - name: restore-ui
           # semver: 1.0.9 (ghcr.io/henryhst/vw-restore:1.0.9)
-          image: registry.stadthagen.dev/dev/vw-restore@sha256:4a251ce4ea047262b051b8e061b268037ed3a71e0a7c1c5584daee8a7fb80385
+          image: git.stadthagen.dev/dev/vw-restore@sha256:4a251ce4ea047262b051b8e061b268037ed3a71e0a7c1c5584daee8a7fb80385
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

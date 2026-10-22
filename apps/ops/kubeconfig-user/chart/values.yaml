@@ -30,7 +30,7 @@ kubeconfigJob:
   enabled: true
   secretName: kubeconfig-user-kubeconfig
   # Lab toolbox (bash+kubectl+certifi); replaces alpine/k8s for GHSA-6q48 / CVE-2025-68121
-  image: registry.stadthagen.dev/ops/k8s-toolbox:1.0.0
+  image: git.stadthagen.dev/ops/k8s-toolbox:1.0.0
   imagePullSecrets:
     - name: registry-pull
   imagePullPolicy: IfNotPresent

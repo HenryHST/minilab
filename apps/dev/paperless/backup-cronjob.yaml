@@ -88,7 +88,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: trigger-backup
-              image: registry.stadthagen.dev/ops/k8s-toolbox:1.0.0
+              image: git.stadthagen.dev/ops/k8s-toolbox:1.0.0
               env:
                 - name: PGHOST
                   value: paperless-pg-rw

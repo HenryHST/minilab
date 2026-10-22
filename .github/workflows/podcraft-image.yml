@@ -1,18 +1,9 @@
 name: podcraft image
 
-# Image: ghcr.io/henryhst/podcraft (multi-arch: linux/amd64, linux/arm64)
-# SemVer source of truth: apps/dev/podcraft/VERSION
-# Optional override: workflow_dispatch input tag, or git tag podcraft-vX.Y.Z
-# Secure build: BuildKit provenance + SBOM, Trivy CRITICAL/HIGH gate, Cosign keyless OIDC
+# Lab SoT: https://git.stadthagen.dev/dev/podcraft (.forgejo/workflows/image.yml)
+# → git.stadthagen.dev/dev/podcraft. This GHA workflow is dispatch-only (optional GHCR).
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "apps/dev/podcraft/**"
-      - ".github/workflows/podcraft-image.yml"
-    tags:
-      - "podcraft-v*"
   workflow_dispatch:
     inputs:
       tag:

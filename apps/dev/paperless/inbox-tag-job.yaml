@@ -20,7 +20,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: inbox-tag
-          image: registry.stadthagen.dev/ops/k8s-toolbox:1.0.0
+          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.0
           command:
             - /bin/bash
             - -c

@@ -93,10 +93,12 @@ spec:
                 exit 1
               fi
               while true; do
+                # Job image must include docker CLI (node:* does not) — DinD is reached via DOCKER_HOST TLS
                 forgejo-runner register --no-interactive \
                   --token "${RUNNER_SECRET}" \
                   --name "${RUNNER_NAME}" \
-                  --instance "${FORGEJO_INSTANCE_URL}" && break
+                  --instance "${FORGEJO_INSTANCE_URL}" \
+                  --labels "docker:docker://docker:27.5.1-cli" && break
                 echo "register failed; retry in 5s"
                 sleep 5
               done

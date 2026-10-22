@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Forgejo** — `apps/dev/forgejo` (Helm chart 17.3.1, app **16.0.6**): Git + Lab OCI registry, Traefik IngressRoute `git.stadthagen.dev`, backup CronJob → RustFS, Actions runner on `nxk3-w06`, Affinity w05/w06; AppSet `dev` wave 3.
+- **pangolin-publish** — `git-ext` resource prepared with `enabled: false`.
+
+### Removed
+
+- **Distribution registry / registry-ui** — removed from AppSet `ops` (cutover to Forgejo; ADR-0027 / Infra_LAB).
+
 ## [0.15.0] - 2026-10-22
 
 **k8s-toolbox**, Cluster-weite **CVE-Hygiene** (Helper/CNPG/MariaDB), **cert-manager v1.21.2**, Trivy **0.37.0**, Authentik/Gatus HA-Härte, Podcraft, Image-Bumps. Begleit-Release Plattform: [Infra_LAB v1.16.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.16.0).

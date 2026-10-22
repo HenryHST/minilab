@@ -31,14 +31,8 @@ spec:
             helmVersion: "0.37.0"
             helmReleaseName: trivy-operator
             helmValuesFile: apps/ops/trivy-operator/values.yaml
-          - app: registry
-            path: apps/ops/registry
-            namespace: kube-system
-            syncWave: "0"
-          - app: registry-ui
-            path: apps/ops/registry-ui/manifests
-            namespace: registry-ui
-            syncWave: "0"
+          # Distribution registry + UI decommissioned — Lab OCI is Forgejo (apps/dev/forgejo).
+          # - app: registry / registry-ui (kept on disk for cutover; pruned by Argo once removed here)
           - app: newt
             namespace: newt
             syncWave: "0"

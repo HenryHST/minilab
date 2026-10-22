@@ -9,7 +9,7 @@
 | Image | `getwud/wud:9.5.0` (digest-pinned) |
 | Auth | WUD-native OIDC → Authentik provider `wupd`; `wupd_admins` = admin, `wupd_users` = read-only, everyone else denied |
 | Watcher | `kubernetes.nxk3` — in-cluster ServiceAccount, all namespaces, daily 06:00 (Europe/Berlin) |
-| Registries | Docker Hub/GHCR/Quay (built-in) + `custom.nxk3` → `https://registry.stadthagen.dev` (user `registry`) |
+| Registries | Docker Hub/GHCR/Quay (built-in) + `custom.nxk3` → `https://git.stadthagen.dev` (Forgejo; user from `REGISTRY_USER`) |
 | Triggers | `pushover.nxk3` (one message per update) + `mqtt.mosquitto` (`wud/container/#`, Home Assistant discovery) |
 | Storage | PVC `wud-store` 1Gi Longhorn → `/store` |
 | Metrics | `/metrics` via ServiceMonitor `wud` (not exposed on the IngressRoute) |

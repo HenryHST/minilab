@@ -1,0 +1,138 @@
+# Forgejo v16.0.6 — chart 17.3.1 (chart version ≠ app version)
+# Image pin: codeberg.org/forgejo/forgejo:16.0.6
+# Regenerieren / Diff:
+#   helm template forgejo oci://code.forgejo.org/forgejo-helm/forgejo --version 17.3.1 \
+#     -f values.yaml --namespace forgejo
+
+image:
+  registry: codeberg.org
+  rootless: true
+  repository: forgejo/forgejo
+  tag: "16.0.6"
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+strategy:
+  type: Recreate
+
+# App + registry blobs on Longhorn; pin to Forgejo workers (w05/w06).
+deployment:
+  env:
+    - name: TZ
+      value: Europe/Berlin
+  labels: {}
+  annotations: {}
+
+# Chart uses deployment affinity via nodeSelector on gitea pod — set under gitea
+# and also top-level if supported; use affinity for hostname In.
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - nxk3-w05
+                - nxk3-w06
+
+persistence:
+  enabled: true
+  size: 50Gi
+  storageClass: longhorn
+  accessModes:
+    - ReadWriteOnce
+
+service:
+  http:
+    type: ClusterIP
+    port: 3000
+  ssh:
+    # LAN Git over SSH later via LB if needed; HTTP/HTTPS primary for v1
+    type: ClusterIP
+    port: 22
+
+ingress:
+  enabled: false
+
+# SQLite for v1 — CNPG cutover prepared via commented postgres block (see README).
+postgresql-ha:
+  enabled: false
+postgresql:
+  enabled: false
+valkey-cluster:
+  enabled: false
+valkey:
+  enabled: false
+
+gitea:
+  admin:
+    existingSecret: forgejo-admin
+    usernameKey: username
+    passwordKey: password
+    emailKey: email
+  oauth:
+    - name: authentik
+      provider: openidConnect
+      key: forgejo
+      existingSecret: forgejo-oauth
+      autoDiscoverUrl: https://idp.stadthagen.dev/application/o/forgejo/.well-known/openid-configuration
+      scopes: openid email profile
+      groupClaimName: groups
+      adminGroup: forgejo_admins
+  config:
+    APP_NAME: Stadthagen Git
+    server:
+      DOMAIN: git.stadthagen.dev
+      ROOT_URL: https://git.stadthagen.dev/
+      SSH_DOMAIN: git.stadthagen.dev
+      DISABLE_SSH: true
+      LANDING_PAGE: login
+    database:
+      DB_TYPE: sqlite3
+    # CNPG prep (do not enable until migration):
+    # database:
+    #   DB_TYPE: postgres
+    #   HOST: forgejo-pg-rw.forgejo.svc.cluster.local:5432
+    #   NAME: forgejo
+    #   USER: forgejo
+    #   PASSWD: via additionalConfigSources secret forgejo-db
+    repository:
+      ENABLE_PUSH_CREATE_USER: true
+      ENABLE_PUSH_CREATE_ORG: true
+      DEFAULT_PUSH_CREATE_PRIVATE: true
+    packages:
+      ENABLED: true
+    service:
+      DISABLE_REGISTRATION: true
+      ALLOW_ONLY_EXTERNAL_REGISTRATION: true
+      SHOW_REGISTRATION_BUTTON: false
+      ENABLE_PASSWORD_SIGNIN_FORM: false
+    openid:
+      ENABLE_OPENID_SIGNIN: false
+      ENABLE_OPENID_SIGNUP: false
+    oauth2_client:
+      ENABLE_AUTO_REGISTRATION: true
+      ACCOUNT_LINKING: auto
+      USERNAME: email
+    mailer:
+      ENABLED: true
+      PROTOCOL: smtps
+      SMTP_ADDR: mail.henrystadthagen.de
+      SMTP_PORT: "465"
+      FROM: auto@henrystadthagen.de
+      USER: auto@henrystadthagen.de
+    indexer:
+      REPO_INDEXER_ENABLED: true
+  additionalConfigFromEnvs:
+    - name: FORGEJO__MAILER__PASSWD
+      valueFrom:
+        secretKeyRef:
+          name: forgejo-smtp
+          key: password
+  metrics:
+    enabled: false
+
+# Actions runner is a separate Deployment in this folder (nodeSelector nxk3-w06).

@@ -88,6 +88,20 @@ data:
           "method": "http"
         }
       },
+      "forgejo": {
+        "enabled": false,
+        "name": "git-ext.stadthagen.dev",
+        "niceId": "git-ext",
+        "subdomain": "git-ext",
+        "ssl": true,
+        "sso": false,
+        "dns": true,
+        "target": {
+          "ip": "forgejo-http.forgejo.svc.cluster.local",
+          "port": 3000,
+          "method": "http"
+        }
+      },
       "idp": {
         "enabled": true,
         "name": "idp.stadthagen.dev",

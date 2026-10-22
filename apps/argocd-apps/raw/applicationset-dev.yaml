@@ -79,6 +79,16 @@ spec:
             path: apps/dev/podcraft
             namespace: podcraft
             syncWave: "3"
+          - app: forgejo
+            path: apps/dev/forgejo
+            namespace: forgejo
+            syncWave: "3"
+            helmRepo: oci://code.forgejo.org/forgejo-helm
+            helmChart: forgejo
+            helmVersion: "17.3.1"
+            helmReleaseName: forgejo
+            helmValuesFile: apps/dev/forgejo/values.yaml
+            extras: true
   template:
     metadata:
       name: "{{ .app }}"

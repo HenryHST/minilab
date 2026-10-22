@@ -52,9 +52,9 @@ spec:
               value: "true"
             - name: WUD_WATCHER_KUBERNETES_NXK3_WATCHBYDEFAULT
               value: "true"
-            # Internal registry — host must match image refs (registry.stadthagen.dev/...)
+            # Lab registry — Forgejo OCI (git.stadthagen.dev); login from wud-env / REGISTRY_*
             - name: WUD_REGISTRY_CUSTOM_NXK3_URL
-              value: https://registry.stadthagen.dev
+              value: https://git.stadthagen.dev
             - name: WUD_REGISTRY_CUSTOM_NXK3_LOGIN
               value: registry
             # Pushover (token/user from wud-env); one message per update, like Gatus defaults

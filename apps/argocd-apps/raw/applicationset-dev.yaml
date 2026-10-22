@@ -83,8 +83,9 @@ spec:
             path: apps/dev/forgejo
             namespace: forgejo
             syncWave: "3"
-            # Full OCI path required — Argo resolves oci://…/forgejo-helm + chart as forgejo-helm:TAG (missing /forgejo).
+            # Native OCI (Argo ≥3.1): full oci://…/chart + path: . (not chart:). Mixing oci:// with chart: fails.
             helmRepo: oci://code.forgejo.org/forgejo-helm/forgejo
+            helmOci: true
             helmVersion: "17.3.1"
             helmReleaseName: forgejo
             helmValuesFile: apps/dev/forgejo/values.yaml
@@ -174,7 +175,9 @@ spec:
     spec:
       sources:
         - repoURL: {{ .helmRepo }}
-          {{- if dig "helmChart" "" . }}
+          {{- if dig "helmOci" false . }}
+          path: {{ dig "helmPath" "." . }}
+          {{- else }}
           chart: {{ .helmChart }}
           {{- end }}
           targetRevision: {{ .helmVersion }}

@@ -32,6 +32,7 @@ RUN apk add --no-cache \
       git \
       gzip \
       jq \
+      wget \
       mariadb-client \
       postgresql-client \
       python3 \

@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **cert-manager** — Helm **v1.21.2** (grpc **1.83.2**, clears CVE-2026-84304).
 - **Trivy Operator** — Helm-Chart **0.37.0** (app **0.35.0**), Trivy-Server-Image **0.76.0** (`trivy.image.tag`); BookStack-Buch v1.2.0 mit Upgrade-Kapitel.
 - **Longhorn CSI** — `longhornio/csi-provisioner` **v6.3.0**.
 - **Longhorn CSI** — `longhornio/csi-attacher` **v4.13.0** (image pin in values).

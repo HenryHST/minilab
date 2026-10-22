@@ -16,7 +16,7 @@ spec:
             syncWave: "0"
             helmRepo: https://charts.jetstack.io
             helmChart: cert-manager
-            helmVersion: v1.21.1
+            helmVersion: v1.21.2
             helmReleaseName: cert-manager
             helmValuesFile: apps/ops/cert-manager/values.yaml
           - app: cert-manager-webhook-hetzner

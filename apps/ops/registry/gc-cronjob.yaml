@@ -26,12 +26,14 @@ spec:
             app.kubernetes.io/name: kube-registry
             app.kubernetes.io/component: maintenance
         spec:
+          imagePullSecrets:
+            - name: registry-pull
           restartPolicy: Never
           serviceAccountName: kube-registry-gc
           containers:
             - name: gc
               # NOT registry.k8s.io/kubectl: distroless (no bash) → StartError.
-              image: docker.io/alpine/k8s:1.37.1@sha256:712dc5385d1c1a3f83b747fa9e40f64d433a97f72ff42f9755ff7dd1f62846e4
+              image: registry.stadthagen.dev/ops/k8s-toolbox:1.0.0
               command: [/bin/bash, -euo, pipefail, -c]
               args:
                 - /opt/repo-scripts/run-garbage-collection.sh

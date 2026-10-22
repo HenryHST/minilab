@@ -17,7 +17,7 @@ metadata:
     app.kubernetes.io/component: postgresql
 spec:
   instances: 1
-  imageName: ghcr.io/cloudnative-pg/postgresql:18
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.6-202610190957-standard-bookworm
   # Server TLS from cert-manager (cnpg-certificates.yaml); client/replication stay operator-managed.
   certificates:
     serverCASecret: paperless-pg-server-tls

@@ -35,11 +35,13 @@ spec:
       # Pin to one Proxmox worker — Longhorn currently has insufficient disk for new volumes
       nodeSelector:
         kubernetes.io/hostname: nxk3-w01
+      imagePullSecrets:
+        - name: registry-pull
       securityContext:
         fsGroup: 999
       containers:
         - name: postgres
-          image: postgres:16-alpine
+          image: registry.stadthagen.dev/dev/postgres:16.15-alpine-gosu1
           imagePullPolicy: IfNotPresent
           ports:
             - name: postgres

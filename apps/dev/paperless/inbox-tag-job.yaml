@@ -15,10 +15,12 @@ spec:
     spec:
       # Reuse backup-runner RBAC (pods get/list + pods/exec)
       serviceAccountName: backup-runner
+      imagePullSecrets:
+        - name: registry-pull
       restartPolicy: OnFailure
       containers:
         - name: inbox-tag
-          image: alpine/k8s:1.37.1
+          image: registry.stadthagen.dev/ops/k8s-toolbox:1.0.0
           command:
             - /bin/bash
             - -c

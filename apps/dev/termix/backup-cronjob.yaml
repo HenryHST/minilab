@@ -50,7 +50,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: pg-dump
-              image: postgres:16-alpine
+              image: ghcr.io/cloudnative-pg/postgresql:16.15-202610190958-standard-bookworm
               imagePullPolicy: IfNotPresent
               env:
                 - name: PGHOST

@@ -18,10 +18,12 @@ spec:
       labels:
         app: audiobookshelf-email
     spec:
+      imagePullSecrets:
+        - name: registry-pull
       restartPolicy: OnFailure
       containers:
         - name: email
-          image: alpine/k8s:1.37.1
+          image: registry.stadthagen.dev/ops/k8s-toolbox:1.0.0
           env:
             - name: ABS_URL
               value: http://audiobookshelf.audiobookshelf.svc.cluster.local

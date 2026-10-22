@@ -25,6 +25,10 @@ spec:
     spec:
       restartPolicy: OnFailure
       serviceAccountName: {{ include "kubeconfig-user.jobSaName" . }}
+      {{- with .Values.kubeconfigJob.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: write-kubeconfig
           image: {{ .Values.kubeconfigJob.image | quote }}

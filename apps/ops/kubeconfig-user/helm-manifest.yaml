@@ -168,9 +168,11 @@ spec:
     spec:
       restartPolicy: OnFailure
       serviceAccountName: kubeconfig-user-job
+      imagePullSecrets:
+        - name: registry-pull
       containers:
         - name: write-kubeconfig
-          image: "docker.io/alpine/k8s:1.37.1"
+          image: "registry.stadthagen.dev/ops/k8s-toolbox:1.0.0"
           imagePullPolicy: IfNotPresent
           env:
             - name: NAMESPACE

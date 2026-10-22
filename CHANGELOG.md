@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **k8s-toolbox** — `apps/ops/k8s-toolbox` (VERSION **1.0.0**, Dockerfile, GHA `k8s-toolbox-image.yml` → `ghcr.io/henryhst/k8s-toolbox`; lab mirror `registry.stadthagen.dev/ops/k8s-toolbox`).
+
+### Fixed
+
+- **CVE hygiene (GHSA-6q48-6c7w-9gw2 / CVE-2025-68121)** — replace `alpine/k8s:1.37.1` with `registry.stadthagen.dev/ops/k8s-toolbox:1.0.0` cluster-wide; pin CNPG Postgres to dated Oct-19 `standard-bookworm` tags (16/17/18); BookStack MariaDB / n8n Postgres gosu rebuilds (`*-gosu1`); backup CronJobs use CNPG image for `pg_dump`.
+
 ### Changed
 
 - **Trivy Operator** — Helm-Chart **0.37.0** (app **0.35.0**), Trivy-Server-Image **0.76.0** (`trivy.image.tag`); BookStack-Buch v1.2.0 mit Upgrade-Kapitel.

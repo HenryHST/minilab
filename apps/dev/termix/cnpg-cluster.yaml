@@ -15,7 +15,7 @@ metadata:
     app.kubernetes.io/part-of: termix
 spec:
   instances: 1
-  imageName: ghcr.io/cloudnative-pg/postgresql:16
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.15-202610190958-standard-bookworm
   # Server TLS from cert-manager (cnpg-certificates.yaml); client/replication stay operator-managed.
   certificates:
     serverCASecret: termix-server-tls

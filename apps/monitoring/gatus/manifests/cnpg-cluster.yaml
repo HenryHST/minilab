@@ -16,7 +16,7 @@ metadata:
     app.kubernetes.io/part-of: gatus
 spec:
   instances: 2
-  imageName: ghcr.io/cloudnative-pg/postgresql:16
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.15-202610190958-standard-bookworm
   certificates:
     serverCASecret: gatus-server-tls
     serverTLSSecret: gatus-server-tls

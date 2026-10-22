@@ -14,10 +14,12 @@ spec:
   template:
     spec:
       serviceAccountName: backup-runner
+      imagePullSecrets:
+        - name: registry-pull
       restartPolicy: OnFailure
       containers:
         - name: mail-inbox
-          image: alpine/k8s:1.37.1
+          image: registry.stadthagen.dev/ops/k8s-toolbox:1.0.0
           env:
             - name: IMAP_PASSWORD
               valueFrom:

@@ -92,12 +92,14 @@ spec:
             app.kubernetes.io/component: im-cpu-enforcer
         spec:
           serviceAccountName: longhorn-im-cpu
+          imagePullSecrets:
+            - name: registry-pull
           restartPolicy: Never
           nodeSelector:
             worker: "true"
           containers:
             - name: enforce
-              image: alpine/k8s:1.37.1
+              image: registry.stadthagen.dev/ops/k8s-toolbox:1.0.0
               imagePullPolicy: IfNotPresent
               command: ["/bin/sh", "/scripts/enforce.sh"]
               env:
@@ -144,12 +146,14 @@ spec:
         app.kubernetes.io/component: im-cpu-enforcer
     spec:
       serviceAccountName: longhorn-im-cpu
+      imagePullSecrets:
+        - name: registry-pull
       restartPolicy: Never
       nodeSelector:
         worker: "true"
       containers:
         - name: enforce
-          image: alpine/k8s:1.37.1
+          image: registry.stadthagen.dev/ops/k8s-toolbox:1.0.0
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "/scripts/enforce.sh"]
           env:

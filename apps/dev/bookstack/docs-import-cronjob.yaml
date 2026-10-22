@@ -85,10 +85,12 @@ spec:
             app.kubernetes.io/component: docs-import
         spec:
           serviceAccountName: bookstack-docs-import
+          imagePullSecrets:
+            - name: registry-pull
           restartPolicy: Never
           containers:
             - name: import
-              image: alpine/k8s:1.37.1
+              image: registry.stadthagen.dev/ops/k8s-toolbox:1.0.0
               imagePullPolicy: IfNotPresent
               env:
                 - name: BOOKSTACK_URL
@@ -174,10 +176,12 @@ spec:
         app.kubernetes.io/component: docs-import
     spec:
       serviceAccountName: bookstack-docs-import
+      imagePullSecrets:
+        - name: registry-pull
       restartPolicy: Never
       containers:
         - name: import
-          image: alpine/k8s:1.37.1
+          image: registry.stadthagen.dev/ops/k8s-toolbox:1.0.0
           imagePullPolicy: IfNotPresent
           env:
             - name: BOOKSTACK_URL

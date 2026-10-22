@@ -19,6 +19,8 @@ clusterName: nXk3
 kubeconfigJob:
   enabled: true
   secretName: kubeconfig-user-kubeconfig
-  # alpine/k8s includes /bin/sh + kubectl (registry.k8s.io/kubectl is distroless — no shell)
-  image: docker.io/alpine/k8s:1.37.1
+  # Lab toolbox (bash+kubectl+certifi); replaces alpine/k8s for GHSA-6q48 / CVE-2025-68121
+  image: registry.stadthagen.dev/ops/k8s-toolbox:1.0.0
+  imagePullSecrets:
+    - name: registry-pull
   shell: /bin/sh

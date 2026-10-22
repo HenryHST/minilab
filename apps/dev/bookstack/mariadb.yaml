@@ -35,11 +35,13 @@ spec:
       # Pin to one worker — Longhorn currently has insufficient disk for new volumes (same as termix-postgres)
       nodeSelector:
         kubernetes.io/hostname: nxk3-w01
+      imagePullSecrets:
+        - name: registry-pull
       securityContext:
         fsGroup: 999
       containers:
         - name: mariadb
-          image: mariadb:11.8.9
+          image: registry.stadthagen.dev/dev/mariadb:11.8.9-gosu1
           imagePullPolicy: IfNotPresent
           ports:
             - name: mysql

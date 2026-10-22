@@ -161,12 +161,14 @@ spec:
             app.kubernetes.io/name: authentik-backup
         spec:
           serviceAccountName: backup-runner
+          imagePullSecrets:
+            - name: registry-pull
           restartPolicy: Never
           nodeSelector:
             worker: "true"
           containers:
             - name: backup
-              image: alpine/k8s:1.37.1
+              image: registry.stadthagen.dev/ops/k8s-toolbox:1.0.0
               env:
                 - name: PGHOST
                   value: authentik-pg-rw
@@ -261,12 +263,14 @@ spec:
             app.kubernetes.io/name: authentik-backup
         spec:
           serviceAccountName: backup-runner
+          imagePullSecrets:
+            - name: registry-pull
           restartPolicy: Never
           nodeSelector:
             worker: "true"
           containers:
             - name: backup
-              image: alpine/k8s:1.37.1
+              image: registry.stadthagen.dev/ops/k8s-toolbox:1.0.0
               env:
                 - name: PGHOST
                   value: authentik-pg-rw

@@ -50,6 +50,8 @@ spec:
   template:
     spec:
       serviceAccountName: bookstack-theme-sync
+      imagePullSecrets:
+        - name: registry-pull
       restartPolicy: Never
       volumes:
         - name: hack-offline
@@ -70,7 +72,7 @@ spec:
             name: bookstack-theme-overlay
       containers:
         - name: sync
-          image: alpine/k8s:1.37.1
+          image: registry.stadthagen.dev/ops/k8s-toolbox:1.0.0
           imagePullPolicy: IfNotPresent
           resources:
             requests:

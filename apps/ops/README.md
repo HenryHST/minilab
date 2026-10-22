@@ -19,4 +19,6 @@ Platform ops: TLS, registry, IdP, edge publish, cluster UI.
 
 Stub (not in ApplicationSet): `kargo/`.
 
+**Image build (not an Argo app):** [`k8s-toolbox/`](k8s-toolbox/) — helper image replacing `alpine/k8s` (`ghcr.io/henryhst/k8s-toolbox` → mirror `registry.stadthagen.dev/ops/k8s-toolbox`). CI: `.github/workflows/k8s-toolbox-image.yml`.
+
 Managed by ApplicationSet `ops` / AppProject `ops`. See [ADR-0022](../../docs/adr/0022-apps-bucket-applicationsets.md).

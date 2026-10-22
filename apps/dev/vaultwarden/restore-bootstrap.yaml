@@ -200,10 +200,12 @@ spec:
   template:
     spec:
       serviceAccountName: vaultwarden-restore
+      imagePullSecrets:
+        - name: registry-pull
       restartPolicy: Never
       containers:
         - name: restore
-          image: alpine/k8s:1.37.1
+          image: registry.stadthagen.dev/ops/k8s-toolbox:1.0.0
           imagePullPolicy: IfNotPresent
           env:
             - name: RESTORE_ENABLED

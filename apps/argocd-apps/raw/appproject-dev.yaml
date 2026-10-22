@@ -45,6 +45,8 @@ spec:
       namespace: excalidash
     - server: "*"
       namespace: podcraft
+    - server: "*"
+      namespace: forgejo
   clusterResourceWhitelist:
     - group: "*"
       kind: "*"

@@ -7,7 +7,7 @@ Self-hosted Git + **Lab container registry** (replaces Distribution `registry.st
 | App | Forgejo **16.0.6** (Helm chart **17.3.1**) |
 | Namespace | `forgejo` |
 | Sync wave | `3` (AppSet `dev`) |
-| Nodes | App: `nxk3-w05` + `nxk3-w06`; Actions runner: **only** `nxk3-w06` |
+| Nodes | App: `nxk3-w05` + `nxk3-w06`; Actions runner: **only** `nxk3-w06` (DinD sidecar — no host `docker.sock`) |
 | DB | SQLite on Longhorn (CNPG prep in values — not cut over) |
 | Ext | `git-ext.stadthagen.dev` via pangolin-publish **`enabled: false`** |
 | Backup | CronJob → RustFS bucket `forgejo-backups` |

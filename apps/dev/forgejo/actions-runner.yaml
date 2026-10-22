@@ -1,5 +1,6 @@
 # Forgejo Actions runner on nxk3-w06 — DinD sidecar (k3s has containerd, no host docker.sock).
 # Pattern: https://code.forgejo.org/forgejo/runner (examples/kubernetes/dind-docker.yaml)
+# Token: Secret forgejo-runner, or auto-mint via Forgejo admin API using forgejo-admin.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -28,6 +29,57 @@ spec:
       nodeSelector:
         kubernetes.io/hostname: nxk3-w06
       initContainers:
+        - name: ensure-token
+          image: curlimages/curl:8.12.1
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: RUNNER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: forgejo-runner
+                  key: token
+                  optional: true
+            - name: ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: forgejo-admin
+                  key: username
+            - name: ADMIN_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: forgejo-admin
+                  key: password
+            - name: FORGEJO_INSTANCE_URL
+              value: http://forgejo-http.forgejo.svc.cluster.local:3000
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              if [ -n "${RUNNER_SECRET:-}" ]; then
+                printf '%s' "$RUNNER_SECRET" > /runner-token/token
+                echo "using forgejo-runner secret token_len=${#RUNNER_SECRET}"
+                exit 0
+              fi
+              echo "forgejo-runner secret missing/empty — minting via admin API"
+              code=$(curl -sS -o /tmp/out -w "%{http_code}" -u "$ADMIN_USER:$ADMIN_PASS" \
+                -X GET "$FORGEJO_INSTANCE_URL/api/v1/admin/actions/runners/registration-token")
+              echo "admin registration-token HTTP $code"
+              tok=$(sed -n 's/.*"token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /tmp/out | head -1)
+              if [ -z "$tok" ]; then
+                echo "mint failed; body_prefix=$(head -c 120 /tmp/out | tr '\n' ' ')"
+                exit 1
+              fi
+              printf '%s' "$tok" > /runner-token/token
+              echo "minted token_len=${#tok}"
+          volumeMounts:
+            - name: runner-token
+              mountPath: /runner-token
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
         - name: runner-register
           image: code.forgejo.org/forgejo/runner:6.3.1
           imagePullPolicy: IfNotPresent
@@ -35,9 +87,10 @@ spec:
           args:
             - |
               set -euo pipefail
-              if [[ -z "${RUNNER_SECRET:-}" ]]; then
-                echo "forgejo-runner secret token empty — create FORGEJO_RUNNER_TOKEN / Secret forgejo-runner"
-                sleep infinity
+              RUNNER_SECRET="$(cat /runner-token/token)"
+              if [[ -z "${RUNNER_SECRET}" ]]; then
+                echo "runner token file empty"
+                exit 1
               fi
               while true; do
                 forgejo-runner register --no-interactive \
@@ -57,17 +110,14 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: RUNNER_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: forgejo-runner
-                  key: token
-                  optional: true
             - name: FORGEJO_INSTANCE_URL
               value: http://forgejo-http.forgejo.svc.cluster.local:3000
           volumeMounts:
             - name: data
               mountPath: /data
+            - name: runner-token
+              mountPath: /runner-token
+              readOnly: true
           resources:
             requests:
               cpu: 50m
@@ -131,4 +181,6 @@ spec:
         - name: data
           emptyDir: {}
         - name: dind-storage
+          emptyDir: {}
+        - name: runner-token
           emptyDir: {}

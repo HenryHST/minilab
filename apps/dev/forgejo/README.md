@@ -20,7 +20,7 @@ Self-hosted Git + **Lab container registry** (replaces Distribution `registry.st
 | `forgejo-smtp` | `passwd` from `AUTHENTIK_EMAIL_PASSWORD` (mailer section) |
 | `forgejo-admin` | `username` / `password` / `email` |
 | `forgejo-backup-s3` | RustFS AWS_* + `S3_BUCKET` |
-| `forgejo-runner` | optional `token` after UI registration |
+| `forgejo-runner` | optional `token`; if missing, runner init mints via admin API (`forgejo-admin`) |
 | `registry-pull` | dockerconfig for `git.stadthagen.dev` |
 
 ## Registry cutover

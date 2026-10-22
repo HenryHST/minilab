@@ -83,8 +83,8 @@ spec:
             path: apps/dev/forgejo
             namespace: forgejo
             syncWave: "3"
-            helmRepo: oci://code.forgejo.org/forgejo-helm
-            helmChart: forgejo
+            # Full OCI path required — Argo resolves oci://…/forgejo-helm + chart as forgejo-helm:TAG (missing /forgejo).
+            helmRepo: oci://code.forgejo.org/forgejo-helm/forgejo
             helmVersion: "17.3.1"
             helmReleaseName: forgejo
             helmValuesFile: apps/dev/forgejo/values.yaml
@@ -170,11 +170,13 @@ spec:
         repoURL: https://github.com/HenryHST/minilab
         targetRevision: main
         path: {{ .path }}
-    {{- else if dig "helmChart" "" . }}
+    {{- else if dig "helmRepo" "" . }}
     spec:
       sources:
         - repoURL: {{ .helmRepo }}
+          {{- if dig "helmChart" "" . }}
           chart: {{ .helmChart }}
+          {{- end }}
           targetRevision: {{ .helmVersion }}
           helm:
             releaseName: {{ dig "helmReleaseName" .app . }}

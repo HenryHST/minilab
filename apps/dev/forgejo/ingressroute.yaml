@@ -22,7 +22,8 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`git.stadthagen.dev`)
+    # /metrics is unauthenticated — keep off the public Host route (404); scrape via ClusterIP ServiceMonitor.
+    - match: Host(`git.stadthagen.dev`) && !PathPrefix(`/metrics`)
       kind: Rule
       middlewares:
         - name: default-headers

@@ -133,6 +133,9 @@ gitea:
           name: forgejo-smtp
           key: password
   metrics:
-    enabled: false
+    enabled: true
+    # ServiceMonitor: hand-written apps/dev/forgejo/servicemonitor.yaml (release label)
+    serviceMonitor:
+      enabled: false
 
 # Actions runner is a separate Deployment in this folder (nodeSelector nxk3-w06).

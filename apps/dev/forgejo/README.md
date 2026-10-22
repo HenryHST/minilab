@@ -11,6 +11,8 @@ Self-hosted Git + **Lab container registry** (replaces Distribution `registry.st
 | DB | SQLite on Longhorn (CNPG prep in values — not cut over) |
 | Ext | `git-ext.stadthagen.dev` via pangolin-publish **`enabled: false`** |
 | Backup | CronJob → RustFS bucket `forgejo-backups` |
+| Metrics | `/metrics` on Service `forgejo-http` (ServiceMonitor); Ingress excludes PathPrefix `/metrics` |
+| Grafana | `https://grafana.stadthagen.dev/d/forgejo-overview` (folder Forgejo) |
 
 ## Secrets (Infra_LAB `k3s_secrets`)
 

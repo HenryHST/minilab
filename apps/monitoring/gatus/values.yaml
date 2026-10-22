@@ -360,15 +360,14 @@ config:
       conditions:
         - "[STATUS] == 302"
       alerts: *pushover
-    - name: registry-ui
-      group: sso
-      url: https://registry-ui.stadthagen.dev
-      interval: 2m
+    - name: forgejo
+      group: plattform
+      url: https://git.stadthagen.dev/api/healthz
+      interval: 1m
       client:
         timeout: 10s
-        ignore-redirect: true
       conditions:
-        - "[STATUS] == 302"
+        - "[STATUS] == 200"
       alerts: *pushover
     - name: stirling-pdf
       group: sso

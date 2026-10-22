@@ -65,6 +65,10 @@ data:
             href: https://idp.stadthagen.dev
             icon: authentik.svg
             description: Identity Provider (OIDC)
+        - Forgejo:
+            href: https://git.stadthagen.dev
+            icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/forgejo.svg
+            description: Git + OCI Registry (OIDC)
     - Tools:
         - Omni Tools:
             href: https://omni-tools.stadthagen.dev

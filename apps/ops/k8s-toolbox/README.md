@@ -10,7 +10,9 @@ Lab helper image replacing `alpine/k8s` for CronJobs / restore / GC Jobs.
 | SemVer | [`VERSION`](VERSION) (current **1.0.0**) |
 | Base | Alpine 3.22 + official `kubectl` v1.37.1 + `certifi>=2026.10.19` |
 | Clears | GHSA-6q48-6c7w-9gw2, CVE-2025-68121 (vs `alpine/k8s:1.37.1`) |
-| Tools | bash, curl, git, jq, python3, mariadb-client, postgresql-client, tar/gzip |
+| Tools | bash, curl, git, jq, python3, mariadb-client, postgresql-client (**17.x** on Alpine 3.22), tar/gzip |
+
+**PG18 clients:** do not `apk add` edge `postgresql18-client` alone on top of this image — that leaves `libpq` 17 and breaks `psql` (`PQfullProtocolVersion`). Use `apk add --upgrade … postgresql18-client libpq` from edge, or a CNPG `postgresql:18` image (Termix pattern).
 | CI | Forgejo Actions (`.forgejo/workflows/image.yml` in the image repo) |
 
 Not an Argo Application — build artifact only (like `vw-restore` image). Consumers pin the SemVer tag in their manifests.

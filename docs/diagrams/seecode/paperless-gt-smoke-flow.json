@@ -1,0 +1,29 @@
+{
+  "type": "sequence",
+  "title": "Gotenberg/Tika Smoke Ablauf",
+  "subtitle": "Health → DOCX → PDF → Text-Marker",
+  "eyebrow": "Paperless · Verify",
+  "caption": "Job Failed, wenn PDF-Magic oder Marker fehlen — z. B. nach Image-Bump.",
+  "lang": "de",
+  "motion": "trace",
+  "skin": "light",
+  "numbered": true,
+  "participants": [
+    {"id": "job", "label": "gt-smoke", "sub": "CronJob", "focal": true},
+    {"id": "g", "label": "Gotenberg", "sub": ":3000"},
+    {"id": "t", "label": "Tika", "sub": ":9998"}
+  ],
+  "messages": [
+    ["job", "g", "GET /health", "sync"],
+    ["g", "job", "ok", "reply"],
+    ["job", "t", "GET /version", "sync"],
+    ["t", "job", "version", "reply"],
+    ["job", "g", "POST libreoffice/convert", "primary"],
+    ["g", "job", "%PDF…", "reply"],
+    ["job", "t", "PUT /tika Accept text", "primary"],
+    ["t", "job", "marker text", "reply"]
+  ],
+  "fragments": [
+    {"kind": "alt", "label": "PDF oder Marker fehlt", "from": 4, "to": 7, "else": 7, "elseLabel": "PASS"}
+  ]
+}

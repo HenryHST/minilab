@@ -54,7 +54,19 @@ Buch **Vaultwarden** — Reihenfolge aus `books/vaultwarden/`:
 
 URL (kanonisch): `https://vw-ext.stadthagen.dev` · Manifeste: `apps/dev/vaultwarden/`.
 
-## 4b. BookStack (Wiki-App)
+## 4b. Paperless
+
+Buch **Paperless** — Reihenfolge aus `books/paperless/`:
+
+1. Übersicht
+2. Deploy & Verify
+3. Quellen
+4. OIDC-Gruppen
+5. Gotenberg & Tika Smoke
+
+Manifeste: `apps/dev/paperless/`. LAN: `https://paperless.stadthagen.dev`.
+
+## 4c. BookStack (Wiki-App)
 
 Buch **BookStack** — Reihenfolge aus `books/bookstack/`:
 
@@ -65,7 +77,7 @@ Buch **BookStack** — Reihenfolge aus `books/bookstack/`:
 
 Manifeste: `apps/dev/bookstack/`.
 
-## 4c. Home Assistant
+## 4d. Home Assistant
 
 Buch **Home Assistant** — Reihenfolge aus `books/home-assistant/`:
 

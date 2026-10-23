@@ -1,0 +1,91 @@
+{
+  "type": "architecture",
+  "title": "Paperless Gotenberg/Tika Smoke",
+  "subtitle": "CronJob pr\u00fcft LibreOffice-Convert und Textextraktion",
+  "eyebrow": "Paperless \u00b7 OCR-Pfad",
+  "caption": "Gleicher Namespace wie Paperless \u2014 NetPol erlaubt Ingress nur aus paperless.",
+  "lang": "de",
+  "dir": "LR",
+  "motion": "trace",
+  "skin": "light",
+  "size": "auto",
+  "nodes": [
+    {
+      "id": "cron",
+      "label": "gt-smoke",
+      "sub": "CronJob \u00b7 6h",
+      "kind": "backend",
+      "icon": "clock",
+      "tag": "Job",
+      "focal": true,
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "gotenberg",
+      "label": "Gotenberg",
+      "sub": ":3000 \u00b7 LibreOffice",
+      "kind": "backend",
+      "icon": "server",
+      "tag": "PDF",
+      "focal": true,
+      "row": 0,
+      "col": 1,
+      "group": "svc"
+    },
+    {
+      "id": "tika",
+      "label": "Tika",
+      "sub": ":9998 \u00b7 extract",
+      "kind": "backend",
+      "icon": "server",
+      "tag": "Text",
+      "row": 1,
+      "col": 1,
+      "group": "svc"
+    },
+    {
+      "id": "web",
+      "label": "Paperless",
+      "sub": "Web + Worker",
+      "kind": "external",
+      "icon": "document",
+      "tag": "App",
+      "row": 0,
+      "col": 2
+    }
+  ],
+  "edges": [
+    [
+      "cron",
+      "gotenberg",
+      "POST convert",
+      "primary"
+    ],
+    [
+      "cron",
+      "tika",
+      "PUT /tika",
+      "primary"
+    ],
+    [
+      "web",
+      "gotenberg",
+      "TIKA_GOTENBERG",
+      "muted"
+    ],
+    [
+      "web",
+      "tika",
+      "TIKA_ENDPOINT",
+      "muted"
+    ]
+  ],
+  "groups": [
+    {
+      "id": "svc",
+      "label": "NS paperless",
+      "style": "dashed"
+    }
+  ]
+}

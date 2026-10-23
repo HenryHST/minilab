@@ -1,0 +1,727 @@
+# Functional smoke for Gotenberg + Tika (Paperless office → PDF → text path).
+# Collects Paperless system + backup status; mails a clear PDF verdict report.
+# Run after bumping gotenberg.yaml / tika.yaml image tags.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: paperless-gt-smoke
+  namespace: paperless
+  labels:
+    app: paperless-gt-smoke
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: paperless-gt-smoke
+  namespace: paperless
+  labels:
+    app: paperless-gt-smoke
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "persistentvolumeclaims"]
+    verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets"]
+    verbs: ["get", "list"]
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list"]
+  - apiGroups: ["batch"]
+    resources: ["cronjobs", "jobs"]
+    verbs: ["get", "list"]
+  - apiGroups: ["postgresql.cnpg.io"]
+    resources: ["clusters", "backups", "scheduledbackups"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: paperless-gt-smoke
+  namespace: paperless
+  labels:
+    app: paperless-gt-smoke
+subjects:
+  - kind: ServiceAccount
+    name: paperless-gt-smoke
+    namespace: paperless
+roleRef:
+  kind: Role
+  name: paperless-gt-smoke
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: paperless-gt-smoke
+  namespace: paperless
+  labels:
+    app: paperless-gt-smoke
+spec:
+  schedule: "0 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 300
+      template:
+        metadata:
+          labels:
+            app: paperless-gt-smoke
+        spec:
+          serviceAccountName: paperless-gt-smoke
+          restartPolicy: Never
+          # k8s-toolbox is linux/amd64; avoid Pi arm64 ImagePullBackOff
+          nodeSelector:
+            worker: "true"
+            kubernetes.io/arch: amd64
+          imagePullSecrets:
+            - name: registry-pull
+          containers:
+            - name: smoke
+              image: git.stadthagen.dev/ops/k8s-toolbox:1.0.0
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                runAsUser: 65532
+                runAsGroup: 65532
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: GOTENBERG_URL
+                  value: http://paperless-gotenberg:3000
+                - name: TIKA_URL
+                  value: http://paperless-tika:9998
+                - name: PAPERLESS_URL
+                  value: http://paperless-web:8000
+                - name: MARKER
+                  value: paperless-gt-smoke
+                - name: HOME
+                  value: /tmp
+                - name: SMTP_HOST
+                  value: mail.henrystadthagen.de
+                - name: SMTP_PORT
+                  value: "465"
+                - name: SMTP_USER
+                  value: auto@henrystadthagen.de
+                - name: SMTP_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: paperless-smtp
+                      key: password
+                # SMTP auth is auto@… — server rejects From paperless@ (not owned by user)
+                - name: MAIL_FROM
+                  value: auto@henrystadthagen.de
+                - name: MAIL_TO
+                  value: paperless@stadthagen.dev
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -uo pipefail
+                  MARKER="${MARKER:-paperless-gt-smoke}"
+                  WORK=/tmp/gt-smoke
+                  REPORT=/tmp/gt-smoke-report.txt
+                  STATUS_TXT=/tmp/gt-smoke-status.txt
+                  HTML=/tmp/index.html
+                  PDF=/tmp/paperless-smoke-report.pdf
+                  mkdir -p "${WORK}"
+                  : > "${REPORT}"
+                  : > "${STATUS_TXT}"
+                  log() { echo "$*" | tee -a "${REPORT}"; }
+                  slog() { echo "$*" | tee -a "${STATUS_TXT}" "${REPORT}"; }
+
+                  run_smoke() {
+                    set -e
+                    log "==> health"
+                    curl -fsS --max-time 15 "${GOTENBERG_URL}/health" >/dev/null
+                    log "gotenberg /health ok"
+                    TIKA_VER="$(curl -fsS --max-time 15 "${TIKA_URL}/version" | head -c 200)"
+                    log "${TIKA_VER}"
+                    log "tika /version ok"
+
+                    log "==> fixture docx (marker=${MARKER})"
+                    python3 -c '
+                  import zipfile, os
+                  work, marker = "/tmp/gt-smoke", os.environ["MARKER"]
+                  ct = """<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+                  <Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">
+                    <Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>
+                    <Default Extension=\"xml\" ContentType=\"application/xml\"/>
+                    <Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/>
+                  </Types>"""
+                  rels = """<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+                  <Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">
+                    <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/>
+                  </Relationships>"""
+                  doc = """<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+                  <w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">
+                    <w:body><w:p><w:r><w:t>%s</w:t></w:r></w:p></w:body>
+                  </w:document>""" % marker
+                  path = work + "/smoke.docx"
+                  with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as z:
+                      z.writestr("[Content_Types].xml", ct.strip())
+                      z.writestr("_rels/.rels", rels.strip())
+                      z.writestr("word/document.xml", doc.strip())
+                  print("wrote", path, os.path.getsize(path), "bytes")
+                  ' | tee -a "${REPORT}"
+
+                    log "==> gotenberg libreoffice convert"
+                    curl -fsS --max-time 120 \
+                      -o "${WORK}/out.pdf" \
+                      -F "files=@${WORK}/smoke.docx" \
+                      "${GOTENBERG_URL}/forms/libreoffice/convert"
+                    head -c 5 "${WORK}/out.pdf" | grep -q '%PDF'
+                    log "gotenberg convert ok ($(wc -c < "${WORK}/out.pdf") bytes)"
+
+                    log "==> tika extract"
+                    TEXT="$(curl -fsS --max-time 60 \
+                      -X PUT \
+                      -H "Accept: text/plain" \
+                      -H "Content-Type: application/pdf" \
+                      --data-binary @"${WORK}/out.pdf" \
+                      "${TIKA_URL}/tika")"
+                    echo "${TEXT}" | grep -F "${MARKER}" >/dev/null
+                    log "tika extract ok (marker found)"
+                    log "paperless-gt-smoke: PASS"
+                  }
+
+                  collect_status() {
+                    slog "==> Paperless system status (raw)"
+                    kubectl get deploy,sts,po,pvc,hpa,cronjob -n paperless -o wide 2>&1 | tee -a "${STATUS_TXT}" "${REPORT}" || slog "WARN: core list failed"
+                    kubectl get cluster.postgresql.cnpg.io,scheduledbackup.postgresql.cnpg.io,backup.postgresql.cnpg.io -n paperless -o wide 2>&1 | tee -a "${STATUS_TXT}" "${REPORT}" || slog "WARN: cnpg/backup list failed"
+                    slog "--- health endpoints ---"
+                    python3 -c '
+                  import json, os, urllib.request
+                  health = {}
+                  checks = [
+                      ("gotenberg", os.environ["GOTENBERG_URL"] + "/health", None),
+                      ("tika", os.environ["TIKA_URL"] + "/version", None),
+                      ("paperless", os.environ["PAPERLESS_URL"] + "/", "paperless.stadthagen.dev"),
+                  ]
+                  for name, url, host in checks:
+                      req = urllib.request.Request(url, method="GET")
+                      if host:
+                          req.add_header("Host", host)
+                      try:
+                          with urllib.request.urlopen(req, timeout=15) as resp:
+                              code = resp.getcode()
+                              body = resp.read(120).decode("utf-8", "replace").replace("\n", " ")
+                      except Exception as e:
+                          code = "err"
+                          body = str(e)[:120]
+                      health[name] = {"code": code, "body": body}
+                      print("%s: HTTP %s %s" % (name, code, body))
+                  open("/tmp/health.json", "w").write(json.dumps(health))
+                  ' | tee -a "${STATUS_TXT}" "${REPORT}"
+                    kubectl get deploy,po,pvc,hpa,cronjob,job -n paperless -o json > /tmp/k8s-core.json 2>/tmp/k8s-core.err || echo '{"items":[]}' > /tmp/k8s-core.json
+                    kubectl get cluster.postgresql.cnpg.io,scheduledbackup.postgresql.cnpg.io,backup.postgresql.cnpg.io -n paperless -o json > /tmp/k8s-cnpg.json 2>/tmp/k8s-cnpg.err || echo '{"items":[]}' > /tmp/k8s-cnpg.json
+                  }
+
+                  STATUS=FAIL
+                  if run_smoke; then
+                    STATUS=PASS
+                  else
+                    log "paperless-gt-smoke: FAIL"
+                    STATUS=FAIL
+                  fi
+                  log "result=${STATUS}"
+
+                  collect_status || log "WARN: status collection errors (non-fatal)"
+
+                  cat > /tmp/build_report.py <<'PY'
+                  #!/usr/bin/env python3
+                  import html, json, os, re
+                  from datetime import datetime, timezone
+                  from pathlib import Path
+
+                  CRITICAL_DEPLOYS = (
+                      "paperless",
+                      "paperless-gotenberg",
+                      "paperless-tika",
+                      "paperless-worker",
+                  )
+                  APP_BACKUP_CRON = "paperless-backup-cron"
+                  CNPG_SB = "paperless-pg-snapshot"
+                  APP_BACKUP_MAX_H = 36.0
+                  CNPG_BACKUP_MAX_H = 12.0
+                  BAD_POD = ("CrashLoopBackOff", "ImagePullBackOff", "ErrImagePull", "Error", "CreateContainerConfigError")
+
+                  def now():
+                      return datetime.now(timezone.utc)
+
+                  def parse_ts(ts):
+                      if not ts:
+                          return None
+                      return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+
+                  def age_h(ts):
+                      dt = parse_ts(ts)
+                      if not dt:
+                          return None
+                      return (now() - dt).total_seconds() / 3600.0
+
+                  def fmt_age(h):
+                      if h is None:
+                          return "never"
+                      if h < 1:
+                          return f"{int(h * 60)}m ago"
+                      if h < 48:
+                          return f"{h:.1f}h ago"
+                      return f"{h / 24:.1f}d ago"
+
+                  def load_items(path):
+                      try:
+                          data = json.loads(Path(path).read_text())
+                      except Exception:
+                          return []
+                      items = data.get("items")
+                      if items is None and data.get("kind"):
+                          return [data]
+                      return items or []
+
+                  def kind_of(obj):
+                      return obj.get("kind") or ""
+
+                  def add(checks, name, level, detail):
+                      checks.append({"name": name, "level": level, "detail": detail})
+
+                  def worst(levels):
+                      lv = list(levels)
+                      if "FAIL" in lv:
+                          return "FAIL"
+                      if "WARN" in lv:
+                          return "DEGRADED"
+                      return "OK"
+
+                  smoke_status = os.environ.get("STATUS", "FAIL")
+                  report = Path("/tmp/gt-smoke-report.txt").read_text(errors="replace")
+                  raw_status = Path("/tmp/gt-smoke-status.txt").read_text(errors="replace")
+
+                  smoke_checks = [
+                      ("gotenberg-health", "gotenberg /health ok" in report),
+                      ("tika-version", "tika /version ok" in report),
+                      ("libreoffice-pdf", "gotenberg convert ok" in report),
+                      ("tika-marker", "tika extract ok" in report),
+                  ]
+                  smoke_rows = []
+                  for name, ok in smoke_checks:
+                      smoke_rows.append({
+                          "name": name,
+                          "level": "PASS" if ok else "FAIL",
+                          "detail": "ok" if ok else "missing in log",
+                      })
+                  if smoke_status != "PASS":
+                      for row in smoke_rows:
+                          if row["level"] == "PASS" and smoke_status == "FAIL":
+                              pass
+                      if not any(r["level"] == "FAIL" for r in smoke_rows):
+                          smoke_rows.append({"name": "smoke-overall", "level": "FAIL", "detail": "run_smoke failed"})
+
+                  sys_checks = []
+                  core = load_items("/tmp/k8s-core.json")
+                  cnpg = load_items("/tmp/k8s-cnpg.json")
+                  # mixed list may be from Table-less multi-resource; also handle List of lists via kubectl
+                  # When kubectl returns a List with items of different kinds, items are flat.
+                  all_objs = core + cnpg
+                  # Sometimes kubectl wraps as {"kind":"List","items":[...]} already handled.
+                  # Multi-resource get can return kind List with items that are themselves Lists — flatten once.
+                  flat = []
+                  for o in all_objs:
+                      if kind_of(o) == "List" and "items" in o:
+                          flat.extend(o.get("items") or [])
+                      else:
+                          flat.append(o)
+                  all_objs = flat
+
+                  deploys = {o["metadata"]["name"]: o for o in all_objs if kind_of(o) == "Deployment"}
+                  for name in CRITICAL_DEPLOYS:
+                      d = deploys.get(name)
+                      if not d:
+                          add(sys_checks, f"deploy/{name}", "FAIL", "missing")
+                          continue
+                      spec_r = d.get("spec", {}).get("replicas") or 0
+                      st = d.get("status", {})
+                      ready = st.get("readyReplicas") or 0
+                      avail = st.get("availableReplicas") or 0
+                      if spec_r <= 0:
+                          add(sys_checks, f"deploy/{name}", "WARN", f"desired={spec_r}")
+                      elif ready <= 0 or avail <= 0:
+                          add(sys_checks, f"deploy/{name}", "FAIL", f"ready={ready} available={avail} desired={spec_r}")
+                      elif ready < spec_r or avail < spec_r:
+                          # HPA scale-up / rolling update — degraded, not hard fail
+                          add(sys_checks, f"deploy/{name}", "WARN", f"ready={ready}/{spec_r} (scaling or rolling)")
+                      else:
+                          add(sys_checks, f"deploy/{name}", "OK", f"{ready}/{spec_r} ready")
+
+                  clusters = [o for o in all_objs if kind_of(o) == "Cluster"]
+                  if not clusters:
+                      add(sys_checks, "cnpg/paperless-pg", "FAIL", "cluster missing")
+                  else:
+                      for cl in clusters:
+                          nm = cl["metadata"]["name"]
+                          st = cl.get("status", {})
+                          phase = (st.get("phase") or "")
+                          instances = st.get("instances") or cl.get("spec", {}).get("instances")
+                          ready = st.get("readyInstances")
+                          phase_ok = "healthy" in phase.lower()
+                          if ready is not None and instances is not None:
+                              if ready == instances and ready > 0 and phase_ok:
+                                  add(sys_checks, f"cnpg/{nm}", "OK", f"{phase} ({ready}/{instances})")
+                              else:
+                                  add(sys_checks, f"cnpg/{nm}", "FAIL", f"ready={ready}/{instances} phase={phase}")
+                          elif phase_ok:
+                              add(sys_checks, f"cnpg/{nm}", "OK", phase)
+                          else:
+                              add(sys_checks, f"cnpg/{nm}", "FAIL", phase or "unknown")
+
+                  pvcs = [o for o in all_objs if kind_of(o) == "PersistentVolumeClaim"]
+                  if not pvcs:
+                      add(sys_checks, "pvc", "WARN", "no PVCs listed")
+                  for pvc in pvcs:
+                      nm = pvc["metadata"]["name"]
+                      phase = pvc.get("status", {}).get("phase")
+                      if phase == "Bound":
+                          add(sys_checks, f"pvc/{nm}", "OK", "Bound")
+                      else:
+                          add(sys_checks, f"pvc/{nm}", "FAIL", f"phase={phase}")
+
+                  try:
+                      health = json.loads(Path("/tmp/health.json").read_text())
+                  except Exception:
+                      health = {}
+                      add(sys_checks, "health", "WARN", "health.json missing")
+                  for name, expect in (("gotenberg", 200), ("tika", 200), ("paperless", None)):
+                      h = health.get(name) or {}
+                      code = h.get("code")
+                      if name == "paperless":
+                          ok = isinstance(code, int) and 200 <= code < 400
+                          add(sys_checks, f"health/{name}", "OK" if ok else "FAIL", f"HTTP {code}")
+                      else:
+                          ok = code == expect
+                          add(sys_checks, f"health/{name}", "OK" if ok else "FAIL", f"HTTP {code}")
+
+                  # bad pods (non-job)
+                  for po in [o for o in all_objs if kind_of(o) == "Pod"]:
+                      nm = po["metadata"]["name"]
+                      # skip completed job pods
+                      phase = po.get("status", {}).get("phase")
+                      if phase == "Succeeded":
+                          continue
+                      owners = po.get("metadata", {}).get("ownerReferences") or []
+                      if any(o.get("kind") == "Job" for o in owners):
+                          if phase in ("Succeeded", "Failed"):
+                              continue
+                      for cs in (po.get("status", {}).get("containerStatuses") or []):
+                          waiting = (cs.get("state") or {}).get("waiting") or {}
+                          reason = waiting.get("reason") or ""
+                          if reason in BAD_POD:
+                              add(sys_checks, f"pod/{nm}", "WARN", reason)
+
+                  cronjobs = {o["metadata"]["name"]: o for o in all_objs if kind_of(o) == "CronJob"}
+                  for nm, cj in cronjobs.items():
+                      if cj.get("spec", {}).get("suspend"):
+                          add(sys_checks, f"cronjob/{nm}", "WARN", "suspended")
+
+                  # App backup
+                  cj = cronjobs.get(APP_BACKUP_CRON)
+                  if not cj:
+                      add(sys_checks, "backup-app", "FAIL", f"CronJob {APP_BACKUP_CRON} missing")
+                  else:
+                      if cj.get("spec", {}).get("suspend"):
+                          add(sys_checks, "backup-app", "WARN", "CronJob suspended")
+                      jobs = [
+                          o for o in all_objs if kind_of(o) == "Job"
+                          and any(
+                              (ow.get("kind") == "CronJob" and ow.get("name") == APP_BACKUP_CRON)
+                              for ow in (o.get("metadata", {}).get("ownerReferences") or [])
+                          )
+                      ]
+                      jobs.sort(key=lambda j: j["metadata"].get("creationTimestamp", ""), reverse=True)
+                      last_ok_h = age_h((cj.get("status") or {}).get("lastSuccessfulTime"))
+                      if not jobs:
+                          if last_ok_h is not None and last_ok_h <= APP_BACKUP_MAX_H:
+                              add(sys_checks, "backup-app", "OK", f"lastSuccessfulTime {fmt_age(last_ok_h)}")
+                          else:
+                              add(sys_checks, "backup-app", "WARN", f"no jobs; lastSuccess {fmt_age(last_ok_h)}")
+                      else:
+                          j = jobs[0]
+                          st = j.get("status", {})
+                          failed = (st.get("failed") or 0) > 0
+                          succeeded = (st.get("succeeded") or 0) > 0
+                          when = st.get("completionTime") or st.get("startTime") or j["metadata"].get("creationTimestamp")
+                          h = age_h(when)
+                          if failed and not succeeded:
+                              add(sys_checks, "backup-app", "FAIL", f"job {j['metadata']['name']} Failed ({fmt_age(h)})")
+                          elif succeeded:
+                              if h is not None and h > APP_BACKUP_MAX_H:
+                                  add(sys_checks, "backup-app", "WARN", f"last success {fmt_age(h)} (>{APP_BACKUP_MAX_H:.0f}h)")
+                              else:
+                                  add(sys_checks, "backup-app", "OK", f"job {j['metadata']['name']} Complete ({fmt_age(h)})")
+                          else:
+                              add(sys_checks, "backup-app", "WARN", f"job {j['metadata']['name']} in progress")
+
+                  # CNPG backup
+                  sbs = [o for o in all_objs if kind_of(o) == "ScheduledBackup"]
+                  sb = next((o for o in sbs if o["metadata"]["name"] == CNPG_SB), None)
+                  backups = [o for o in all_objs if kind_of(o) == "Backup"]
+                  # filter to cluster paperless-pg
+                  backups = [
+                      b for b in backups
+                      if (b.get("spec") or {}).get("cluster", {}).get("name") == "paperless-pg"
+                      or b["metadata"]["name"].startswith("paperless-pg-snapshot")
+                  ]
+                  backups.sort(
+                      key=lambda b: (b.get("status") or {}).get("stoppedAt")
+                      or b["metadata"].get("creationTimestamp")
+                      or "",
+                      reverse=True,
+                  )
+                  if not sb:
+                      add(sys_checks, "backup-cnpg", "WARN", f"ScheduledBackup {CNPG_SB} missing")
+                  elif (sb.get("spec") or {}).get("suspend"):
+                      add(sys_checks, "backup-cnpg", "WARN", "ScheduledBackup suspended")
+                  if backups:
+                      b = backups[0]
+                      phase = ((b.get("status") or {}).get("phase") or "").lower()
+                      stopped = (b.get("status") or {}).get("stoppedAt") or b["metadata"].get("creationTimestamp")
+                      h = age_h(stopped)
+                      err = (b.get("status") or {}).get("error")
+                      if phase == "failed" or err:
+                          add(sys_checks, "backup-cnpg", "FAIL", f"{b['metadata']['name']} phase={phase} err={err}")
+                      elif phase == "completed":
+                          if h is not None and h > CNPG_BACKUP_MAX_H:
+                              add(sys_checks, "backup-cnpg", "WARN", f"last completed {fmt_age(h)} (>{CNPG_BACKUP_MAX_H:.0f}h)")
+                          else:
+                              add(sys_checks, "backup-cnpg", "OK", f"{b['metadata']['name']} completed ({fmt_age(h)})")
+                      else:
+                          add(sys_checks, "backup-cnpg", "WARN", f"{b['metadata']['name']} phase={phase or 'unknown'}")
+                  elif sb:
+                      h = age_h((sb.get("status") or {}).get("lastScheduleTime"))
+                      if h is not None and h <= CNPG_BACKUP_MAX_H:
+                          add(sys_checks, "backup-cnpg", "OK", f"lastSchedule {fmt_age(h)} (no Backup CR)")
+                      else:
+                          add(sys_checks, "backup-cnpg", "WARN", f"no Backup CRs; lastSchedule {fmt_age(h)}")
+
+                  # collection errors
+                  for errf, label in (("/tmp/k8s-core.err", "kubectl-core"), ("/tmp/k8s-cnpg.err", "kubectl-cnpg")):
+                      p = Path(errf)
+                      if p.exists() and p.read_text().strip():
+                          add(sys_checks, label, "WARN", p.read_text().strip()[:160])
+
+                  sys_status = worst(c["level"] for c in sys_checks)
+                  for c in sys_checks:
+                      if c["level"] in ("FAIL", "WARN"):
+                          print(f"  [{c['level']}] {c['name']}: {c['detail']}")
+
+                  ts = now().strftime("%Y-%m-%d %H:%M UTC")
+                  smoke_cls = "pass" if smoke_status == "PASS" else "fail"
+                  sys_cls = {"OK": "pass", "DEGRADED": "warn", "FAIL": "fail"}.get(sys_status, "warn")
+
+                  def rows_html(rows):
+                      out = ["<table><thead><tr><th>Check</th><th>Result</th><th>Detail</th></tr></thead><tbody>"]
+                      for r in rows:
+                          lvl = r["level"]
+                          css = {"OK": "ok", "PASS": "ok", "WARN": "warn", "DEGRADED": "warn", "FAIL": "bad"}.get(lvl, "")
+                          out.append(
+                              f"<tr class='{css}'><td>{html.escape(r['name'])}</td>"
+                              f"<td><strong>{html.escape(lvl)}</strong></td>"
+                              f"<td>{html.escape(r['detail'])}</td></tr>"
+                          )
+                      out.append("</tbody></table>")
+                      return "\n".join(out)
+
+                  doc = f"""<!DOCTYPE html>
+                  <html lang="en">
+                  <head>
+                  <meta charset="utf-8"/>
+                  <title>Paperless GT Smoke — SMOKE={html.escape(smoke_status)} SYS={html.escape(sys_status)}</title>
+                  <style>
+                  body {{ font-family: DejaVu Sans, Helvetica, Arial, sans-serif; margin: 20px; color: #1a1a1a; font-size: 11px; }}
+                  h1 {{ font-size: 18px; margin: 0 0 4px; }}
+                  h2 {{ font-size: 13px; margin: 16px 0 8px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }}
+                  .meta {{ color: #555; margin-bottom: 12px; }}
+                  .cards {{ display: flex; gap: 12px; margin: 12px 0 18px; }}
+                  .card {{ flex: 1; border: 2px solid #333; border-radius: 6px; padding: 14px 16px; }}
+                  .card .label {{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #444; }}
+                  .card .verdict {{ font-size: 28px; font-weight: bold; margin-top: 4px; }}
+                  .pass {{ background: #e8f5e9; border-color: #2e7d32; }}
+                  .pass .verdict {{ color: #1b5e20; }}
+                  .fail {{ background: #ffebee; border-color: #c62828; }}
+                  .fail .verdict {{ color: #b71c1c; }}
+                  .warn {{ background: #fff8e1; border-color: #f9a825; }}
+                  .warn .verdict {{ color: #f57f17; }}
+                  table {{ width: 100%; border-collapse: collapse; margin-bottom: 8px; }}
+                  th, td {{ border: 1px solid #ddd; padding: 5px 7px; text-align: left; vertical-align: top; }}
+                  th {{ background: #f0f0f0; }}
+                  tr.ok td:nth-child(2) {{ color: #1b5e20; }}
+                  tr.warn td:nth-child(2) {{ color: #f57f17; }}
+                  tr.bad td:nth-child(2) {{ color: #b71c1c; }}
+                  pre.appendix {{ background: #f7f7f7; border: 1px solid #ddd; padding: 8px; white-space: pre-wrap; word-break: break-word; font-size: 8px; max-height: none; }}
+                  </style>
+                  </head>
+                  <body>
+                  <h1>Paperless health report</h1>
+                  <div class="meta">{html.escape(ts)} · namespace paperless · CronJob paperless-gt-smoke</div>
+                  <div class="cards">
+                    <div class="card {smoke_cls}">
+                      <div class="label">Smoke test</div>
+                      <div class="verdict">{html.escape(smoke_status)}</div>
+                    </div>
+                    <div class="card {sys_cls}">
+                      <div class="label">System status</div>
+                      <div class="verdict">{html.escape(sys_status)}</div>
+                    </div>
+                  </div>
+                  <h2>Smoke checklist</h2>
+                  {rows_html(smoke_rows)}
+                  <h2>System checklist</h2>
+                  {rows_html(sys_checks)}
+                  <h2>Appendix — raw log</h2>
+                  <pre class="appendix">{html.escape(report)}</pre>
+                  </body>
+                  </html>"""
+                  # dedent leading spaces from YAML indent in heredoc content — strip common indent
+                  Path("/tmp/index.html").write_text(doc)
+
+                  issues = [c for c in sys_checks if c["level"] in ("FAIL", "WARN")]
+                  smoke_fail = [c for c in smoke_rows if c["level"] == "FAIL"]
+                  summary_lines = [
+                      f"SMOKE={smoke_status}  SYS={sys_status}",
+                      f"time={ts}",
+                      "",
+                  ]
+                  if smoke_fail:
+                      summary_lines.append("Smoke failures:")
+                      for c in smoke_fail:
+                          summary_lines.append(f"  - {c['name']}: {c['detail']}")
+                  if issues:
+                      summary_lines.append("System issues:")
+                      for c in issues:
+                          summary_lines.append(f"  - [{c['level']}] {c['name']}: {c['detail']}")
+                  if not smoke_fail and not issues:
+                      summary_lines.append("All checks green.")
+                  summary_lines.append("")
+                  summary_lines.append("Full details in PDF attachment.")
+                  Path("/tmp/mail-summary.txt").write_text("\n".join(summary_lines) + "\n")
+
+                  verdict = {
+                      "smoke": smoke_status,
+                      "sys": sys_status,
+                      "smoke_checks": smoke_rows,
+                      "sys_checks": sys_checks,
+                  }
+                  Path("/tmp/verdict.json").write_text(json.dumps(verdict, indent=2))
+                  print(f"verdict SMOKE={smoke_status} SYS={sys_status} checks={len(sys_checks)}")
+                  PY
+
+                  PDF_OK=0
+                  SYS_STATUS=UNKNOWN
+                  log "==> build HTML report"
+                  if STATUS="${STATUS}" python3 /tmp/build_report.py; then
+                    SYS_STATUS="$(python3 -c 'import json; print(json.load(open("/tmp/verdict.json"))["sys"])' 2>/dev/null || echo UNKNOWN)"
+                    log "html ok SYS=${SYS_STATUS}"
+                    log "==> gotenberg chromium HTML→PDF"
+                    if curl -fsS --max-time 90 \
+                      -o "${PDF}" \
+                      -F "files=@${HTML};filename=index.html" \
+                      "${GOTENBERG_URL}/forms/chromium/convert/html" \
+                      && head -c 5 "${PDF}" | grep -q '%PDF'; then
+                      log "PDF generated ($(wc -c < "${PDF}") bytes)"
+                      PDF_OK=1
+                    else
+                      log "WARN: PDF generation failed"
+                      PDF_OK=0
+                    fi
+                  else
+                    log "WARN: HTML build failed"
+                    echo "SMOKE=${STATUS} SYS=UNKNOWN" > /tmp/mail-summary.txt
+                    echo '{"smoke":"'"${STATUS}"'","sys":"UNKNOWN"}' > /tmp/verdict.json
+                    PDF_OK=0
+                  fi
+
+                  SUBJECT_EXTRA=""
+                  if [[ "${PDF_OK}" != "1" ]]; then
+                    SUBJECT_EXTRA=" [FAIL-PDF]"
+                  fi
+
+                  log "==> mail report to ${MAIL_TO}"
+                  if ! STATUS="${STATUS}" SYS_STATUS="${SYS_STATUS}" PDF_OK="${PDF_OK}" SUBJECT_EXTRA="${SUBJECT_EXTRA}" python3 -c '
+                  import os, ssl, smtplib, socket, subprocess, json
+                  from email.message import EmailMessage
+                  from pathlib import Path
+                  from datetime import datetime, timezone
+                  host = os.environ["SMTP_HOST"]
+                  port = int(os.environ["SMTP_PORT"])
+                  out = subprocess.check_output(["nslookup", host], text=True)
+                  ips = []
+                  for line in out.splitlines():
+                      line = line.strip()
+                      if not line.startswith("Address:"):
+                          continue
+                      addr = line.split("Address:", 1)[1].strip()
+                      if "." in addr and ":" not in addr and not addr.endswith(":53"):
+                          ips.append(addr)
+                  if not ips:
+                      raise RuntimeError("no IPv4 for " + host)
+                  ip = ips[0]
+                  smoke = os.environ["STATUS"]
+                  sys_st = os.environ.get("SYS_STATUS") or "UNKNOWN"
+                  try:
+                      v = json.loads(Path("/tmp/verdict.json").read_text())
+                      smoke = v.get("smoke", smoke)
+                      sys_st = v.get("sys", sys_st)
+                  except Exception:
+                      pass
+                  pdf_ok = os.environ.get("PDF_OK") == "1"
+                  extra = os.environ.get("SUBJECT_EXTRA", "")
+                  summary = Path("/tmp/mail-summary.txt").read_text(errors="replace")
+                  stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
+                  msg = EmailMessage()
+                  msg["Subject"] = f"[paperless-gt-smoke] SMOKE={smoke} SYS={sys_st}{extra}"
+                  msg["From"] = os.environ["MAIL_FROM"]
+                  msg["To"] = os.environ["MAIL_TO"]
+                  msg["Reply-To"] = "paperless@stadthagen.dev"
+                  msg.set_content(summary)
+                  if pdf_ok:
+                      pdf_path = Path("/tmp/paperless-smoke-report.pdf")
+                      msg.add_attachment(
+                          pdf_path.read_bytes(),
+                          maintype="application",
+                          subtype="pdf",
+                          filename=f"paperless-smoke-{stamp}.pdf",
+                      )
+                  ctx = ssl.create_default_context()
+                  raw = socket.create_connection((ip, port), timeout=60)
+                  ssock = ctx.wrap_socket(raw, server_hostname=host)
+                  s = smtplib.SMTP_SSL()
+                  s.sock = ssock
+                  s.file = None
+                  s._host = host
+                  s.getreply()
+                  s.ehlo()
+                  s.login(os.environ["SMTP_USER"], os.environ["SMTP_PASSWORD"])
+                  s.send_message(msg)
+                  s.quit()
+                  print("mail sent to", os.environ["MAIL_TO"], "via", ip, "pdf=", pdf_ok, f"SMOKE={smoke} SYS={sys_st}")
+                  '; then
+                    log "mail send FAILED"
+                    exit 1
+                  fi
+
+                  [[ "${STATUS}" == "PASS" ]]
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  memory: 256Mi
+          volumes:
+            - name: tmp
+              emptyDir: {}

@@ -1,5 +1,24 @@
 # Changelog — Buch Paperless
 
+## [1.5.0] - 2026-10-23
+
+### Changed
+
+- Kapitel **Gotenberg & Tika Smoke**: Verdict-Karten SMOKE/SYS, Checklisten, Backup-Ampel (App-Cron + CNPG-Snapshot); Betreff `SMOKE=… SYS=…`
+
+## [1.4.0] - 2026-10-23
+
+### Changed
+
+- Kapitel **Gotenberg & Tika Smoke**: Systemzustand (Workloads/CNPG/PVC/HPA/CronJobs/Health) + PDF-Anhang per Gotenberg Chromium; SA `paperless-gt-smoke`
+
+## [1.3.0] - 2026-10-23
+
+### Added
+
+- Kapitel **Gotenberg & Tika Smoke**: CronJob `paperless-gt-smoke`, Image-Bump-Verify
+- SeeCode: `paperless-gt-smoke`, `paperless-gt-smoke-flow` (HTML + PNG/SVG)
+
 ## [1.2.0] - 2026-10-14
 
 ### Added

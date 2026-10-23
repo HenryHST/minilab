@@ -96,6 +96,7 @@ Erwartung: Cluster `healthy`, 1 Instanz. `pg_dump` des CronJobs geht gegen `pape
 - IMAP: PDF an `paperless@stadthagen.dev` → Settings → Mail; Dokument mit Tag `inbox`
 - Ext absichtlich nicht erreichbar, bis `pangolin-publish` `paperless.enabled=true`
 - Storage: PVCs Bound, Web/Worker Ready auf `nxk3-w01`, keine `FailedMount`-Events
+- Gotenberg/Tika: CronJob `paperless-gt-smoke` (alle 6h) oder manuell nach Image-Bump — siehe [Gotenberg & Tika Smoke](05-gotenberg-tika-smoke.md)
 
 ## Troubleshooting: FailedMount / path does not exist
 

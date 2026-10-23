@@ -1,6 +1,6 @@
 book: Paperless
 cover: cover.png
-book_version: "1.2.0"
-updated: "2026-10-14"
-description: Paperless-ngx — Dokumente, OCR, HPScan, Authentik OIDC, Dokumentgruppen
+book_version: "1.5.0"
+updated: "2026-10-23"
+description: Paperless-ngx — Dokumente, OCR, HPScan, Authentik OIDC, Dokumentgruppen, Gotenberg/Tika Smoke (Verdict-PDF inkl. Backup)
 shelf: Plattform

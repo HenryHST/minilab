@@ -121,6 +121,8 @@ data:
     dn=$(awk '/^auth_opt_ldap_bind_dn / {sub(/^auth_opt_ldap_bind_dn /,""); print; exit}' "$CONF")
     line=$(grep -E '^auth_opt_ldap_bind_password ' "$CONF" | head -n1 || true)
     pw=${line#auth_opt_ldap_bind_password }
+    # Drop CR/LF leftovers from secret files (grep -n1 still keeps \\r on some renders)
+    pw=$(printf '%s' "$pw" | tr -d '\r\n')
 
     if [ -z "$url" ] || [ -z "$host" ] || [ -z "$port" ] || [ "$port" = "$hostport" ]; then
       echo "ldap-preflight: rendered mosquitto.conf has no auth_opt_ldap_url ldap://host:port." >&2

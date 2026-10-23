@@ -26,6 +26,14 @@ spec:
             - name: smoke
               image: eclipse-mosquitto:2
               imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                runAsUser: 1883
+                runAsGroup: 1883
+                capabilities:
+                  drop: ["ALL"]
               env:
                 - name: MQTT_USER
                   valueFrom:
@@ -39,6 +47,11 @@ spec:
                       key: password
                 - name: MQTT_HOST
                   value: mqtt.mosquitto.svc.cluster.local
+                - name: HOME
+                  value: /tmp
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
               command:
                 - /bin/sh
                 - -c
@@ -55,3 +68,6 @@ spec:
                   memory: 16Mi
                 limits:
                   memory: 32Mi
+          volumes:
+            - name: tmp
+              emptyDir: {}

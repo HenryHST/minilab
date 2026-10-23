@@ -5,7 +5,7 @@ Eclipse Mosquitto MQTT broker with Authentik LDAP auth (go-auth). LAN LoadBalanc
 | | |
 |--|--|
 | Argo | ApplicationSet `infra`, sync wave `1`, namespace `mosquitto` |
-| Image | `registry.stadthagen.dev/infra/mosquitto-custom:1.1.2` (mirror of `ghcr.io/henryhst/mosquitto-custom`; Mosquitto 2.1.2 glibc; [mosquitto-custom](https://github.com/HenryHST/mosquitto-custom); **amd64** `nodeSelector`; Pull-Secret `registry-pull`) |
+| Image | `ghcr.io/henryhst/mosquitto-custom:1.1.2` (Mosquitto 2.1.2 glibc; [mosquitto-custom](https://github.com/HenryHST/mosquitto-custom); **amd64** `nodeSelector`) |
 | Conf | `/mosquitto/config/mosquitto.conf` (bind pw via init `tls-bootstrap`; init `ldap-preflight` waits for the outpost and checks the bind) |
 | Host | `mqtt-pro.stadthagen.dev` → LB `192.168.0.218` (manual Hetzner A) |
 | Ports | `1883` MQTT, `8883` MQTTS, `9001` WebSockets (TLS) |
@@ -16,19 +16,9 @@ Eclipse Mosquitto MQTT broker with Authentik LDAP auth (go-auth). LAN LoadBalanc
 | Smoke | Deployment `mqtt-tools` + CronJob `mqtt-smoke` (every 15 min) |
 
 
-## Image mirror (lab registry)
+## Image
 
-Build/sign stays on GHCR (`ghcr.io/henryhst/mosquitto-custom`). Mirror into the cluster registry before bumping the Deployment:
-
-```bash
-VER=1.1.2
-crane copy \
-  "ghcr.io/henryhst/mosquitto-custom:${VER}" \
-  "registry.stadthagen.dev/infra/mosquitto-custom:${VER}"
-crane tag "registry.stadthagen.dev/infra/mosquitto-custom:${VER}" latest
-```
-
-Pull-Secret `registry-pull` in NS `mosquitto` comes from Infra_LAB `k3s_secrets` (`REGISTRY_DOCKERCONFIG`).
+Pull directly from GHCR (`ghcr.io/henryhst/mosquitto-custom`). Lab Distribution `registry.stadthagen.dev` is decommissioned (Forgejo is the lab OCI for other images). Optional: `crane copy` to `git.stadthagen.dev/infra/mosquitto-custom` if you want an offline mirror.
 
 ## Secrets (before sync)
 

@@ -1,5 +1,6 @@
 # Mosquitto MQTT broker — LDAP auth via Authentik Outpost; LAN LB 192.168.0.218.
-# Image: registry.stadthagen.dev/infra/mosquitto-custom (GHCR mirror; Mosquitto 2.1.2 glibc + vendored go-auth).
+# Image: ghcr.io/henryhst/mosquitto-custom (Mosquitto 2.1.2 glibc + vendored go-auth).
+# Lab Distribution registry.stadthagen.dev is decommissioned (Forgejo OCI); pull GHCR directly.
 # Cilium L2 pool: 215 Traefik, 216 Authentik LDAP, 217 Alloy → 218 Mosquitto.
 
 apiVersion: v1
@@ -301,8 +302,8 @@ spec:
         # go-auth aborts the broker process when LDAP is down or the bind password is wrong.
         # Kubernetes then CrashLoopBackOffs and hides the cause. Wait here, and say which of the two it is.
         - name: ldap-preflight
-          # semver: 1.1.2 — crane copy from ghcr.io/henryhst/mosquitto-custom
-          image: registry.stadthagen.dev/infra/mosquitto-custom:1.1.2
+          # semver: 1.1.2 — public GHCR (lab registry.stadthagen.dev decommissioned)
+          image: ghcr.io/henryhst/mosquitto-custom:1.1.2
           imagePullPolicy: IfNotPresent
           command: ["/bin/bash", "/preflight/ldap-preflight.sh"]
           env:
@@ -322,8 +323,8 @@ spec:
           securityContext:
             runAsUser: 1883
             runAsGroup: 1883
-          # semver: 1.1.2 — crane copy from ghcr.io/henryhst/mosquitto-custom
-          image: registry.stadthagen.dev/infra/mosquitto-custom:1.1.2
+          # semver: 1.1.2 — public GHCR (lab registry.stadthagen.dev decommissioned)
+          image: ghcr.io/henryhst/mosquitto-custom:1.1.2
           imagePullPolicy: IfNotPresent
           args:
             - /usr/sbin/mosquitto

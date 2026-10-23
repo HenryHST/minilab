@@ -5,7 +5,7 @@ PostgreSQL operator (CloudNativePG) in `cnpg-system`. Clusters: Termix (`termix-
 | | |
 |--|--|
 | Argo | ApplicationSet `infra`, sync wave `1`, namespace `cnpg-system` |
-| Chart | `cloudnative-pg` 0.28.3 + `image.tag: 1.29.3` from `https://cloudnative-pg.github.io/charts` |
+| Chart | `cloudnative-pg` 0.29.1 (operator 1.30.1) from `https://cloudnative-pg.github.io/charts` |
 | ServiceAccount | `postgres-cloud-sa` (ClusterRole/Binding from the chart) |
 | Metrics | Operator PodMonitor port `metrics` (8080), label `release: kube-prometheus-stack` |
 | Dashboard | Application `cnpg-grafana`, chart `cluster` 0.0.5, namespace `monitoring` |

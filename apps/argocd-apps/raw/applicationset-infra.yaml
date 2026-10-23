@@ -62,7 +62,7 @@ spec:
             syncWave: "1"
             helmRepo: https://cloudnative-pg.github.io/charts
             helmChart: cloudnative-pg
-            helmVersion: "0.28.3"
+            helmVersion: "0.29.1"
             helmReleaseName: cloudnative-pg
             helmValuesFile: apps/infra/cloudnative-pg/values.yaml
             extras: true

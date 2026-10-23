@@ -38,6 +38,17 @@ affinity:
                 - nxk3-w05
                 - nxk3-w06
 
+# Rootless image UID 1000 — explicit for PSA / defense in depth (SSH in same pod).
+podSecurityContext:
+  fsGroup: 1000
+containerSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+
 persistence:
   enabled: true
   size: 50Gi
@@ -50,9 +61,14 @@ service:
     type: ClusterIP
     port: 3000
   ssh:
-    # LAN Git over SSH later via LB if needed; HTTP/HTTPS primary for v1
-    type: ClusterIP
+    # LAN Git SSH: git@git-ssh.stadthagen.dev (UniFi A → 192.168.0.218)
+    # Shared VIP with Mosquitto (1883/8883/9001) via Cilium LB IPAM sharing-key
+    type: LoadBalancer
     port: 22
+    loadBalancerIP: 192.168.0.218
+    annotations:
+      lbipam.cilium.io/sharing-key: "lan-218"
+      lbipam.cilium.io/sharing-cross-namespace: "mosquitto"
 
 ingress:
   enabled: false
@@ -84,11 +100,14 @@ gitea:
       adminGroup: forgejo_admins
   config:
     APP_NAME: Stadthagen Git
+    APP_SLOGAN: Lab Git + OCI
     server:
       DOMAIN: git.stadthagen.dev
       ROOT_URL: https://git.stadthagen.dev/
-      SSH_DOMAIN: git.stadthagen.dev
-      DISABLE_SSH: true
+      SSH_DOMAIN: git-ssh.stadthagen.dev
+      SSH_PORT: 22
+      SSH_LISTEN_PORT: 2222
+      DISABLE_SSH: false
       LANDING_PAGE: login
     database:
       DB_TYPE: sqlite3
@@ -99,10 +118,20 @@ gitea:
     #   NAME: forgejo
     #   USER: forgejo
     #   PASSWD: via additionalConfigSources secret forgejo-db
+    actions:
+      ENABLED: true
+      DEFAULT_ACTIONS_URL: self
+    admin:
+      DISABLE_REGULAR_ORG_CREATION: true
+      DEFAULT_EMAIL_NOTIFICATIONS: enabled
+    federation:
+      ENABLED: false
     repository:
       ENABLE_PUSH_CREATE_USER: true
       ENABLE_PUSH_CREATE_ORG: true
       DEFAULT_PUSH_CREATE_PRIVATE: true
+      DEFAULT_PRIVATE: true
+      DEFAULT_REPO_UNITS: repo.code,repo.releases,repo.issues,repo.pulls,repo.packages
     packages:
       ENABLED: true
     service:
@@ -110,6 +139,7 @@ gitea:
       ALLOW_ONLY_EXTERNAL_REGISTRATION: true
       SHOW_REGISTRATION_BUTTON: false
       ENABLE_PASSWORD_SIGNIN_FORM: false
+      ENABLE_NOTIFY_MAIL: true
     openid:
       ENABLE_OPENID_SIGNIN: false
       ENABLE_OPENID_SIGNUP: false
@@ -124,6 +154,12 @@ gitea:
       SMTP_PORT: "465"
       FROM: auto@henrystadthagen.de
       USER: auto@henrystadthagen.de
+    security:
+      MIN_PASSWORD_LENGTH: 12
+      PASSWORD_COMPLEXITY: lower,upper
+    ui:
+      DEFAULT_THEME: gitea-dark
+      DEFAULT_SHOW_FULL_NAME: true
     indexer:
       REPO_INDEXER_ENABLED: true
   additionalConfigFromEnvs:
@@ -132,6 +168,15 @@ gitea:
         secretKeyRef:
           name: forgejo-smtp
           key: password
+    # Nested INI keys (git.timeout / git.config) via env — chart map is awkward
+    - name: FORGEJO__git.timeout__MIGRATE
+      value: "3000"
+    - name: FORGEJO__git.timeout__MIRROR
+      value: "3000"
+    - name: FORGEJO__git.config__fsck.largePathname
+      value: warn
+    - name: FORGEJO__git.config__fetch.fsck.largePathname
+      value: warn
   metrics:
     enabled: true
     # ServiceMonitor: hand-written apps/dev/forgejo/servicemonitor.yaml (release label)

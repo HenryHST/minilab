@@ -7,7 +7,7 @@ Wiki / Wissensdatenbank:
 | LAN | `https://book.stadthagen.dev` (Traefik) |
 | Internet | `https://book-ext.stadthagen.dev` (Pangolin → Newt → ClusterIP) |
 
-`APP_URL` is the public host (`book-ext`) so OIDC callbacks work from the internet. Argo applies **`helm-manifest.yaml`** (regenerate after values changes: `helm template bookstack ./charts/bookstack -f values.yaml --namespace bookstack > helm-manifest.yaml`). Authentik also allows LAN redirects (`bookstack_url` + `bookstack_external_url`).
+`APP_URL` is the public host (`book-ext`) so OIDC callbacks work from the internet. `SESSION_DOMAIN=.stadthagen.dev` shares the session/CSRF cookie across LAN `book` and `book-ext` (otherwise LAN `/login` POSTs to `book-ext` and Laravel returns **419 Page Expired**). Argo applies **`helm-manifest.yaml`** (regenerate after values changes: `helm template bookstack ./charts/bookstack -f values.yaml --namespace bookstack > helm-manifest.yaml`). Authentik also allows LAN redirects (`bookstack_url` + `bookstack_external_url`).
 
 ## Überblick
 
@@ -40,12 +40,18 @@ Vor dem ersten Sync SecretSpecs / Ansible anlegen — Vorlage: [`secret.example.
 1. Application + OAuth2/OIDC Provider, Slug `bookstack`
 2. Redirect URI (strict): `https://book-ext.stadthagen.dev/oidc/callback` (primary via `APP_URL`) plus LAN `https://book.stadthagen.dev/oidc/callback`
 3. Post-Logout / login URIs on both hosts (`bookstack_url` + `bookstack_external_url`)
-4. Gruppen (Namen = BookStack-Rollen): `Admin` / `Editor` (OIDC `groups` claim)
+4. Gruppen (Namen = BookStack-Rollen): `BookStack Admin` / `BookStack Editor` / `BookStack Familie` (OIDC `groups` claim; Bootstrap legt die Rollen an)
 5. Client-Secret → SecretSpec `bookstack-oauth`
 
 Siehe [Authentik ↔ BookStack](https://integrations.goauthentik.io/documentation/bookstack/). Pangolin publish: `apps/ops/pangolin-publish` (niceId `book-ext`).
 
-Login-Incidents (State-Race, `external_auth_id` nach Authentik-Restore): Buch **BookStack** → Kapitel [OIDC-Login Fehleranalyse](../../../docs/bookstack/books/bookstack/03-oidc-login-fehleranalyse.md).
+Login-Incidents (State-Race, `external_auth_id` nach Authentik-Restore, 419/`SESSION_DOMAIN`): Buch **BookStack** → Kapitel [OIDC-Login Fehleranalyse](../../../docs/bookstack/books/bookstack/03-oidc-login-fehleranalyse.md).
+
+### OIDC Relink nach Authentik-Restore
+
+ConfigMap `bookstack-oidc-relink` (`enabled` / `dry_run`) + PostSync-Job [`oidc-relink.yaml`](oidc-relink.yaml). Authentik-Exec-RBAC: [`../../ops/authentik/bookstack-oidc-relink-rbac.yaml`](../../ops/authentik/bookstack-oidc-relink-rbac.yaml).
+
+Nach IdP-Restore: `enabled=true` + `dry_run=true` → Sync/Logs → bei `DRIFT` `dry_run=false` → Sync → `enabled=false`.
 
 ## Theme modules & PDF fonts (GitOps)
 

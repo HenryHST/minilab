@@ -1,5 +1,16 @@
 # Changelog — Buch BookStack
 
+## [1.3.0] - 2026-10-23
+
+### Added
+
+- OIDC Relink-Job (`bookstack-oidc-relink`) als Dauerhafte Absicherung nach Authentik-Restore; Runbook dry-run → apply
+- Incident-Hinweis 2026-10-23: `SESSION_DOMAIN` (419) + erneuter `external_auth_id`-Drift
+
+### Changed
+
+- Kapitel OIDC-Login Fehleranalyse: Relink von Empfehlung auf umgesetzt; Runbook erweitert
+
 ## [1.2.0] - 2026-10-19
 
 ### Added

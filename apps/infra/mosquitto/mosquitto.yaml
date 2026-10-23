@@ -72,9 +72,13 @@ metadata:
   namespace: mosquitto
   labels:
     app: mosquitto
+  annotations:
+    # Share VIP with forgejo-ssh (port 22) — see apps/dev/forgejo/values.yaml service.ssh
+    lbipam.cilium.io/sharing-key: "lan-218"
+    lbipam.cilium.io/sharing-cross-namespace: "forgejo"
 spec:
   type: LoadBalancer
-  # Cilium L2 pool 215–218: Traefik/LDAP/Alloy → 218 free for Mosquitto
+  # Cilium L2: 192.168.0.218 — Mosquitto 1883/8883/9001 + Forgejo SSH 22 (shared)
   loadBalancerIP: 192.168.0.218
   ports:
     - name: mqtt

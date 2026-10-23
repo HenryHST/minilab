@@ -106,6 +106,16 @@ kubectl -n authentik logs -f job/authentik-backup-manual -c backup
 
 See [VERIFY.md](VERIFY.md). MFA row restore: [scripts/restore-user-mfa.sh](scripts/restore-user-mfa.sh).
 
+### After bootstrap restore
+
+If `AUTHENTIK_SECRET_KEY` or user PKs changed, BookStack OIDC `sub` (`user.uid`) drifts → „E-Mail bereits mit anderen Anmeldedaten“. Relink:
+
+1. Dry-run: patch CM `bookstack/bookstack-oidc-relink` `enabled=true` / `dry_run=true`, sync App **bookstack**, check Job logs.
+2. Apply: `dry_run=false`, sync again.
+3. Reset: `enabled=false`, `dry_run=true`.
+
+Manifests: [`../dev/bookstack/oidc-relink.yaml`](../dev/bookstack/oidc-relink.yaml), RBAC here [`bookstack-oidc-relink-rbac.yaml`](bookstack-oidc-relink-rbac.yaml). Details: BookStack chapter OIDC-Login Fehleranalyse.
+
 ## Helm (vendored + rendered)
 
 ```bash

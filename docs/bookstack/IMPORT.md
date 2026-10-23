@@ -60,7 +60,7 @@ Buch **BookStack** — Reihenfolge aus `books/bookstack/`:
 
 1. Übersicht
 2. PDF-Export Fehleranalyse (Incident 2026-10-17)
-3. OIDC-Login Fehleranalyse (Incident 2026-10-19)
+3. OIDC-Login Fehleranalyse (Incidents 2026-10-19 / 2026-10-23; Relink-Job)
 4. Quellen
 
 Manifeste: `apps/dev/bookstack/`.

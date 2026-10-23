@@ -1,6 +1,6 @@
 # Mosquitto
 
-Eclipse Mosquitto MQTT broker with Authentik LDAP auth (go-auth). LAN LoadBalancer `192.168.0.218`.
+Eclipse Mosquitto MQTT broker with Authentik LDAP auth (go-auth). LAN LoadBalancer `192.168.0.218` (Cilium sharing-key `lan-218` — same VIP as Forgejo SSH port 22).
 
 | | |
 |--|--|

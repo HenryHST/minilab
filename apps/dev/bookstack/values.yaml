@@ -22,6 +22,9 @@ env:
   PGID: "911"
   # Pangolin public host (OIDC redirect_uri); LAN Ingress book.stadthagen.dev remains.
   APP_URL: https://book-ext.stadthagen.dev
+  # Share session/CSRF cookie across book + book-ext. Without this, LAN /login forms
+  # POST to APP_URL (book-ext) and get Laravel 419 Page Expired (host-only cookie).
+  SESSION_DOMAIN: ".stadthagen.dev"
   APP_LANG: de
   APP_THEME: custom
   EXPORT_PAGE_SIZE: a4

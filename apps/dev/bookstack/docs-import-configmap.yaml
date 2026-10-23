@@ -1200,7 +1200,8 @@ data:
      * Env: BOOKSTACK_TOKEN_ID, BOOKSTACK_TOKEN_SECRET
      * Creates/updates:
      *   - role "GitOps Import" + user gitops-import@localhost + API token "docs-import"
-     *   - role "BookStack Familie" (OIDC group display_name; content ACL for Regal Familie)
+     *   - roles "BookStack Admin" / "BookStack Editor" / "BookStack Familie"
+     *     (OIDC group display_name == role display_name for OIDC_USER_TO_GROUPS)
      *   - app setting app-disable-comments=true (global comments off)
      */
     declare(strict_types=1);
@@ -1267,17 +1268,75 @@ data:
         // PDF/HTML/Markdown/ZIP export from the UI (view alone is not enough)
         'content-export',
     ];
+
+    // Mirror default Admin / Editor permission sets (OIDC group names from Authentik TF).
+    $adminPermissions = [
+        'settings-manage', 'users-manage', 'user-roles-manage', 'restrictions-manage-all', 'restrictions-manage-own',
+        'templates-manage', 'access-api', 'content-export', 'content-import', 'editor-change', 'receive-notifications',
+        'revision-view-all',
+        'bookshelf-view-all', 'bookshelf-view-own', 'bookshelf-create-all', 'bookshelf-create-own',
+        'bookshelf-update-all', 'bookshelf-update-own', 'bookshelf-delete-all', 'bookshelf-delete-own',
+        'book-view-all', 'book-view-own', 'book-create-all', 'book-create-own',
+        'book-update-all', 'book-update-own', 'book-delete-all', 'book-delete-own',
+        'chapter-view-all', 'chapter-view-own', 'chapter-create-all', 'chapter-create-own',
+        'chapter-update-all', 'chapter-update-own', 'chapter-delete-all', 'chapter-delete-own',
+        'page-view-all', 'page-view-own', 'page-create-all', 'page-create-own',
+        'page-update-all', 'page-update-own', 'page-delete-all', 'page-delete-own',
+        'image-create-all', 'image-create-own', 'image-update-all', 'image-update-own',
+        'image-delete-all', 'image-delete-own',
+        'attachment-create-all', 'attachment-create-own', 'attachment-update-all', 'attachment-update-own',
+        'attachment-delete-all', 'attachment-delete-own',
+        'comment-create-all', 'comment-create-own', 'comment-update-all', 'comment-update-own',
+        'comment-delete-all', 'comment-delete-own',
+    ];
+    $editorPermissions = [
+        'revision-view-all', 'content-export',
+        'bookshelf-view-all', 'bookshelf-view-own', 'bookshelf-create-all', 'bookshelf-create-own',
+        'bookshelf-update-all', 'bookshelf-update-own', 'bookshelf-delete-all', 'bookshelf-delete-own',
+        'book-view-all', 'book-view-own', 'book-create-all', 'book-create-own',
+        'book-update-all', 'book-update-own', 'book-delete-all', 'book-delete-own',
+        'chapter-view-all', 'chapter-view-own', 'chapter-create-all', 'chapter-create-own',
+        'chapter-update-all', 'chapter-update-own', 'chapter-delete-all', 'chapter-delete-own',
+        'page-view-all', 'page-view-own', 'page-create-all', 'page-create-own',
+        'page-update-all', 'page-update-own', 'page-delete-all', 'page-delete-own',
+        'image-create-all', 'image-create-own', 'image-update-all', 'image-update-own',
+        'image-delete-all', 'image-delete-own',
+    ];
     
     $roleName = 'GitOps Import';
     $email = 'gitops-import@localhost';
     $userName = 'gitops-import';
     $tokenName = 'docs-import';
     $familieRoleName = 'BookStack Familie';
+    $adminRoleName = 'BookStack Admin';
+    $editorRoleName = 'BookStack Editor';
     
     /** @var PermissionsRepo $permsRepo */
     $permsRepo = app(PermissionsRepo::class);
     /** @var UserRepo $userRepo */
     $userRepo = app(UserRepo::class);
+
+    $upsertOidcRole = static function (PermissionsRepo $permsRepo, string $name, string $description, array $permissions): Role {
+        $existing = Role::query()->where('display_name', $name)->first();
+        if ($existing === null) {
+            $created = $permsRepo->saveNewRole([
+                'display_name' => $name,
+                'description' => $description,
+                'permissions' => $permissions,
+                'mfa_enforced' => false,
+            ]);
+            echo "ROLE created id={$created->id} display_name={$name}\n";
+            return $created;
+        }
+        $permsRepo->updateRole($existing->id, [
+            'description' => $description,
+            'permissions' => $permissions,
+            'mfa_enforced' => false,
+        ]);
+        $updated = $permsRepo->getRoleById($existing->id);
+        echo "ROLE updated id={$updated->id} display_name={$name}\n";
+        return $updated;
+    };
     
     $role = Role::query()->where('display_name', $roleName)->first();
     if ($role === null) {
@@ -1297,25 +1356,25 @@ data:
         $role = $permsRepo->getRoleById($role->id);
         echo "ROLE updated id={$role->id}\n";
     }
-    
-    $familieRole = Role::query()->where('display_name', $familieRoleName)->first();
-    if ($familieRole === null) {
-        $familieRole = $permsRepo->saveNewRole([
-            'display_name' => $familieRoleName,
-            'description' => 'OIDC group BookStack Familie — view/create/update + export, no delete',
-            'permissions' => $familiePermissions,
-            'mfa_enforced' => false,
-        ]);
-        echo "ROLE created id={$familieRole->id} display_name={$familieRoleName}\n";
-    } else {
-        $permsRepo->updateRole($familieRole->id, [
-            'description' => 'OIDC group BookStack Familie — view/create/update + export, no delete',
-            'permissions' => $familiePermissions,
-            'mfa_enforced' => false,
-        ]);
-        $familieRole = $permsRepo->getRoleById($familieRole->id);
-        echo "ROLE updated id={$familieRole->id} display_name={$familieRoleName}\n";
-    }
+
+    $upsertOidcRole(
+        $permsRepo,
+        $adminRoleName,
+        'OIDC group BookStack Admin — full admin (settings/users/roles)',
+        $adminPermissions,
+    );
+    $upsertOidcRole(
+        $permsRepo,
+        $editorRoleName,
+        'OIDC group BookStack Editor — content CRUD + export',
+        $editorPermissions,
+    );
+    $upsertOidcRole(
+        $permsRepo,
+        $familieRoleName,
+        'OIDC group BookStack Familie — view/create/update + export, no delete',
+        $familiePermissions,
+    )
     
     $user = User::query()->where('email', $email)->first();
     if ($user === null) {

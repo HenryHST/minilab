@@ -1,11 +1,11 @@
 ---
 title: OIDC-Login Fehleranalyse
-book_version: "1.2.0"
+book_version: "1.3.0"
 ---
 
 # OIDC-Login Fehleranalyse
 
-> **Buch** v1.2.0 · Stand: 2026-10-19 · Incident 2026-10-19
+> **Buch** v1.3.0 · Stand: 2026-10-23 · Incidents 2026-10-19 / 2026-10-23
 
 Zwei unabhängige Ursachen verhinderten den Login über Authentik (Symptome: leerer Fehler-Toast, Redirect-Schleife, danach „E-Mail bereits mit anderen Anmeldedaten registriert“). Der OIDC-Handshake selbst (Authorize → Callback) war nach dem ersten Fix intakt; der zweite Fehler lag in der **Identitätsverknüpfung** nach einem Authentik-Restore.
 
@@ -183,16 +183,38 @@ SET external_auth_id = '<aktuelles-authentik-uid>'
 WHERE email = '<email>';
 ```
 
-Am 2026-10-19 aktualisiert: Henry + Markus (Marion hatte noch keinen BookStack-User).
+Am 2026-10-19 aktualisiert: Henry + Markus (Marion hatte noch keinen BookStack-User).  
+Am 2026-10-23 erneut: Henry nach weiterem Authentik-Restore (`a3e40827…` → live `uid`); parallel **419 Page Expired** auf LAN wegen `APP_URL=book-ext` ohne `SESSION_DOMAIN` → Fix `SESSION_DOMAIN=.stadthagen.dev`.
 
-### Dauerhafte Absicherung (Empfehlung)
+### Dauerhafte Absicherung
 
-| Option | Vorteil | Nachteil |
+| Maßnahme | Status | Hinweis |
 |--|--|--|
-| Nach jedem Authentik-Restore mit Secret-/User-Drift: Relink-Skript | Kein Provider-Umbau | Manuell / Runbook |
-| Terraform `sub_mode` → `user_uuid` + einmalig `external_auth_id` = UUID | Stabil über Secret-Rotation | Alle App-Links einmal migrieren |
+| Relink-Job nach Authentik-Restore | **umgesetzt** | ConfigMap `bookstack-oidc-relink` + PostSync-Job; Default `enabled=false`, `dry_run=true` |
+| Terraform `sub_mode` → `user_uuid` | nicht gewählt | bliebe Migration aller App-Links; `hashed_user_id` bleibt SoT |
 
-Aktuell bleibt `hashed_user_id` (Terraform BookStack-OAuth). **SECRET_KEY** und User-PKs bei Restore strikt mitführen (siehe Authentik Backup/Verify).
+**SECRET_KEY** und User-PKs bei Restore weiterhin strikt mitführen (siehe Authentik Backup/Verify). Zusätzlich nach jedem Restore mit möglichem Drift:
+
+```bash
+# 1) Dry-run (Default)
+kubectl -n bookstack patch cm bookstack-oidc-relink --type merge \
+  -p '{"data":{"enabled":"true","dry_run":"true"}}'
+# Argo Sync App bookstack (PostSync-Job) — oder:
+kubectl -n bookstack delete job bookstack-oidc-relink --ignore-not-found
+# (nach Sync legt Argo den Hook neu an; Logs:)
+kubectl -n bookstack logs job/bookstack-oidc-relink -c relink
+
+# 2) Apply bei DRIFT-Zeilen
+kubectl -n bookstack patch cm bookstack-oidc-relink --type merge \
+  -p '{"data":{"enabled":"true","dry_run":"false"}}'
+# Sync / Job erneut → summary updated=N
+
+# 3) wieder absichern
+kubectl -n bookstack patch cm bookstack-oidc-relink --type merge \
+  -p '{"data":{"enabled":"false","dry_run":"true"}}'
+```
+
+GitOps: [`apps/dev/bookstack/oidc-relink.yaml`](../../../../apps/dev/bookstack/oidc-relink.yaml), RBAC Authentik-Exec: [`apps/ops/authentik/bookstack-oidc-relink-rbac.yaml`](../../../../apps/ops/authentik/bookstack-oidc-relink-rbac.yaml).
 
 ---
 
@@ -234,6 +256,7 @@ UI: Incognito → `/login` → **Anmelden mit Authentik** → MFA → BookStack-
 ## Runbook bei Regression
 
 1. **Leerer Toast / Redirect-Schleife:** `AUTH_AUTO_INITIATE` prüfen; GitOps darf nicht wieder auf `true` healen.
-2. **E-Mail bereits registriert:** Authentik `user.uid` vs. `users.external_auth_id` vergleichen; nach Restore Relink.
-3. **302/401 am IdP:** Client-Secret, Redirect-URIs (`book` + `book-ext`), Provider-Slug `bookstack`.
-4. Authentik-Restore: `AUTHENTIK_SECRET_KEY` und User-IDs dokumentieren; MFA und gehashte `sub`s hängen daran.
+2. **419 Page Expired** (LAN `book` → Form-POST `book-ext`): `SESSION_DOMAIN=.stadthagen.dev` prüfen.
+3. **E-Mail bereits registriert:** Relink-Job dry-run → apply (Abschnitt Dauerhafte Absicherung); nicht manuell SQL, außer Notfall.
+4. **302/401 am IdP:** Client-Secret, Redirect-URIs (`book` + `book-ext`), Provider-Slug `bookstack`.
+5. Authentik-Restore: `AUTHENTIK_SECRET_KEY` und User-IDs mitführen; danach immer Relink dry-run.

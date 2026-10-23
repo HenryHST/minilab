@@ -101,6 +101,8 @@ spec:
               value: custom
             - name: APP_URL
               value: https://book-ext.stadthagen.dev
+            - name: SESSION_DOMAIN
+              value: .stadthagen.dev
             - name: AUTH_AUTO_INITIATE
               value: "false"
             - name: AUTH_METHOD

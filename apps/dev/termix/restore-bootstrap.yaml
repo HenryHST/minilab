@@ -57,6 +57,10 @@ spec:
       serviceAccountName: termix-restore
       imagePullSecrets:
         - name: registry-pull
+      # k8s-toolbox is linux/amd64 only — avoid Pi arm64 ErrImagePull (blocks Argo PostSync)
+      nodeSelector:
+        worker: "true"
+        kubernetes.io/arch: amd64
       restartPolicy: Never
       containers:
         - name: restore

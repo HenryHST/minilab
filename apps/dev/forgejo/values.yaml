@@ -168,15 +168,10 @@ gitea:
         secretKeyRef:
           name: forgejo-smtp
           key: password
-    # Nested INI keys (git.timeout / git.config) via env — chart map is awkward
-    - name: FORGEJO__git.timeout__MIGRATE
-      value: "3000"
-    - name: FORGEJO__git.timeout__MIRROR
-      value: "3000"
-    - name: FORGEJO__git.config__fsck.largePathname
-      value: warn
-    - name: FORGEJO__git.config__fetch.fsck.largePathname
-      value: warn
+    # Do NOT set nested git.* / git.config.* via FORGEJO__* envs here.
+    # Chart/init still materializes dotted names (FORGEJO__git.config__…) which
+    # break config_environment.sh `export` → Init CrashLoop → git.stadthagen.dev 503.
+    # Prefer app.ini / future chart-native nested config if timeouts/fsck needed.
   metrics:
     enabled: true
     # ServiceMonitor: hand-written apps/dev/forgejo/servicemonitor.yaml (release label)

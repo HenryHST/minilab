@@ -251,6 +251,13 @@ spec:
         - name: tls-bootstrap
           image: alpine/openssl:3.5.9
           imagePullPolicy: IfNotPresent
+          # Root init: chown certs for uid 1883; RO rootfs + emptyDir /tmp (AVD-KSV-0014).
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+              add: ["CHOWN", "FOWNER"]
           command:
             - /bin/sh
             - -c
@@ -301,18 +308,30 @@ spec:
             - name: ldap-secret
               mountPath: /ldap-secret
               readOnly: true
+            - name: tmp
+              mountPath: /tmp
         # go-auth aborts the broker process when LDAP is down or the bind password is wrong.
         # Kubernetes then CrashLoopBackOffs and hides the cause. Wait here, and say which of the two it is.
         - name: ldap-preflight
           # semver: 1.1.2 — public GHCR (lab registry.stadthagen.dev decommissioned)
           image: ghcr.io/henryhst/mosquitto-custom:1.1.2
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1883
+            runAsGroup: 1883
+            capabilities:
+              drop: ["ALL"]
           command: ["/bin/bash", "/preflight/ldap-preflight.sh"]
           env:
             - name: LDAP_PREFLIGHT_ATTEMPTS
               value: "40"
             - name: LDAP_PREFLIGHT_INTERVAL
               value: "15"
+            - name: HOME
+              value: /tmp
           volumeMounts:
             - name: config
               mountPath: /config
@@ -320,11 +339,18 @@ spec:
             - name: ldap-preflight
               mountPath: /preflight
               readOnly: true
+            - name: tmp
+              mountPath: /tmp
       containers:
         - name: mosquitto
           securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
             runAsUser: 1883
             runAsGroup: 1883
+            capabilities:
+              drop: ["ALL"]
           # semver: 1.1.2 — public GHCR (lab registry.stadthagen.dev decommissioned)
           image: ghcr.io/henryhst/mosquitto-custom:1.1.2
           imagePullPolicy: IfNotPresent
@@ -365,6 +391,8 @@ spec:
               readOnly: true
             - name: data
               mountPath: /mosquitto/data
+            - name: tmp
+              mountPath: /tmp
       volumes:
         - name: config-src
           configMap:
@@ -387,6 +415,8 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: mosquitto-data
+        - name: tmp
+          emptyDir: {}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

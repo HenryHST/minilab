@@ -30,6 +30,14 @@ spec:
         - name: exporter
           image: jryberg/mosquitto-exporter@sha256:a68104c040a398426ee1f93187bdf9f66f482092cfcd51333462907d25c03550
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            capabilities:
+              drop: ["ALL"]
           env:
             - name: BROKER_ENDPOINT
               value: tcp://mqtt.mosquitto.svc.cluster.local:1883
@@ -45,6 +53,8 @@ spec:
                 secretKeyRef:
                   name: mosquitto-exporter
                   key: password
+            - name: HOME
+              value: /tmp
           ports:
             - name: metrics
               containerPort: 9234
@@ -66,6 +76,12 @@ spec:
               memory: 32Mi
             limits:
               memory: 64Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

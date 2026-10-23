@@ -114,11 +114,13 @@ spec:
                 - -c
                 - |
                   set -euo pipefail
-                  # paperless-pg is CNPG 18.x; package lives on Alpine edge (not default toolbox repos)
-                  apk add --no-cache \
+                  # paperless-pg is CNPG 18.x; client lives on Alpine edge.
+                  # --upgrade + libpq required: edge postgresql18-client alone leaves
+                  # baked libpq 17 → psql: PQfullProtocolVersion (pg_dump still works).
+                  apk add --no-cache --upgrade \
                     --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main \
                     --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community \
-                    postgresql18-client >/dev/null
+                    postgresql18-client libpq >/dev/null
                   STAMP="$(date -u +%Y%m%d-%H%M%S)"
                   OUT_DIR="/backup/paperless-${STAMP}"
                   mkdir -p "${OUT_DIR}"

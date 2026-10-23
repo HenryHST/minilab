@@ -1,8 +1,11 @@
-# CloudNativePG operator 1.29.1 — chart 0.28.3
+# CloudNativePG operator 1.29.3 — chart 0.28.3 (image.tag pin)
 # https://cloudnative-pg.io/docs/current/installation_upgrade/
 # Cluster CRs live in the app namespace, not in this chart.
-# Chart 0.28.3 / operator 1.29.1 clears CVE-2026-33815 (pgx) and
-# CVE-2025-68121 (Go crypto/tls) in the operator / bootstrap-controller image.
+# 1.29.3 clears CVE-2026-84304 (google.golang.org/grpc) in bootstrap-controller;
+# chart stays 0.28.3 (appVersion 1.29.1) with an explicit tag override.
+
+image:
+  tag: "1.29.3"
 
 serviceAccount:
   create: true

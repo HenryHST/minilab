@@ -13,6 +13,8 @@ rules:
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list"]
+  # Online tar of RWO Longhorn PVC via kubectl exec (cannot mount while Forgejo runs).
+  # Trivy AVD-KSV-0053 HIGH accepted — least privilege: create only (same pattern as vaultwarden/bookstack backups).
   - apiGroups: [""]
     resources: ["pods/exec"]
     verbs: ["create"]

@@ -164,6 +164,9 @@ spec:
           env:
             - name: DOCKER_TLS_CERTDIR
               value: /certs
+          # DinD needs privileged (Forgejo examples/kubernetes/dind-docker.yaml).
+          # Trivy AVD-KSV-0017 HIGH is accepted — setting privileged=false breaks Actions builds.
+          # Alternatives (Kaniko/Buildah/sysbox) are a separate runner redesign.
           securityContext:
             privileged: true
           volumeMounts:

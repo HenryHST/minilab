@@ -97,11 +97,28 @@ extraEnv:
         name: termix-ha
         key: GUACAMOLE_ENCRYPTION_KEY
 
+podSecurityContext:
+  fsGroup: 1000
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
+
+# Image USER is node (uid 1000); was starting as root without an explicit context.
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
 resources:
   requests:
     cpu: 100m
     memory: 256Mi
   limits:
+    cpu: "1"
     memory: 1Gi
 
 guacd:
@@ -109,11 +126,20 @@ guacd:
   image:
     repository: guacamole/guacd
     tag: "1.6.0"
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
   resources:
     requests:
       cpu: 50m
       memory: 64Mi
     limits:
+      cpu: 500m
       memory: 256Mi
 
 ingress:

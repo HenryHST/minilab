@@ -21,8 +21,17 @@ podLabels: {}
 podSecurityContext:
   fsGroup: 1000
   fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
 
-securityContext: {}
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
 
 service:
   type: ClusterIP
@@ -109,6 +118,7 @@ guacd:
     runAsNonRoot: true
     runAsUser: 1000
     allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
     capabilities:
       drop:
         - ALL

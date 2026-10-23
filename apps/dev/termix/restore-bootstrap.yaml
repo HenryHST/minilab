@@ -62,11 +62,37 @@ spec:
         worker: "true"
         kubernetes.io/arch: amd64
       restartPolicy: Never
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: restore
           image: git.stadthagen.dev/ops/k8s-toolbox:1.0.0
           imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           env:
+            - name: HOME
+              value: /tmp
             - name: PGHOST
               value: termix-rw
             - name: PGSSLMODE
@@ -107,7 +133,7 @@ spec:
             - -c
             - |
               set -euo pipefail
-              apk add --no-cache postgresql16-client >/dev/null
+              # postgresql-client is baked into k8s-toolbox (no apk → allows RO rootfs)
 
               if [[ "${RESTORE_ENABLED}" != "true" ]]; then
                 echo "termix-restore.enabled!=true — skip"
@@ -168,7 +194,11 @@ spec:
           volumeMounts:
             - name: backup
               mountPath: /backup
+            - name: tmp
+              mountPath: /tmp
       volumes:
         - name: backup
           persistentVolumeClaim:
             claimName: termix-backups
+        - name: tmp
+          emptyDir: {}

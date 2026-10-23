@@ -48,10 +48,34 @@ spec:
       template:
         spec:
           restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 26
+            runAsGroup: 26
+            fsGroup: 26
+            seccompProfile:
+              type: RuntimeDefault
           containers:
             - name: pg-dump
               image: ghcr.io/cloudnative-pg/postgresql:16.15-202610190958-standard-bookworm
               imagePullPolicy: IfNotPresent
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 26
+                runAsGroup: 26
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
               env:
                 - name: PGHOST
                   value: termix-rw
@@ -68,6 +92,8 @@ spec:
                     secretKeyRef:
                       name: termix-db
                       key: POSTGRES_PASSWORD
+                - name: HOME
+                  value: /tmp
               command:
                 # Debian /bin/sh is dash — no pipefail; use bash (CNPG bookworm image includes it).
                 - /bin/bash
@@ -87,7 +113,11 @@ spec:
               volumeMounts:
                 - name: backup
                   mountPath: /backup
+                - name: tmp
+                  mountPath: /tmp
           volumes:
             - name: backup
               persistentVolumeClaim:
                 claimName: termix-backups
+            - name: tmp
+              emptyDir: {}

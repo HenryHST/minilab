@@ -114,6 +114,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /app/data
+            - name: tmp
+              mountPath: /tmp
         {{- if .Values.guacd.enabled }}
         - name: guacd
           image: "{{ .Values.guacd.image.repository }}:{{ .Values.guacd.image.tag }}"
@@ -129,6 +131,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /termix-data
+            - name: tmp
+              mountPath: /tmp
         {{- end }}
       volumes:
         - name: data
@@ -138,6 +142,8 @@ spec:
           {{- else }}
           emptyDir: {}
           {{- end }}
+        - name: tmp
+          emptyDir: {}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

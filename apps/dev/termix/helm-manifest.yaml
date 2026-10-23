@@ -88,10 +88,18 @@ spec:
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: termix
           securityContext:
-            {}
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
           image: "ghcr.io/lukegus/termix:release-2.9.2"
           imagePullPolicy: IfNotPresent
           ports:
@@ -192,6 +200,7 @@ spec:
             failureThreshold: 6
           resources:
             limits:
+              cpu: "1"
               memory: 1Gi
             requests:
               cpu: 100m
@@ -199,6 +208,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /app/data
+            - name: tmp
+              mountPath: /tmp
         - name: guacd
           image: "guacamole/guacd:1.6.0"
           imagePullPolicy: IfNotPresent
@@ -207,6 +218,7 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsNonRoot: true
             runAsUser: 1000
           ports:
@@ -215,6 +227,7 @@ spec:
               protocol: TCP
           resources:
             limits:
+              cpu: 500m
               memory: 256Mi
             requests:
               cpu: 50m
@@ -222,8 +235,12 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /termix-data
+            - name: tmp
+              mountPath: /tmp
       volumes:
         - name: data
+          emptyDir: {}
+        - name: tmp
           emptyDir: {}
       nodeSelector:
         worker: "true"

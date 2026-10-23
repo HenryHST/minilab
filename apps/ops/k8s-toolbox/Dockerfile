@@ -5,7 +5,7 @@
 # Pin used across minilab manifests:
 #   registry.stadthagen.dev/ops/k8s-toolbox:<VERSION>  (lab mirror)
 #   ghcr.io/henryhst/k8s-toolbox:<VERSION>            (CI source of truth)
-ARG ALPINE_VERSION=3.22
+ARG ALPINE_VERSION=3.24
 ARG KUBECTL_VERSION=v1.37.1
 ARG VERSION=0.0.0
 ARG VCS_REF=unknown

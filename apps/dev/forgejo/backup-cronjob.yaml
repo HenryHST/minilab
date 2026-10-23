@@ -65,6 +65,8 @@ spec:
                 - |
                   set -euo pipefail
                   apk add --no-cache aws-cli >/dev/null
+                  # Ensure bucket exists (docs: manual on pi7cl; mb is idempotent-ish)
+                  aws s3 mb "s3://${S3_BUCKET}" --endpoint-url "${AWS_ENDPOINT_URL}" 2>/dev/null || true
                   TS="$(date -u +%Y%m%dT%H%M%SZ)"
                   POD="$(kubectl -n forgejo get pod -l app.kubernetes.io/name=forgejo \
                     --field-selector=status.phase=Running \

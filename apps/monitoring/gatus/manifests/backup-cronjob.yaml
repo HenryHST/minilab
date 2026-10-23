@@ -69,7 +69,8 @@ spec:
                       name: gatus-db
                       key: POSTGRES_PASSWORD
               command:
-                - /bin/sh
+                # Debian /bin/sh is dash — no pipefail; use bash (bookworm image includes it).
+                - /bin/bash
                 - -c
                 - |
                   set -euo pipefail

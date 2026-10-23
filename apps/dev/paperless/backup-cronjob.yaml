@@ -85,6 +85,10 @@ spec:
           serviceAccountName: backup-runner
           imagePullSecrets:
             - name: registry-pull
+          # k8s-toolbox is linux/amd64 — avoid Pi ImagePullBackOff / edge aarch64 apk
+          nodeSelector:
+            worker: "true"
+            kubernetes.io/arch: amd64
           restartPolicy: Never
           containers:
             - name: trigger-backup
@@ -110,15 +114,20 @@ spec:
                 - -c
                 - |
                   set -euo pipefail
-                  apk add --no-cache postgresql18-client >/dev/null
+                  # paperless-pg is CNPG 18.x; package lives on Alpine edge (not default toolbox repos)
+                  apk add --no-cache \
+                    --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main \
+                    --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community \
+                    postgresql18-client >/dev/null
                   STAMP="$(date -u +%Y%m%d-%H%M%S)"
                   OUT_DIR="/backup/paperless-${STAMP}"
                   mkdir -p "${OUT_DIR}"
+                  # Avoid jsonpath {.items[0]} on empty list (fails under set -e)
                   WEB_POD="$(kubectl -n paperless get pod -l app=paperless \
                     --field-selector=status.phase=Running \
-                    -o jsonpath='{.items[0].metadata.name}')"
+                    -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | head -n1 || true)"
                   if [[ -z "${WEB_POD}" ]]; then
-                    echo "Missing Running paperless pod" >&2
+                    echo "Missing Running paperless pod (app=paperless) — is redis up?" >&2
                     exit 1
                   fi
                   echo "Waiting for postgres..."

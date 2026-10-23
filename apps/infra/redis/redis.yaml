@@ -51,6 +51,13 @@ spec:
     spec:
       nodeSelector:
         worker: "true"
+      # redis:*-alpine runs as uid 999; Longhorn PVC is root-owned without fsGroup
+      # → "Can't open or create append-only dir appendonlydir: Permission denied"
+      securityContext:
+        fsGroup: 999
+        runAsUser: 999
+        runAsGroup: 999
+        runAsNonRoot: true
       containers:
         - name: redis
           image: redis:8-alpine3.23
@@ -83,6 +90,10 @@ spec:
               memory: 64Mi
             limits:
               memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           volumeMounts:
             - name: data
               mountPath: /data

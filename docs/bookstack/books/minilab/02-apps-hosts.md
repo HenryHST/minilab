@@ -1,12 +1,12 @@
 ---
 title: Apps & Hosts
-book_version: "1.2.0"
-updated: "2026-10-22"
+book_version: "1.2.1"
+updated: "2026-10-24"
 ---
 
 # Apps & Hosts
 
-> **Buch** v1.2.0 · Stand: 2026-10-22
+> **Buch** v1.2.1 · Stand: 2026-10-24
 
 Kurzübersicht der User-Apps (Details und Sync Waves: Root-README im Git-Repo).
 
@@ -38,9 +38,11 @@ Workloads liegen unter `apps/{infra,monitoring,ops,dev}/` und werden von vier Ap
 
 | Image | Verwendung |
 |-------|------------|
-| `git.stadthagen.dev/ops/k8s-toolbox:1.0.1` | Backup-/Restore-/GC-Jobs (ersetzt `alpine/k8s`) |
+| `git.stadthagen.dev/ops/k8s-toolbox:1.0.1` | Backup-/Restore-/GC-Jobs (ersetzt `alpine/k8s`); Multi-Arch; Mirror `registry.stadthagen.dev/ops/k8s-toolbox` |
 | Jetstack cert-manager **v1.21.2** | TLS / DNS-01 (CVE-2026-84304 / grpc) |
 
-Build/CI: `apps/ops/k8s-toolbox/` · GHCR `ghcr.io/henryhst/k8s-toolbox`.
+Build/CI: Forgejo `ops/k8s-toolbox` (SoT) · Sync-Tree `apps/ops/k8s-toolbox/` · optional GHCR `ghcr.io/henryhst/k8s-toolbox`. Pull: Secret `registry-pull`.
+
+Paperless Trivy-Residuals (App/Gotenberg Upstream): Buch **Paperless** → Trivy & CVE-Hygiene.
 
 Release: minilab **v0.15.0** · Plattform Infra_LAB **v1.16.0**.

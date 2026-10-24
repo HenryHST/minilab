@@ -1,5 +1,12 @@
 # Changelog — Buch Minilab
 
+## [1.2.1] - 2026-10-24
+
+### Changed
+
+- Apps & Hosts / Troubleshooting: Helper-Pin **`k8s-toolbox:1.0.1`** (Multi-Arch; Consumer-Retarget von `1.0.0`)
+- Verweis Paperless-Buch → Kapitel **Trivy & CVE-Hygiene** für App-Residuals
+
 ## [1.2.0] - 2026-10-22
 
 ### Added

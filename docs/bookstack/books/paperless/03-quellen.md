@@ -15,4 +15,6 @@ book_version: "1.2.0"
 - Archify Provisionierung: [`docs/diagrams/archify/paperless-groups-provision.html`](../../../diagrams/archify/paperless-groups-provision.html)
 - Infra_LAB Authentik: `terraform/authentik/modules/dev/authentik_paperless.tf`, `access_control_users.tf`
 - Upstream: [paperless-ngx](https://docs.paperless-ngx.com/) · Config [`PAPERLESS_SOCIAL_ACCOUNT_SYNC_GROUPS`](https://docs.paperless-ngx.com/configuration/#PAPERLESS_SOCIAL_ACCOUNT_SYNC_GROUPS)
+- Helper-Image: [`apps/ops/k8s-toolbox/`](../../../../apps/ops/k8s-toolbox/) · Tag **1.0.1** (Forgejo SoT)
+- CVE-Hygiene: [Trivy & CVE-Hygiene](06-trivy-cve-hygiene.md)
 - Issue: [HenryHST/minilab#64](https://github.com/HenryHST/minilab/issues/64)

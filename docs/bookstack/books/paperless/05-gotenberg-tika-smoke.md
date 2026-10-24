@@ -30,6 +30,8 @@ Funktionaler Smoke für die Office→PDF→Text-Kette plus bewerteter Paperless-
 
 Job-Exit: nur Smoke FAIL → Job Failed. System-/Trivy-DEGRADED/FAIL erscheinen im Bericht, killen den Job nicht.
 
+Welche Findings nach Image-Bump noch **akzeptiert** sind (Paperless/Gotenberg Upstream, kubectl in toolbox): [Trivy & CVE-Hygiene](06-trivy-cve-hygiene.md).
+
 ![Paperless Gotenberg/Tika Smoke Architektur](../../../diagrams/seecode/exports/paperless-gt-smoke.png)
 
 Interaktiv: [`paperless-gt-smoke.html`](../../../diagrams/seecode/paperless-gt-smoke.html)

@@ -97,6 +97,7 @@ Erwartung: Cluster `healthy`, 1 Instanz. `pg_dump` des CronJobs geht gegen `pape
 - Ext absichtlich nicht erreichbar, bis `pangolin-publish` `paperless.enabled=true`
 - Storage: PVCs Bound, Web/Worker Ready auf `nxk3-w01`, keine `FailedMount`-Events
 - Gotenberg/Tika: CronJob `paperless-gt-smoke` (alle 6h) oder manuell nach Image-Bump — siehe [Gotenberg & Tika Smoke](05-gotenberg-tika-smoke.md)
+- Trivy/CVE-Pins und akzeptierte Residuals: [Trivy & CVE-Hygiene](06-trivy-cve-hygiene.md) (Helper `k8s-toolbox:1.0.1`)
 
 ## Troubleshooting: FailedMount / path does not exist
 

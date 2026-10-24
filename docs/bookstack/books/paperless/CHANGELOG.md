@@ -1,5 +1,15 @@
 # Changelog — Buch Paperless
 
+## [1.7.0] - 2026-10-24
+
+### Added
+
+- Kapitel **Trivy & CVE-Hygiene**: Image-Pins (`paperless-ngx:3.3.4`, `gotenberg:8.38.0`, `k8s-toolbox:1.0.1`), akzeptierte Residuals bis Upstream
+
+### Changed
+
+- Smoke-Kapitel / Deploy: Verweis auf Helper-Pin **1.0.1** und CVE-Hygiene-Kapitel
+
 ## [1.6.1] - 2026-10-24
 
 ### Changed

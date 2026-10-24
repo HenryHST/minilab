@@ -18,7 +18,7 @@ Funktionaler Smoke für die Office→PDF→Text-Kette plus bewerteter Paperless-
 | CronJob | `paperless-gt-smoke` (NS `paperless`) |
 | Schedule | `0 */6 * * *` (UTC), Forbid |
 | ServiceAccount | `paperless-gt-smoke` (get/list Pods, Deploy, HPA, PVC, CronJob/Job, CNPG, VulnerabilityReports) |
-| Image | `git.stadthagen.dev/ops/k8s-toolbox:1.0.0` (amd64 `nodeSelector`) |
+| Image | `git.stadthagen.dev/ops/k8s-toolbox:1.0.1` (amd64 `nodeSelector`) |
 | Gotenberg | LibreOffice convert + Chromium HTML→PDF |
 | Manifest | minilab `apps/dev/paperless/gotenberg-tika-smoke.yaml` |
 | API-Token | Secret `paperless-gt-smoke` / Key `api-token` (manuell; UI Profil → Auth-Tokens) |

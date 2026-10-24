@@ -24,8 +24,11 @@ spec:
         app.kubernetes.io/part-of: registry
         app.kubernetes.io/component: registry
     spec:
+      # Prefer workers with schedulable Longhorn disks (w05/w06 often "disks unavailable"
+      # for strict-local SC). Pin keeps RWO volume attach reliable in the lab.
       nodeSelector:
         worker: "true"
+        kubernetes.io/hostname: nxk3-w04
       containers:
         - name: registry
           # Pin digest (registry:3 as of 2026-06); Renovate can bump.

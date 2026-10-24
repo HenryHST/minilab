@@ -72,7 +72,7 @@ spec:
             name: bookstack-theme-overlay
       containers:
         - name: sync
-          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.0
+          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
           imagePullPolicy: IfNotPresent
           resources:
             requests:

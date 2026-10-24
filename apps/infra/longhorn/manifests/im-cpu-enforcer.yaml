@@ -99,7 +99,7 @@ spec:
             worker: "true"
           containers:
             - name: enforce
-              image: git.stadthagen.dev/ops/k8s-toolbox:1.0.0
+              image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
               imagePullPolicy: IfNotPresent
               command: ["/bin/sh", "/scripts/enforce.sh"]
               env:
@@ -153,7 +153,7 @@ spec:
         worker: "true"
       containers:
         - name: enforce
-          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.0
+          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "/scripts/enforce.sh"]
           env:

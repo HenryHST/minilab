@@ -69,7 +69,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: restore
-          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.0
+          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
           imagePullPolicy: IfNotPresent
           env:
             - name: MYSQL_PWD

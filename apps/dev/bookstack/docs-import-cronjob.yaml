@@ -90,7 +90,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: import
-              image: git.stadthagen.dev/ops/k8s-toolbox:1.0.0
+              image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
               imagePullPolicy: IfNotPresent
               env:
                 - name: BOOKSTACK_URL
@@ -181,7 +181,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: import
-          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.0
+          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
           imagePullPolicy: IfNotPresent
           env:
             - name: BOOKSTACK_URL

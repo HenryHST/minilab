@@ -33,7 +33,7 @@ spec:
           containers:
             - name: gc
               # NOT registry.k8s.io/kubectl: distroless (no bash) → StartError.
-              image: git.stadthagen.dev/ops/k8s-toolbox:1.0.0
+              image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
               command: [/bin/bash, -euo, pipefail, -c]
               args:
                 - /opt/repo-scripts/run-garbage-collection.sh

@@ -57,7 +57,7 @@ spec:
             - name: registry-pull
           containers:
             - name: backup
-              image: git.stadthagen.dev/ops/k8s-toolbox:1.0.0
+              image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
               envFrom:
                 - secretRef:
                     name: forgejo-backup-s3

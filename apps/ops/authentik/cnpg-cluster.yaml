@@ -30,7 +30,7 @@ spec:
       secret:
         name: authentik-credentials
   storage:
-    size: 8Gi
+    size: 16Gi
     storageClass: longhorn
   affinity:
     nodeSelector:

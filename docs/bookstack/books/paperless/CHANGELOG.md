@@ -1,5 +1,17 @@
 # Changelog — Buch Paperless
 
+## [1.6.1] - 2026-10-24
+
+### Changed
+
+- Kapitel **Gotenberg & Tika Smoke**: PDF A4 — Trivy und Rohlog jeweils auf eigener Seite
+
+## [1.6.0] - 2026-10-24
+
+### Added
+
+- Kapitel **Gotenberg & Tika Smoke**: Paperless-API-Checks (Secret `paperless-gt-smoke`), App-Version/Image im Bericht, optionale Trivy-Karte (`TRIVY_REPORT`, Default an), Berichtssprache `REPORT_LANG=de|en` (Default `de`)
+
 ## [1.5.0] - 2026-10-23
 
 ### Changed

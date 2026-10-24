@@ -40,17 +40,19 @@ spec:
             - |
               until (echo >/dev/tcp/paperless-pg-rw/5432) >/dev/null 2>&1; do echo waiting-for-postgres; sleep 3; done
               until (echo >/dev/tcp/redis.redis.svc.cluster.local/6379) >/dev/null 2>&1; do echo waiting-for-redis; sleep 3; done
-              mkdir -p /tmp/paperless /usr/src/paperless/data /usr/src/paperless/media
-              chown -R paperless:paperless /tmp/paperless || true
+              mkdir -p /usr/src/paperless/data/scratch /usr/src/paperless/media /usr/src/paperless/consume
+              chown -R paperless:paperless /usr/src/paperless/data/scratch || true
               cd /usr/src/paperless/src
               export HOME=/usr/src/paperless
               exec s6-setuidgid paperless /usr/local/bin/celery \
                 --app paperless worker --loglevel INFO --without-mingle --without-gossip
           env:
+            - name: PAPERLESS_DBENGINE
+              value: postgresql
             - name: PAPERLESS_DBHOST
               value: paperless-pg-rw
-            - name: PAPERLESS_DBSSLMODE
-              value: require
+            - name: PAPERLESS_DB_OPTIONS
+              value: sslmode=require
             - name: PAPERLESS_DBNAME
               value: paperless
             - name: PAPERLESS_DBUSER
@@ -81,6 +83,9 @@ spec:
               value: http://paperless-tika:9998
             - name: PAPERLESS_TIKA_GOTENBERG_ENDPOINT
               value: http://paperless-gotenberg:3000
+            # Same scratch as web — mail attachments must be visible to consume_file
+            - name: PAPERLESS_SCRATCH_DIR
+              value: /usr/src/paperless/data/scratch
             - name: USERMAP_UID
               value: "1000"
             - name: USERMAP_GID
@@ -97,6 +102,8 @@ spec:
               mountPath: /usr/src/paperless/data
             - name: media
               mountPath: /usr/src/paperless/media
+            - name: consume
+              mountPath: /usr/src/paperless/consume
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -104,6 +111,9 @@ spec:
         - name: media
           persistentVolumeClaim:
             claimName: paperless-media
+        - name: consume
+          persistentVolumeClaim:
+            claimName: paperless-consume
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler

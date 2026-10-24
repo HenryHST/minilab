@@ -59,10 +59,12 @@ spec:
             - name: http
               containerPort: 8000
           env:
+            - name: PAPERLESS_DBENGINE
+              value: postgresql
             - name: PAPERLESS_DBHOST
               value: paperless-pg-rw
-            - name: PAPERLESS_DBSSLMODE
-              value: require
+            - name: PAPERLESS_DB_OPTIONS
+              value: sslmode=require
             - name: PAPERLESS_DBNAME
               value: paperless
             - name: PAPERLESS_DBUSER
@@ -148,7 +150,8 @@ spec:
               value: http://paperless-tika:9998
             - name: PAPERLESS_TIKA_GOTENBERG_ENDPOINT
               value: http://paperless-gotenberg:3000
-            - name: PAPERLESS_CONSUMER_POLLING
+            # v3: CONSUMER_POLLING renamed
+            - name: PAPERLESS_CONSUMER_POLLING_INTERVAL
               value: "60"
             - name: USERMAP_UID
               value: "1000"
@@ -157,6 +160,9 @@ spec:
             # Extra OCR capacity comes from paperless-worker HPA
             - name: PAPERLESS_TASK_WORKERS
               value: "1"
+            # Mail/consume scratch must be shared with paperless-worker (not pod-local /tmp)
+            - name: PAPERLESS_SCRATCH_DIR
+              value: /usr/src/paperless/data/scratch
           # NFS consume chown + migrations can take >2m on first/cold start.
           # Host header required — Django rejects probes that use the pod IP.
           readinessProbe:

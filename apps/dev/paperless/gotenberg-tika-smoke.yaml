@@ -1,5 +1,6 @@
 # Functional smoke for Gotenberg + Tika (Paperless office → PDF → text path).
-# Collects Paperless system + backup status; mails a clear PDF verdict report.
+# Collects Paperless system + backup + API (+ optional Trivy); mails PDF verdict.
+# REPORT_LANG=de|en (default de). TRIVY_REPORT=1|0 (default 1).
 # Run after bumping gotenberg.yaml / tika.yaml image tags.
 apiVersion: v1
 kind: ServiceAccount
@@ -31,6 +32,9 @@ rules:
     verbs: ["get", "list"]
   - apiGroups: ["postgresql.cnpg.io"]
     resources: ["clusters", "backups", "scheduledbackups"]
+    verbs: ["get", "list"]
+  - apiGroups: ["aquasecurity.github.io"]
+    resources: ["vulnerabilityreports"]
     verbs: ["get", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -97,6 +101,16 @@ spec:
                   value: http://paperless-tika:9998
                 - name: PAPERLESS_URL
                   value: http://paperless-web:8000
+                - name: PAPERLESS_API_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: paperless-gt-smoke
+                      key: api-token
+                      optional: true
+                - name: REPORT_LANG
+                  value: "de"
+                - name: TRIVY_REPORT
+                  value: "1"
                 - name: MARKER
                   value: paperless-gt-smoke
                 - name: HOME
@@ -222,6 +236,77 @@ spec:
                   ' | tee -a "${STATUS_TXT}" "${REPORT}"
                     kubectl get deploy,po,pvc,hpa,cronjob,job -n paperless -o json > /tmp/k8s-core.json 2>/tmp/k8s-core.err || echo '{"items":[]}' > /tmp/k8s-core.json
                     kubectl get cluster.postgresql.cnpg.io,scheduledbackup.postgresql.cnpg.io,backup.postgresql.cnpg.io -n paperless -o json > /tmp/k8s-cnpg.json 2>/tmp/k8s-cnpg.err || echo '{"items":[]}' > /tmp/k8s-cnpg.json
+                    slog "--- paperless API ---"
+                    python3 -c '
+                  import json, os, urllib.error, urllib.request
+                  base = os.environ.get("PAPERLESS_URL", "").rstrip("/")
+                  token = (os.environ.get("PAPERLESS_API_TOKEN") or "").strip()
+                  out = {"ok": False, "version": None, "documents": None, "tags": None, "endpoints": {}, "error": None}
+                  if not token:
+                      out["error"] = "PAPERLESS_API_TOKEN missing (secret paperless-gt-smoke/api-token)"
+                      print("api: FAIL", out["error"])
+                      open("/tmp/api.json", "w").write(json.dumps(out))
+                      raise SystemExit(0)
+                  def call(path):
+                      req = urllib.request.Request(base + path, method="GET")
+                      req.add_header("Authorization", "Token " + token)
+                      req.add_header("Accept", "application/json")
+                      # Django ALLOWED_HOSTS rejects Host paperless-web:8000
+                      req.add_header("Host", "paperless.stadthagen.dev")
+                      try:
+                          with urllib.request.urlopen(req, timeout=20) as resp:
+                              body = resp.read()
+                              headers = {k.lower(): v for k, v in resp.headers.items()}
+                              data = None
+                              try:
+                                  data = json.loads(body.decode("utf-8", "replace"))
+                              except Exception:
+                                  data = None
+                              return {"code": resp.getcode(), "headers": headers, "data": data, "error": None}
+                      except urllib.error.HTTPError as e:
+                          return {"code": e.code, "headers": {k.lower(): v for k, v in (e.headers.items() if e.headers else [])}, "data": None, "error": str(e)[:160]}
+                      except Exception as e:
+                          return {"code": "err", "headers": {}, "data": None, "error": str(e)[:160]}
+                  root = call("/api/")
+                  out["endpoints"]["api"] = {"code": root["code"], "error": root.get("error")}
+                  ver = (root.get("headers") or {}).get("x-version")
+                  if ver:
+                      out["version"] = ver.strip()
+                  ui = call("/api/ui_settings/")
+                  out["endpoints"]["ui_settings"] = {"code": ui["code"], "error": ui.get("error")}
+                  if not out["version"] and isinstance(ui.get("data"), dict):
+                      settings = ui["data"].get("settings") or {}
+                      if isinstance(settings, dict) and settings.get("version"):
+                          out["version"] = str(settings["version"])
+                  docs = call("/api/documents/?page_size=1")
+                  out["endpoints"]["documents"] = {"code": docs["code"], "error": docs.get("error")}
+                  if isinstance(docs.get("data"), dict) and "count" in docs["data"]:
+                      out["documents"] = docs["data"]["count"]
+                  tags = call("/api/tags/?page_size=1")
+                  out["endpoints"]["tags"] = {"code": tags["code"], "error": tags.get("error")}
+                  if isinstance(tags.get("data"), dict) and "count" in tags["data"]:
+                      out["tags"] = tags["data"]["count"]
+                  codes = [root["code"], docs["code"], tags["code"]]
+                  out["ok"] = all(isinstance(c, int) and 200 <= c < 300 for c in codes)
+                  if not out["ok"] and not out["error"]:
+                      out["error"] = "one or more API endpoints failed"
+                  print("api: %s version=%s documents=%s tags=%s" % (
+                      "OK" if out["ok"] else "FAIL", out.get("version"), out.get("documents"), out.get("tags")))
+                  open("/tmp/api.json", "w").write(json.dumps(out))
+                  ' | tee -a "${STATUS_TXT}" "${REPORT}"
+                    if [[ "${TRIVY_REPORT:-1}" == "1" ]]; then
+                      slog "--- trivy VulnerabilityReports ---"
+                      kubectl get vulnerabilityreports -n paperless -o json > /tmp/k8s-trivy.json 2>/tmp/k8s-trivy.err \
+                        || echo '{"items":[]}' > /tmp/k8s-trivy.json
+                      if [[ -s /tmp/k8s-trivy.err ]]; then
+                        slog "WARN: trivy list: $(head -c 160 /tmp/k8s-trivy.err)"
+                      else
+                        slog "trivy reports listed"
+                      fi
+                    else
+                      slog "--- trivy skipped (TRIVY_REPORT=${TRIVY_REPORT:-0}) ---"
+                      rm -f /tmp/k8s-trivy.json /tmp/k8s-trivy.err
+                    fi
                   }
 
                   STATUS=FAIL
@@ -237,7 +322,7 @@ spec:
 
                   cat > /tmp/build_report.py <<'PY'
                   #!/usr/bin/env python3
-                  import html, json, os, re
+                  import html, json, os
                   from datetime import datetime, timezone
                   from pathlib import Path
 
@@ -252,6 +337,66 @@ spec:
                   APP_BACKUP_MAX_H = 36.0
                   CNPG_BACKUP_MAX_H = 12.0
                   BAD_POD = ("CrashLoopBackOff", "ImagePullBackOff", "ErrImagePull", "Error", "CreateContainerConfigError")
+                  I18N = {
+                      "de": {
+                          "title": "Paperless Gesundheitsbericht",
+                          "meta_ns": "Namespace paperless",
+                          "meta_job": "CronJob paperless-gt-smoke",
+                          "version_unknown": "unbekannt",
+                          "image_label": "Image",
+                          "card_smoke": "Smoke-Test",
+                          "card_sys": "Systemstatus",
+                          "card_trivy": "Trivy",
+                          "h_smoke": "Smoke-Checkliste",
+                          "h_sys": "System-Checkliste",
+                          "h_trivy": "Trivy VulnerabilityReports",
+                          "h_appendix": "Anhang — Rohlog",
+                          "th_check": "Check",
+                          "th_result": "Ergebnis",
+                          "th_detail": "Detail",
+                          "th_report": "Report",
+                          "th_image": "Image",
+                          "smoke_fail": "Smoke-Fehler:",
+                          "sys_issues": "System-Probleme:",
+                          "trivy_issues": "Trivy-Hinweise:",
+                          "all_green": "Alle Checks grün.",
+                          "pdf_hint": "Details im PDF-Anhang.",
+                          "missing_log": "fehlt im Log",
+                          "fmt_age_never": "nie",
+                          "fmt_age_m": "{n}m her",
+                          "fmt_age_h": "{h:.1f}h her",
+                          "fmt_age_d": "{d:.1f}d her",
+                      },
+                      "en": {
+                          "title": "Paperless health report",
+                          "meta_ns": "namespace paperless",
+                          "meta_job": "CronJob paperless-gt-smoke",
+                          "version_unknown": "unknown",
+                          "image_label": "Image",
+                          "card_smoke": "Smoke test",
+                          "card_sys": "System status",
+                          "card_trivy": "Trivy",
+                          "h_smoke": "Smoke checklist",
+                          "h_sys": "System checklist",
+                          "h_trivy": "Trivy VulnerabilityReports",
+                          "h_appendix": "Appendix — raw log",
+                          "th_check": "Check",
+                          "th_result": "Result",
+                          "th_detail": "Detail",
+                          "th_report": "Report",
+                          "th_image": "Image",
+                          "smoke_fail": "Smoke failures:",
+                          "sys_issues": "System issues:",
+                          "trivy_issues": "Trivy notes:",
+                          "all_green": "All checks green.",
+                          "pdf_hint": "Full details in PDF attachment.",
+                          "missing_log": "missing in log",
+                          "fmt_age_never": "never",
+                          "fmt_age_m": "{n}m ago",
+                          "fmt_age_h": "{h:.1f}h ago",
+                          "fmt_age_d": "{d:.1f}d ago",
+                      },
+                  }
 
                   def now():
                       return datetime.now(timezone.utc)
@@ -267,14 +412,19 @@ spec:
                           return None
                       return (now() - dt).total_seconds() / 3600.0
 
+                  lang = (os.environ.get("REPORT_LANG") or "de").strip().lower()
+                  if lang not in I18N:
+                      lang = "de"
+                  T = I18N[lang]
+
                   def fmt_age(h):
                       if h is None:
-                          return "never"
+                          return T["fmt_age_never"]
                       if h < 1:
-                          return f"{int(h * 60)}m ago"
+                          return T["fmt_age_m"].format(n=int(h * 60))
                       if h < 48:
-                          return f"{h:.1f}h ago"
-                      return f"{h / 24:.1f}d ago"
+                          return T["fmt_age_h"].format(h=h)
+                      return T["fmt_age_d"].format(d=h / 24.0)
 
                   def load_items(path):
                       try:
@@ -301,8 +451,8 @@ spec:
                       return "OK"
 
                   smoke_status = os.environ.get("STATUS", "FAIL")
+                  trivy_enabled = (os.environ.get("TRIVY_REPORT") or "1").strip() == "1"
                   report = Path("/tmp/gt-smoke-report.txt").read_text(errors="replace")
-                  raw_status = Path("/tmp/gt-smoke-status.txt").read_text(errors="replace")
 
                   smoke_checks = [
                       ("gotenberg-health", "gotenberg /health ok" in report),
@@ -315,23 +465,16 @@ spec:
                       smoke_rows.append({
                           "name": name,
                           "level": "PASS" if ok else "FAIL",
-                          "detail": "ok" if ok else "missing in log",
+                          "detail": "ok" if ok else T["missing_log"],
                       })
                   if smoke_status != "PASS":
-                      for row in smoke_rows:
-                          if row["level"] == "PASS" and smoke_status == "FAIL":
-                              pass
                       if not any(r["level"] == "FAIL" for r in smoke_rows):
                           smoke_rows.append({"name": "smoke-overall", "level": "FAIL", "detail": "run_smoke failed"})
 
                   sys_checks = []
                   core = load_items("/tmp/k8s-core.json")
                   cnpg = load_items("/tmp/k8s-cnpg.json")
-                  # mixed list may be from Table-less multi-resource; also handle List of lists via kubectl
-                  # When kubectl returns a List with items of different kinds, items are flat.
                   all_objs = core + cnpg
-                  # Sometimes kubectl wraps as {"kind":"List","items":[...]} already handled.
-                  # Multi-resource get can return kind List with items that are themselves Lists — flatten once.
                   flat = []
                   for o in all_objs:
                       if kind_of(o) == "List" and "items" in o:
@@ -341,6 +484,18 @@ spec:
                   all_objs = flat
 
                   deploys = {o["metadata"]["name"]: o for o in all_objs if kind_of(o) == "Deployment"}
+                  paperless_image = None
+                  d_pl = deploys.get("paperless")
+                  if d_pl:
+                      containers = (d_pl.get("spec", {}).get("template", {}).get("spec", {}).get("containers") or [])
+                      for c in containers:
+                          img = c.get("image") or ""
+                          if "paperless" in img:
+                              paperless_image = img
+                              break
+                      if not paperless_image and containers:
+                          paperless_image = containers[0].get("image")
+
                   for name in CRITICAL_DEPLOYS:
                       d = deploys.get(name)
                       if not d:
@@ -355,7 +510,6 @@ spec:
                       elif ready <= 0 or avail <= 0:
                           add(sys_checks, f"deploy/{name}", "FAIL", f"ready={ready} available={avail} desired={spec_r}")
                       elif ready < spec_r or avail < spec_r:
-                          # HPA scale-up / rolling update — degraded, not hard fail
                           add(sys_checks, f"deploy/{name}", "WARN", f"ready={ready}/{spec_r} (scaling or rolling)")
                       else:
                           add(sys_checks, f"deploy/{name}", "OK", f"{ready}/{spec_r} ready")
@@ -407,10 +561,27 @@ spec:
                           ok = code == expect
                           add(sys_checks, f"health/{name}", "OK" if ok else "FAIL", f"HTTP {code}")
 
-                  # bad pods (non-job)
+                  paperless_version = None
+                  try:
+                      api = json.loads(Path("/tmp/api.json").read_text())
+                  except Exception:
+                      api = None
+                      add(sys_checks, "api", "FAIL", "api.json missing")
+                  if api is not None:
+                      paperless_version = api.get("version")
+                      if api.get("error") and not api.get("ok"):
+                          add(sys_checks, "api", "FAIL", str(api.get("error"))[:160])
+                      elif not api.get("ok"):
+                          parts = []
+                          for ep, info in (api.get("endpoints") or {}).items():
+                              parts.append(f"{ep}=HTTP {info.get('code')}")
+                          add(sys_checks, "api", "FAIL", "; ".join(parts) or "API failed")
+                      else:
+                          detail = f"documents={api.get('documents')} tags={api.get('tags')} version={paperless_version or T['version_unknown']}"
+                          add(sys_checks, "api", "OK", detail)
+
                   for po in [o for o in all_objs if kind_of(o) == "Pod"]:
                       nm = po["metadata"]["name"]
-                      # skip completed job pods
                       phase = po.get("status", {}).get("phase")
                       if phase == "Succeeded":
                           continue
@@ -429,7 +600,6 @@ spec:
                       if cj.get("spec", {}).get("suspend"):
                           add(sys_checks, f"cronjob/{nm}", "WARN", "suspended")
 
-                  # App backup
                   cj = cronjobs.get(APP_BACKUP_CRON)
                   if not cj:
                       add(sys_checks, "backup-app", "FAIL", f"CronJob {APP_BACKUP_CRON} missing")
@@ -467,11 +637,9 @@ spec:
                           else:
                               add(sys_checks, "backup-app", "WARN", f"job {j['metadata']['name']} in progress")
 
-                  # CNPG backup
                   sbs = [o for o in all_objs if kind_of(o) == "ScheduledBackup"]
                   sb = next((o for o in sbs if o["metadata"]["name"] == CNPG_SB), None)
                   backups = [o for o in all_objs if kind_of(o) == "Backup"]
-                  # filter to cluster paperless-pg
                   backups = [
                       b for b in backups
                       if (b.get("spec") or {}).get("cluster", {}).get("name") == "paperless-pg"
@@ -509,23 +677,78 @@ spec:
                       else:
                           add(sys_checks, "backup-cnpg", "WARN", f"no Backup CRs; lastSchedule {fmt_age(h)}")
 
-                  # collection errors
                   for errf, label in (("/tmp/k8s-core.err", "kubectl-core"), ("/tmp/k8s-cnpg.err", "kubectl-cnpg")):
                       p = Path(errf)
                       if p.exists() and p.read_text().strip():
                           add(sys_checks, label, "WARN", p.read_text().strip()[:160])
 
-                  sys_status = worst(c["level"] for c in sys_checks)
+                  sys_status = worst(c["level"] for c in sys_checks) if sys_checks else "OK"
                   for c in sys_checks:
                       if c["level"] in ("FAIL", "WARN"):
                           print(f"  [{c['level']}] {c['name']}: {c['detail']}")
 
+                  trivy_status = None
+                  trivy_rows = []
+                  trivy_totals = {"critical": 0, "high": 0, "medium": 0, "low": 0, "unknown": 0}
+                  if trivy_enabled:
+                      trivy_err = Path("/tmp/k8s-trivy.err")
+                      collect_fail = trivy_err.exists() and trivy_err.read_text().strip()
+                      reports = load_items("/tmp/k8s-trivy.json")
+                      if collect_fail and not reports:
+                          trivy_status = "FAIL"
+                          trivy_rows.append({"name": "trivy-collect", "level": "FAIL", "detail": collect_fail.strip()[:160],
+                                             "image": "", "critical": 0, "high": 0, "medium": 0, "low": 0})
+                      else:
+                          if collect_fail:
+                              trivy_rows.append({"name": "trivy-collect", "level": "WARN", "detail": collect_fail.strip()[:160],
+                                                 "image": "", "critical": 0, "high": 0, "medium": 0, "low": 0})
+                          for r in reports:
+                              nm = r.get("metadata", {}).get("name") or "report"
+                              img = (r.get("report") or {}).get("artifact") or {}
+                              if isinstance(img, dict):
+                                  image = img.get("repository") or img.get("tag") or ""
+                                  if img.get("repository") and img.get("tag"):
+                                      image = f"{img.get('repository')}:{img.get('tag')}"
+                              else:
+                                  image = str(img) if img else ""
+                              summary = ((r.get("report") or {}).get("summary") or {})
+                              c = int(summary.get("criticalCount") or 0)
+                              h = int(summary.get("highCount") or 0)
+                              m = int(summary.get("mediumCount") or 0)
+                              lo = int(summary.get("lowCount") or 0)
+                              u = int(summary.get("unknownCount") or 0)
+                              trivy_totals["critical"] += c
+                              trivy_totals["high"] += h
+                              trivy_totals["medium"] += m
+                              trivy_totals["low"] += lo
+                              trivy_totals["unknown"] += u
+                              lvl = "FAIL" if c > 0 else ("WARN" if h > 0 else "OK")
+                              trivy_rows.append({
+                                  "name": nm, "level": lvl, "image": image,
+                                  "critical": c, "high": h, "medium": m, "low": lo,
+                                  "detail": f"C={c} H={h} M={m} L={lo}" + (f" U={u}" if u else ""),
+                              })
+                          trivy_rows.sort(key=lambda x: (-x.get("critical", 0), -x.get("high", 0), x.get("name", "")))
+                          if trivy_totals["critical"] > 0 or any(x["level"] == "FAIL" for x in trivy_rows):
+                              trivy_status = "FAIL"
+                          elif trivy_totals["high"] > 0 or any(x["level"] == "WARN" for x in trivy_rows):
+                              trivy_status = "DEGRADED"
+                          else:
+                              trivy_status = "OK"
+                          if not reports and not collect_fail:
+                              trivy_status = "OK"
+                              trivy_rows.append({"name": "trivy", "level": "OK", "detail": "no VulnerabilityReports",
+                                                 "image": "", "critical": 0, "high": 0, "medium": 0, "low": 0})
+
                   ts = now().strftime("%Y-%m-%d %H:%M UTC")
+                  ver_disp = paperless_version or T["version_unknown"]
+                  img_disp = paperless_image or T["version_unknown"]
                   smoke_cls = "pass" if smoke_status == "PASS" else "fail"
                   sys_cls = {"OK": "pass", "DEGRADED": "warn", "FAIL": "fail"}.get(sys_status, "warn")
+                  trivy_cls = {"OK": "pass", "DEGRADED": "warn", "FAIL": "fail"}.get(trivy_status or "", "warn")
 
                   def rows_html(rows):
-                      out = ["<table><thead><tr><th>Check</th><th>Result</th><th>Detail</th></tr></thead><tbody>"]
+                      out = [f"<table><thead><tr><th>{html.escape(T['th_check'])}</th><th>{html.escape(T['th_result'])}</th><th>{html.escape(T['th_detail'])}</th></tr></thead><tbody>"]
                       for r in rows:
                           lvl = r["level"]
                           css = {"OK": "ok", "PASS": "ok", "WARN": "warn", "DEGRADED": "warn", "FAIL": "bad"}.get(lvl, "")
@@ -537,18 +760,53 @@ spec:
                       out.append("</tbody></table>")
                       return "\n".join(out)
 
+                  def trivy_html(rows):
+                      out = [f"<table><thead><tr><th>{html.escape(T['th_report'])}</th><th>{html.escape(T['th_image'])}</th><th>C</th><th>H</th><th>M</th><th>L</th><th>{html.escape(T['th_result'])}</th></tr></thead><tbody>"]
+                      for r in rows:
+                          lvl = r["level"]
+                          css = {"OK": "ok", "WARN": "warn", "FAIL": "bad"}.get(lvl, "")
+                          out.append(
+                              f"<tr class='{css}'><td>{html.escape(r['name'])}</td>"
+                              f"<td>{html.escape(r.get('image') or '')}</td>"
+                              f"<td>{r.get('critical', 0)}</td><td>{r.get('high', 0)}</td>"
+                              f"<td>{r.get('medium', 0)}</td><td>{r.get('low', 0)}</td>"
+                              f"<td><strong>{html.escape(lvl)}</strong></td></tr>"
+                          )
+                      out.append("</tbody></table>")
+                      return "\n".join(out)
+
+                  trivy_card = ""
+                  trivy_section = ""
+                  title_extra = ""
+                  if trivy_enabled and trivy_status:
+                      title_extra = f" TRIVY={html.escape(trivy_status)}"
+                      trivy_card = f"""
+                    <div class="card {trivy_cls}">
+                      <div class="label">{html.escape(T['card_trivy'])}</div>
+                      <div class="verdict">{html.escape(trivy_status)}</div>
+                    </div>"""
+                      totals = f"C={trivy_totals['critical']} H={trivy_totals['high']} M={trivy_totals['medium']} L={trivy_totals['low']}"
+                      trivy_section = f"""
+                  <div class="page-break" aria-hidden="true"></div>
+                  <section class="pdf-page" id="page-trivy">
+                  <h2>{html.escape(T['h_trivy'])}</h2>
+                  <div class="meta">{html.escape(totals)}</div>
+                  {trivy_html(trivy_rows)}
+                  </section>"""
+
                   doc = f"""<!DOCTYPE html>
-                  <html lang="en">
+                  <html lang="{html.escape(lang)}">
                   <head>
                   <meta charset="utf-8"/>
-                  <title>Paperless GT Smoke — SMOKE={html.escape(smoke_status)} SYS={html.escape(sys_status)}</title>
+                  <title>Paperless GT Smoke — SMOKE={html.escape(smoke_status)} SYS={html.escape(sys_status)}{title_extra}</title>
                   <style>
-                  body {{ font-family: DejaVu Sans, Helvetica, Arial, sans-serif; margin: 20px; color: #1a1a1a; font-size: 11px; }}
+                  @page {{ size: A4; margin: 12mm; }}
+                  html, body {{ font-family: DejaVu Sans, Helvetica, Arial, sans-serif; margin: 0; padding: 0; color: #1a1a1a; font-size: 11px; }}
                   h1 {{ font-size: 18px; margin: 0 0 4px; }}
                   h2 {{ font-size: 13px; margin: 16px 0 8px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }}
                   .meta {{ color: #555; margin-bottom: 12px; }}
-                  .cards {{ display: flex; gap: 12px; margin: 12px 0 18px; }}
-                  .card {{ flex: 1; border: 2px solid #333; border-radius: 6px; padding: 14px 16px; }}
+                  .cards {{ display: flex; gap: 12px; margin: 12px 0 18px; flex-wrap: wrap; }}
+                  .card {{ flex: 1; min-width: 120px; border: 2px solid #333; border-radius: 6px; padding: 14px 16px; }}
                   .card .label {{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #444; }}
                   .card .verdict {{ font-size: 28px; font-weight: bold; margin-top: 4px; }}
                   .pass {{ background: #e8f5e9; border-color: #2e7d32; }}
@@ -564,73 +822,118 @@ spec:
                   tr.warn td:nth-child(2) {{ color: #f57f17; }}
                   tr.bad td:nth-child(2) {{ color: #b71c1c; }}
                   pre.appendix {{ background: #f7f7f7; border: 1px solid #ddd; padding: 8px; white-space: pre-wrap; word-break: break-word; font-size: 8px; max-height: none; }}
+                  /* Only break-before — before+after on the same spacer creates blank pages */
+                  .page-break {{
+                    display: block;
+                    height: 0;
+                    margin: 0;
+                    padding: 0;
+                    border: 0;
+                    page-break-before: always;
+                    break-before: page;
+                  }}
+                  @media print {{
+                    .page-break {{
+                      page-break-before: always !important;
+                      break-before: page !important;
+                    }}
+                  }}
                   </style>
                   </head>
                   <body>
-                  <h1>Paperless health report</h1>
-                  <div class="meta">{html.escape(ts)} · namespace paperless · CronJob paperless-gt-smoke</div>
+                  <section class="pdf-page" id="page-main">
+                  <h1>{html.escape(T['title'])}</h1>
+                  <div class="meta">{html.escape(ts)} · {html.escape(T['meta_ns'])} · {html.escape(T['meta_job'])}</div>
+                  <div class="meta">Paperless {html.escape(str(ver_disp))} · {html.escape(T['image_label'])} {html.escape(str(img_disp))}</div>
                   <div class="cards">
                     <div class="card {smoke_cls}">
-                      <div class="label">Smoke test</div>
+                      <div class="label">{html.escape(T['card_smoke'])}</div>
                       <div class="verdict">{html.escape(smoke_status)}</div>
                     </div>
                     <div class="card {sys_cls}">
-                      <div class="label">System status</div>
+                      <div class="label">{html.escape(T['card_sys'])}</div>
                       <div class="verdict">{html.escape(sys_status)}</div>
-                    </div>
+                    </div>{trivy_card}
                   </div>
-                  <h2>Smoke checklist</h2>
+                  <h2>{html.escape(T['h_smoke'])}</h2>
                   {rows_html(smoke_rows)}
-                  <h2>System checklist</h2>
+                  <h2>{html.escape(T['h_sys'])}</h2>
                   {rows_html(sys_checks)}
-                  <h2>Appendix — raw log</h2>
+                  </section>
+                  {trivy_section}
+                  <div class="page-break" aria-hidden="true"></div>
+                  <section class="pdf-page" id="page-appendix">
+                  <h2>{html.escape(T['h_appendix'])}</h2>
                   <pre class="appendix">{html.escape(report)}</pre>
+                  </section>
                   </body>
                   </html>"""
-                  # dedent leading spaces from YAML indent in heredoc content — strip common indent
                   Path("/tmp/index.html").write_text(doc)
 
                   issues = [c for c in sys_checks if c["level"] in ("FAIL", "WARN")]
                   smoke_fail = [c for c in smoke_rows if c["level"] == "FAIL"]
+                  trivy_issues = [c for c in trivy_rows if c["level"] in ("FAIL", "WARN")] if trivy_enabled else []
                   summary_lines = [
-                      f"SMOKE={smoke_status}  SYS={sys_status}",
+                      f"SMOKE={smoke_status}  SYS={sys_status}" + (f"  TRIVY={trivy_status}" if trivy_enabled and trivy_status else ""),
                       f"time={ts}",
+                      f"Paperless {ver_disp} · {T['image_label']} {img_disp}",
                       "",
                   ]
                   if smoke_fail:
-                      summary_lines.append("Smoke failures:")
+                      summary_lines.append(T["smoke_fail"])
                       for c in smoke_fail:
                           summary_lines.append(f"  - {c['name']}: {c['detail']}")
                   if issues:
-                      summary_lines.append("System issues:")
+                      summary_lines.append(T["sys_issues"])
                       for c in issues:
                           summary_lines.append(f"  - [{c['level']}] {c['name']}: {c['detail']}")
-                  if not smoke_fail and not issues:
-                      summary_lines.append("All checks green.")
+                  if trivy_issues:
+                      summary_lines.append(T["trivy_issues"])
+                      for c in trivy_issues[:12]:
+                          summary_lines.append(f"  - [{c['level']}] {c['name']}: {c['detail']}")
+                  if not smoke_fail and not issues and not trivy_issues:
+                      summary_lines.append(T["all_green"])
                   summary_lines.append("")
-                  summary_lines.append("Full details in PDF attachment.")
+                  summary_lines.append(T["pdf_hint"])
                   Path("/tmp/mail-summary.txt").write_text("\n".join(summary_lines) + "\n")
 
                   verdict = {
                       "smoke": smoke_status,
                       "sys": sys_status,
+                      "lang": lang,
+                      "paperless_version": paperless_version,
+                      "paperless_image": paperless_image,
                       "smoke_checks": smoke_rows,
                       "sys_checks": sys_checks,
                   }
+                  if trivy_enabled:
+                      verdict["trivy"] = trivy_status
+                      verdict["trivy_totals"] = trivy_totals
+                      verdict["trivy_reports"] = trivy_rows
                   Path("/tmp/verdict.json").write_text(json.dumps(verdict, indent=2))
-                  print(f"verdict SMOKE={smoke_status} SYS={sys_status} checks={len(sys_checks)}")
+                  extra = f" TRIVY={trivy_status}" if trivy_enabled and trivy_status else ""
+                  print(f"verdict SMOKE={smoke_status} SYS={sys_status}{extra} version={paperless_version} checks={len(sys_checks)}")
                   PY
 
                   PDF_OK=0
                   SYS_STATUS=UNKNOWN
+                  TRIVY_STATUS=""
                   log "==> build HTML report"
-                  if STATUS="${STATUS}" python3 /tmp/build_report.py; then
+                  if STATUS="${STATUS}" REPORT_LANG="${REPORT_LANG:-de}" TRIVY_REPORT="${TRIVY_REPORT:-1}" python3 /tmp/build_report.py; then
                     SYS_STATUS="$(python3 -c 'import json; print(json.load(open("/tmp/verdict.json"))["sys"])' 2>/dev/null || echo UNKNOWN)"
-                    log "html ok SYS=${SYS_STATUS}"
+                    TRIVY_STATUS="$(python3 -c 'import json; print(json.load(open("/tmp/verdict.json")).get("trivy") or "")' 2>/dev/null || true)"
+                    log "html ok SYS=${SYS_STATUS}${TRIVY_STATUS:+ TRIVY=${TRIVY_STATUS}}"
                     log "==> gotenberg chromium HTML→PDF"
                     if curl -fsS --max-time 90 \
                       -o "${PDF}" \
                       -F "files=@${HTML};filename=index.html" \
+                      -F "preferCssPageSize=true" \
+                      -F "emulatedMediaType=print" \
+                      -F "printBackground=true" \
+                      -F "marginTop=0" \
+                      -F "marginBottom=0" \
+                      -F "marginLeft=0" \
+                      -F "marginRight=0" \
                       "${GOTENBERG_URL}/forms/chromium/convert/html" \
                       && head -c 5 "${PDF}" | grep -q '%PDF'; then
                       log "PDF generated ($(wc -c < "${PDF}") bytes)"
@@ -652,7 +955,7 @@ spec:
                   fi
 
                   log "==> mail report to ${MAIL_TO}"
-                  if ! STATUS="${STATUS}" SYS_STATUS="${SYS_STATUS}" PDF_OK="${PDF_OK}" SUBJECT_EXTRA="${SUBJECT_EXTRA}" python3 -c '
+                  if ! STATUS="${STATUS}" SYS_STATUS="${SYS_STATUS}" TRIVY_STATUS="${TRIVY_STATUS}" PDF_OK="${PDF_OK}" SUBJECT_EXTRA="${SUBJECT_EXTRA}" python3 -c '
                   import os, ssl, smtplib, socket, subprocess, json
                   from email.message import EmailMessage
                   from pathlib import Path
@@ -673,10 +976,13 @@ spec:
                   ip = ips[0]
                   smoke = os.environ["STATUS"]
                   sys_st = os.environ.get("SYS_STATUS") or "UNKNOWN"
+                  trivy_st = os.environ.get("TRIVY_STATUS") or ""
                   try:
                       v = json.loads(Path("/tmp/verdict.json").read_text())
                       smoke = v.get("smoke", smoke)
                       sys_st = v.get("sys", sys_st)
+                      if v.get("trivy"):
+                          trivy_st = v.get("trivy")
                   except Exception:
                       pass
                   pdf_ok = os.environ.get("PDF_OK") == "1"
@@ -684,7 +990,8 @@ spec:
                   summary = Path("/tmp/mail-summary.txt").read_text(errors="replace")
                   stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
                   msg = EmailMessage()
-                  msg["Subject"] = f"[paperless-gt-smoke] SMOKE={smoke} SYS={sys_st}{extra}"
+                  trivy_part = f" TRIVY={trivy_st}" if trivy_st else ""
+                  msg["Subject"] = f"[paperless-gt-smoke] SMOKE={smoke} SYS={sys_st}{trivy_part}{extra}"
                   msg["From"] = os.environ["MAIL_FROM"]
                   msg["To"] = os.environ["MAIL_TO"]
                   msg["Reply-To"] = "paperless@stadthagen.dev"
@@ -709,7 +1016,7 @@ spec:
                   s.login(os.environ["SMTP_USER"], os.environ["SMTP_PASSWORD"])
                   s.send_message(msg)
                   s.quit()
-                  print("mail sent to", os.environ["MAIL_TO"], "via", ip, "pdf=", pdf_ok, f"SMOKE={smoke} SYS={sys_st}")
+                  print("mail sent to", os.environ["MAIL_TO"], "via", ip, "pdf=", pdf_ok, f"SMOKE={smoke} SYS={sys_st}{trivy_part}")
                   '; then
                     log "mail send FAILED"
                     exit 1

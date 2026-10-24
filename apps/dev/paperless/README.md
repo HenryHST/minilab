@@ -46,12 +46,13 @@ kubectl -n paperless get pods -o wide | rg 'paperless-|paperless-worker'
 
 OIDC login via LAN; drop a scan into HPScan → consume. IMAP: send a PDF to `paperless@stadthagen.dev` → Settings → Mail shows account/rule; document gets tag `inbox` (~10 min poll).
 
-**Gotenberg / Tika smoke** (CronJob `paperless-gt-smoke`, every 6h): LibreOffice convert → PDF → Tika text extract; then evaluated system status (workloads, CNPG, PVC, health, **app-backup** + **CNPG-snapshot**). PDF report with two verdict cards (`SMOKE=PASS|FAIL`, `SYS=OK|DEGRADED|FAIL`) mailed to `paperless@stadthagen.dev` from `auto@…` (Subject `[paperless-gt-smoke] SMOKE=… SYS=…`, optional `[FAIL-PDF]`). SA `paperless-gt-smoke` (read-only RBAC). After bumping `gotenberg.yaml` / `tika.yaml` tags, run manually before relying on the new images:
+**Gotenberg / Tika smoke** (CronJob `paperless-gt-smoke`, every 6h): LibreOffice convert → PDF → Tika text extract; then system status (workloads, CNPG, PVC, health, backups), **Paperless API** (Secret `paperless-gt-smoke` / `api-token`), app **version** + image, and optional **Trivy** VulnerabilityReports (`TRIVY_REPORT=1` default). Report language: `REPORT_LANG=de|en` (default `de`). PDF mailed to `paperless@stadthagen.dev` (Subject `SMOKE=… SYS=… TRIVY=…`, optional `[FAIL-PDF]`). After bumping `gotenberg.yaml` / `tika.yaml` tags, run manually:
 
 ```bash
+# Token: Paperless UI → Profile → Auth tokens → secret paperless-gt-smoke/api-token
 kubectl -n paperless create job --from=cronjob/paperless-gt-smoke paperless-gt-smoke-manual-$(date +%s)
 kubectl -n paperless logs -f job/paperless-gt-smoke-manual-…
-# Expect: verdict SMOKE=PASS SYS=OK|DEGRADED; PDF generated; mail sent … SMOKE=… SYS=…
+# Expect: verdict SMOKE=PASS SYS=… TRIVY=… version=…; PDF generated; mail sent …
 ```
 
 BookStack: **Paperless → Gotenberg & Tika Smoke**.

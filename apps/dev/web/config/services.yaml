@@ -24,13 +24,15 @@
         icon: traefik.png
         description: Ingress LB 192.168.0.215
     - Authentik:
+        id: authentik
         href: https://idp.stadthagen.dev
         icon: authentik.svg
-        description: Identity Provider (OIDC)
+        description: Identity Provider
     - Forgejo:
+        id: forgejo
         href: https://git.stadthagen.dev
         icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/forgejo.svg
-        description: Git + OCI Registry (OIDC)
+        description: Git + OCI Registry
 - Tools:
     - Omni Tools:
         href: https://omni-tools.stadthagen.dev
@@ -52,14 +54,21 @@
         href: https://drawio.stadthagen.dev
         icon: si-diagramsdotnet-#F08705
         description: Diagram editor
+    - ExcaliDash:
+        id: excalidash
+        href: https://excalidash.stadthagen.dev
+        icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/excalidraw.png
+        description: Excalidraw workspaces
     - Termix:
+        id: termix
         href: https://termix.stadthagen.dev
         icon: si-gnubash-#4EAA25
-        description: SSH terminal (OIDC)
+        description: SSH terminal
     - Vaultwarden:
+        id: vaultwarden
         href: https://vw-ext.stadthagen.dev
         icon: si-bitwarden-#175DDC
-        description: Password Manager (SSO)
+        description: Password Manager
     - Vaultwarden Restore:
         href: https://vw-restore.stadthagen.dev
         icon: si-bitwarden-#175DDC
@@ -69,21 +78,24 @@
         icon: bookstack.png
         description: Bedienungshandbuch
     - ByteStash:
+        id: bytestash
         href: https://bytestash.stadthagen.dev
         icon: bytestash.png
-        description: code snippets (OIDC)
+        description: code snippets
     - Paperless:
         href: https://paperless.stadthagen.dev
         icon: https://www.svgrepo.com/show/518457/paperless.svg
         description: Dokumente / OCR
     - Audiobookshelf:
+        id: audiobookshelf
         href: https://audiobookshelf.stadthagen.dev
         icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/audiobookshelf.svg
-        description: Hörbücher / Podcasts (OIDC)
+        description: Hörbücher / Podcasts
     - n8n:
+        id: n8n
         href: https://n8n.stadthagen.dev
         icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/n8n.svg
-        description: Workflows (ForwardAuth)
+        description: Workflows
 - Monitoring:
     - Longhorn:
         href: https://longhorn.stadthagen.dev
@@ -98,9 +110,10 @@
         icon: si-docker-#2496ED
         description: dashboards
     - Hubble UI:
+        id: hubble
         href: https://hubble.stadthagen.dev
         icon: si-cilium-#F8C21A
-        description: Cilium flow visualization (SSO)
+        description: Cilium flow visualization
     - Prometheus:
         href: https://prometheus.stadthagen.dev
         icon: si-prometheus-#E6522C

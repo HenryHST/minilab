@@ -20,21 +20,18 @@ data:
       - minilab:
         - icon: si-github-#FFFFFF
           href: https://github.com/HenryHST/minilab
-
+    
     - Developer:
         - Github:
             - abbr: GH
               icon: si-github-#FFFFFF
               href: https://github.com/
-
   docker.yaml: |
     ---
     # Docker socket integration not used in cluster
-
   kubernetes.yaml: |
     ---
     mode: cluster
-
   services.yaml: |
     ---
     - nXk3:
@@ -62,13 +59,15 @@ data:
             icon: traefik.png
             description: Ingress LB 192.168.0.215
         - Authentik:
+            id: authentik
             href: https://idp.stadthagen.dev
             icon: authentik.svg
-            description: Identity Provider (OIDC)
+            description: Identity Provider
         - Forgejo:
+            id: forgejo
             href: https://git.stadthagen.dev
             icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/forgejo.svg
-            description: Git + OCI Registry (OIDC)
+            description: Git + OCI Registry
     - Tools:
         - Omni Tools:
             href: https://omni-tools.stadthagen.dev
@@ -91,17 +90,20 @@ data:
             icon: si-diagramsdotnet-#F08705
             description: Diagram editor
         - ExcaliDash:
+            id: excalidash
             href: https://excalidash.stadthagen.dev
             icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/excalidraw.png
-            description: Excalidraw workspaces (OIDC)
+            description: Excalidraw workspaces
         - Termix:
+            id: termix
             href: https://termix.stadthagen.dev
             icon: si-gnubash-#4EAA25
-            description: SSH terminal (OIDC)
+            description: SSH terminal
         - Vaultwarden:
+            id: vaultwarden
             href: https://vw-ext.stadthagen.dev
             icon: si-bitwarden-#175DDC
-            description: Password Manager (SSO)
+            description: Password Manager
         - Vaultwarden Restore:
             href: https://vw-restore.stadthagen.dev
             icon: si-bitwarden-#175DDC
@@ -111,21 +113,24 @@ data:
             icon: bookstack.png
             description: Bedienungshandbuch
         - ByteStash:
+            id: bytestash
             href: https://bytestash.stadthagen.dev
             icon: bytestash.png
-            description: code snippets (OIDC)
+            description: code snippets
         - Paperless:
             href: https://paperless.stadthagen.dev
             icon: https://www.svgrepo.com/show/518457/paperless.svg
             description: Dokumente / OCR
         - Audiobookshelf:
+            id: audiobookshelf
             href: https://audiobookshelf.stadthagen.dev
             icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/audiobookshelf.svg
-            description: Hörbücher / Podcasts (OIDC)
+            description: Hörbücher / Podcasts
         - n8n:
+            id: n8n
             href: https://n8n.stadthagen.dev
             icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/n8n.svg
-            description: Workflows (ForwardAuth)
+            description: Workflows
     - Monitoring:
         - Longhorn:
             href: https://longhorn.stadthagen.dev
@@ -140,9 +145,10 @@ data:
             icon: si-docker-#2496ED
             description: dashboards
         - Hubble UI:
+            id: hubble
             href: https://hubble.stadthagen.dev
             icon: si-cilium-#F8C21A
-            description: Cilium flow visualization (SSO)
+            description: Cilium flow visualization
         - Prometheus:
             href: https://prometheus.stadthagen.dev
             icon: si-prometheus-#E6522C
@@ -169,7 +175,6 @@ data:
               classes: h-72
               allowScrolling: yes
               refreshInterval: 60000
-
   settings.yaml: |
     ---
     title: Stadthagen Home
@@ -178,20 +183,20 @@ data:
     language: de
     hideVersion: true
     hideErrors: true
-
+    
     providers:
       longhorn:
         url: http://longhorn-frontend.longhorn-system.svc.cluster.local
-
+    
     background:
       image: https://images.unsplash.com/photo-1637825891028-564f672aa42c
       blur: md
       brightness: 60
       opacity: 60
-
+    
     cardBlur: sm
     useEqualHeights: true
-
+    
     layout:
       nXk3:
         header: true
@@ -202,7 +207,6 @@ data:
       Monitoring:
         header: true
         icon: mdi-list-status-#FFFFFF
-
   widgets.yaml: |
     ---
     - resources:
@@ -210,7 +214,7 @@ data:
         memory: true
         disk: /
         refresh: 3000
-
+    
     - datetime:
         text_size: xl
         locale: de
@@ -218,7 +222,7 @@ data:
             timeStyle: long
             dateStyle: long
             hourCycle: h23
-
+    
     - kubernetes:
         cluster:
           show: false
@@ -231,18 +235,18 @@ data:
           cpu: true
           memory: true
           showLabel: true
-
+    
     - longhorn:
         expanded: true
         total: true
         labels: true
         nodes: false
-
+    
     - unifi_console:
         url: "{{HOMEPAGE_VAR_UNIFI_URL}}"
         username: "{{HOMEPAGE_VAR_UNIFI_USER}}"
         password: "{{HOMEPAGE_VAR_UNIFI_PASS}}"
-
+    
     # OpenWeatherMap requires OPENWEATHERMAP_API_KEY — see secret.env.example
     # - openweathermap:
     #     latitude: 49.86014928642
@@ -251,3 +255,176 @@ data:
     #     units: metric
     #     cache: 5
     #     label: Griesheim
+  custom.css: |
+    /* Auth badges (SSO / OIDC / FA) — injected by custom.js */
+    .auth-badge {
+      display: inline-flex;
+      align-items: center;
+      margin-left: 0.4rem;
+      padding: 0.05rem 0.35rem;
+      border-radius: 0.25rem;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      line-height: 1.2;
+      vertical-align: middle;
+      white-space: nowrap;
+      cursor: help;
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.12);
+      color: inherit;
+      opacity: 0.9;
+    }
+    
+    .auth-badge--oidc {
+      border-color: rgba(96, 165, 250, 0.45);
+      background: rgba(37, 99, 235, 0.25);
+    }
+    
+    .auth-badge--sso {
+      border-color: rgba(52, 211, 153, 0.45);
+      background: rgba(16, 185, 129, 0.25);
+    }
+    
+    .auth-badge--fa {
+      border-color: rgba(251, 191, 36, 0.45);
+      background: rgba(217, 119, 6, 0.25);
+    }
+    
+    .auth-badge::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 0.35rem);
+      transform: translateX(-50%) translateY(0.15rem);
+      padding: 0.35rem 0.55rem;
+      border-radius: 0.35rem;
+      background: rgba(15, 23, 42, 0.95);
+      color: #f8fafc;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: normal;
+      line-height: 1.3;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s;
+      z-index: 50;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
+    
+    .auth-badge:hover::after,
+    .auth-badge:focus-visible::after {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+  custom.js: |
+    (() => {
+      const AUTH_BADGES = {
+        authentik: {
+          label: "OIDC",
+          title: "Anmeldung über Authentik (OIDC)",
+          kind: "oidc",
+        },
+        forgejo: {
+          label: "OIDC",
+          title: "Anmeldung über Authentik (OIDC)",
+          kind: "oidc",
+        },
+        excalidash: {
+          label: "OIDC",
+          title: "Anmeldung über Authentik (OIDC)",
+          kind: "oidc",
+        },
+        termix: {
+          label: "OIDC",
+          title: "Anmeldung über Authentik (OIDC)",
+          kind: "oidc",
+        },
+        vaultwarden: {
+          label: "SSO",
+          title: "Single Sign-On über Authentik",
+          kind: "sso",
+        },
+        bytestash: {
+          label: "OIDC",
+          title: "Anmeldung über Authentik (OIDC)",
+          kind: "oidc",
+        },
+        audiobookshelf: {
+          label: "OIDC",
+          title: "Anmeldung über Authentik (OIDC)",
+          kind: "oidc",
+        },
+        n8n: {
+          label: "FA",
+          title: "Zugriffsschutz via Authentik ForwardAuth",
+          kind: "fa",
+        },
+        hubble: {
+          label: "SSO",
+          title: "Single Sign-On über Authentik",
+          kind: "sso",
+        },
+      };
+    
+      function ensureBadge(serviceId, meta) {
+        const root = document.getElementById(serviceId);
+        if (!root || root.querySelector(`.auth-badge[data-auth-id="${serviceId}"]`)) {
+          return;
+        }
+    
+        const badge = document.createElement("span");
+        badge.className = `auth-badge auth-badge--${meta.kind}`;
+        badge.textContent = meta.label;
+        badge.title = meta.title;
+        badge.setAttribute("data-tooltip", meta.title);
+        badge.setAttribute("data-auth-id", serviceId);
+        badge.setAttribute("tabindex", "0");
+        badge.setAttribute("role", "note");
+        badge.setAttribute("aria-label", meta.title);
+    
+        const nameEl = root.querySelector(".service-name");
+        if (!nameEl) {
+          root.appendChild(badge);
+          return;
+        }
+    
+        const desc = nameEl.querySelector(".service-description");
+        if (desc) {
+          nameEl.insertBefore(badge, desc);
+        } else {
+          nameEl.appendChild(badge);
+        }
+      }
+    
+      function injectAuthBadges() {
+        Object.entries(AUTH_BADGES).forEach(([serviceId, meta]) => {
+          ensureBadge(serviceId, meta);
+        });
+      }
+    
+      function start() {
+        injectAuthBadges();
+    
+        let scheduled = false;
+        const observer = new MutationObserver(() => {
+          if (scheduled) return;
+          scheduled = true;
+          requestAnimationFrame(() => {
+            scheduled = false;
+            injectAuthBadges();
+          });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      }
+    
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", start);
+      } else {
+        start();
+      }
+    })();

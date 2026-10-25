@@ -1,8 +1,8 @@
 # ADR-0015: App-Backups per CronJob auf NFS
 
 - **Status:** Accepted
-- **Datum:** 2026-09-11 (ergänzt 2026-09-27)
-- **Kontext:** gatus, vaultwarden, termix, bookstack, authentik, bytestash, n8n
+- **Datum:** 2026-09-11 (ergänzt 2026-09-27; Paperless Exporter 2026-10-25)
+- **Kontext:** gatus, vaultwarden, termix, bookstack, authentik, bytestash, n8n, paperless
 
 ## Kontext
 
@@ -26,6 +26,7 @@ Longhorn-Volume-Backups decken nicht alle App-Semantiken ab (SQLite-Dateien, `pg
 | **authentik** | **02:30 + 11:50 Europe/Berlin** (scale-to-0) | `pg_dump` + `/media` → NFS **and** RustFS S3 `authentik-backups` (retention 30d) |
 | **bytestash** | **06:00** | tar `/data/snippets` |
 | **n8n** | **03:30** | `pg_dump` + tar `.n8n` |
+| **paperless** | **05:00** | `document_exporter -z` → NFS ZIP (+ `.meta` Image-Pin); parallel CNPG `ScheduledBackup` alle 6h (kein Full-DR) |
 
 ```mermaid
 flowchart LR

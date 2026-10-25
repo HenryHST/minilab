@@ -10,7 +10,7 @@ Document management with OCR (deu+eng), Authentik OIDC, Gotenberg + Tika, HPScan
 | LAN | https://paperless.stadthagen.dev |
 | Ext | https://paperless-ext.stadthagen.dev (pangolin-publish `enabled: false` until flipped) |
 | OCR workers | Deployment `paperless-worker` + HPA 1–3 (pinned to `nxk3-w01` with web; hostPath media) |
-| Storage | **Postgres:** CNPG `paperless-pg` (Longhorn). **App:** hostPath/local on `nxk3-w01` — `/var/lib/paperless-{data,media,export}` (`media-pvc.yaml`). **Consume:** HPScan NFS. **Backups:** NFS `…/infra01/paperless-backups` |
+| Storage | **Postgres:** CNPG `paperless-pg` (Longhorn). **App:** hostPath/local on `nxk3-w01` — `/var/lib/paperless-{data,media,export}` (`media-pvc.yaml`). **Consume:** HPScan NFS. **Backups (C):** `document_exporter` ZIP → NFS `…/infra01/paperless-backups` + CNPG snapshots |
 | IMAP inbox | `paperless@stadthagen.dev` @ `mail.henrystadthagen.de:993` (Secret `paperless-imap`, PostSync `mail-inbox-job`) |
 | OIDC groups | Access: `paperless_admins` / `paperless_users`. Document: `familie_stadthagen` / `familie_erdmann` / `vs-nfd` (PostSync `inbox-tag-job`; Authentik membership in Infra_LAB) |
 
@@ -59,11 +59,15 @@ BookStack: **Paperless → Gotenberg & Tika Smoke**.
 
 If pods stuck in `Init` with `FailedMount` / path does not exist: create the three host dirs on `nxk3-w01`, then delete the pods (see BookStack Deploy & Verify).
 
+## Backup
+
+CronJob `paperless-backup-cron` (05:00 UTC): `document_exporter -z` im Web-Pod → ZIP + `.meta` (Image-Tag) auf NFS `paperless-backups`, Retention 7. CNPG `paperless-pg-snapshot` alle 6h (DB-only). Manuell: `kubectl -n paperless create job --from=cronjob/paperless-backup-cron …`.
+
 ## Restore
 
-Set ConfigMap `paperless-restore` `enabled: true`, scale web/worker to 0, restore `pg_dump` + `data-media.tar.gz` from NFS archive into PVCs, scale up, set `enabled: false`.
+ConfigMap `paperless-restore`: `enabled=true`, `archive=latest|<zip>`, `force=true` bei nicht-leerer Instanz → PostSync Job leert DB + data/media, startet Web, `document_importer`, skaliert Worker/HPA zurück. Danach sofort `enabled=false` in Git. **API-Tokens neu.** Pflicht-Checkliste V1–V14: BookStack **Paperless → Backup & Restore**.
 
-ADR: [`docs/adr/0026-paperless-ngx.md`](../../docs/adr/0026-paperless-ngx.md).
+ADR: [`docs/adr/0026-paperless-ngx.md`](../../docs/adr/0026-paperless-ngx.md) · [`0015-backup-restore-cronjobs.md`](../../docs/adr/0015-backup-restore-cronjobs.md).
 
 ## Trivy residuals (accepted until upstream)
 

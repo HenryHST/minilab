@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Paperless Backup (Strategie C)",
+    "subtitle": "document_exporter ZIP → NFS · CNPG Snapshot parallel",
+    "output": "docs/diagrams/archify/paperless-backup.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "exporter",
+        "label": "Full-DR Exporter",
+        "focus": ["web", "cron", "export", "nfs"],
+        "note": "Täglich 05:00 UTC: document_exporter -z, ZIP + .meta auf NFS, Retention 7."
+      },
+      {
+        "id": "cnpg",
+        "label": "CNPG Snapshot",
+        "focus": ["pg", "snap", "lh"],
+        "note": "Alle 6h VolumeSnapshot — DB-only, kein Media-Ersatz."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "web",
+      "type": "frontend",
+      "label": "Paperless Web",
+      "sublabel": "nxk3-w01 · :3.3.4",
+      "pos": [40, 40],
+      "size": [168, 64],
+      "tag": "app"
+    },
+    {
+      "id": "pg",
+      "type": "database",
+      "label": "paperless-pg",
+      "sublabel": "CNPG · Longhorn",
+      "pos": [40, 280],
+      "size": [168, 64],
+      "tag": "db"
+    },
+    {
+      "id": "cron",
+      "type": "backend",
+      "label": "backup-cron",
+      "sublabel": "05:00 UTC · toolbox",
+      "pos": [280, 40],
+      "size": [168, 64],
+      "tag": "job"
+    },
+    {
+      "id": "export",
+      "type": "database",
+      "label": "export PVC",
+      "sublabel": "/var/lib/paperless-export",
+      "pos": [280, 280],
+      "size": [168, 64],
+      "tag": "hostPath"
+    },
+    {
+      "id": "nfs",
+      "type": "cloud",
+      "label": "NFS backups",
+      "sublabel": "infra01/paperless-backups",
+      "pos": [560, 40],
+      "size": [180, 64],
+      "tag": "offsite"
+    },
+    {
+      "id": "snap",
+      "type": "backend",
+      "label": "ScheduledBackup",
+      "sublabel": "*/6h volumeSnapshot",
+      "pos": [280, 420],
+      "size": [168, 64],
+      "tag": "cnpg"
+    },
+    {
+      "id": "lh",
+      "type": "cloud",
+      "label": "Longhorn",
+      "sublabel": "VolumeSnapshots",
+      "pos": [560, 420],
+      "size": [168, 64],
+      "tag": "cluster"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "NS paperless · nxk3-w01",
+      "wraps": ["web", "pg", "cron", "export", "snap"],
+      "pad": 20
+    },
+    {
+      "kind": "region",
+      "label": "Durable copies",
+      "wraps": ["nfs", "lh"],
+      "pad": 18
+    }
+  ],
+  "connections": [
+    {
+      "from": "web",
+      "to": "pg",
+      "label": "SQL TLS",
+      "variant": "default"
+    },
+    {
+      "from": "cron",
+      "to": "web",
+      "label": "exec document_exporter -z",
+      "variant": "emphasis"
+    },
+    {
+      "from": "web",
+      "to": "export",
+      "label": "ZIP schreiben",
+      "variant": "default"
+    },
+    {
+      "from": "cron",
+      "to": "nfs",
+      "label": "kubectl cp + retain 7",
+      "variant": "emphasis"
+    },
+    {
+      "from": "pg",
+      "to": "snap",
+      "label": "online snapshot",
+      "variant": "dashed"
+    },
+    {
+      "from": "snap",
+      "to": "lh",
+      "label": "VolumeSnapshot",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Kanonisches DR",
+      "items": [
+        "ZIP enthält Docs, Thumbnails, Manifest/DB",
+        ".meta speichert Image-Tag für Version-Match"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Nicht im ZIP",
+      "items": [
+        "API-Tokens (nach Import neu)",
+        "Redis, Secrets, HPScan-Inbox"
+      ]
+    }
+  ]
+}

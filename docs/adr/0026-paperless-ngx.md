@@ -14,7 +14,7 @@ Dokumentenarchiv mit OCR, HPScan-Import und Authentik-Login soll auf nXk3 laufen
 - **Consume:** NFS PV von un10 HPScan-Export; Tag `inbox` via PostSync-Job; IMAP-Inbox `paperless@stadthagen.dev` (`mail.henrystadthagen.de:993`, Secret `paperless-imap`, PostSync `mail-inbox-job`).
 - **Auth:** Authentik OIDC (LAN + Ext-Redirects wie Termix); SMTP outbound `mail.henrystadthagen.de:465` (`auto@…`).
 - **Exposure:** LAN `paperless.stadthagen.dev`; Ext `paperless-ext` in pangolin-publish mit **`enabled: false`** vorbereitet.
-- **Backup:** ADR-0015 CronJob (`pg_dump` + data/media tar → NFS).
+- **Backup:** Strategie C — ADR-0015 CronJob `document_exporter -z` → NFS ZIP; parallel CNPG `ScheduledBackup` (DB-only). Restore: ConfigMap-Gate + `document_importer` (BookStack Paperless → Backup & Restore).
 
 ```mermaid
 flowchart LR

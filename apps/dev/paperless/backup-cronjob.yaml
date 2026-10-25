@@ -67,6 +67,7 @@ spec:
     requests:
       storage: 50Gi
 ---
+# Strategy C: document_exporter ZIP → NFS (canonical DR). CNPG ScheduledBackup stays separate.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -80,6 +81,7 @@ spec:
   jobTemplate:
     spec:
       backoffLimit: 1
+      activeDeadlineSeconds: 7200
       template:
         spec:
           serviceAccountName: backup-runner
@@ -93,58 +95,48 @@ spec:
           containers:
             - name: trigger-backup
               image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
-              env:
-                - name: PGHOST
-                  value: paperless-pg-rw
-                - name: PGPORT
-                  value: "5432"
-                - name: PGUSER
-                  value: paperless
-                - name: PGDATABASE
-                  value: paperless
-                - name: PGSSLMODE
-                  value: require
-                - name: PGPASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      name: paperless-db
-                      key: password
               command:
                 - /bin/bash
                 - -c
                 - |
                   set -euo pipefail
-                  # paperless-pg is CNPG 18.x; client lives on Alpine edge.
-                  # --upgrade + libpq required: edge postgresql18-client alone leaves
-                  # baked libpq 17 → psql: PQfullProtocolVersion (pg_dump still works).
-                  apk add --no-cache --upgrade \
-                    --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main \
-                    --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community \
-                    postgresql18-client libpq >/dev/null
+                  NS=paperless
                   STAMP="$(date -u +%Y%m%d-%H%M%S)"
-                  OUT_DIR="/backup/paperless-${STAMP}"
-                  mkdir -p "${OUT_DIR}"
-                  # Avoid jsonpath {.items[0]} on empty list (fails under set -e)
-                  WEB_POD="$(kubectl -n paperless get pod -l app=paperless \
+                  ZIP_BASE="paperless-${STAMP}"
+                  ZIP_NAME="${ZIP_BASE}.zip"
+                  WEB_POD="$(kubectl -n "${NS}" get pod -l app=paperless \
                     --field-selector=status.phase=Running \
                     -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | head -n1 || true)"
                   if [[ -z "${WEB_POD}" ]]; then
                     echo "Missing Running paperless pod (app=paperless) — is redis up?" >&2
                     exit 1
                   fi
-                  echo "Waiting for postgres..."
-                  until pg_isready -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -q; do sleep 2; done
-                  echo "pg_dump ${PGDATABASE}@${PGHOST}"
-                  pg_dump -Fc > "${OUT_DIR}/paperless.dump"
-                  echo "media+data from ${WEB_POD}"
-                  kubectl -n paperless exec "${WEB_POD}" -c paperless -- \
-                    tar czf - -C /usr/src/paperless data media > "${OUT_DIR}/data-media.tar.gz"
-                  tar czf "/backup/paperless-${STAMP}.tar.gz" -C /backup "paperless-${STAMP}"
-                  rm -rf "${OUT_DIR}"
-                  ls -lh "/backup/paperless-${STAMP}.tar.gz"
-                  ls -1t /backup/paperless-*.tar.gz 2>/dev/null | tail -n +8 | xargs -r rm -f
+                  IMAGE="$(kubectl -n "${NS}" get pod "${WEB_POD}" \
+                    -o jsonpath='{.spec.containers[?(@.name=="paperless")].image}')"
+                  echo "Exporter on ${WEB_POD} image=${IMAGE}"
+                  kubectl -n "${NS}" exec "${WEB_POD}" -c paperless -- \
+                    document_exporter /usr/src/paperless/export \
+                      -z -zn "${ZIP_BASE}" --no-progress-bar
+                  kubectl -n "${NS}" cp -c paperless \
+                    "${NS}/${WEB_POD}:/usr/src/paperless/export/${ZIP_NAME}" \
+                    "/backup/${ZIP_NAME}"
+                  {
+                    echo "stamp=${STAMP}"
+                    echo "image=${IMAGE}"
+                    echo "archive=${ZIP_NAME}"
+                    echo "tool=document_exporter"
+                    echo "created_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+                  } > "/backup/${ZIP_BASE}.meta"
+                  kubectl -n "${NS}" exec "${WEB_POD}" -c paperless -- \
+                    rm -f "/usr/src/paperless/export/${ZIP_NAME}"
+                  ls -lh "/backup/${ZIP_NAME}" "/backup/${ZIP_BASE}.meta"
+                  ls -1t /backup/paperless-*.zip 2>/dev/null | tail -n +8 | while read -r old; do
+                    base="${old%.zip}"
+                    rm -f "${old}" "${base}.meta"
+                  done
+                  ls -1t /backup/paperless-*.tar.gz 2>/dev/null | xargs -r rm -f
                   echo "Done."
-                  ls -1t /backup/paperless-*.tar.gz 2>/dev/null || true
+                  ls -1t /backup/paperless-*.zip 2>/dev/null || true
               volumeMounts:
                 - name: backup
                   mountPath: /backup

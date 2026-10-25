@@ -1,4 +1,6 @@
-# Bootstrap restore from NFS. Default off — set ConfigMap enabled=true then Argo Sync.
+# Strategy C: Full-DR via document_importer from NFS ZIP.
+# Default off — set ConfigMap enabled=true (+ force=true if not empty) then Argo Sync;
+# set enabled=false in Git immediately after success.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -10,6 +12,45 @@ data:
   force: "false"
   replicas: "1"
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: paperless-restore
+  namespace: paperless
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: paperless-restore
+  namespace: paperless
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale"]
+    verbs: ["get", "list", "patch", "update"]
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: paperless-restore
+  namespace: paperless
+subjects:
+  - kind: ServiceAccount
+    name: paperless-restore
+    namespace: paperless
+roleRef:
+  kind: Role
+  name: paperless-restore
+  apiGroup: rbac.authorization.k8s.io
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -19,31 +60,197 @@ metadata:
     argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
-  ttlSecondsAfterFinished: 600
+  ttlSecondsAfterFinished: 86400
   backoffLimit: 1
+  activeDeadlineSeconds: 7200
   template:
     spec:
-      serviceAccountName: backup-runner
+      serviceAccountName: paperless-restore
       imagePullSecrets:
         - name: registry-pull
-      # k8s-toolbox is linux/amd64 only
+      # Local PVs for data/media/export are bound to nxk3-w01; toolbox is amd64.
       nodeSelector:
-        worker: "true"
-        kubernetes.io/arch: amd64
+        kubernetes.io/hostname: nxk3-w01
       restartPolicy: Never
       containers:
-        - name: restore-gate
+        - name: restore
           image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PGHOST
+              value: paperless-pg-rw
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              value: paperless
+            - name: PGDATABASE
+              value: paperless
+            - name: PGSSLMODE
+              value: require
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-db
+                  key: password
+            - name: RESTORE_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: paperless-restore
+                  key: enabled
+            - name: RESTORE_ARCHIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: paperless-restore
+                  key: archive
+            - name: RESTORE_FORCE
+              valueFrom:
+                configMapKeyRef:
+                  name: paperless-restore
+                  key: force
+            - name: WEB_REPLICAS
+              valueFrom:
+                configMapKeyRef:
+                  name: paperless-restore
+                  key: replicas
           command:
             - /bin/bash
             - -c
             - |
               set -euo pipefail
-              ENABLED="$(kubectl -n paperless get cm paperless-restore -o jsonpath='{.data.enabled}')"
-              if [[ "${ENABLED}" != "true" ]]; then
+              apk add --no-cache --upgrade \
+                --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main \
+                --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community \
+                postgresql18-client libpq >/dev/null
+
+              NS=paperless
+              WEB_DEPLOY=paperless
+              WORKER_DEPLOY=paperless-worker
+              HPA=paperless-worker
+              DATA_DIR=/restore-data
+              MEDIA_DIR=/restore-media
+              EXPORT_DIR=/restore-export
+
+              scale_up() {
+                kubectl -n "${NS}" patch hpa "${HPA}" --type merge -p '{"spec":{"minReplicas":1}}' || true
+                kubectl -n "${NS}" scale "deploy/${WEB_DEPLOY}" --replicas="${WEB_REPLICAS:-1}" || true
+                kubectl -n "${NS}" scale "deploy/${WORKER_DEPLOY}" --replicas=1 || true
+              }
+
+              if [[ "${RESTORE_ENABLED}" != "true" ]]; then
                 echo "paperless-restore.enabled!=true — skip"
                 exit 0
               fi
-              echo "Restore requested — scale deployments to 0, restore manually from NFS archive, then scale up."
-              echo "See apps/dev/paperless/README.md § Restore"
-              exit 1
+
+              echo "Waiting for postgres..."
+              until pg_isready -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -q; do sleep 2; done
+
+              TABLES="$(psql -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -Atc \
+                "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';")"
+              MEDIA_COUNT="$(find "${MEDIA_DIR}" -mindepth 1 -maxdepth 1 2>/dev/null | wc -l | tr -d ' ')"
+              echo "public tables=${TABLES} media_entries=${MEDIA_COUNT}"
+
+              if [[ "${TABLES}" != "0" || "${MEDIA_COUNT}" != "0" ]] && [[ "${RESTORE_FORCE}" != "true" ]]; then
+                echo "Instance not empty and force!=true — abort" >&2
+                exit 1
+              fi
+
+              if [[ "${RESTORE_ARCHIVE}" == "latest" ]]; then
+                ARCHIVE="$(ls -1t /backup/paperless-*.zip 2>/dev/null | head -n1 || true)"
+              else
+                ARCHIVE="/backup/${RESTORE_ARCHIVE}"
+              fi
+              if [[ -z "${ARCHIVE}" || ! -f "${ARCHIVE}" ]]; then
+                echo "No backup ZIP under /backup (archive=${RESTORE_ARCHIVE})" >&2
+                exit 1
+              fi
+              echo "Restoring from ${ARCHIVE}"
+              if [[ -f "${ARCHIVE%.zip}.meta" ]]; then
+                echo "--- meta ---"
+                cat "${ARCHIVE%.zip}.meta" || true
+                echo "------------"
+              fi
+
+              echo "HPA minReplicas=0 + scale deployments to 0..."
+              kubectl -n "${NS}" patch hpa "${HPA}" --type merge -p '{"spec":{"minReplicas":0}}'
+              kubectl -n "${NS}" scale "deploy/${WEB_DEPLOY}" "deploy/${WORKER_DEPLOY}" --replicas=0
+              for i in $(seq 1 90); do
+                N="$(kubectl -n "${NS}" get pods -l 'app in (paperless,paperless-worker)' \
+                  --field-selector=status.phase!=Succeeded,status.phase!=Failed \
+                  -o name 2>/dev/null | wc -l | tr -d ' ')"
+                [[ "${N}" == "0" ]] && break
+                sleep 2
+              done
+              if [[ "${N:-1}" != "0" ]]; then
+                echo "Pods still present after scale-to-0" >&2
+                scale_up
+                exit 1
+              fi
+
+              echo "DROP SCHEMA public CASCADE..."
+              psql -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" -v ON_ERROR_STOP=1 \
+                -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO paperless; GRANT ALL ON SCHEMA public TO public;"
+
+              echo "Clearing data/media/export mounts..."
+              find "${DATA_DIR}" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+              find "${MEDIA_DIR}" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+              find "${EXPORT_DIR}" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+
+              ZIP_BASENAME="$(basename "${ARCHIVE}")"
+              cp -f "${ARCHIVE}" "${EXPORT_DIR}/${ZIP_BASENAME}"
+
+              echo "Scaling web to ${WEB_REPLICAS} for importer..."
+              kubectl -n "${NS}" scale "deploy/${WEB_DEPLOY}" --replicas="${WEB_REPLICAS}"
+              kubectl -n "${NS}" rollout status "deploy/${WEB_DEPLOY}" --timeout=300s
+
+              WEB_POD=""
+              for i in $(seq 1 60); do
+                WEB_POD="$(kubectl -n "${NS}" get pod -l app=paperless \
+                  --field-selector=status.phase=Running \
+                  -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | head -n1 || true)"
+                if [[ -n "${WEB_POD}" ]]; then
+                  READY="$(kubectl -n "${NS}" get pod "${WEB_POD}" \
+                    -o jsonpath='{.status.containerStatuses[?(@.name=="paperless")].ready}' 2>/dev/null || true)"
+                  [[ "${READY}" == "true" ]] && break
+                fi
+                sleep 5
+              done
+              if [[ -z "${WEB_POD}" ]]; then
+                echo "No ready paperless web pod for importer" >&2
+                scale_up
+                exit 1
+              fi
+
+              echo "document_importer on ${WEB_POD} ← ${ZIP_BASENAME}"
+              kubectl -n "${NS}" exec "${WEB_POD}" -c paperless -- \
+                document_importer "/usr/src/paperless/export/${ZIP_BASENAME}" --no-progress-bar
+
+              rm -f "${EXPORT_DIR}/${ZIP_BASENAME}"
+
+              echo "Scaling worker + restoring HPA..."
+              scale_up
+              kubectl -n "${NS}" rollout status "deploy/${WORKER_DEPLOY}" --timeout=300s || true
+
+              echo "Done. Set paperless-restore.enabled=false (and force=false) in Git immediately."
+              echo "API tokens are NOT in the export — recreate (BookStack V10). Run verify checklist V1–V14."
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+            - name: data
+              mountPath: /restore-data
+            - name: media
+              mountPath: /restore-media
+            - name: export
+              mountPath: /restore-export
+      volumes:
+        - name: backup
+          persistentVolumeClaim:
+            claimName: paperless-backups
+        - name: data
+          persistentVolumeClaim:
+            claimName: paperless-data
+        - name: media
+          persistentVolumeClaim:
+            claimName: paperless-media
+        - name: export
+          persistentVolumeClaim:
+            claimName: paperless-export

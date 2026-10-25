@@ -1,0 +1,158 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Paperless Restore-Workflow",
+    "subtitle": "Gate → Empty → document_importer → Verify V1–V14",
+    "output": "docs/diagrams/archify/paperless-restore-workflow.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "happy",
+        "label": "Erfolgspfad",
+        "focus": ["gate", "scale0", "empty", "webup", "import", "verify"],
+        "note": "force=true bei bestehender Instanz; danach enabled=false in Git."
+      },
+      {
+        "id": "abort",
+        "label": "Abort",
+        "focus": ["gate", "abort"],
+        "note": "Nicht leer und force!=true → Job bricht ab ohne Wipe."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "ops", "label": "Operator / Git" },
+    { "id": "job", "label": "restore-bootstrap" },
+    { "id": "data", "label": "DB + hostPath" },
+    { "id": "app", "label": "Paperless" }
+  ],
+  "phases": [
+    { "id": "prep", "label": "Gate", "fromCol": 0, "toCol": 1 },
+    { "id": "wipe", "label": "Empty", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "load", "label": "Import + Verify", "fromCol": 4, "toCol": 5 }
+  ],
+  "mainPath": ["gate", "scale0", "empty", "nfs", "webup", "import", "scaleup", "verify"],
+  "nodes": [
+    {
+      "id": "gate",
+      "lane": "ops",
+      "col": 0,
+      "type": "security",
+      "label": "ConfigMap Gate",
+      "sublabel": "enabled / archive / force",
+      "width": 140
+    },
+    {
+      "id": "abort",
+      "lane": "ops",
+      "col": 1,
+      "type": "security",
+      "label": "Abort",
+      "sublabel": "force!=true",
+      "width": 120
+    },
+    {
+      "id": "done",
+      "lane": "job",
+      "col": 5,
+      "type": "backend",
+      "label": "Gate aus",
+      "sublabel": "enabled=false Git",
+      "width": 132
+    },
+    {
+      "id": "scale0",
+      "lane": "job",
+      "col": 1,
+      "type": "backend",
+      "label": "HPA 0 + Scale 0",
+      "sublabel": "web + worker",
+      "width": 140
+    },
+    {
+      "id": "empty",
+      "lane": "data",
+      "col": 2,
+      "type": "database",
+      "label": "Empty",
+      "sublabel": "DROP SCHEMA + wipe",
+      "width": 140
+    },
+    {
+      "id": "nfs",
+      "lane": "data",
+      "col": 3,
+      "type": "cloud",
+      "label": "NFS ZIP",
+      "sublabel": "→ export PVC",
+      "width": 132
+    },
+    {
+      "id": "webup",
+      "lane": "app",
+      "col": 3,
+      "type": "frontend",
+      "label": "Web Ready",
+      "sublabel": "leere Migration",
+      "width": 132
+    },
+    {
+      "id": "import",
+      "lane": "app",
+      "col": 4,
+      "type": "backend",
+      "label": "document_importer",
+      "sublabel": "ZIP im Pod",
+      "width": 148
+    },
+    {
+      "id": "scaleup",
+      "lane": "job",
+      "col": 4,
+      "type": "backend",
+      "label": "Worker + HPA",
+      "sublabel": "minReplicas=1",
+      "width": 132
+    },
+    {
+      "id": "verify",
+      "lane": "ops",
+      "col": 5,
+      "type": "messagebus",
+      "label": "Verify V1–V14",
+      "sublabel": "OIDC · Docs · Sanity",
+      "tag": "pflicht",
+      "width": 148
+    }
+  ],
+  "edges": [
+    { "id": "e1", "from": "gate", "to": "scale0", "label": "enabled=true", "variant": "emphasis" },
+    { "id": "e2", "from": "scale0", "to": "empty", "variant": "default" },
+    { "id": "e-abort", "from": "gate", "to": "abort", "label": "nicht leer", "variant": "security", "role": "error" },
+    { "id": "e3", "from": "empty", "to": "nfs", "label": "ZIP wählen", "variant": "default" },
+    { "id": "e4", "from": "nfs", "to": "webup", "variant": "emphasis" },
+    { "id": "e5", "from": "webup", "to": "import", "variant": "emphasis" },
+    { "id": "e6", "from": "import", "to": "scaleup", "variant": "default" },
+    { "id": "e7", "from": "scaleup", "to": "verify", "variant": "emphasis" },
+    { "id": "e8", "from": "verify", "to": "done", "label": "Checklist ok", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Destruktiv",
+      "items": [
+        "force=true löscht DB + data/media",
+        "Nur im Wartungsfenster"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Nach Import",
+      "items": [
+        "API-Tokens neu (V10)",
+        "Quartals-Drill mit voller Checkliste"
+      ]
+    }
+  ]
+}

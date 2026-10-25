@@ -11,6 +11,8 @@ Interaktive HTML-Diagramme und BookStack-Exports für die Plattform-Bücher.
 | `gatus-architektur` | architecture | [gatus-architektur.html](archify/gatus-architektur.html) | `archify/exports/gatus-architektur.png` | Gatus — Übersicht |
 | `paperless-oidc-groups` | architecture | [paperless-oidc-groups.html](archify/paperless-oidc-groups.html) | `archify/exports/paperless-oidc-groups.png` | Paperless — OIDC-Gruppen |
 | `paperless-groups-provision` | workflow | [paperless-groups-provision.html](archify/paperless-groups-provision.html) | `archify/exports/paperless-groups-provision.png` | Paperless — Gruppen-Provisionierung |
+| `paperless-backup` | architecture | [paperless-backup.html](archify/paperless-backup.html) | `archify/exports/paperless-backup.png` | Paperless — Backup (Strategie C) |
+| `paperless-restore-workflow` | workflow | [paperless-restore-workflow.html](archify/paperless-restore-workflow.html) | `archify/exports/paperless-restore-workflow.png` | Paperless — Restore-Workflow |
 
 ## Archify
 

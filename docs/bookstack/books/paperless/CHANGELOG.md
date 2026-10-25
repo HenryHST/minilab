@@ -1,5 +1,16 @@
 # Changelog — Buch Paperless
 
+## [1.9.0] - 2026-10-25
+
+### Added
+
+- Kapitel **Backup & Restore** (Strategie C): `document_exporter`/`document_importer` ZIP → NFS, CNPG-Snapshot parallel; Step-by-Step Backup/Restore; Pflicht-Checkliste Restore-Verifikation V1–V14
+- Archify: `paperless-backup`, `paperless-restore-workflow` (HTML + PNG)
+
+### Changed
+
+- Übersicht / Quellen: Verweis auf Backup & Restore; App-Cron von `pg_dump`+tar auf Exporter-ZIP (siehe App-Manifeste)
+
 ## [1.8.0] - 2026-10-25
 
 ### Added

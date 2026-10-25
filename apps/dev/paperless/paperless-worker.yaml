@@ -77,6 +77,11 @@ spec:
               value: deu+eng
             - name: PAPERLESS_OCR_LANGUAGES
               value: deu eng
+            # Explicit upstream defaults — deskew disabled automatically if OCR_MODE=redo
+            - name: PAPERLESS_OCR_DESKEW
+              value: "true"
+            - name: PAPERLESS_OCR_ROTATE_PAGES
+              value: "true"
             - name: PAPERLESS_TIKA_ENABLED
               value: "1"
             - name: PAPERLESS_TIKA_ENDPOINT

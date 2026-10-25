@@ -1,4 +1,5 @@
-# Idempotent inbox tag — runs after sync once secrets/DB exist.
+# Idempotent seed: inbox tag, OIDC groups, document types, tags, Kategorie workflow.
+# Runs after sync once secrets/DB exist.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -9,7 +10,7 @@ metadata:
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
     argocd.argoproj.io/sync-wave: "5"
 spec:
-  ttlSecondsAfterFinished: 300
+  ttlSecondsAfterFinished: 600
   backoffLimit: 3
   template:
     spec:
@@ -30,35 +31,45 @@ spec:
             - |
               set -euo pipefail
               for i in $(seq 1 60); do
-                POD="$(kubectl -n paperless get pod -l app=paperless --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
-                READY="$(kubectl -n paperless get pod -l app=paperless --field-selector=status.phase=Running -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null || true)"
-                if [[ -n "${POD}" && "${READY}" == "true" ]]; then
-                  break
+                POD="$(kubectl -n paperless get pod -l app=paperless \
+                  --field-selector=status.phase=Running \
+                  -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | head -n1 || true)"
+                if [[ -n "${POD}" ]]; then
+                  READY="$(kubectl -n paperless get pod "${POD}" \
+                    -o jsonpath='{.status.containerStatuses[?(@.name=="paperless")].ready}' 2>/dev/null || true)"
+                  [[ "${READY}" == "true" ]] && break
                 fi
                 sleep 5
               done
-              POD="$(kubectl -n paperless get pod -l app=paperless --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')"
-              READY="$(kubectl -n paperless get pod -l app=paperless --field-selector=status.phase=Running -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null || true)"
+              POD="$(kubectl -n paperless get pod -l app=paperless \
+                --field-selector=status.phase=Running \
+                -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | head -n1 || true)"
+              READY="$(kubectl -n paperless get pod "${POD}" \
+                -o jsonpath='{.status.containerStatuses[?(@.name=="paperless")].ready}' 2>/dev/null || true)"
               if [[ -z "${POD}" || "${READY}" != "true" ]]; then
                 echo "paperless pod not ready" >&2
                 exit 1
               fi
               kubectl -n paperless exec "${POD}" -c paperless -- \
                 python3 manage.py shell -c "
-              from documents.models import Tag
+              from documents.models import (
+                  Tag, DocumentType, CustomField,
+                  Workflow, WorkflowTrigger, WorkflowAction,
+              )
               from django.contrib.auth.models import Group, Permission
+
               t, created = Tag.objects.get_or_create(name='inbox')
               if not t.is_inbox_tag:
                   t.is_inbox_tag = True
                   t.save(update_fields=['is_inbox_tag'])
               print('inbox tag ok', 'created=' + str(created))
+
               # OIDC groups (Authentik access + document-permission groups)
               admins, _ = Group.objects.get_or_create(name='paperless_admins')
               users, _ = Group.objects.get_or_create(name='paperless_users')
               doc_apps = ('documents', 'paperless', 'paperless_mail', 'auth', 'guardian')
               perms = Permission.objects.filter(content_type__app_label__in=doc_apps)
               admins.permissions.set(perms)
-              # Users: view/add/change documents + view ui settings (no delete-all / admin)
               user_codenames = (
                   'view_document', 'add_document', 'change_document', 'delete_document',
                   'view_tag', 'add_tag', 'change_tag',
@@ -69,7 +80,6 @@ spec:
                   'view_note', 'add_note', 'change_note', 'delete_note',
               )
               users.permissions.set(Permission.objects.filter(codename__in=user_codenames))
-              # Document-permission groups (Authentik OIDC names must match)
               doc_group_names = ('familie_stadthagen', 'familie_erdmann', 'vs-nfd')
               user_perms = Permission.objects.filter(codename__in=user_codenames)
               for name in doc_group_names:
@@ -77,4 +87,109 @@ spec:
                   g.permissions.set(user_perms)
                   print('doc group ok', name, 'perms', g.permissions.count())
               print('oidc groups ok', 'admins_perms', admins.permissions.count(), 'users_perms', users.permissions.count())
+
+              DOCUMENT_TYPES = (
+                  'AGBs / Vertragsbedingungen',
+                  'Antrag',
+                  'Attest',
+                  'AU',
+                  'Bedienungsanleitung',
+                  'Bescheid',
+                  'Bestellung',
+                  'Bewerbung',
+                  'Datenschutz',
+                  'Dokumente',
+                  'Gehaltsnachweis',
+                  'Kontoauszug',
+                  'Lieferschein',
+                  'Mahnung',
+                  'Rechnung',
+                  'Schaden',
+                  'Sonstiges',
+                  'Vertrag',
+                  'Wichtig',
+                  'Zahlungserinnerung',
+                  'Zeugnisse',
+              )
+              for name in DOCUMENT_TYPES:
+                  dt, created = DocumentType.objects.get_or_create(name=name)
+                  print('documenttype', name, 'created=' + str(created))
+
+              TAG_NAMES = (
+                  'Bausparer',
+                  'BAV (Betriebliche Altersvorsorge)',
+                  'Bilder',
+                  'Brille',
+                  'Elektronik',
+                  'Festnetz',
+                  'Fortbildung',
+                  'Haftpflicht',
+                  'Handy',
+                  'Hausrat',
+                  'Heizung',
+                  'Job-Rad',
+                  'KFZ',
+                  'Krankenzusatz',
+                  'Müll',
+                  'Nebenkosten',
+                  'PV',
+                  'Rechtsschutz',
+                  'Rente',
+                  'Risikoleben',
+                  'Schaden',
+                  'Service',
+                  'Sozialversicherung',
+                  'Strom',
+                  'Unfall',
+                  'Wasser',
+                  'Wohngebäude',
+                  'Wohnung',
+              )
+              for name in TAG_NAMES:
+                  tag, created = Tag.objects.get_or_create(name=name)
+                  print('tag', name, 'created=' + str(created))
+
+              # Custom field + workflow: Kategorie hinzufügen
+              cf, cf_created = CustomField.objects.get_or_create(
+                  name='Kategorie',
+                  defaults={'data_type': CustomField.FieldDataType.STRING},
+              )
+              print('customfield Kategorie', 'created=' + str(cf_created), 'type=' + str(cf.data_type))
+
+              wf, wf_created = Workflow.objects.get_or_create(
+                  name='Kategorie hinzufügen',
+                  defaults={'order': 1, 'enabled': True},
+              )
+              changed = False
+              if wf.order != 1:
+                  wf.order = 1
+                  changed = True
+              if not wf.enabled:
+                  wf.enabled = True
+                  changed = True
+              if changed:
+                  wf.save()
+              print('workflow Kategorie hinzufügen', 'created=' + str(wf_created), 'enabled=' + str(wf.enabled))
+
+              CONSUMPTION = WorkflowTrigger.WorkflowTriggerType.CONSUMPTION
+              ASSIGNMENT = WorkflowAction.WorkflowActionType.ASSIGNMENT
+              if not wf.triggers.filter(type=CONSUMPTION).exists():
+                  trigger = WorkflowTrigger.objects.create(type=CONSUMPTION)
+                  wf.triggers.add(trigger)
+                  print('workflow trigger CONSUMPTION created')
+              else:
+                  print('workflow trigger CONSUMPTION ok')
+
+              action = wf.actions.filter(type=ASSIGNMENT).order_by('order', 'id').first()
+              if action is None:
+                  action = WorkflowAction.objects.create(type=ASSIGNMENT, order=0)
+                  wf.actions.add(action)
+                  print('workflow action ASSIGNMENT created')
+              else:
+                  print('workflow action ASSIGNMENT ok')
+              if not action.assign_custom_fields.filter(pk=cf.pk).exists():
+                  action.assign_custom_fields.add(cf)
+                  print('workflow assign_custom_fields Kategorie added')
+              else:
+                  print('workflow assign_custom_fields Kategorie ok')
               "

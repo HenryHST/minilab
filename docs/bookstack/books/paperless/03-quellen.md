@@ -1,11 +1,11 @@
 ---
 title: Quellen
-book_version: "1.9.0"
+book_version: "1.9.1"
 ---
 
 # Quellen
 
-> **Buch** v1.9.0 · Stand: 2026-10-25
+> **Buch** v1.9.1 · Stand: 2026-10-25
 
 - App-README: [`apps/dev/paperless/README.md`](../../../../apps/dev/paperless/README.md)
 - Redis: [`apps/infra/redis/README.md`](../../../../apps/infra/redis/README.md)
@@ -17,7 +17,7 @@ book_version: "1.9.0"
 - Archify Provisionierung: [`docs/diagrams/archify/paperless-groups-provision.html`](../../../diagrams/archify/paperless-groups-provision.html)
 - Archify Backup / Restore: [`paperless-backup.html`](../../../diagrams/archify/paperless-backup.html) · [`paperless-restore-workflow.html`](../../../diagrams/archify/paperless-restore-workflow.html)
 - Infra_LAB Authentik: `terraform/authentik/modules/dev/authentik_paperless.tf`, `access_control_users.tf`
-- Upstream: [paperless-ngx](https://docs.paperless-ngx.com/) · [Exporter](https://docs.paperless-ngx.com/administration/#exporter) · [Importer](https://docs.paperless-ngx.com/administration/#importer) · Config [`PAPERLESS_SOCIAL_ACCOUNT_SYNC_GROUPS`](https://docs.paperless-ngx.com/configuration/#PAPERLESS_SOCIAL_ACCOUNT_SYNC_GROUPS) · [`PAPERLESS_FILENAME_FORMAT`](https://docs.paperless-ngx.com/configuration/#PAPERLESS_FILENAME_FORMAT) · Management [`document_renamer`](https://docs.paperless-ngx.com/administration/#renamer)
+- Upstream: [paperless-ngx](https://docs.paperless-ngx.com/) · [Exporter](https://docs.paperless-ngx.com/administration/#exporter) · [Importer](https://docs.paperless-ngx.com/administration/#importer) · Config [`PAPERLESS_SOCIAL_ACCOUNT_SYNC_GROUPS`](https://docs.paperless-ngx.com/configuration/#PAPERLESS_SOCIAL_ACCOUNT_SYNC_GROUPS) · [`PAPERLESS_FILENAME_FORMAT`](https://docs.paperless-ngx.com/configuration/#PAPERLESS_FILENAME_FORMAT) · [`PAPERLESS_OCR_DESKEW`](https://docs.paperless-ngx.com/configuration/#PAPERLESS_OCR_DESKEW) · Management [`document_renamer`](https://docs.paperless-ngx.com/administration/#renamer) · [Workflows](https://docs.paperless-ngx.com/usage/#workflows)
 - Helper-Image: [`apps/ops/k8s-toolbox/`](../../../../apps/ops/k8s-toolbox/) · Tag **1.0.1** (Forgejo SoT)
 - Backup & Restore: [Backup & Restore](07-backup-restore.md)
 - CVE-Hygiene: [Trivy & CVE-Hygiene](06-trivy-cve-hygiene.md)

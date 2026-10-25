@@ -1,5 +1,12 @@
 # Changelog — Buch Paperless
 
+## [1.9.1] - 2026-10-25
+
+### Added
+
+- Deploy & Verify: **OCR / Schräglagenkorrektur** (`PAPERLESS_OCR_DESKEW` / `OCR_ROTATE_PAGES`)
+- Deploy & Verify: Seed **Dokumententypen**, **Tags**, Custom Field **Kategorie**, Workflow **Kategorie hinzufügen** (PostSync `paperless-inbox-tag`)
+
 ## [1.9.0] - 2026-10-25
 
 ### Added

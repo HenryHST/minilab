@@ -1,6 +1,6 @@
 # Paperless-ngx
 
-Document management with OCR (deu+eng), Authentik OIDC, Gotenberg + Tika, HPScan NFS consume, shared Redis.
+Document management with OCR (deu+eng, deskew/rotate on), Authentik OIDC, Gotenberg + Tika, HPScan NFS consume, shared Redis. PostSync seeds document types, tags, and workflow „Kategorie hinzufügen“.
 
 | | |
 |--|--|

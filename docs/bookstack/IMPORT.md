@@ -56,7 +56,7 @@ URL (kanonisch): `https://vw-ext.stadthagen.dev` · Manifeste: `apps/dev/vaultwa
 
 ## 4b. Paperless
 
-Buch **Paperless** — Reihenfolge aus `books/paperless/` (aktuell **v1.9.0**):
+Buch **Paperless** — Reihenfolge aus `books/paperless/` (aktuell **v1.9.1**):
 
 1. Übersicht
 2. Deploy & Verify

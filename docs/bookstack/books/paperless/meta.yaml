@@ -1,6 +1,6 @@
 book: Paperless
 cover: cover.png
-book_version: "1.9.0"
+book_version: "1.9.1"
 updated: "2026-10-25"
-description: Paperless-ngx — Dokumente, OCR, HPScan, Authentik OIDC, Dokumentgruppen, Filename-Format, Backup/Restore (document_exporter), Gotenberg/Tika Smoke, Trivy/CVE-Hygiene
+description: Paperless-ngx — Dokumente, OCR Deskew, HPScan, Authentik OIDC, Dokumenttypen/Tags-Seed, Workflow Kategorie, Backup/Restore, Gotenberg/Tika Smoke, Trivy
 shelf: Plattform

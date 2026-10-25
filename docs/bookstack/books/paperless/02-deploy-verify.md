@@ -1,11 +1,11 @@
 ---
 title: Deploy & Verify
-book_version: "1.9.0"
+book_version: "1.9.1"
 ---
 
 # Deploy & Verify
 
-> **Buch** v1.9.0 · Stand: 2026-10-25
+> **Buch** v1.9.1 · Stand: 2026-10-25
 
 ## Voraussetzungen
 
@@ -109,6 +109,38 @@ kubectl -n paperless exec deploy/paperless -c paperless -- \
 
 Kein dauerhafter PostSync-Job — nur bei Bedarf. Fehlende Correspondent-/Title-Metadaten ergeben leere Segmente im Dateinamen; Metadaten setzen und Renamer erneut laufen lassen.
 
+## OCR / Schräglagenkorrektur
+
+Web- und Worker-Deployment setzen explizit die Upstream-Defaults:
+
+| Env | Wert | Wirkung |
+|-----|------|---------|
+| `PAPERLESS_OCR_DESKEW` | `true` | leichte Schräglage korrigieren |
+| `PAPERLESS_OCR_ROTATE_PAGES` | `true` | 90°/180°/270° drehen |
+
+Gilt für **neue** Consumes. Bei `PAPERLESS_OCR_MODE=redo` deaktiviert Paperless Deskew automatisch — Mode bleibt bei uns `auto` (Default). Upstream: [OCR settings](https://docs.paperless-ngx.com/configuration/#PAPERLESS_OCR_DESKEW).
+
+```bash
+kubectl -n paperless exec deploy/paperless -c paperless -- env | rg 'OCR_DESKEW|OCR_ROTATE'
+kubectl -n paperless exec deploy/paperless-worker -c paperless-worker -- env | rg 'OCR_DESKEW|OCR_ROTATE'
+```
+
+## Dokumententypen, Tags & Workflow (PostSync)
+
+Job `paperless-inbox-tag` (Wave 5) legt idempotent an:
+
+- Inbox-Tag `inbox` (`is_inbox_tag`) + OIDC-/Dokumentgruppen (siehe [OIDC-Gruppen](04-oidc-gruppen.md))
+- **Dokumententypen:** AGBs / Vertragsbedingungen, Antrag, Attest, AU, Bedienungsanleitung, Bescheid, Bestellung, Bewerbung, Datenschutz, Dokumente, Gehaltsnachweis, Kontoauszug, Lieferschein, Mahnung, Rechnung, Schaden, Sonstiges, Vertrag, Wichtig, Zahlungserinnerung, Zeugnisse
+- **Tags:** Bausparer, BAV (Betriebliche Altersvorsorge), Bilder, Brille, Elektronik, Festnetz, Fortbildung, Haftpflicht, Handy, Hausrat, Heizung, Job-Rad, KFZ, Krankenzusatz, Müll, Nebenkosten, PV, Rechtsschutz, Rente, Risikoleben, Schaden, Service, Sozialversicherung, Strom, Unfall, Wasser, Wohngebäude, Wohnung
+- **Custom Field** `Kategorie` (neu als `string`, bestehendes Feld unverändert)
+- **Arbeitsablauf** `Kategorie hinzufügen` (`order=1`, aktiv): Auslöser *Verarbeitung gestartet* (`CONSUMPTION`), Aktion *Zuordnung* mit benutzerdefiniertem Feld `Kategorie` (ohne festen Wert)
+
+Manifest: `apps/dev/paperless/inbox-tag-job.yaml`. Kein Auto-Matching — Zuordnung manuell bzw. über den Workflow nur das leere Feld.
+
+```bash
+kubectl -n paperless logs job/paperless-inbox-tag | rg 'documenttype|tag |Kategorie|workflow'
+```
+
 ## Checks
 
 - OIDC-Login über LAN
@@ -117,6 +149,8 @@ Kein dauerhafter PostSync-Job — nur bei Bedarf. Fehlende Correspondent-/Title-
 - Ext absichtlich nicht erreichbar, bis `pangolin-publish` `paperless.enabled=true`
 - Storage: PVCs Bound, Web/Worker Ready auf `nxk3-w01`, keine `FailedMount`-Events
 - Filename-Format: Env `PAPERLESS_FILENAME_FORMAT` in Web + Worker; nach Format-Wechsel `document_renamer` (siehe oben)
+- OCR: `PAPERLESS_OCR_DESKEW` / `OCR_ROTATE_PAGES` = `true` in Web + Worker
+- Seed: Dokumententypen/Tags/Workflow `Kategorie hinzufügen` nach PostSync sichtbar (UI Einstellungen)
 - Gotenberg/Tika: CronJob `paperless-gt-smoke` (alle 6h) oder manuell nach Image-Bump — siehe [Gotenberg & Tika Smoke](05-gotenberg-tika-smoke.md)
 - Trivy/CVE-Pins und akzeptierte Residuals: [Trivy & CVE-Hygiene](06-trivy-cve-hygiene.md) (Helper `k8s-toolbox:1.0.1`)
 

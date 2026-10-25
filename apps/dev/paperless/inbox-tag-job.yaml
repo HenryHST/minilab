@@ -56,7 +56,33 @@ spec:
                   Tag, DocumentType, CustomField,
                   Workflow, WorkflowTrigger, WorkflowAction,
               )
+              from paperless.models import ApplicationConfiguration
+              from paperless.config import OcrConfig
               from django.contrib.auth.models import Group, Permission
+
+              # UI OCR toggles live in ApplicationConfiguration (null looks like "off"
+              # even when PAPERLESS_OCR_* env defaults apply at runtime).
+              app_cfg = ApplicationConfiguration.objects.first()
+              if app_cfg is None:
+                  app_cfg = ApplicationConfiguration.objects.create()
+              ocr_fields = []
+              if app_cfg.deskew is not True:
+                  app_cfg.deskew = True
+                  ocr_fields.append('deskew')
+              if app_cfg.rotate_pages is not True:
+                  app_cfg.rotate_pages = True
+                  ocr_fields.append('rotate_pages')
+              if ocr_fields:
+                  app_cfg.save(update_fields=ocr_fields)
+              eff = OcrConfig()
+              print(
+                  'ocr config',
+                  'deskew_db=' + str(app_cfg.deskew),
+                  'rotate_db=' + str(app_cfg.rotate_pages),
+                  'deskew_eff=' + str(eff.deskew),
+                  'rotate_eff=' + str(eff.rotate),
+                  'updated=' + ','.join(ocr_fields) if ocr_fields else 'updated=none',
+              )
 
               t, created = Tag.objects.get_or_create(name='inbox')
               if not t.is_inbox_tag:

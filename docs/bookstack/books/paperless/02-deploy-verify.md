@@ -120,9 +120,11 @@ Web- und Worker-Deployment setzen explizit die Upstream-Defaults:
 
 Gilt für **neue** Consumes. Bei `PAPERLESS_OCR_MODE=redo` deaktiviert Paperless Deskew automatisch — Mode bleibt bei uns `auto` (Default). Upstream: [OCR settings](https://docs.paperless-ngx.com/configuration/#PAPERLESS_OCR_DESKEW).
 
+Die UI-Schalter liegen in `ApplicationConfiguration` (DB). `null` erscheint in der UI als **aus**, auch wenn Env-Defaults zur Laufzeit greifen. PostSync setzt deshalb `deskew`/`rotate_pages` explizit auf `true`.
+
 ```bash
 kubectl -n paperless exec deploy/paperless -c paperless -- env | rg 'OCR_DESKEW|OCR_ROTATE'
-kubectl -n paperless exec deploy/paperless-worker -c paperless-worker -- env | rg 'OCR_DESKEW|OCR_ROTATE'
+kubectl -n paperless logs job/paperless-inbox-tag | rg 'ocr config'
 ```
 
 ## Dokumententypen, Tags & Workflow (PostSync)

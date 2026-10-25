@@ -35,7 +35,7 @@ Pushover after 4 failures, resolve after 2 successes. Group `homelab` stays HTTP
 
 NFS backup CronJobs get a 30-minute maintenance window from the cron minute (timezone UTC for most apps). Authentik uses two Europe/Berlin windows (`02:30` and `11:50`, 30m each) matching scale-to-0 backup CronJobs. In those windows Gatus sends no Pushover alert. Longhorn snapshots are not a window.
 
-`https://status.stadthagen.dev/uebersicht` is anonymous and shows health badges (`manifests/overview.yaml`). The dashboard and its history stay behind OIDC. A new Gatus check needs an `<img>` there; the badge key is `group_name`.
+`https://status.stadthagen.dev/uebersicht` is anonymous and shows health badges (`manifests/overview.yaml`). The dashboard and its history stay behind OIDC. A new Gatus check needs an `<img>` there; the badge key is `group_name`. Each badge/section uses an HTML `title` for hover tooltips (check expectation, e.g. SSO ForwardAuth → 302).
 
 Section **nXk3 cluster** embeds Kromgo PromQL badges (Ready / Pressure / root free% / Longhorn / Cilium DS) from `https://kromgo.stadthagen.dev/badges/<id>` — not Gatus HTTP endpoints. Kromgo is LAN-only (ADR-0019); badges load on the homepage embed and LAN clients.
 

@@ -45,60 +45,61 @@ data:
       </style>
     </head>
     <body>
-      <h1><a href="https://status.stadthagen.dev">Umgebung</a></h1>
+      <h1><a href="https://status.stadthagen.dev" title="Gatus-Dashboard (OIDC)">Umgebung</a></h1>
       <!-- nXk3 cluster: Kromgo PromQL badges (LAN-only, ADR-0019). Not Gatus HTTP checks. -->
-      <h2>nXk3 cluster</h2>
-      <img alt="nodes_ready" src="https://kromgo.stadthagen.dev/badges/nodes_ready">
-      <img alt="nodes_notready" src="https://kromgo.stadthagen.dev/badges/nodes_notready">
-      <img alt="disk_pressure" src="https://kromgo.stadthagen.dev/badges/disk_pressure">
-      <img alt="memory_pressure" src="https://kromgo.stadthagen.dev/badges/memory_pressure">
-      <img alt="root_free_min" src="https://kromgo.stadthagen.dev/badges/root_free_min">
-      <img alt="longhorn_ready" src="https://kromgo.stadthagen.dev/badges/longhorn_ready">
-      <img alt="cilium_unavailable" src="https://kromgo.stadthagen.dev/badges/cilium_unavailable">
+      <!-- title= Browser-Tooltip; alt bleibt als Fallback/Screenreader -->
+      <h2 title="Kromgo PromQL (LAN)">nXk3 cluster</h2>
+      <img alt="nodes_ready" title="Nodes Ready (Kromgo)" src="https://kromgo.stadthagen.dev/badges/nodes_ready">
+      <img alt="nodes_notready" title="Nodes NotReady (Kromgo)" src="https://kromgo.stadthagen.dev/badges/nodes_notready">
+      <img alt="disk_pressure" title="Nodes mit DiskPressure (Kromgo)" src="https://kromgo.stadthagen.dev/badges/disk_pressure">
+      <img alt="memory_pressure" title="Nodes mit MemoryPressure (Kromgo)" src="https://kromgo.stadthagen.dev/badges/memory_pressure">
+      <img alt="root_free_min" title="Min. freier Speicher auf / in % (Kromgo)" src="https://kromgo.stadthagen.dev/badges/root_free_min">
+      <img alt="longhorn_ready" title="Longhorn Ready auf Worker-Nodes (Kromgo)" src="https://kromgo.stadthagen.dev/badges/longhorn_ready">
+      <img alt="cilium_unavailable" title="Cilium DaemonSet unavailable (Kromgo)" src="https://kromgo.stadthagen.dev/badges/cilium_unavailable">
       <!-- Pi agents: Kromgo only (ADR-0034: no ICMP/node HTTP in Gatus). -->
-      <h2>nXk3 pis</h2>
-      <img alt="pi1cl_ready" src="https://kromgo.stadthagen.dev/badges/pi1cl_ready">
-      <img alt="pi2cl_ready" src="https://kromgo.stadthagen.dev/badges/pi2cl_ready">
-      <img alt="pi4cl_ready" src="https://kromgo.stadthagen.dev/badges/pi4cl_ready">
-      <img alt="pi7cl_ready" src="https://kromgo.stadthagen.dev/badges/pi7cl_ready">
-      <h2>homelab</h2>
-      <img alt="authentik" src="/api/v1/endpoints/homelab_authentik/health/badge.svg">
-      <img alt="it-tools" src="/api/v1/endpoints/homelab_it-tools/health/badge.svg">
-      <img alt="paperless" src="/api/v1/endpoints/homelab_paperless/health/badge.svg">
-      <img alt="bookstack" src="/api/v1/endpoints/homelab_bookstack/health/badge.svg">
-      <h2>apps</h2>
-      <img alt="omni-tools" src="/api/v1/endpoints/apps_omni-tools/health/badge.svg">
-      <img alt="searxng" src="/api/v1/endpoints/apps_searxng/health/badge.svg">
-      <img alt="drawio" src="/api/v1/endpoints/apps_drawio/health/badge.svg">
-      <img alt="termix" src="/api/v1/endpoints/apps_termix/health/badge.svg">
-      <img alt="bytestash" src="/api/v1/endpoints/apps_bytestash/health/badge.svg">
-      <img alt="audiobookshelf" src="/api/v1/endpoints/apps_audiobookshelf/health/badge.svg">
-      <img alt="homepage" src="/api/v1/endpoints/apps_homepage/health/badge.svg">
-      <img alt="pgweb" src="/api/v1/endpoints/apps_pgweb/health/badge.svg">
-      <img alt="vaultwarden" src="/api/v1/endpoints/apps_vaultwarden/health/badge.svg">
-      <img alt="karakeep" src="/api/v1/endpoints/apps_karakeep/health/badge.svg">
-      <img alt="kromgo" src="/api/v1/endpoints/apps_kromgo/health/badge.svg">
-      <img alt="longhorn" src="/api/v1/endpoints/apps_longhorn/health/badge.svg">
-      <img alt="headlamp" src="/api/v1/endpoints/apps_headlamp/health/badge.svg">
-      <h2>plattform</h2>
-      <img alt="grafana" src="/api/v1/endpoints/plattform_grafana/health/badge.svg">
-      <img alt="prometheus" src="/api/v1/endpoints/plattform_prometheus/health/badge.svg">
-      <img alt="alertmanager" src="/api/v1/endpoints/plattform_alertmanager/health/badge.svg">
-      <img alt="loki" src="/api/v1/endpoints/plattform_loki/health/badge.svg">
-      <img alt="argocd" src="/api/v1/endpoints/plattform_argocd/health/badge.svg">
-      <img alt="wud" src="/api/v1/endpoints/plattform_wud/health/badge.svg">
-      <img alt="forgejo" src="/api/v1/endpoints/plattform_forgejo/health/badge.svg">
-      <h2>sso</h2>
-      <img alt="n8n" src="/api/v1/endpoints/sso_n8n/health/badge.svg">
-      <img alt="hubble" src="/api/v1/endpoints/sso_hubble/health/badge.svg">
-      <img alt="stirling-pdf" src="/api/v1/endpoints/sso_stirling-pdf/health/badge.svg">
-      <h2>storage</h2>
-      <img alt="rustfs" src="/api/v1/endpoints/storage_rustfs/health/badge.svg">
-      <img alt="rustfs-console-oidc" src="/api/v1/endpoints/storage_rustfs-console-oidc/health/badge.svg">
-      <h2>extern</h2>
-      <img alt="pangolin" src="/api/v1/endpoints/extern_pangolin/health/badge.svg">
-      <img alt="mail" src="/api/v1/endpoints/extern_mail/health/badge.svg">
-      <img alt="mail-smtp" src="/api/v1/endpoints/extern_mail-smtp/health/badge.svg">
+      <h2 title="Pi-Nodes Ready via Kromgo">nXk3 pis</h2>
+      <img alt="pi1cl_ready" title="pi1cl Ready (Kromgo)" src="https://kromgo.stadthagen.dev/badges/pi1cl_ready">
+      <img alt="pi2cl_ready" title="pi2cl Ready (Kromgo)" src="https://kromgo.stadthagen.dev/badges/pi2cl_ready">
+      <img alt="pi4cl_ready" title="pi4cl Ready (Kromgo)" src="https://kromgo.stadthagen.dev/badges/pi4cl_ready">
+      <img alt="pi7cl_ready" title="pi7cl Ready (Kromgo)" src="https://kromgo.stadthagen.dev/badges/pi7cl_ready">
+      <h2 title="HTTP 200 auf App-URL">homelab</h2>
+      <img alt="authentik" title="Authentik — HTTP 200 (idp.stadthagen.dev)" src="/api/v1/endpoints/homelab_authentik/health/badge.svg">
+      <img alt="it-tools" title="IT Tools — HTTP 200" src="/api/v1/endpoints/homelab_it-tools/health/badge.svg">
+      <img alt="paperless" title="Paperless — HTTP 200" src="/api/v1/endpoints/homelab_paperless/health/badge.svg">
+      <img alt="bookstack" title="BookStack — HTTP 200" src="/api/v1/endpoints/homelab_bookstack/health/badge.svg">
+      <h2 title="HTTP 200 auf App-URL">apps</h2>
+      <img alt="omni-tools" title="Omni Tools — HTTP 200" src="/api/v1/endpoints/apps_omni-tools/health/badge.svg">
+      <img alt="searxng" title="SearXNG — HTTP 200" src="/api/v1/endpoints/apps_searxng/health/badge.svg">
+      <img alt="drawio" title="Draw.io — HTTP 200" src="/api/v1/endpoints/apps_drawio/health/badge.svg">
+      <img alt="termix" title="Termix — HTTP 200" src="/api/v1/endpoints/apps_termix/health/badge.svg">
+      <img alt="bytestash" title="ByteStash — HTTP 200" src="/api/v1/endpoints/apps_bytestash/health/badge.svg">
+      <img alt="audiobookshelf" title="Audiobookshelf — HTTP 200" src="/api/v1/endpoints/apps_audiobookshelf/health/badge.svg">
+      <img alt="homepage" title="Homepage — HTTP 200" src="/api/v1/endpoints/apps_homepage/health/badge.svg">
+      <img alt="pgweb" title="pgweb — HTTP 200" src="/api/v1/endpoints/apps_pgweb/health/badge.svg">
+      <img alt="vaultwarden" title="Vaultwarden — HTTP 200 (/alive)" src="/api/v1/endpoints/apps_vaultwarden/health/badge.svg">
+      <img alt="karakeep" title="Karakeep — HTTP 200" src="/api/v1/endpoints/apps_karakeep/health/badge.svg">
+      <img alt="kromgo" title="Kromgo — HTTP 200" src="/api/v1/endpoints/apps_kromgo/health/badge.svg">
+      <img alt="longhorn" title="Longhorn UI — HTTP 200" src="/api/v1/endpoints/apps_longhorn/health/badge.svg">
+      <img alt="headlamp" title="Headlamp — HTTP 200" src="/api/v1/endpoints/apps_headlamp/health/badge.svg">
+      <h2 title="HTTP 200 auf Health-Pfaden">plattform</h2>
+      <img alt="grafana" title="Grafana — HTTP 200 (/api/health)" src="/api/v1/endpoints/plattform_grafana/health/badge.svg">
+      <img alt="prometheus" title="Prometheus — HTTP 200 (/-/healthy)" src="/api/v1/endpoints/plattform_prometheus/health/badge.svg">
+      <img alt="alertmanager" title="Alertmanager — HTTP 200 (/-/healthy)" src="/api/v1/endpoints/plattform_alertmanager/health/badge.svg">
+      <img alt="loki" title="Loki — HTTP 200 (buildinfo)" src="/api/v1/endpoints/plattform_loki/health/badge.svg">
+      <img alt="argocd" title="Argo CD — HTTP 200 (/healthz)" src="/api/v1/endpoints/plattform_argocd/health/badge.svg">
+      <img alt="wud" title="WUD — HTTP 200 (/health)" src="/api/v1/endpoints/plattform_wud/health/badge.svg">
+      <img alt="forgejo" title="Forgejo — HTTP 200 (/api/healthz)" src="/api/v1/endpoints/plattform_forgejo/health/badge.svg">
+      <h2 title="ForwardAuth: unauth erwartet HTTP 302">sso</h2>
+      <img alt="n8n" title="n8n — ForwardAuth, erwartet HTTP 302" src="/api/v1/endpoints/sso_n8n/health/badge.svg">
+      <img alt="hubble" title="Hubble UI — ForwardAuth/SSO, erwartet HTTP 302" src="/api/v1/endpoints/sso_hubble/health/badge.svg">
+      <img alt="stirling-pdf" title="Stirling PDF — ForwardAuth, erwartet HTTP 302" src="/api/v1/endpoints/sso_stirling-pdf/health/badge.svg">
+      <h2 title="Object Storage / Console OIDC">storage</h2>
+      <img alt="rustfs" title="RustFS S3 health — HTTP 200 (:9000/health)" src="/api/v1/endpoints/storage_rustfs/health/badge.svg">
+      <img alt="rustfs-console-oidc" title="RustFS Console OIDC providers — HTTP 200" src="/api/v1/endpoints/storage_rustfs-console-oidc/health/badge.svg">
+      <h2 title="Externe Dienste">extern</h2>
+      <img alt="pangolin" title="Pangolin — HTTP 200" src="/api/v1/endpoints/extern_pangolin/health/badge.svg">
+      <img alt="mail" title="Mail Web — HTTP 200 (mail.henrystadthagen.de)" src="/api/v1/endpoints/extern_mail/health/badge.svg">
+      <img alt="mail-smtp" title="Mail SMTP — TCP 465 erreichbar" src="/api/v1/endpoints/extern_mail-smtp/health/badge.svg">
     </body>
     </html>
 ---

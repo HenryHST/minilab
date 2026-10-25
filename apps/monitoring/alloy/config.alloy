@@ -1,5 +1,5 @@
 // Source of truth for Alloy config — mirror edits in configmap.yaml (plain YAML; no Kustomize/CMP).
-// Syslog from Proxmox (pve01–pve03) → Loki.
+// Syslog from Proxmox (pve01–pve03) + Pi agents (pi1cl/pi2cl/pi4cl/pi7cl) → Loki.
 // Listen 1514 UDP/TCP (RFC3164 — Debian/Proxmox rsyslog default).
 // Docs: https://grafana.com/docs/alloy/latest/reference/components/loki/loki.source.syslog/
 

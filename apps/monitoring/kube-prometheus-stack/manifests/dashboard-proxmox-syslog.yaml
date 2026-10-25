@@ -30,7 +30,7 @@ data:
           "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
           "id": 1,
           "options": {
-            "content": "## Proxmox syslog (via Alloy → Loki)\n\n| Host | Explore query |\n|------|----------------|\n| all | `{job=\"syslog\"}` |\n| pve01 | `{job=\"syslog\"} \\| host=~\"pve01.*\" or src_ip=\"192.168.0.110\"` |\n| pve02 | `{job=\"syslog\"} \\| host=~\"pve02.*\" or src_ip=\"192.168.0.108\"` |\n| pve03 | `{job=\"syslog\"} \\| host=~\"pve03.*\" or src_ip=\"192.168.0.109\"` |\n\nNote: `or` belongs in the **pipeline** after `\\|`, not between two `{…}` selectors.",
+            "content": "## Proxmox syslog (via Alloy → Loki)\n\n| Host | Explore query |\n|------|----------------|\n| all | `{job=\"syslog\"} \\| host=~\"pve0[1-3].*\" or src_ip=~\"192.168.0.10[89]\\|192.168.0.110\"` |\n| pve01 | `{job=\"syslog\"} \\| host=~\"pve01.*\" or src_ip=\"192.168.0.110\"` |\n| pve02 | `{job=\"syslog\"} \\| host=~\"pve02.*\" or src_ip=\"192.168.0.108\"` |\n| pve03 | `{job=\"syslog\"} \\| host=~\"pve03.*\" or src_ip=\"192.168.0.109\"` |\n\nNote: `or` belongs in the **pipeline** after `\\|`, not between two `{…}` selectors. Pi agents: dashboard **Pi Syslog** (folder nXk3).",
             "mode": "markdown"
           },
           "title": "Queries",
@@ -52,7 +52,7 @@ data:
             {
               "datasource": { "type": "loki", "uid": "loki" },
               "editorMode": "code",
-              "expr": "{job=\"syslog\"}",
+              "expr": "{job=\"syslog\"} | host=~\"pve0[1-3].*\" or src_ip=~\"192.168.0.10[89]|192.168.0.110\"",
               "queryType": "range",
               "refId": "A"
             }

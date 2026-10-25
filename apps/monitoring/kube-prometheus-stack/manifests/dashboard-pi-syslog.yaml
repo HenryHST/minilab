@@ -1,0 +1,170 @@
+# Pi agent syslog Grafana dashboard (rsyslog → Alloy → Loki).
+# Argo: kube-prometheus-stack manifests (label grafana_dashboard=1).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-pi-syslog
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: nXk3
+data:
+  pi-syslog.json: |
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "links": [],
+      "panels": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "gridPos": { "h": 5, "w": 24, "x": 0, "y": 0 },
+          "id": 1,
+          "options": {
+            "content": "## Pi agent syslog (via Alloy → Loki)\n\n| Host | Explore query |\n|------|----------------|\n| all | `{job=\"syslog\"} \\| host=~\"pi[1247]cl.*\" or src_ip=~\"192.168.0.10(1\\|2\\|4\\|7)\"` |\n| pi1cl | `{job=\"syslog\"} \\| host=~\"pi1cl.*\" or src_ip=\"192.168.0.101\"` |\n| pi2cl | `{job=\"syslog\"} \\| host=~\"pi2cl.*\" or src_ip=\"192.168.0.102\"` |\n| pi4cl | `{job=\"syslog\"} \\| host=~\"pi4cl.*\" or src_ip=\"192.168.0.104\"` |\n| pi7cl | `{job=\"syslog\"} \\| host=~\"pi7cl.*\" or src_ip=\"192.168.0.107\"` |\n\nNote: `or` belongs in the **pipeline** after `\\|`, not between two `{…}` selectors. Ansible: `site.yaml --tags rsyslog --limit raspberrypi`.",
+            "mode": "markdown"
+          },
+          "title": "Queries",
+          "type": "text"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 5 },
+          "id": 2,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "showLabels": true,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "editorMode": "code",
+              "expr": "{job=\"syslog\"} | host=~\"pi[1247]cl.*\" or src_ip=~\"192.168.0.10(1|2|4|7)\"",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "All Pi agents",
+          "type": "logs"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "gridPos": { "h": 10, "w": 12, "x": 0, "y": 15 },
+          "id": 3,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "editorMode": "code",
+              "expr": "{job=\"syslog\"} | host=~\"pi1cl.*\" or src_ip=\"192.168.0.101\"",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "pi1cl",
+          "type": "logs"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "gridPos": { "h": 10, "w": 12, "x": 12, "y": 15 },
+          "id": 4,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "editorMode": "code",
+              "expr": "{job=\"syslog\"} | host=~\"pi2cl.*\" or src_ip=\"192.168.0.102\"",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "pi2cl",
+          "type": "logs"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "gridPos": { "h": 10, "w": 12, "x": 0, "y": 25 },
+          "id": 5,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "editorMode": "code",
+              "expr": "{job=\"syslog\"} | host=~\"pi4cl.*\" or src_ip=\"192.168.0.104\"",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "pi4cl",
+          "type": "logs"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "gridPos": { "h": 10, "w": 12, "x": 12, "y": 25 },
+          "id": 6,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "editorMode": "code",
+              "expr": "{job=\"syslog\"} | host=~\"pi7cl.*\" or src_ip=\"192.168.0.107\"",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "pi7cl",
+          "type": "logs"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["nxk3", "raspberrypi", "syslog", "loki"],
+      "templating": { "list": [] },
+      "time": { "from": "now-6h", "to": "now" },
+      "timezone": "browser",
+      "title": "Pi Syslog",
+      "uid": "pi-syslog",
+      "version": 1
+    }

@@ -1,13 +1,14 @@
-# Grafana Alloy — Proxmox syslog → Loki
+# Grafana Alloy — Host syslog → Loki
 
-Receives RFC3164 syslog from `pve01`/`pve02`/`pve03` and pushes to in-cluster Loki.
+Receives RFC3164 syslog from Proxmox (`pve01`/`pve02`/`pve03`) and Pi agents
+(`pi1cl`/`pi2cl`/`pi4cl`/`pi7cl`) and pushes to in-cluster Loki.
 
 | Item | Value |
 |------|--------|
 | LB IP | `192.168.0.217` (Cilium pool) |
 | Port | **1514** UDP/TCP |
 | Loki | `http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push` |
-| Grafana | `{job="syslog"}` or `{job="syslog", host="pve02"}` |
+| Grafana | `{job="syslog"}` or host/src_ip filters below |
 
 ## Proxmox rsyslog (each node)
 
@@ -41,10 +42,22 @@ Dashboard **Proxmox Syslog** (folder Proxmox):
 
 | Panel | Query |
 |-------|--------|
-| all | `{job="syslog"}` |
+| all | `{job="syslog"} \| host=~"pve0[1-3].*" or src_ip=~"192.168.0.10[89]\|192.168.0.110"` |
 | pve01 | `{job="syslog"} \| host=~"pve01.*" or src_ip="192.168.0.110"` |
 | pve02 | `{job="syslog"} \| host=~"pve02.*" or src_ip="192.168.0.108"` |
 | pve03 | `{job="syslog"} \| host=~"pve03.*" or src_ip="192.168.0.109"` |
+
+Dashboard **Pi Syslog** (folder nXk3) — ConfigMap
+[`dashboard-pi-syslog.yaml`](../kube-prometheus-stack/manifests/dashboard-pi-syslog.yaml).
+Pi rsyslog via Infra_LAB Ansible: `site.yaml --tags rsyslog --limit raspberrypi`.
+
+| Panel | Query |
+|-------|--------|
+| all | `{job="syslog"} \| host=~"pi[1247]cl.*" or src_ip=~"192.168.0.10(1\|2\|4\|7)"` |
+| pi1cl | `{job="syslog"} \| host=~"pi1cl.*" or src_ip="192.168.0.101"` |
+| pi2cl | `{job="syslog"} \| host=~"pi2cl.*" or src_ip="192.168.0.102"` |
+| pi4cl | `{job="syslog"} \| host=~"pi4cl.*" or src_ip="192.168.0.104"` |
+| pi7cl | `{job="syslog"} \| host=~"pi7cl.*" or src_ip="192.168.0.107"` |
 
 `or` must be in the LogQL **pipeline** (after `|`), not between two stream selectors.
 

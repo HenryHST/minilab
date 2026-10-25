@@ -153,6 +153,8 @@ spec:
             # v3: CONSUMER_POLLING renamed
             - name: PAPERLESS_CONSUMER_POLLING_INTERVAL
               value: "60"
+            - name: PAPERLESS_FILENAME_FORMAT
+              value: "{{created_year}}_{{correspondent}}_{{title}}"
             - name: USERMAP_UID
               value: "1000"
             - name: USERMAP_GID

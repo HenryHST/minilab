@@ -1,11 +1,11 @@
 ---
 title: Übersicht
-book_version: "1.2.0"
+book_version: "1.8.0"
 ---
 
 # Übersicht
 
-> **Buch** v1.2.0 · Stand: 2026-10-14
+> **Buch** v1.8.0 · Stand: 2026-10-25
 
 Paperless-ngx archiviert Dokumente mit OCR (Deutsch + Englisch), importiert Scans vom HPScan-NFS und meldet sich per Authentik an.
 
@@ -31,5 +31,7 @@ flowchart LR
 Web- und Worker-Pods sind an `nxk3-w01` gebunden (Node-Affinity / hostPath). Ohne die drei Verzeichnisse auf dem Node starten sie nicht (`FailedMount`). Details und Anlage: Kapitel **Deploy & Verify** (Local Storage / Troubleshooting). Begründung: [ADR-0026](../../../adr/0026-paperless-ngx.md).
 
 OIDC-Zugang und Dokumentgruppen (Familien / vs-nfd): Kapitel **OIDC-Gruppen**.
+
+Media-Dateinamen folgen `{{created_year}}_{{correspondent}}_{{title}}` (`PAPERLESS_FILENAME_FORMAT` in Web- und Worker-Deployment). Nach Format-Wechsel bestehende Dateien per `document_renamer` umbenennen — Details: Kapitel **Deploy & Verify**.
 
 Image-Pins und Trivy-Residuals (Gotenberg/Paperless Upstream, `k8s-toolbox:1.0.1`): Kapitel **Trivy & CVE-Hygiene**.

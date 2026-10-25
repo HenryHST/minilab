@@ -1,11 +1,11 @@
 ---
 title: Deploy & Verify
-book_version: "1.1.0"
+book_version: "1.8.0"
 ---
 
 # Deploy & Verify
 
-> **Buch** v1.1.0 · Stand: 2026-10-08
+> **Buch** v1.8.0 · Stand: 2026-10-25
 
 ## Voraussetzungen
 
@@ -89,6 +89,26 @@ kubectl -n paperless get scheduledbackup paperless-pg-snapshot
 
 Erwartung: Cluster `healthy`, 1 Instanz. `pg_dump` des CronJobs geht gegen `paperless-pg-rw` mit `PGSSLMODE=require`.
 
+## Dateinamen / Filename-Format
+
+Web- und Worker-Deployment setzen:
+
+```yaml
+- name: PAPERLESS_FILENAME_FORMAT
+  value: "{{created_year}}_{{correspondent}}_{{title}}"
+```
+
+Neue Consumes und Speichervorgänge legen Media-Dateien unter diesem Schema ab (Jahr_Korrespondent_Titel).
+
+**Bestehende Dateien** übernimmt Paperless nicht automatisch. Nach einem Format-Wechsel (oder wenn Metadaten nachgezogen wurden) einmalig den Renamer im Web-Pod ausführen:
+
+```bash
+kubectl -n paperless exec deploy/paperless -c paperless -- \
+  python3 manage.py document_renamer
+```
+
+Kein dauerhafter PostSync-Job — nur bei Bedarf. Fehlende Correspondent-/Title-Metadaten ergeben leere Segmente im Dateinamen; Metadaten setzen und Renamer erneut laufen lassen.
+
 ## Checks
 
 - OIDC-Login über LAN
@@ -96,6 +116,7 @@ Erwartung: Cluster `healthy`, 1 Instanz. `pg_dump` des CronJobs geht gegen `pape
 - IMAP: PDF an `paperless@stadthagen.dev` → Settings → Mail; Dokument mit Tag `inbox`
 - Ext absichtlich nicht erreichbar, bis `pangolin-publish` `paperless.enabled=true`
 - Storage: PVCs Bound, Web/Worker Ready auf `nxk3-w01`, keine `FailedMount`-Events
+- Filename-Format: Env `PAPERLESS_FILENAME_FORMAT` in Web + Worker; nach Format-Wechsel `document_renamer` (siehe oben)
 - Gotenberg/Tika: CronJob `paperless-gt-smoke` (alle 6h) oder manuell nach Image-Bump — siehe [Gotenberg & Tika Smoke](05-gotenberg-tika-smoke.md)
 - Trivy/CVE-Pins und akzeptierte Residuals: [Trivy & CVE-Hygiene](06-trivy-cve-hygiene.md) (Helper `k8s-toolbox:1.0.1`)
 

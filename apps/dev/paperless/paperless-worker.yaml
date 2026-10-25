@@ -83,6 +83,8 @@ spec:
               value: http://paperless-tika:9998
             - name: PAPERLESS_TIKA_GOTENBERG_ENDPOINT
               value: http://paperless-gotenberg:3000
+            - name: PAPERLESS_FILENAME_FORMAT
+              value: "{{created_year}}_{{correspondent}}_{{title}}"
             # Same scratch as web — mail attachments must be visible to consume_file
             - name: PAPERLESS_SCRATCH_DIR
               value: /usr/src/paperless/data/scratch

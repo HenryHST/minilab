@@ -1,5 +1,15 @@
 # Changelog — Buch Paperless
 
+## [1.8.0] - 2026-10-25
+
+### Added
+
+- Deploy & Verify: Abschnitt **Dateinamen / Filename-Format** (`PAPERLESS_FILENAME_FORMAT`, `document_renamer`)
+
+### Changed
+
+- Übersicht / Quellen: Hinweis und Upstream-Links zu Filename-Format und Renamer
+
 ## [1.7.0] - 2026-10-24
 
 ### Added

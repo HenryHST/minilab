@@ -63,7 +63,9 @@ Zusätzlich (vor dem Severity-Routing, `continue: true`):
 
 Webhook-URL liegt in Secret `monitoring/alertmanager-ha-webhook` Key `url` (SecretSpec `HA_NXK3_WEBHOOK_URL`, z. B. `http://192.168.0.106:8123/api/webhook/nxk3-pi-notready`). Mount: `alertmanagerSpec.secrets`. Ohne Secret bleibt der Receiver konfiguriert, Webhooks failen bis `--tags secrets`.
 
-Inhibit (Auszug): critical unterdrückt warning bei gleichem `namespace`+`pod`;
+Inhibit (Auszug): critical unterdrückt warning bei gleichem `namespace`+`alertname`
+(nicht `pod` — kube-state-metrics-Alerts teilen sonst denselben Pod und würden
+`NXk3PiNodeNotReady` unter `NXk3NodeNotReady` suppressen und den HA-Webhook blockieren);
 `PVENodeDown` unterdrückt warning mit gleichem `instance`.
 
 ---

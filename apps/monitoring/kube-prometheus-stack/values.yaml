@@ -300,6 +300,9 @@ alertmanager:
   alertmanagerSpec:
     replicas: 1
     retention: 120h
+    # HA webhook URL (SecretSpec HA_NXK3_WEBHOOK_URL → Secret alertmanager-ha-webhook/url)
+    secrets:
+      - alertmanager-ha-webhook
     storage:
       volumeClaimTemplate:
         spec:
@@ -327,6 +330,15 @@ alertmanager:
       group_interval: 5m
       repeat_interval: 12h
       routes:
+        # Pi NotReady → Home Assistant remediations (ha02); continue so e-mail still fires
+        - matchers:
+            - alertname = NXk3PiNodeNotReady
+          receiver: homeassistant-pi
+          group_by: [alertname, node]
+          group_wait: 0s
+          group_interval: 5m
+          repeat_interval: 1h
+          continue: true
         - matchers:
             - severity = critical
           receiver: email-critical
@@ -365,6 +377,12 @@ alertmanager:
             send_resolved: true
             headers:
               Subject: "[WARNING][minilab] {{ .GroupLabels.alertname }}"
+      - name: homeassistant-pi
+        webhook_configs:
+          - url_file: /etc/alertmanager/secrets/alertmanager-ha-webhook/url
+            send_resolved: true
+            http_config:
+              follow_redirects: false
 
 nodeExporter:
   enabled: true

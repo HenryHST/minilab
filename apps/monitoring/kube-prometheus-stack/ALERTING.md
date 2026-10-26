@@ -55,6 +55,14 @@ Grafana bleibt Visualisierung + Alertmanager-Datasource (`handleGrafanaManagedAl
 | `critical` | `email-critical` | 0s | 4h | `[CRITICAL][minilab]` |
 | `warning` | `email-warning` | 30s | 12h | `[WARNING][minilab]` |
 
+Zusätzlich (vor dem Severity-Routing, `continue: true`):
+
+| Matcher | Receiver | Zweck |
+|---------|----------|--------|
+| `alertname = NXk3PiNodeNotReady` | `homeassistant-pi` | Webhook → Home Assistant **ha02** (`192.168.0.106`) — Agent-Restart / Reboot |
+
+Webhook-URL liegt in Secret `monitoring/alertmanager-ha-webhook` Key `url` (SecretSpec `HA_NXK3_WEBHOOK_URL`, z. B. `http://192.168.0.106:8123/api/webhook/nxk3-pi-notready`). Mount: `alertmanagerSpec.secrets`. Ohne Secret bleibt der Receiver konfiguriert, Webhooks failen bis `--tags secrets`.
+
 Inhibit (Auszug): critical unterdrückt warning bei gleichem `namespace`+`pod`;
 `PVENodeDown` unterdrückt warning mit gleichem `instance`.
 

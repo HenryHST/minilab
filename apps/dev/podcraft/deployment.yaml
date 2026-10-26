@@ -28,9 +28,8 @@ spec:
       containers:
         - name: podcraft
           # Pin digest after CI + crane mirror — see README.md
-          # VERSION file is 0.1.9; use mirrored tag available on the cluster until rebuild.
-          # semver: 0.1.6 (bump image when 0.1.9 is mirrored)
-          image: git.stadthagen.dev/dev/podcraft:0.1.6
+          # semver: 0.1.9
+          image: git.stadthagen.dev/dev/podcraft:0.1.9
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

@@ -5,6 +5,10 @@ Shared Valkey 9.1 (Redis protocol) for cluster apps (AOF on Longhorn). Primary c
 **Authentik** uses a dedicated StatefulSet in `apps/ops/authentik/redis.yaml`
 (`authentik-redis.authentik.svc.cluster.local`) — do not point the IdP back at this Service.
 
+### Redis → Valkey cutover
+
+Valkey 9.1 cannot load Redis 8 AOF/RDB (**format v15** → CrashLoop). Wipe `/data` once while scaled to 0 (broker/cache only). Deployment uses **`Recreate`** so the RWO PVC is not dual-attached during upgrades.
+
 | Item | Value |
 |------|--------|
 | Namespace | `redis` |

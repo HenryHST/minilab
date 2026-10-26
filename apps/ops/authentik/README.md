@@ -43,6 +43,8 @@ kubectl -n authentik get cluster authentik-pg -o jsonpath='{.status.instances} r
 
 Authentik **requires** a Redis-compatible broker for cache, sessions, and the task broker. Lab runs **Valkey 9.1** (`valkey/valkey:9.1.2-alpine`).
 
+**Cutover note:** Valkey 9.1 rejects Redis 8 RDB format v15 (`Can't handle RDB format version 15`). Scale STS to 0, wipe both `data-authentik-redis-*` PVCs under `/data`, then scale back to 2 (sessions/cache only).
+
 | Piece | Value |
 |-------|--------|
 | Dedicated STS | `redis.yaml` → Service `authentik-redis.authentik.svc.cluster.local:6379` (primary `…-0`) |

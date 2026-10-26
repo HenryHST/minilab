@@ -41,6 +41,11 @@ metadata:
     app: redis
 spec:
   replicas: 1
+  # RWO Longhorn PVC: RollingUpdate leaves old+new pods both needing the volume
+  # (FailedAttachVolume). Recreate tears down first. Redis 8 → Valkey 9 also needs
+  # a one-time AOF/RDB wipe (RDB format v15 unsupported) — see README.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: redis

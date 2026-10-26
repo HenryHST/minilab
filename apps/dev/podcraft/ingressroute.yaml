@@ -10,16 +10,22 @@ spec:
     - websecure
   routes:
     # HA machine clients only: Basic Authorization + LAN allowlist (no ForwardAuth).
-    # Browser OIDC has no Basic header → falls through to Authentik route below.
     - match: Host(`podcraft.stadthagen.dev`) && PathPrefix(`/api/v1/workloads`) && HeaderRegexp(`Authorization`, `(?i)^Basic `)
       kind: Rule
-      priority: 30
+      priority: 40
       middlewares:
         - name: podcraft-api-allowlist
       services:
         - name: podcraft
           port: 8080
-    # Browser UI + OIDC APIs (including /api/v1/workloads without Basic)
+    # Public shell + assets so Pulse can show its login screen (Authentik button).
+    - match: Host(`podcraft.stadthagen.dev`) && (Path(`/`) || Path(`/login`) || PathPrefix(`/static`) || Path(`/healthz`))
+      kind: Rule
+      priority: 30
+      services:
+        - name: podcraft
+          port: 8080
+    # Browser OIDC: API + authenticated SPA routes (ForwardAuth).
     - match: Host(`podcraft.stadthagen.dev`)
       kind: Rule
       priority: 10

@@ -52,31 +52,17 @@ function headers(json = true) {
 }
 
 async function api(path, opts = {}) {
+  // redirect:manual — Traefik ForwardAuth may 302 to IdP; treat as unauthenticated.
   const res = await fetch(path, {
     ...opts,
+    redirect: "manual",
     headers: { ...headers(), ...(opts.headers || {}) },
   });
-  if (res.status === 401) {
+  const redirected =
+    res.type === "opaqueredirect" ||
+    (res.status >= 300 && res.status < 400);
+  if (res.status === 401 || redirected) {
     state.me = null;
-    // #region agent log
-    fetch("http://127.0.0.1:7458/ingest/617307a5-b9d4-4557-ad01-d7ba8d199fa8", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "e03b97" },
-      body: JSON.stringify({
-        sessionId: "e03b97",
-        runId: "auth-sso",
-        hypothesisId: "H1",
-        location: "app.js:api",
-        message: "api 401",
-        data: {
-          path,
-          wwwAuthenticate: res.headers.get("www-authenticate"),
-          hasBasicLocal: Boolean(state.basicAuth),
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
     throw Object.assign(new Error("unauthorized"), { status: 401 });
   }
   if (!res.ok) {
@@ -275,7 +261,7 @@ function renderLogin() {
         <h1>podcraft</h1>
         <p>${t(state.locale, "tagline")}</p>
         <div class="login-actions">
-          <a class="btn btn-oidc" href="/">
+          <a class="btn btn-oidc" href="/auth/start">
             <img class="btn-oidc-icon" src="/static/brand/authentik.svg" alt="" width="18" height="18" />
             <span>${t(state.locale, "loginOidc")}</span>
           </a>

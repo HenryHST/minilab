@@ -260,7 +260,7 @@ button, a.chip, .icon-btn { touch-action: manipulation; }
 }
 .btn-oidc { width: 100%; }
 .btn-oidc-icon {
-  width: 1.15rem; height: 1.15rem; flex-shrink: 0; display: block;
+  width: 1.75rem; height: 1.75rem; flex-shrink: 0; display: block;
 }
 
 /* Tooltips */

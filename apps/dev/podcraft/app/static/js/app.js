@@ -262,7 +262,7 @@ function renderLogin() {
         <p>${t(state.locale, "tagline")}</p>
         <div class="login-actions">
           <a class="btn btn-oidc" href="/auth/start">
-            <img class="btn-oidc-icon" src="/static/brand/authentik.svg" alt="" width="18" height="18" />
+            <img class="btn-oidc-icon" src="/static/brand/authentik.svg" alt="" width="28" height="28" />
             <span>${t(state.locale, "loginOidc")}</span>
           </a>
           <details>

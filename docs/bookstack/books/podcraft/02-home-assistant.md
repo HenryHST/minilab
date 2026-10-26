@@ -66,3 +66,7 @@ Service prüfen: `rest_command.podcraft_start_drawio`.
 | Rotate in UI schlägt fehl | Nicht per OIDC eingeloggt, oder Secret-RBAC fehlt |
 
 Custom Integration (OpenAPI-Client) ist bewusst später — Spec zuerst stabil halten.
+
+## Incident-Bezug
+
+Fehleranalyse 2026-10-26 (Missing Deploy, DEFAULT CERT, Registry/Platform): [03-incident-2026-10-26-missing-ha-ssl](03-incident-2026-10-26-missing-ha-ssl.md). Bis `podcraft-tls` Ready: `verify_ssl: false` nur als Übergang.

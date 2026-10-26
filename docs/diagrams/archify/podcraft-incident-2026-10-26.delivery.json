@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "129023a2-564e-4d52-a61d-e2c7b360c7bc",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/henry/Projects/minilab/.archify/architecture-podcraft-incident-20261026-200000/candidate.json",
+  "output": "/Users/henry/Projects/minilab/docs/diagrams/archify/podcraft-incident-2026-10-26.html",
+  "specification": {
+    "sha256": "eed6137dc81a296203ec7c99c55a86c6281ad480fdb5206e8fe2300ae00d540a",
+    "bytes": 6106
+  },
+  "artifact": {
+    "sha256": "7fc2fb21a9dc85ca9cc7f7b13a0b93a4b73943d81c87b28ff2d3c2bd0fc085fe",
+    "bytes": 831737
+  }
+}

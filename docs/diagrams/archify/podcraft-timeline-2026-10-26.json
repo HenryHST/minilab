@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "diagram_type": "timeline",
+  "meta": {
+    "title": "podcraft Incident Timeline — 2026-10-26",
+    "subtitle": "From HA SSL failure to Deploy Ready and API 200",
+    "output": "docs/diagrams/archify/podcraft-timeline-2026-10-26.html",
+    "evidence": "observed",
+    "timezone": "Europe/Berlin",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "ha", "label": "HA / Edge" },
+    { "id": "gitops", "label": "Argo / Pull" },
+    { "id": "fix", "label": "Fix" }
+  ],
+  "events": [
+    {
+      "id": "e1",
+      "lane": "ha",
+      "at": "2026-10-26T16:00:00+01:00",
+      "title": "HA SSL fail",
+      "detail": "curl certificate subject mismatch — Traefik DEFAULT CERT",
+      "kind": "alert"
+    },
+    {
+      "id": "e2",
+      "lane": "gitops",
+      "at": "2026-10-26T16:30:00+01:00",
+      "title": "Argo Missing",
+      "detail": "PreSync Job ImagePullBackOff with Forgejo 401",
+      "kind": "alert"
+    },
+    {
+      "id": "e3",
+      "lane": "gitops",
+      "at": "2026-10-26T18:15:00+01:00",
+      "title": "Auth probe",
+      "detail": "registry-pull rejected at /v2/token; user registry exists",
+      "kind": "action"
+    },
+    {
+      "id": "e4",
+      "lane": "fix",
+      "at": "2026-10-26T18:32:00+01:00",
+      "title": "Token rotate",
+      "detail": "Forgejo read:package → SecretSpec → --tags secrets",
+      "kind": "change"
+    },
+    {
+      "id": "e5",
+      "lane": "fix",
+      "at": "2026-10-26T18:34:00+01:00",
+      "title": "Tag check",
+      "detail": "0.1.6=404, 0.1.9=200 — bump Deploy/Job",
+      "kind": "change"
+    },
+    {
+      "id": "e6",
+      "lane": "gitops",
+      "at": "2026-10-26T18:40:00+01:00",
+      "title": "Platform fail",
+      "detail": "Pull on pi1cl: no match for platform (arm64)",
+      "kind": "alert"
+    },
+    {
+      "id": "e7",
+      "lane": "fix",
+      "at": "2026-10-26T18:43:00+01:00",
+      "title": "amd64 sync",
+      "detail": "PreSync Complete on nxk3-w04; Deploy Running",
+      "kind": "recovery"
+    },
+    {
+      "id": "e8",
+      "lane": "ha",
+      "at": "2026-10-26T18:55:00+01:00",
+      "title": "HA API 200",
+      "detail": "Basic Auth OK; verify_ssl false until LE cert",
+      "kind": "recovery"
+    }
+  ]
+}

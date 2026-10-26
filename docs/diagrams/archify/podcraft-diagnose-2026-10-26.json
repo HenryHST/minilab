@@ -1,0 +1,161 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "podcraft Incident — Diagnose & Remediation",
+    "output": "docs/diagrams/archify/podcraft-diagnose-2026-10-26.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/HenryHST/minilab",
+      "revision": "4eb2ab7f49eb6045bdffe7239bfb35f14098baf3"
+    },
+    "views": [
+      {
+        "id": "triage",
+        "label": "Triage",
+        "focus": ["symptom", "ssl", "argo"],
+        "note": "HA SSL auf DEFAULT CERT und Argo Missing zurückführen."
+      },
+      {
+        "id": "root",
+        "label": "Root Causes",
+        "focus": ["token", "tag", "arch"],
+        "note": "401, fehlendes Tag 0.1.6, arm64 trennen."
+      },
+      {
+        "id": "fix",
+        "label": "Fix",
+        "focus": ["rotate", "bump", "sync"],
+        "note": "Token, 0.1.9+amd64, Argo sync, HA API 200."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "obs", "label": "Beobachtung" },
+    { "id": "cluster", "label": "Cluster" },
+    { "id": "fix", "label": "Remediation" }
+  ],
+  "phases": [
+    { "id": "triage", "label": "Triage", "fromCol": 0, "toCol": 1 },
+    { "id": "root", "label": "Ursachen", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "fix", "label": "Beheben", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["symptom", "ssl", "argo", "token", "tag", "arch", "rotate", "bump", "sync"],
+  "nodes": [
+    {
+      "id": "symptom",
+      "lane": "obs",
+      "col": 0,
+      "type": "external",
+      "label": "Symptom",
+      "sublabel": "HA SSL fail",
+      "tag": "ha02"
+    },
+    {
+      "id": "ssl",
+      "lane": "obs",
+      "col": 1,
+      "type": "security",
+      "label": "TLS Check",
+      "sublabel": "DEFAULT CERT",
+      "tag": "Edge"
+    },
+    {
+      "id": "argo",
+      "lane": "cluster",
+      "col": 1,
+      "type": "cloud",
+      "label": "Argo",
+      "sublabel": "Missing PreSync",
+      "tag": "GitOps",
+      "sources": [
+        {
+          "path": "apps/dev/podcraft/image-pull-job.yaml",
+          "line": 11,
+          "end_line": 14,
+          "label": "PreSync Hook"
+        }
+      ]
+    },
+    {
+      "id": "token",
+      "lane": "cluster",
+      "col": 2,
+      "type": "security",
+      "label": "Token 401",
+      "sublabel": "registry-pull",
+      "tag": "Auth"
+    },
+    {
+      "id": "tag",
+      "lane": "obs",
+      "col": 2,
+      "type": "backend",
+      "label": "Tags",
+      "sublabel": "0.1.6≠ 0.1.9=",
+      "tag": "OCI"
+    },
+    {
+      "id": "arch",
+      "lane": "cluster",
+      "col": 3,
+      "type": "backend",
+      "label": "Platform",
+      "sublabel": "arm64 fail",
+      "tag": "Node",
+      "sources": [
+        {
+          "path": "apps/dev/podcraft/deployment.yaml",
+          "line": 19,
+          "end_line": 22,
+          "label": "amd64 nodeSelector"
+        }
+      ]
+    },
+    {
+      "id": "rotate",
+      "lane": "fix",
+      "col": 4,
+      "type": "security",
+      "label": "Rotate Token",
+      "sublabel": "SecretSpec",
+      "tag": "Fix"
+    },
+    {
+      "id": "bump",
+      "lane": "cluster",
+      "col": 4,
+      "type": "backend",
+      "label": "0.1.9 + amd64",
+      "sublabel": "Git push",
+      "tag": "Fix",
+      "sources": [
+        {
+          "path": "apps/dev/podcraft/deployment.yaml",
+          "line": 31,
+          "end_line": 34,
+          "label": "Image Tag 0.1.9"
+        }
+      ]
+    },
+    {
+      "id": "sync",
+      "lane": "fix",
+      "col": 5,
+      "type": "cloud",
+      "label": "Sync + HA",
+      "sublabel": "API 200",
+      "tag": "Verify"
+    }
+  ],
+  "edges": [
+    { "from": "symptom", "to": "ssl" },
+    { "from": "ssl", "to": "argo" },
+    { "from": "argo", "to": "token" },
+    { "from": "token", "to": "tag" },
+    { "from": "tag", "to": "arch" },
+    { "from": "arch", "to": "rotate" },
+    { "from": "rotate", "to": "bump" },
+    { "from": "bump", "to": "sync" }
+  ]
+}

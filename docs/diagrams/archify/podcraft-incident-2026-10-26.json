@@ -1,0 +1,225 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Incident 2026-10-26: podcraft Missing / HA SSL",
+    "output": "docs/diagrams/archify/podcraft-incident-2026-10-26.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/HenryHST/minilab",
+      "revision": "4eb2ab7f49eb6045bdffe7239bfb35f14098baf3"
+    },
+    "views": [
+      {
+        "id": "fail",
+        "label": "Fehlerkette",
+        "focus": ["ha02", "traefik", "defaultcert", "argomissing", "presync", "registry401"],
+        "note": "HA SSL scheitert am Traefik-Default-Cert, weil PreSync ImagePull blockiert."
+      },
+      {
+        "id": "ok",
+        "label": "Sollpfad",
+        "focus": ["ha02", "traefik", "podcraft", "registryok", "amd64"],
+        "note": "Token + Tag 0.1.9 + amd64 → Deploy Ready; HA Basic API OK."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "ha02",
+      "type": "frontend",
+      "label": "Home Assistant ha02",
+      "sublabel": "rest_command packages",
+      "tag": "Client",
+      "pos": [40, 200],
+      "size": [170, 70],
+      "sources": [
+        {
+          "path": "docs/bookstack/books/podcraft/02-home-assistant.md",
+          "line": 8,
+          "end_line": 9,
+          "label": "HA auf ha02 → podcraft Host"
+        }
+      ]
+    },
+    {
+      "id": "traefik",
+      "type": "cloud",
+      "label": "Traefik L2",
+      "sublabel": "192.168.0.215",
+      "tag": "Ingress",
+      "pos": [280, 200],
+      "size": [150, 70],
+      "sources": [
+        {
+          "path": "apps/dev/podcraft/ingressroute.yaml",
+          "line": 12,
+          "end_line": 20,
+          "label": "IngressRoute Basic + Allowlist"
+        }
+      ]
+    },
+    {
+      "id": "defaultcert",
+      "type": "security",
+      "label": "DEFAULT CERT",
+      "sublabel": "kein podcraft-tls",
+      "tag": "Fehler",
+      "pos": [280, 40],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "apps/dev/podcraft/certificate.yaml",
+          "line": 1,
+          "end_line": 12,
+          "label": "Certificate → Secret podcraft-tls"
+        }
+      ]
+    },
+    {
+      "id": "argomissing",
+      "type": "cloud",
+      "label": "Argo podcraft",
+      "sublabel": "OutOfSync Missing",
+      "tag": "GitOps",
+      "pos": [500, 40],
+      "size": [160, 70],
+      "sources": [
+        {
+          "path": "apps/dev/podcraft/image-pull-job.yaml",
+          "line": 11,
+          "end_line": 14,
+          "label": "PreSync Hook blockiert Sync"
+        }
+      ]
+    },
+    {
+      "id": "presync",
+      "type": "backend",
+      "label": "PreSync Job",
+      "sublabel": "ImagePullBackOff",
+      "tag": "Hook",
+      "pos": [500, 200],
+      "size": [160, 70],
+      "sources": [
+        {
+          "path": "apps/dev/podcraft/image-pull-job.yaml",
+          "line": 36,
+          "end_line": 39,
+          "label": "Pull git…/dev/podcraft"
+        }
+      ]
+    },
+    {
+      "id": "registry401",
+      "type": "security",
+      "label": "registry-pull",
+      "sublabel": "401 Unauthorized",
+      "tag": "Secret",
+      "pos": [720, 100],
+      "size": [160, 70],
+      "sources": [
+        {
+          "path": "apps/dev/podcraft/README.md",
+          "line": 20,
+          "end_line": 22,
+          "label": "Pull-Secret in NS podcraft"
+        }
+      ]
+    },
+    {
+      "id": "platform",
+      "type": "backend",
+      "label": "pi1cl arm64",
+      "sublabel": "no match platform",
+      "tag": "Arch",
+      "pos": [720, 260],
+      "size": [160, 70],
+      "sources": [
+        {
+          "path": "apps/dev/podcraft/deployment.yaml",
+          "line": 19,
+          "end_line": 22,
+          "label": "nodeSelector arch=amd64"
+        }
+      ]
+    },
+    {
+      "id": "registryok",
+      "type": "database",
+      "label": "Forgejo OCI",
+      "sublabel": "podcraft:0.1.9",
+      "tag": "Registry",
+      "pos": [940, 40],
+      "size": [150, 70],
+      "sources": [
+        {
+          "path": "apps/dev/podcraft/deployment.yaml",
+          "line": 31,
+          "end_line": 34,
+          "label": "Image Tag 0.1.9"
+        }
+      ]
+    },
+    {
+      "id": "amd64",
+      "type": "backend",
+      "label": "nxk3-w04",
+      "sublabel": "amd64 Worker",
+      "tag": "Node",
+      "pos": [940, 360],
+      "size": [140, 64],
+      "sources": [
+        {
+          "path": "apps/dev/podcraft/image-pull-job.yaml",
+          "line": 24,
+          "end_line": 27,
+          "label": "PreSync nur amd64"
+        }
+      ]
+    },
+    {
+      "id": "podcraft",
+      "type": "backend",
+      "label": "podcraft Deploy",
+      "sublabel": "Ready 1/1",
+      "tag": "App",
+      "pos": [720, 400],
+      "size": [160, 70],
+      "sources": [
+        {
+          "path": "apps/dev/podcraft/deployment.yaml",
+          "line": 1,
+          "end_line": 10,
+          "label": "Deployment podcraft"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "LAN Edge",
+      "wraps": ["ha02", "traefik", "defaultcert"],
+      "pad": 22
+    },
+    {
+      "kind": "security-group",
+      "label": "GitOps Pull-Pfad",
+      "wraps": ["argomissing", "presync", "registry401", "platform"],
+      "pad": 22
+    }
+  ],
+  "connections": [
+    { "from": "ha02", "to": "traefik", "label": "HTTPS verify_ssl" },
+    { "from": "traefik", "to": "defaultcert", "label": "SNI ohne Secret", "variant": "emphasis" },
+    { "from": "defaultcert", "to": "argomissing", "label": "Ingress fehlt" },
+    { "from": "argomissing", "to": "presync", "label": "wartet Hook" },
+    { "from": "presync", "to": "registry401", "label": "oauth 401", "variant": "emphasis" },
+    { "from": "presync", "to": "platform", "label": "Schedule Pi" },
+    { "from": "registryok", "to": "presync", "label": "nach Rotate", "variant": "dashed" },
+    { "from": "amd64", "to": "presync", "label": "nodeSelector", "variant": "dashed" },
+    { "from": "presync", "to": "podcraft", "label": "Sync Deploy", "variant": "dashed" },
+    { "from": "traefik", "to": "podcraft", "label": "Basic /api/v1", "variant": "dashed" }
+  ]
+}

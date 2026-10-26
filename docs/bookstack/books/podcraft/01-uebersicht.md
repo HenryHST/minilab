@@ -19,4 +19,6 @@ Gesteuerte Apps (MVP): `drawio`, `it-tools` — Day/Night 06:30–23:45 Europe/B
 
 **Home Assistant:** Credentials unter Systemeinstellungen → „HA-Passwort rotieren“; Anleitung → [Home Assistant](02-home-assistant.md).
 
+**Incident 2026-10-26** (Argo Missing / Traefik DEFAULT CERT / Registry 401 / amd64): → [Incident Missing / HA SSL](03-incident-2026-10-26-missing-ha-ssl.md).
+
 Code: minilab `apps/dev/podcraft/`. Pull-Secret: Infra_LAB `registry-pull` in NS `podcraft`.

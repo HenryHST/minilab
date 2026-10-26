@@ -270,13 +270,15 @@ function renderLogin() {
     el(`
     <div class="login-view">
       <div class="login-top">${topControls()}</div>
-      <div class="login-bg">${pulseSvg(true)}</div>
       <div class="login-card">
         <div class="brand">${brandMarkHtml(64)}</div>
         <h1>podcraft</h1>
         <p>${t(state.locale, "tagline")}</p>
         <div class="login-actions">
-          <a class="btn" href="/">${t(state.locale, "loginOidc")}</a>
+          <a class="btn btn-oidc" href="/">
+            <img class="btn-oidc-icon" src="/static/brand/authentik.svg" alt="" width="18" height="18" />
+            <span>${t(state.locale, "loginOidc")}</span>
+          </a>
           <details>
             <summary class="chip" style="display:inline-block;cursor:pointer">${t(state.locale, "loginBasic")}</summary>
             <form id="basic-form" class="form-grid" style="margin-top:0.75rem;text-align:left">

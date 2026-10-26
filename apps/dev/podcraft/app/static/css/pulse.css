@@ -249,6 +249,7 @@ button, a.chip, .icon-btn { touch-action: manipulation; }
   border: 0; border-radius: 999px; padding: 0.6rem 1.1rem; cursor: pointer; font-weight: 600;
   background: var(--accent); color: #04110a; min-height: var(--touch);
   display: inline-flex; align-items: center; justify-content: center;
+  gap: 0.5rem; text-decoration: none;
 }
 [data-theme="light"] .btn { color: #f0fdf4; }
 .btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
@@ -256,6 +257,10 @@ button, a.chip, .icon-btn { touch-action: manipulation; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn.ghost {
   background: transparent; color: var(--muted); border: 0; min-height: 2rem; padding: 0.35rem 0.55rem;
+}
+.btn-oidc { width: 100%; }
+.btn-oidc-icon {
+  width: 1.15rem; height: 1.15rem; flex-shrink: 0; display: block;
 }
 
 /* Tooltips */
@@ -314,7 +319,6 @@ input, select {
   min-height: 100vh; min-height: 100dvh;
   display: grid; place-items: center; padding: 1.25rem 1rem 2rem; position: relative; overflow: hidden;
 }
-.login-bg { position: absolute; inset: 0; opacity: 0.55; pointer-events: none; }
 .login-card {
   position: relative; z-index: 1; width: min(420px, 100%); text-align: center;
   padding: 1.75rem 1.25rem; border: 1px solid var(--border); border-radius: 20px;

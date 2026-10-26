@@ -1,14 +1,18 @@
-# Home Assistant package: podcraft start/stop + optional status
+# Home Assistant package: podcraft start/stop + status sensors
 # Install:
 #   1. Copy this file to config/packages/podcraft.yaml
 #   2. Ensure configuration.yaml has:
 #        homeassistant:
 #          packages: !include_dir_named packages
 #   3. Add secrets from secrets.yaml.example
-#   4. Developer tools → YAML → Reload REST commands / automations (or restart)
+#   4. Developer tools → YAML → Reload REST / Template entities / Automations
+#      (or restart Core)
 #
 # Auth: HTTP Basic only (Authorization: Basic …). Browser SSO is separate.
 # Ingress allows /api/v1/workloads without Authentik when Basic is present + LAN allowlist.
+#
+# verify_ssl: false while podcraft uses temporary self-signed TLS.
+# Set back to true once Let's Encrypt issues podcraft-tls.
 
 input_boolean:
   podcraft_drawio:
@@ -24,30 +28,31 @@ rest_command:
     method: POST
     username: !secret podcraft_basic_user
     password: !secret podcraft_basic_password
-    verify_ssl: true
+    verify_ssl: false
   podcraft_stop_drawio:
     url: "https://podcraft.stadthagen.dev/api/v1/workloads/drawio/stop"
     method: POST
     username: !secret podcraft_basic_user
     password: !secret podcraft_basic_password
-    verify_ssl: true
+    verify_ssl: false
   podcraft_start_it_tools:
     url: "https://podcraft.stadthagen.dev/api/v1/workloads/it-tools/start"
     method: POST
     username: !secret podcraft_basic_user
     password: !secret podcraft_basic_password
-    verify_ssl: true
+    verify_ssl: false
   podcraft_stop_it_tools:
     url: "https://podcraft.stadthagen.dev/api/v1/workloads/it-tools/stop"
     method: POST
     username: !secret podcraft_basic_user
     password: !secret podcraft_basic_password
-    verify_ssl: true
+    verify_ssl: false
 
 rest:
   - resource: https://podcraft.stadthagen.dev/api/v1/workloads/drawio
     username: !secret podcraft_basic_user
     password: !secret podcraft_basic_password
+    verify_ssl: false
     scan_interval: 60
     sensor:
       - name: Podcraft drawio desired
@@ -56,9 +61,19 @@ rest:
       - name: Podcraft drawio ready
         unique_id: podcraft_drawio_ready
         value_template: "{{ value_json.ready }}"
+      - name: Podcraft drawio available
+        unique_id: podcraft_drawio_available
+        value_template: "{{ value_json.available }}"
+      - name: Podcraft drawio phase
+        unique_id: podcraft_drawio_phase
+        value_template: "{{ value_json.phase }}"
+      - name: Podcraft drawio schedule
+        unique_id: podcraft_drawio_schedule
+        value_template: "{{ value_json.schedule }}"
   - resource: https://podcraft.stadthagen.dev/api/v1/workloads/it-tools
     username: !secret podcraft_basic_user
     password: !secret podcraft_basic_password
+    verify_ssl: false
     scan_interval: 60
     sensor:
       - name: Podcraft it-tools desired
@@ -67,6 +82,30 @@ rest:
       - name: Podcraft it-tools ready
         unique_id: podcraft_it_tools_ready
         value_template: "{{ value_json.ready }}"
+      - name: Podcraft it-tools available
+        unique_id: podcraft_it_tools_available
+        value_template: "{{ value_json.available }}"
+      - name: Podcraft it-tools phase
+        unique_id: podcraft_it_tools_phase
+        value_template: "{{ value_json.phase }}"
+      - name: Podcraft it-tools schedule
+        unique_id: podcraft_it_tools_schedule
+        value_template: "{{ value_json.schedule }}"
+
+template:
+  - binary_sensor:
+      - name: Podcraft drawio running
+        unique_id: podcraft_drawio_running
+        device_class: running
+        state: >-
+          {{ states('sensor.podcraft_drawio_desired') | int(0) > 0
+             and states('sensor.podcraft_drawio_ready') | int(0) >= 1 }}
+      - name: Podcraft it-tools running
+        unique_id: podcraft_it_tools_running
+        device_class: running
+        state: >-
+          {{ states('sensor.podcraft_it_tools_desired') | int(0) > 0
+             and states('sensor.podcraft_it_tools_ready') | int(0) >= 1 }}
 
 automation:
   - id: podcraft_drawio_on
@@ -101,3 +140,68 @@ automation:
         to: "off"
     action:
       - service: rest_command.podcraft_stop_it_tools
+  # Keep HA toggles in sync with cluster (Day/Night schedule or external scale).
+  - id: podcraft_drawio_sync_boolean
+    alias: "podcraft drawio sync boolean from desired"
+    trigger:
+      - platform: state
+        entity_id: sensor.podcraft_drawio_desired
+    condition:
+      - condition: template
+        value_template: >-
+          {{ states('sensor.podcraft_drawio_desired') not in ['unknown', 'unavailable', '']
+             and (
+               (states('sensor.podcraft_drawio_desired') | int(0) > 0
+                and is_state('input_boolean.podcraft_drawio', 'off'))
+               or
+               (states('sensor.podcraft_drawio_desired') | int(0) == 0
+                and is_state('input_boolean.podcraft_drawio', 'on'))
+             ) }}
+    action:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ states('sensor.podcraft_drawio_desired') | int(0) > 0 }}"
+            sequence:
+              - service: input_boolean.turn_on
+                target:
+                  entity_id: input_boolean.podcraft_drawio
+          - conditions:
+              - condition: template
+                value_template: "{{ states('sensor.podcraft_drawio_desired') | int(0) == 0 }}"
+            sequence:
+              - service: input_boolean.turn_off
+                target:
+                  entity_id: input_boolean.podcraft_drawio
+  - id: podcraft_it_tools_sync_boolean
+    alias: "podcraft it-tools sync boolean from desired"
+    trigger:
+      - platform: state
+        entity_id: sensor.podcraft_it_tools_desired
+    condition:
+      - condition: template
+        value_template: >-
+          {{ states('sensor.podcraft_it_tools_desired') not in ['unknown', 'unavailable', '']
+             and (
+               (states('sensor.podcraft_it_tools_desired') | int(0) > 0
+                and is_state('input_boolean.podcraft_it_tools', 'off'))
+               or
+               (states('sensor.podcraft_it_tools_desired') | int(0) == 0
+                and is_state('input_boolean.podcraft_it_tools', 'on'))
+             ) }}
+    action:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ states('sensor.podcraft_it_tools_desired') | int(0) > 0 }}"
+            sequence:
+              - service: input_boolean.turn_on
+                target:
+                  entity_id: input_boolean.podcraft_it_tools
+          - conditions:
+              - condition: template
+                value_template: "{{ states('sensor.podcraft_it_tools_desired') | int(0) == 0 }}"
+            sequence:
+              - service: input_boolean.turn_off
+                target:
+                  entity_id: input_boolean.podcraft_it_tools

@@ -47,8 +47,25 @@ podcraft_basic_password: "<einmalig angezeigtes Passwort>"
 
 ## Aktivieren
 
-Entwicklerwerkzeuge → YAML-Konfiguration neu laden (oder Core neu starten).  
+Entwicklerwerkzeuge → YAML neu laden (REST-Entities, REST-Befehle, Vorlagen, Automationen) oder Core neu starten.  
 Service prüfen: `rest_command.podcraft_start_drawio`.
+
+## Status in HA
+
+Alle ~60 s pollt HA `GET /api/v1/workloads/{drawio|it-tools}` (Basic Auth). Entities:
+
+| Entity | Bedeutung |
+|--------|-----------|
+| `sensor.podcraft_*_desired` | gewünschte Replicas (0/1) |
+| `sensor.podcraft_*_ready` | ready Replicas |
+| `sensor.podcraft_*_available` | available Replicas |
+| `sensor.podcraft_*_phase` | z. B. `Running` / `Stopped` |
+| `sensor.podcraft_*_schedule` | Workload im Day/Night-Schedule (`true`/`false`) |
+| `binary_sensor.podcraft_*_running` | an wenn `desired > 0` und `ready >= 1` |
+
+Sync-Automationen setzen `input_boolean.podcraft_drawio` / `podcraft_it_tools` nach `desired`, damit die Schalter dem Cluster (inkl. Day/Night) folgen. Manuelles Togglen ruft weiter `rest_command` start/stop auf.
+
+`verify_ssl: false` im Package gilt für Commands **und** Status-Polls, solange podcraft Self-Signed-TLS nutzt. Nach gültigem Let’s-Encrypt-Cert wieder `true`.
 
 ## Netz
 

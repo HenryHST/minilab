@@ -1,11 +1,11 @@
 ---
 title: Deploy & Verify
-book_version: "1.9.2"
+book_version: "1.10.0"
 ---
 
 # Deploy & Verify
 
-> **Buch** v1.9.2 · Stand: 2026-10-26
+> **Buch** v1.10.0 · Stand: 2026-10-26
 
 ## Voraussetzungen
 

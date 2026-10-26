@@ -1,11 +1,11 @@
 ---
 title: Übersicht
-book_version: "1.9.2"
+book_version: "1.10.0"
 ---
 
 # Übersicht
 
-> **Buch** v1.9.2 · Stand: 2026-10-26
+> **Buch** v1.10.0 · Stand: 2026-10-26
 
 Paperless-ngx archiviert Dokumente mit OCR (Deutsch + Englisch), importiert Scans vom HPScan-NFS und meldet sich per Authentik an.
 
@@ -37,5 +37,7 @@ Media-Dateinamen folgen `{{created_year}}_{{correspondent}}_{{title}}` (`PAPERLE
 Image-Pins und Trivy-Residuals (Gotenberg/Paperless Upstream, `k8s-toolbox:1.0.1`): Kapitel **Trivy & CVE-Hygiene**.
 
 Backup/Restore (Exporter-ZIP, Restore-Gate, Verifikation V1–V14): Kapitel **Backup & Restore**.
+
+Cutover Redis→Valkey 9.1 (RWO FailedAttach + RDB v15): Kapitel **Incident 2026-10-26 Redis→Valkey**.
 
 OCR Deskew/Rotate sowie Seed von Dokumententypen, Tags und Workflow **Kategorie hinzufügen**: Kapitel **Deploy & Verify**.

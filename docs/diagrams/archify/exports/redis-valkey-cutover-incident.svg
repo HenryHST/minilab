@@ -1,0 +1,290 @@
+<svg viewBox="0 0 1192 612" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-animation="trace" data-preset="classic" data-quality-profile="showcase" data-node-ui="" data-reader-fit="intrinsic-height" data-reader-min-text="7.5" data-reader-primary-text="14">
+        <title id="archify-diagram-title">Incident 2026-10-26: Redis → Valkey Cutover</title>
+        <desc id="archify-diagram-description">FailedAttachVolume (RWO) + RDB format v15 CrashLoop</desc>
+        <!-- Definitions -->
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="m-default" />
+          </marker>
+          <marker id="arrowhead-emphasis" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="m-emphasis" />
+          </marker>
+          <marker id="arrowhead-security" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="m-security" />
+          </marker>
+          <marker id="arrowhead-dashed" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="m-dashed" />
+          </marker>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" class="c-grid" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <style>
+          svg[data-node-ui] [data-node-id] > rect:not(.c-mask) { stroke-width: 1.25px; }
+          :is([data-theme="dark"] svg[data-node-ui], svg[data-node-ui][data-theme="dark"]) [data-node-id] > rect:not(.c-mask).c-frontend { fill: color-mix(in srgb, var(--frontend-stroke) 13%, var(--mask)); stroke: color-mix(in srgb, var(--frontend-stroke) 72%, var(--mask)); }
+          :is([data-theme="dark"] svg[data-node-ui], svg[data-node-ui][data-theme="dark"]) [data-node-id] > rect:not(.c-mask).c-backend { fill: color-mix(in srgb, var(--backend-stroke) 13%, var(--mask)); stroke: color-mix(in srgb, var(--backend-stroke) 72%, var(--mask)); }
+          :is([data-theme="dark"] svg[data-node-ui], svg[data-node-ui][data-theme="dark"]) [data-node-id] > rect:not(.c-mask).c-database { fill: color-mix(in srgb, var(--database-stroke) 13%, var(--mask)); stroke: color-mix(in srgb, var(--database-stroke) 72%, var(--mask)); }
+          :is([data-theme="dark"] svg[data-node-ui], svg[data-node-ui][data-theme="dark"]) [data-node-id] > rect:not(.c-mask).c-cloud { fill: color-mix(in srgb, var(--cloud-stroke) 13%, var(--mask)); stroke: color-mix(in srgb, var(--cloud-stroke) 72%, var(--mask)); }
+          :is([data-theme="dark"] svg[data-node-ui], svg[data-node-ui][data-theme="dark"]) [data-node-id] > rect:not(.c-mask).c-security { fill: color-mix(in srgb, var(--security-stroke) 13%, var(--mask)); stroke: color-mix(in srgb, var(--security-stroke) 72%, var(--mask)); }
+          :is([data-theme="dark"] svg[data-node-ui], svg[data-node-ui][data-theme="dark"]) [data-node-id] > rect:not(.c-mask).c-messagebus { fill: color-mix(in srgb, var(--messagebus-stroke) 13%, var(--mask)); stroke: color-mix(in srgb, var(--messagebus-stroke) 72%, var(--mask)); }
+          :is([data-theme="dark"] svg[data-node-ui], svg[data-node-ui][data-theme="dark"]) [data-node-id] > rect:not(.c-mask).c-external { fill: color-mix(in srgb, var(--external-stroke) 13%, var(--mask)); stroke: color-mix(in srgb, var(--external-stroke) 72%, var(--mask)); }
+          svg[data-node-ui]:is([data-preset="classic"], [data-preset="signal-flow"], [data-preset="editorial"]) .c-region { fill: color-mix(in srgb, var(--cloud-stroke) 3%, transparent); stroke: color-mix(in srgb, var(--cloud-stroke) 42%, var(--lane-stroke)); stroke-dasharray: none; }
+          svg[data-node-ui] .c-security-group { stroke: color-mix(in srgb, var(--security-stroke) 58%, var(--lane-stroke)); }
+          svg[data-node-ui]:is([data-preset="classic"], [data-preset="signal-flow"], [data-preset="editorial"]) .c-security-group { stroke-dasharray: 4 3; }
+          svg[data-node-ui]:is([data-preset="classic"], [data-preset="signal-flow"], [data-preset="editorial"]) .c-lane { stroke: var(--lane-stroke); stroke-dasharray: none; }
+          svg[data-node-ui] [data-graph-role="structural-frame-label-mask"] { rx: 5px; fill: color-mix(in srgb, var(--cloud-stroke) 10%, var(--mask)); stroke: color-mix(in srgb, var(--cloud-stroke) 38%, var(--mask)); stroke-width: .8px; }
+          svg[data-node-ui] [data-composition-frame-kind="security-group"] > [data-graph-role="structural-frame-label-mask"] { fill: color-mix(in srgb, var(--security-stroke) 9%, var(--mask)); stroke: color-mix(in srgb, var(--security-stroke) 36%, var(--mask)); }
+          svg[data-node-ui] .phase-rule { opacity: .5; stroke-dasharray: none; }
+          svg[data-node-ui] .phase-chip { stroke: var(--lane-stroke); stroke-width: .75px; }
+          svg[data-node-ui] g[data-edge-from] > rect.c-mask { rx: 7px; stroke: var(--lane-stroke); stroke-width: .75px; }
+          svg[data-node-ui][data-preset="blueprint"] :is([data-graph-role="structural-frame-label-mask"], g[data-edge-from] > rect.c-mask, .phase-chip) { rx: 2px; }
+          svg[data-node-ui][data-preset="editorial"] :is([data-graph-role="structural-frame-label-mask"], g[data-edge-from] > rect.c-mask, .phase-chip) { rx: 3px; }
+        </style>
+
+        <!-- Background Grid -->
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <!-- Boundaries (behind everything) -->
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="0" data-composition-frame-label="NS redis · Shared Broker" x="258" y="56" width="444" height="488" rx="12" class="c-region" stroke-width="1"/>
+
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="1" data-composition-frame-label="NS authentik · Dedicated STS" x="738" y="96" width="414" height="268" rx="12" class="c-region" stroke-width="1"/>
+
+        <!-- Connection paths (before components for correct z-order) -->
+        <g data-graph-role="automatic-crossover" style="--step:0">
+          <path data-graph-role="automatic-crossover-underlay" d="M 174 200 L 174 136 Q 174 128 182 128 L 280 128" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="paperless" data-edge-to="oldredis" data-edge-label="redis://…/0" data-edge-key="0" data-composition-points="174,200;174,128;280,128" data-composition-crossover="halo" data-composition-independent="true" d="M 174 200 L 174 136 Q 174 128 182 128 L 280 128" class="a-dashed" data-animate="edge" style="--step:0" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+        </g>
+        <g data-graph-role="automatic-crossover" style="--step:1">
+          <path data-graph-role="automatic-crossover-underlay" d="M 174 264 L 174 468 Q 174 476 182 476 L 280 476" fill="none" stroke="var(--mask)" stroke-width="5.8" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="paperless" data-edge-to="valkey" data-edge-label="DNS gleich" data-edge-key="1" data-composition-points="174,264;174,476;280,476" data-composition-crossover="halo" data-composition-independent="true" d="M 174 264 L 174 468 Q 174 476 182 476 L 280 476" class="a-emphasis" data-animate="edge" style="--step:1" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        </g>
+        <g data-graph-role="automatic-crossover" style="--step:2">
+          <path data-graph-role="automatic-crossover-underlay" d="M 448 128 L 528 128 Q 536 128 536 136 L 536 200" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="oldredis" data-edge-to="pvc" data-edge-label="hält Volume" data-edge-key="2" data-composition-points="448,128;536,128;536,200" data-composition-crossover="halo" data-composition-independent="true" d="M 448 128 L 528 128 Q 536 128 536 136 L 536 200" class="a-security" data-animate="edge" style="--step:2" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
+        </g>
+        <g data-graph-role="automatic-crossover" style="--step:3">
+          <path data-graph-role="automatic-crossover-underlay" d="M 448 336 L 528 336 Q 536 336 536 328 L 536 264" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="newvalkey" data-edge-to="pvc" data-edge-label="FailedAttach" data-edge-key="3" data-composition-points="448,336;536,336;536,264" data-composition-crossover="halo" data-composition-independent="true" d="M 448 336 L 528 336 Q 536 336 536 328 L 536 264" class="a-security" data-animate="edge" style="--step:3" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
+        </g>
+        <g data-graph-role="automatic-crossover" style="--step:4">
+          <path data-graph-role="automatic-crossover-underlay" d="M 604.1 460 L 604.1 264" fill="none" stroke="var(--mask)" stroke-width="5.8" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="wipe" data-edge-to="pvc" data-edge-label="rm AOF/RDB" data-edge-key="4" data-composition-points="604.1,460;604.1,264" data-composition-crossover="halo" data-composition-independent="true" d="M 604.1 460 L 604.1 264" class="a-emphasis" data-animate="edge" style="--step:4" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        </g>
+        <g data-graph-role="automatic-crossover" style="--step:5">
+          <path data-graph-role="automatic-crossover-underlay" d="M 373.1 460 L 373.1 444 Q 373.1 436 381.1 436 L 580 436 Q 588 436 588 428 L 588 264" fill="none" stroke="var(--mask)" stroke-width="5.8" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="valkey" data-edge-to="pvc" data-edge-label="frisch mount" data-edge-key="5" data-composition-points="373.1,460;373.1,436;588,436;588,264" data-composition-crossover="halo" data-composition-independent="true" d="M 373.1 460 L 373.1 444 Q 373.1 436 381.1 436 L 580 436 Q 588 436 588 428 L 588 264" class="a-emphasis" data-animate="edge" style="--step:5" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        </g>
+        <g data-graph-role="automatic-crossover" style="--step:6">
+          <path data-graph-role="automatic-crossover-underlay" d="M 864 280 L 864 264 Q 864 256 872 256 L 1047 256 Q 1055 256 1055 264 L 1055 280" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="auth1" data-edge-to="aof" data-edge-label="load RDB v15" data-edge-key="6" data-composition-points="864,280;864,256;1055,256;1055,280" data-composition-crossover="halo" data-composition-independent="true" d="M 864 280 L 864 264 Q 864 256 872 256 L 1047 256 Q 1055 256 1055 264 L 1055 280" class="a-security" data-animate="edge" style="--step:6" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
+        </g>
+        <g data-graph-role="automatic-crossover" style="--step:7">
+          <path data-graph-role="automatic-crossover-underlay" d="M 850 280 L 850 184" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="auth1" data-edge-to="auth0" data-edge-label="replicaof" data-edge-key="7" data-composition-points="850,280;850,184" data-composition-crossover="halo" data-composition-independent="true" d="M 850 280 L 850 184" class="a-dashed" data-animate="edge" style="--step:7" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+        </g>
+        <g data-graph-role="automatic-crossover" style="--step:8">
+          <path data-graph-role="automatic-crossover-underlay" d="M 448 28 L 464 28 Q 472 28 472 36 L 472 90 Q 472 98 464 98 L 448 98" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="argo" data-edge-to="oldredis" data-edge-label="hält alt Pod" data-edge-key="8" data-composition-points="448,28;472,28;472,98;448,98" data-composition-crossover="halo" data-composition-independent="true" d="M 448 28 L 464 28 Q 472 28 472 36 L 472 90 Q 472 98 464 98 L 448 98" class="a-dashed" data-animate="edge" style="--step:8" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+        </g>
+
+        <!-- Components -->
+        <g id="node-paperless" data-node-id="paperless" data-node-label="Paperless" tabindex="0" role="button" aria-label="Focus Paperless, PAPERLESS_REDIS, Architecture component" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="PAPERLESS_REDIS" data-node-tag="Client" data-node-context="Architecture component">
+          <title>Paperless · PAPERLESS_REDIS · Architecture component · Client</title>
+          <rect x="40" y="200" width="150" height="64" rx="8" class="c-mask"/>
+          <rect x="40" y="200" width="150" height="64" rx="8" class="c-frontend" data-animate="node" style="--step:0" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="frontend" class="semantic-sigil s-frontend" transform="translate(46 206) scale(0.6875)">
+            <rect x="2" y="3" width="12" height="10" rx="2"/>
+            <path d="M2 6.5h12"/>
+            <circle cx="4.1" cy="4.8" r=".7" class="sigil-fill"/>
+            <circle cx="6.3" cy="4.8" r=".7" class="sigil-fill"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="115" y="230" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Paperless</text>
+        <text data-detail="context" x="115" y="246" class="t-muted" font-size="9" text-anchor="middle">PAPERLESS_REDIS</text>
+        <text data-detail="fine" x="115" y="256" class="t-frontend" font-size="7" text-anchor="middle">Client</text>
+        </g>
+
+        <g id="node-oldredis" data-node-id="oldredis" data-node-label="Redis 8 Pod" tabindex="0" role="button" aria-label="Focus Redis 8 Pod, redis:8-alpine3.23, NS redis · Shared Broker" aria-pressed="false" data-node-kind="backend" data-node-sublabel="redis:8-alpine3.23" data-node-tag="alt Running" data-node-context="NS redis · Shared Broker">
+          <title>Redis 8 Pod · redis:8-alpine3.23 · NS redis · Shared Broker · alt Running</title>
+          <rect x="280" y="80" width="168" height="64" rx="8" class="c-mask"/>
+          <rect x="280" y="80" width="168" height="64" rx="8" class="c-backend" data-animate="node" style="--step:1" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(286 86) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="364" y="110" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Redis 8 Pod</text>
+        <text data-detail="context" x="364" y="126" class="t-muted" font-size="9" text-anchor="middle">redis:8-alpine3.23</text>
+        <text data-detail="fine" x="364" y="136" class="t-backend" font-size="7" text-anchor="middle">alt Running</text>
+        </g>
+
+        <g id="node-newvalkey" data-node-id="newvalkey" data-node-label="Valkey Pod" tabindex="0" role="button" aria-label="Focus Valkey Pod, Init FailedAttach, NS redis · Shared Broker" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Init FailedAttach" data-node-tag="neu stuck" data-node-context="NS redis · Shared Broker">
+          <title>Valkey Pod · Init FailedAttach · NS redis · Shared Broker · neu stuck</title>
+          <rect x="280" y="320" width="168" height="64" rx="8" class="c-mask"/>
+          <rect x="280" y="320" width="168" height="64" rx="8" class="c-backend" data-animate="node" style="--step:3" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(286 326) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="364" y="350" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Valkey Pod</text>
+        <text data-detail="context" x="364" y="366" class="t-muted" font-size="9" text-anchor="middle">Init FailedAttach</text>
+        <text data-detail="fine" x="364" y="376" class="t-backend" font-size="7" text-anchor="middle">neu stuck</text>
+        </g>
+
+        <g id="node-pvc" data-node-id="pvc" data-node-label="redis-data" tabindex="0" role="button" aria-label="Focus redis-data, Longhorn RWO 2Gi, NS redis · Shared Broker" aria-pressed="false" data-node-kind="database" data-node-sublabel="Longhorn RWO 2Gi" data-node-tag="PVC" data-node-context="NS redis · Shared Broker">
+          <title>redis-data · Longhorn RWO 2Gi · NS redis · Shared Broker · PVC</title>
+          <rect x="520" y="200" width="150" height="64" rx="8" class="c-mask"/>
+          <rect x="520" y="200" width="150" height="64" rx="8" class="c-database" data-animate="node" style="--step:3" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(526 206) scale(0.6875)">
+            <ellipse cx="8" cy="4" rx="5" ry="2"/>
+            <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="595" y="230" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">redis-data</text>
+        <text data-detail="context" x="595" y="246" class="t-muted" font-size="9" text-anchor="middle">Longhorn RWO 2Gi</text>
+        <text data-detail="fine" x="595" y="256" class="t-database" font-size="7" text-anchor="middle">PVC</text>
+        </g>
+
+        <g id="node-valkey" data-node-id="valkey" data-node-label="Shared Valkey" tabindex="0" role="button" aria-label="Focus Shared Valkey, 9.1.2-alpine Recreate, NS redis · Shared Broker" aria-pressed="false" data-node-kind="backend" data-node-sublabel="9.1.2-alpine Recreate" data-node-tag="Soll" data-node-context="NS redis · Shared Broker">
+          <title>Shared Valkey · 9.1.2-alpine Recreate · NS redis · Shared Broker · Soll</title>
+          <rect x="280" y="460" width="168" height="64" rx="8" class="c-mask"/>
+          <rect x="280" y="460" width="168" height="64" rx="8" class="c-backend" data-animate="node" style="--step:2" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(286 466) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="364" y="490" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Shared Valkey</text>
+        <text data-detail="context" x="364" y="506" class="t-muted" font-size="9" text-anchor="middle">9.1.2-alpine Recreate</text>
+        <text data-detail="fine" x="364" y="516" class="t-backend" font-size="7" text-anchor="middle">Soll</text>
+        </g>
+
+        <g id="node-wipe" data-node-id="wipe" data-node-label="AOF Wipe" tabindex="0" role="button" aria-label="Focus AOF Wipe, einmalig /data leeren, NS redis · Shared Broker" aria-pressed="false" data-node-kind="security" data-node-sublabel="einmalig /data leeren" data-node-tag="Cutover" data-node-context="NS redis · Shared Broker">
+          <title>AOF Wipe · einmalig /data leeren · NS redis · Shared Broker · Cutover</title>
+          <rect x="520" y="460" width="160" height="64" rx="8" class="c-mask"/>
+          <rect x="520" y="460" width="160" height="64" rx="8" class="c-security" data-animate="node" style="--step:4" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(526 466) scale(0.6875)">
+            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
+            <path d="m5.8 8 1.5 1.5 3-3"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="600" y="490" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">AOF Wipe</text>
+        <text data-detail="context" x="600" y="506" class="t-muted" font-size="9" text-anchor="middle">einmalig /data leeren</text>
+        <text data-detail="fine" x="600" y="516" class="t-security" font-size="7" text-anchor="middle">Cutover</text>
+        </g>
+
+        <g id="node-auth0" data-node-id="auth0" data-node-label="authentik-redis-0" tabindex="0" role="button" aria-label="Focus authentik-redis-0, Primary Valkey, NS authentik · Dedicated STS" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Primary Valkey" data-node-tag="STS" data-node-context="NS authentik · Dedicated STS">
+          <title>authentik-redis-0 · Primary Valkey · NS authentik · Dedicated STS · STS</title>
+          <rect x="760" y="120" width="180" height="64" rx="8" class="c-mask"/>
+          <rect x="760" y="120" width="180" height="64" rx="8" class="c-backend" data-animate="node" style="--step:8" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(766 126) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="850" y="150" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">authentik-redis-0</text>
+        <text data-detail="context" x="850" y="166" class="t-muted" font-size="9" text-anchor="middle">Primary Valkey</text>
+        <text data-detail="fine" x="850" y="176" class="t-backend" font-size="7" text-anchor="middle">STS</text>
+        </g>
+
+        <g id="node-auth1" data-node-id="auth1" data-node-label="authentik-redis-1" tabindex="0" role="button" aria-label="Focus authentik-redis-1, Replica CrashLoop, NS authentik · Dedicated STS" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Replica CrashLoop" data-node-tag="STS" data-node-context="NS authentik · Dedicated STS">
+          <title>authentik-redis-1 · Replica CrashLoop · NS authentik · Dedicated STS · STS</title>
+          <rect x="760" y="280" width="180" height="64" rx="8" class="c-mask"/>
+          <rect x="760" y="280" width="180" height="64" rx="8" class="c-backend" data-animate="node" style="--step:6" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(766 286) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="850" y="310" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">authentik-redis-1</text>
+        <text data-detail="context" x="850" y="326" class="t-muted" font-size="9" text-anchor="middle">Replica CrashLoop</text>
+        <text data-detail="fine" x="850" y="336" class="t-backend" font-size="7" text-anchor="middle">STS</text>
+        </g>
+
+        <g id="node-aof" data-node-id="aof" data-node-label="AOF / RDB v15" tabindex="0" role="button" aria-label="Focus AOF / RDB v15, Redis 8 Persistenz, NS authentik · Dedicated STS" aria-pressed="false" data-node-kind="database" data-node-sublabel="Redis 8 Persistenz" data-node-tag="inkompatibel" data-node-context="NS authentik · Dedicated STS">
+          <title>AOF / RDB v15 · Redis 8 Persistenz · NS authentik · Dedicated STS · inkompatibel</title>
+          <rect x="980" y="280" width="150" height="64" rx="8" class="c-mask"/>
+          <rect x="980" y="280" width="150" height="64" rx="8" class="c-database" data-animate="node" style="--step:7" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(986 286) scale(0.6875)">
+            <ellipse cx="8" cy="4" rx="5" ry="2"/>
+            <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="1055" y="310" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">AOF / RDB v15</text>
+        <text data-detail="context" x="1055" y="326" class="t-muted" font-size="9" text-anchor="middle">Redis 8 Persistenz</text>
+        <text data-detail="fine" x="1055" y="336" class="t-database" font-size="7" text-anchor="middle">inkompatibel</text>
+        </g>
+
+        <g id="node-argo" data-node-id="argo" data-node-label="Argo CD" tabindex="0" role="button" aria-label="Focus Argo CD, selfHeal scale-up, Architecture component" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="selfHeal scale-up" data-node-tag="GitOps" data-node-context="Architecture component">
+          <title>Argo CD · selfHeal scale-up · Architecture component · GitOps</title>
+          <rect x="280" y="0" width="168" height="56" rx="8" class="c-mask"/>
+          <rect x="280" y="0" width="168" height="56" rx="8" class="c-cloud" data-animate="node" style="--step:8" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(286 6) scale(0.6875)">
+            <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="364" y="26" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Argo CD</text>
+        <text data-detail="context" x="364" y="42" class="t-muted" font-size="9" text-anchor="middle">selfHeal scale-up</text>
+        <text data-detail="fine" x="364" y="48" class="t-cloud" font-size="7" text-anchor="middle">GitOps</text>
+        </g>
+
+        <!-- Connection labels -->
+        <g data-detail="context" data-edge-from="paperless" data-edge-to="oldredis" data-edge-label="redis://…/0" data-edge-key="0">
+          <rect x="195.6" y="108" width="62.8" height="14" rx="3" class="c-mask"/>
+          <text x="227" y="118" class="t-edge-dashed" font-size="8" text-anchor="middle">redis://…/0</text>
+        </g>
+        <g data-detail="context" data-edge-from="paperless" data-edge-to="valkey" data-edge-label="DNS gleich" data-edge-key="1">
+          <rect x="198" y="456" width="58" height="14" rx="3" class="c-mask"/>
+          <text x="227" y="466" class="t-edge-emphasis" font-size="8" text-anchor="middle">DNS gleich</text>
+        </g>
+        <g data-detail="context" data-edge-from="oldredis" data-edge-to="pvc" data-edge-label="hält Volume" data-edge-key="2">
+          <rect x="504.6" y="144" width="62.8" height="14" rx="3" class="c-mask"/>
+          <text x="536" y="154" class="t-edge-security" font-size="8" text-anchor="middle">hält Volume</text>
+        </g>
+        <g data-detail="context" data-edge-from="newvalkey" data-edge-to="pvc" data-edge-label="FailedAttach" data-edge-key="3">
+          <rect x="502.2" y="280" width="67.6" height="14" rx="3" class="c-mask"/>
+          <text x="536" y="290" class="t-edge-security" font-size="8" text-anchor="middle">FailedAttach</text>
+        </g>
+        <g data-detail="context" data-edge-from="wipe" data-edge-to="pvc" data-edge-label="rm AOF/RDB" data-edge-key="4">
+          <rect x="575.1" y="440" width="58" height="14" rx="3" class="c-mask"/>
+          <text x="604.1" y="450" class="t-edge-emphasis" font-size="8" text-anchor="middle">rm AOF/RDB</text>
+        </g>
+        <g data-detail="context" data-edge-from="valkey" data-edge-to="pvc" data-edge-label="frisch mount" data-edge-key="5">
+          <rect x="446.75" y="416" width="67.6" height="14" rx="3" class="c-mask"/>
+          <text x="480.55" y="426" class="t-edge-emphasis" font-size="8" text-anchor="middle">frisch mount</text>
+        </g>
+        <g data-detail="context" data-edge-from="auth1" data-edge-to="aof" data-edge-label="load RDB v15" data-edge-key="6">
+          <rect x="925.7" y="236" width="67.6" height="14" rx="3" class="c-mask"/>
+          <text x="959.5" y="246" class="t-edge-security" font-size="8" text-anchor="middle">load RDB v15</text>
+        </g>
+        <g data-detail="context" data-edge-from="auth1" data-edge-to="auth0" data-edge-label="replicaof" data-edge-key="7">
+          <rect x="790.8" y="225" width="53.199999999999996" height="14" rx="3" class="c-mask"/>
+          <text x="817.4" y="235" class="t-edge-dashed" font-size="8" text-anchor="middle">replicaof</text>
+        </g>
+        <g data-detail="context" data-edge-from="argo" data-edge-to="oldredis" data-edge-label="hält alt Pod" data-edge-key="8">
+          <rect x="478" y="56" width="67.6" height="14" rx="3" class="c-mask"/>
+          <text x="511.8" y="66" class="t-edge-dashed" font-size="8" text-anchor="middle">hält alt Pod</text>
+        </g>
+
+        <!-- Boundary labels (foreground masks keep routes out of titles) -->
+        <g data-graph-role="structural-frame-label" data-composition-frame-id="0" data-composition-frame-kind="region" data-composition-frame-label="NS redis · Shared Broker">
+          <rect data-graph-role="structural-frame-label-mask" x="262" y="60" width="139.6" height="16" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="266" y="73" class="t-cloud" font-size="9" font-weight="600">NS redis · Shared Broker</text>
+        </g>
+
+        <g data-graph-role="structural-frame-label" data-composition-frame-id="1" data-composition-frame-kind="region" data-composition-frame-label="NS authentik · Dedicated STS">
+          <rect data-graph-role="structural-frame-label-mask" x="742" y="100" width="161.2" height="16" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="746" y="113" class="t-cloud" font-size="9" font-weight="600">NS authentik · Dedicated STS</text>
+        </g>
+
+        <!-- Legend -->
+        <g data-legend="" data-legend-bridge="">
+          <text x="40" y="576" class="t-primary" font-size="12" font-weight="650">Legend</text>
+          <g data-legend-semantic-kind="frontend" data-legend-kind="frontend" data-legend-label="Frontend" data-legend-x="40" data-legend-baseline="596" data-legend-width="93">
+            <rect x="40" y="587" width="16" height="10" rx="2.5" class="c-frontend" stroke-width="1"/>
+            <text x="62" y="596" class="t-muted" font-size="10" font-weight="500">Frontend</text>
+          </g>
+          <g data-legend-semantic-kind="backend" data-legend-kind="backend" data-legend-label="Backend" data-legend-x="155" data-legend-baseline="596" data-legend-width="87">
+            <rect x="155" y="587" width="16" height="10" rx="2.5" class="c-backend" stroke-width="1"/>
+            <text x="177" y="596" class="t-muted" font-size="10" font-weight="500">Backend</text>
+          </g>
+          <g data-legend-semantic-kind="database" data-legend-kind="database" data-legend-label="Database" data-legend-x="264" data-legend-baseline="596" data-legend-width="93">
+            <rect x="264" y="587" width="16" height="10" rx="2.5" class="c-database" stroke-width="1"/>
+            <text x="286" y="596" class="t-muted" font-size="10" font-weight="500">Database</text>
+          </g>
+          <g data-legend-semantic-kind="cloud" data-legend-kind="cloud" data-legend-label="Cloud" data-legend-x="379" data-legend-baseline="596" data-legend-width="74">
+            <rect x="379" y="587" width="16" height="10" rx="2.5" class="c-cloud" stroke-width="1"/>
+            <text x="401" y="596" class="t-muted" font-size="10" font-weight="500">Cloud</text>
+          </g>
+          <g data-legend-semantic-kind="security" data-legend-kind="security" data-legend-label="Security" data-legend-x="475" data-legend-baseline="596" data-legend-width="93">
+            <rect x="475" y="587" width="16" height="10" rx="2.5" class="c-security" stroke-width="1"/>
+            <text x="497" y="596" class="t-muted" font-size="10" font-weight="500">Security</text>
+          </g>
+        </g>
+      </svg>

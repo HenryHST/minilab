@@ -1,6 +1,6 @@
 ---
 title: Deploy und Verify
-book_version: "1.3.4"
+book_version: "1.4.0"
 updated: "2026-10-26"
 ---
 
@@ -41,6 +41,8 @@ Erwartung: `-0` = `role:master`, `connected_slaves:1`; `-1` = `role:slave`. Opti
 8. Application `pangolin-publish` ist Synced. Newt-Site `k3s` ist healthy.
 
 Keine Secret-Werte auslesen. Die Checks lesen Namen und Bereitschaft, nicht den Inhalt von `authentik-credentials`.
+
+Cutover-Fehleranalyse (CrashLoop RDB v15, Wipe, Replication): Kapitel **Incident 2026-10-26 Redis→Valkey**.
 
 ## Fehlersuche (GitOps / Backup)
 

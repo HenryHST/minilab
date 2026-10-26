@@ -1,5 +1,11 @@
 # Changelog — Buch Paperless
 
+## [1.10.0] - 2026-10-26
+
+### Added
+
+- Kapitel **Incident 2026-10-26 Redis→Valkey** (FailedAttachVolume + RDB v15) mit Archify Architektur- und Diagnose-Grafiken
+
 ## [1.9.2] - 2026-10-26
 
 ### Changed

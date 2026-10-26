@@ -9,6 +9,8 @@ Shared Valkey 9.1 (Redis protocol) for cluster apps (AOF on Longhorn). Primary c
 
 Valkey 9.1 cannot load Redis 8 AOF/RDB (**format v15** → CrashLoop). Wipe `/data` once while scaled to 0 (broker/cache only). Deployment uses **`Recreate`** so the RWO PVC is not dual-attached during upgrades.
 
+BookStack: **Paperless** → Incident 2026-10-26 Redis→Valkey (Archify Architektur + Diagnose).
+
 | Item | Value |
 |------|--------|
 | Namespace | `redis` |

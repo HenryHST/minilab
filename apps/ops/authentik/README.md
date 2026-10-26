@@ -45,6 +45,8 @@ Authentik **requires** a Redis-compatible broker for cache, sessions, and the ta
 
 **Cutover note:** Valkey 9.1 rejects Redis 8 RDB format v15 (`Can't handle RDB format version 15`). Scale STS to 0, wipe both `data-authentik-redis-*` PVCs under `/data`, then scale back to 2 (sessions/cache only).
 
+BookStack: **Authentik** → Incident 2026-10-26 Redis→Valkey (same Archify diagrams as Paperless shared cutover).
+
 | Piece | Value |
 |-------|--------|
 | Dedicated STS | `redis.yaml` → Service `authentik-redis.authentik.svc.cluster.local:6379` (primary `…-0`) |

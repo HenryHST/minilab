@@ -1,0 +1,180 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Redis → Valkey — Diagnose & Remediation",
+    "output": "docs/diagrams/archify/redis-valkey-cutover-diagnose.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/HenryHST/minilab",
+      "revision": "a88666cd980d4d67c1da360173d45ac941ffd73c"
+    },
+    "views": [
+      {
+        "id": "triage",
+        "label": "Triage",
+        "focus": ["symptom", "events", "logs"],
+        "note": "FailedAttach vs CrashLoop RDB v15 trennen."
+      },
+      {
+        "id": "fix",
+        "label": "Fix",
+        "focus": ["suspend", "wipe", "recreate"],
+        "note": "Argo pausieren, PVC wipen, Recreate/STS hochfahren."
+      },
+      {
+        "id": "verify",
+        "label": "Verify",
+        "focus": ["ping", "argo"],
+        "note": "valkey-cli ping + Replication; Argo wieder an."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "observe", "label": "Beobachtung" },
+    { "id": "cluster", "label": "Cluster" },
+    { "id": "remediate", "label": "Remediation" }
+  ],
+  "phases": [
+    { "id": "triage", "label": "Triage", "fromCol": 0, "toCol": 1 },
+    { "id": "fix", "label": "Beheben", "fromCol": 2, "toCol": 4, "variant": "emphasis" },
+    { "id": "verify", "label": "Verify", "fromCol": 5, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": [
+    "symptom",
+    "events",
+    "logs",
+    "suspend",
+    "wipe",
+    "recreate",
+    "ping",
+    "argo"
+  ],
+  "nodes": [
+    {
+      "id": "symptom",
+      "lane": "observe",
+      "col": 0,
+      "type": "external",
+      "label": "Symptom",
+      "sublabel": "Valkey startet nicht",
+      "width": 140
+    },
+    {
+      "id": "events",
+      "lane": "cluster",
+      "col": 1,
+      "type": "backend",
+      "label": "Events",
+      "sublabel": "FailedAttachVolume",
+      "width": 150
+    },
+    {
+      "id": "logs",
+      "lane": "observe",
+      "col": 1,
+      "type": "backend",
+      "label": "Logs",
+      "sublabel": "RDB format v15",
+      "width": 140
+    },
+    {
+      "id": "suspend",
+      "lane": "remediate",
+      "col": 2,
+      "type": "cloud",
+      "label": "Argo pause",
+      "sublabel": "syncPolicy leer",
+      "width": 130
+    },
+    {
+      "id": "wipe",
+      "lane": "remediate",
+      "col": 3,
+      "type": "security",
+      "label": "Scale0 + Wipe",
+      "sublabel": "rm /data AOF",
+      "width": 140,
+      "sources": [
+        {
+          "path": "apps/infra/redis/README.md",
+          "line": 8,
+          "end_line": 10,
+          "label": "Wipe AOF bei Redis→Valkey Cutover"
+        }
+      ]
+    },
+    {
+      "id": "recreate",
+      "lane": "cluster",
+      "col": 4,
+      "type": "backend",
+      "label": "Recreate",
+      "sublabel": "Valkey scale up",
+      "width": 130,
+      "sources": [
+        {
+          "path": "apps/infra/redis/redis.yaml",
+          "line": 47,
+          "end_line": 48,
+          "label": "strategy.type Recreate"
+        }
+      ]
+    },
+    {
+      "id": "ping",
+      "lane": "observe",
+      "col": 5,
+      "type": "database",
+      "label": "valkey-cli",
+      "sublabel": "PONG + repl",
+      "width": 130
+    },
+    {
+      "id": "argo",
+      "lane": "remediate",
+      "col": 5,
+      "type": "cloud",
+      "label": "Argo on",
+      "sublabel": "automated sync",
+      "width": 130
+    }
+  ],
+  "edges": [
+    { "from": "symptom", "to": "events", "label": "kubectl", "variant": "emphasis" },
+    { "from": "events", "to": "logs", "label": "auth-1" },
+    { "from": "logs", "to": "suspend", "label": "Root Cause", "variant": "emphasis" },
+    { "from": "suspend", "to": "wipe", "label": "kein selfHeal" },
+    { "from": "wipe", "to": "recreate", "label": "WIPE_OK", "variant": "security" },
+    { "from": "recreate", "to": "ping", "label": "Pods Ready", "variant": "emphasis" },
+    { "from": "ping", "to": "argo", "label": "restore", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Ohne Argo-Pause",
+      "items": [
+        "selfHeal skaliert Deploy zurück → Wipe-Job FailedAttach",
+        "Immer syncPolicy leeren bevor scale 0 + Wipe"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Verify",
+      "items": [
+        "Shared: valkey-cli ping + Image-Tag",
+        "Authentik: info replication role/master + slaves",
+        "Paperless Ready; IdP Login ok"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Dauerhaft",
+      "items": [
+        "apps/infra/redis: strategy Recreate",
+        "README Cutover-Hinweis RDB v15",
+        "DNS/Env unverändert"
+      ]
+    }
+  ]
+}

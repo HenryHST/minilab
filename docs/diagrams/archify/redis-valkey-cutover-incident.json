@@ -1,0 +1,291 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Incident 2026-10-26: Redis → Valkey Cutover",
+    "subtitle": "FailedAttachVolume (RWO) + RDB format v15 CrashLoop",
+    "output": "docs/diagrams/archify/redis-valkey-cutover-incident.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/HenryHST/minilab",
+      "revision": "a88666cd980d4d67c1da360173d45ac941ffd73c"
+    },
+    "views": [
+      {
+        "id": "fail",
+        "label": "Fehlerpfad",
+        "focus": ["oldredis", "newvalkey", "pvc", "auth1", "aof"],
+        "note": "RollingUpdate hält Redis-8-Pod am RWO-PVC; Valkey-Replica lädt Redis-8-AOF (RDB v15) → CrashLoop."
+      },
+      {
+        "id": "ok",
+        "label": "Sollpfad",
+        "focus": ["paperless", "valkey", "pvc", "auth0", "auth1", "wipe"],
+        "note": "Recreate + einmaliger AOF-Wipe → Valkey 9.1 Ready; Authentik Primary+Replica."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "paperless",
+      "type": "frontend",
+      "label": "Paperless",
+      "sublabel": "PAPERLESS_REDIS",
+      "tag": "Client",
+      "pos": [40, 200],
+      "size": [150, 64],
+      "sources": [
+        {
+          "path": "apps/dev/paperless/paperless.yaml",
+          "line": 77,
+          "end_line": 78,
+          "label": "PAPERLESS_REDIS DNS unverändert"
+        }
+      ]
+    },
+    {
+      "id": "oldredis",
+      "type": "backend",
+      "label": "Redis 8 Pod",
+      "sublabel": "redis:8-alpine3.23",
+      "tag": "alt Running",
+      "pos": [280, 80],
+      "size": [168, 64],
+      "sources": [
+        {
+          "path": "apps/infra/redis/README.md",
+          "line": 8,
+          "end_line": 10,
+          "label": "Redis 8 AOF unverträglich mit Valkey 9.1"
+        }
+      ]
+    },
+    {
+      "id": "newvalkey",
+      "type": "backend",
+      "label": "Valkey Pod",
+      "sublabel": "Init FailedAttach",
+      "tag": "neu stuck",
+      "pos": [280, 320],
+      "size": [168, 64],
+      "sources": [
+        {
+          "path": "apps/infra/redis/redis.yaml",
+          "line": 68,
+          "end_line": 71,
+          "label": "Image valkey/valkey:9.1.2-alpine + valkey-server"
+        }
+      ]
+    },
+    {
+      "id": "pvc",
+      "type": "database",
+      "label": "redis-data",
+      "sublabel": "Longhorn RWO 2Gi",
+      "tag": "PVC",
+      "pos": [520, 200],
+      "size": [150, 64],
+      "sources": [
+        {
+          "path": "apps/infra/redis/redis.yaml",
+          "line": 4,
+          "end_line": 17,
+          "label": "PVC redis-data RWO Longhorn"
+        }
+      ]
+    },
+    {
+      "id": "valkey",
+      "type": "backend",
+      "label": "Shared Valkey",
+      "sublabel": "9.1.2-alpine Recreate",
+      "tag": "Soll",
+      "pos": [280, 460],
+      "size": [168, 64],
+      "sources": [
+        {
+          "path": "apps/infra/redis/redis.yaml",
+          "line": 47,
+          "end_line": 48,
+          "label": "strategy.type Recreate für RWO-PVC"
+        }
+      ]
+    },
+    {
+      "id": "wipe",
+      "type": "security",
+      "label": "AOF Wipe",
+      "sublabel": "einmalig /data leeren",
+      "tag": "Cutover",
+      "pos": [520, 460],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "apps/infra/redis/README.md",
+          "line": 8,
+          "end_line": 10,
+          "label": "Wipe bei Redis→Valkey wegen RDB format v15"
+        }
+      ]
+    },
+    {
+      "id": "auth0",
+      "type": "backend",
+      "label": "authentik-redis-0",
+      "sublabel": "Primary Valkey",
+      "tag": "STS",
+      "pos": [760, 120],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "apps/ops/authentik/redis.yaml",
+          "line": 16,
+          "end_line": 22,
+          "label": "Ordinal 0: valkey-server ohne replicaof"
+        }
+      ]
+    },
+    {
+      "id": "auth1",
+      "type": "backend",
+      "label": "authentik-redis-1",
+      "sublabel": "Replica CrashLoop",
+      "tag": "STS",
+      "pos": [760, 280],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "apps/ops/authentik/redis.yaml",
+          "line": 25,
+          "end_line": 31,
+          "label": "Ordinal 1: replicaof Primary DNS"
+        }
+      ]
+    },
+    {
+      "id": "aof",
+      "type": "database",
+      "label": "AOF / RDB v15",
+      "sublabel": "Redis 8 Persistenz",
+      "tag": "inkompatibel",
+      "pos": [980, 280],
+      "size": [150, 64],
+      "sources": [
+        {
+          "path": "apps/ops/authentik/README.md",
+          "line": 46,
+          "end_line": 46,
+          "label": "Valkey lehnt Redis 8 RDB format v15 ab"
+        }
+      ]
+    },
+    {
+      "id": "argo",
+      "type": "cloud",
+      "label": "Argo CD",
+      "sublabel": "selfHeal scale-up",
+      "tag": "GitOps",
+      "pos": [280, 0],
+      "size": [168, 56]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "NS redis · Shared Broker",
+      "wraps": ["oldredis", "newvalkey", "pvc", "valkey", "wipe"],
+      "pad": 22
+    },
+    {
+      "kind": "region",
+      "label": "NS authentik · Dedicated STS",
+      "wraps": ["auth0", "auth1", "aof"],
+      "pad": 22
+    }
+  ],
+  "connections": [
+    {
+      "from": "paperless",
+      "to": "oldredis",
+      "label": "redis://…/0",
+      "variant": "dashed"
+    },
+    {
+      "from": "paperless",
+      "to": "valkey",
+      "label": "DNS gleich",
+      "variant": "emphasis"
+    },
+    {
+      "from": "oldredis",
+      "to": "pvc",
+      "label": "hält Volume",
+      "variant": "security"
+    },
+    {
+      "from": "newvalkey",
+      "to": "pvc",
+      "label": "FailedAttach",
+      "variant": "security"
+    },
+    {
+      "from": "wipe",
+      "to": "pvc",
+      "label": "rm AOF/RDB",
+      "variant": "emphasis"
+    },
+    {
+      "from": "valkey",
+      "to": "pvc",
+      "label": "frisch mount",
+      "variant": "emphasis"
+    },
+    {
+      "from": "auth1",
+      "to": "aof",
+      "label": "load RDB v15",
+      "variant": "security"
+    },
+    {
+      "from": "auth1",
+      "to": "auth0",
+      "label": "replicaof",
+      "variant": "dashed"
+    },
+    {
+      "from": "argo",
+      "to": "oldredis",
+      "label": "hält alt Pod",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Shared: RWO + RollingUpdate",
+      "items": [
+        "Neuer Valkey-Pod und alter Redis-8-Pod brauchen dieselbe PVC",
+        "Event: FailedAttachVolume — Volume already used",
+        "Fix: strategy Recreate, danach einmalig /data wipen"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Authentik: RDB format v15",
+      "items": [
+        "Valkey 9.1: Can't handle RDB format version 15",
+        "STS OrderedReady bleibt bei CrashLoop von -1 stecken",
+        "Fix: beide data-authentik-redis-* PVCs leeren, scale 2"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Unverändert",
+      "items": [
+        "Service-DNS redis.redis.svc / authentik-redis.authentik.svc",
+        "App-Env PAPERLESS_REDIS / AUTHENTIK_REDIS__HOST",
+        "Broker/Cache — kein App-Persistenzverlust"
+      ]
+    }
+  ]
+}

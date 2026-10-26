@@ -1,6 +1,6 @@
 book: Authentik
 cover: cover.png
-book_version: "1.3.4"
+book_version: "1.4.0"
 updated: "2026-10-26"
-description: Authentik — IdP, Brand Stadthagen Home, OpenTofu, Pangolin-Publish, CNPG-Postgres, Valkey 9.1 Broker, Vorlage für die nächste OIDC-App
+description: Authentik — IdP, Brand Stadthagen Home, OpenTofu, Pangolin-Publish, CNPG-Postgres, Valkey 9.1 Broker, Incident Redis→Valkey, Vorlage für die nächste OIDC-App
 shelf: Plattform

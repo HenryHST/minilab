@@ -56,7 +56,7 @@ URL (kanonisch): `https://vw-ext.stadthagen.dev` · Manifeste: `apps/dev/vaultwa
 
 ## 4b. Paperless
 
-Buch **Paperless** — Reihenfolge aus `books/paperless/` (aktuell **v1.9.2**):
+Buch **Paperless** — Reihenfolge aus `books/paperless/` (aktuell **v1.10.0**):
 
 1. Übersicht
 2. Deploy & Verify
@@ -65,6 +65,7 @@ Buch **Paperless** — Reihenfolge aus `books/paperless/` (aktuell **v1.9.2**):
 5. Gotenberg & Tika Smoke
 6. Trivy & CVE-Hygiene
 7. Backup & Restore (`document_exporter` / `document_importer` + CNPG-Snapshot; Restore-Verifikation V1–V14)
+8. Incident 2026-10-26 Redis→Valkey (FailedAttachVolume + RDB v15; Archify)
 
 Manifeste: `apps/dev/paperless/`. LAN: `https://paperless.stadthagen.dev`.
 

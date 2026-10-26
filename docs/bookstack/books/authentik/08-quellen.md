@@ -1,11 +1,13 @@
 ---
 title: Quellen
-book_version: "1.1.0"
+book_version: "1.4.0"
 ---
 
 # Quellen
 
 - App-README: [`apps/ops/authentik/README.md`](../../../../apps/ops/authentik/README.md) (Valkey STS)
+- Incident Redis→Valkey: [10-incident-2026-10-26-redis-valkey](10-incident-2026-10-26-redis-valkey.md) · Archify `docs/diagrams/archify/redis-valkey-cutover-*`
+- Paperless (Shared-Broker-Incident): minilab Buch Paperless → Incident 2026-10-26
 - Blueprints: [`apps/ops/authentik/BLUEPRINTS.md`](../../../../apps/ops/authentik/BLUEPRINTS.md)
 - Pangolin-Publish: [`apps/ops/pangolin-publish/README.md`](../../../../apps/ops/pangolin-publish/README.md)
 - Newt: [`apps/ops/newt`](../../../../apps/ops/newt)

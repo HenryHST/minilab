@@ -1,6 +1,6 @@
 ---
 title: Übersicht
-book_version: "1.3.4"
+book_version: "1.4.0"
 ---
 
 # Übersicht
@@ -34,4 +34,4 @@ flowchart LR
 | Konfiguration | OpenTofu in Infra_LAB `terraform/authentik` |
 | Öffentlichkeit | `pangolin-publish`, Ressource `idp` |
 
-ADR: [0010-authentik-idp](../../../adr/0010-authentik-idp.md). Nächste App: Kapitel **Onboarding**. Erscheinungsbild: Kapitel **Brand**. Applications und Gruppen: Kapitel **OpenTofu**. Internet über Pangolin: Kapitel **Externe Ressourcen mit Pangolin**.
+ADR: [0010-authentik-idp](../../../adr/0010-authentik-idp.md). Nächste App: Kapitel **Onboarding**. Erscheinungsbild: Kapitel **Brand**. Applications und Gruppen: Kapitel **OpenTofu**. Internet über Pangolin: Kapitel **Externe Ressourcen mit Pangolin**. Cutover Redis→Valkey (RDB v15): Kapitel **Incident 2026-10-26 Redis→Valkey**.

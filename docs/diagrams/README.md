@@ -13,6 +13,9 @@ Interaktive HTML-Diagramme und BookStack-Exports für die Plattform-Bücher.
 | `paperless-groups-provision` | workflow | [paperless-groups-provision.html](archify/paperless-groups-provision.html) | `archify/exports/paperless-groups-provision.png` | Paperless — Gruppen-Provisionierung |
 | `paperless-backup` | architecture | [paperless-backup.html](archify/paperless-backup.html) | `archify/exports/paperless-backup.png` | Paperless — Backup (Strategie C) |
 | `paperless-restore-workflow` | workflow | [paperless-restore-workflow.html](archify/paperless-restore-workflow.html) | `archify/exports/paperless-restore-workflow.png` | Paperless — Restore-Workflow |
+| `podcraft-incident-2026-10-26` | architecture | [podcraft-incident-2026-10-26.html](archify/podcraft-incident-2026-10-26.html) | `archify/exports/podcraft-incident-2026-10-26.png` | podcraft — Incident Missing / HA SSL |
+| `podcraft-diagnose-2026-10-26` | workflow | [podcraft-diagnose-2026-10-26.html](archify/podcraft-diagnose-2026-10-26.html) | `archify/exports/podcraft-diagnose-2026-10-26.png` | podcraft — Diagnose & Remediation |
+| `podcraft-timeline-2026-10-26` | timeline | [podcraft-timeline-2026-10-26.html](archify/podcraft-timeline-2026-10-26.html) | `archify/exports/podcraft-timeline-2026-10-26.png` | podcraft — Incident Timeline |
 
 ## Archify
 

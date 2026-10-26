@@ -1,3 +1,17 @@
+# Temporary self-signed TLS: Hetzner Cloud DNS API has ACME TXT for
+# _acme-challenge.podcraft, but authoritative NS still serve SOA 2026102205
+# (NXDOMAIN) while API SOA is newer — Let's Encrypt cannot complete DNS-01.
+# Switch issuerRef back to ClusterIssuer letsencrypt-prod once NS publish the TXT.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: podcraft-selfsigned
+  namespace: podcraft
+  labels:
+    app: podcraft
+spec:
+  selfSigned: {}
+---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -6,7 +20,9 @@ metadata:
 spec:
   secretName: podcraft-tls
   issuerRef:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
+    name: podcraft-selfsigned
+    kind: Issuer
   dnsNames:
     - podcraft.stadthagen.dev
+  privateKey:
+    rotationPolicy: Always

@@ -22,6 +22,9 @@ spec:
         app: podcraft-image-pull
     spec:
       restartPolicy: Never
+      # Image is linux/amd64 only — do not schedule on Pi agents (arm64).
+      nodeSelector:
+        kubernetes.io/arch: amd64
       imagePullSecrets:
         - name: registry-pull
       securityContext:

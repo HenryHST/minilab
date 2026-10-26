@@ -44,7 +44,7 @@ PODCRAFT_AUTH_MODE=none PODCRAFT_DRY_RUN=true uvicorn app.main:app --reload --po
 ## Home Assistant
 
 1. Open Pulse **System settings** → **Rotate HA password**
-2. Copy user/password into HA `secrets.yaml` on pi5cl
+2. Copy user/password into HA `secrets.yaml` on ha02
 3. Copy HA package from [`examples/homeassistant/`](examples/homeassistant/) (see docs)
 
 Full guide: [docs/bookstack/books/podcraft/02-home-assistant.md](../../../docs/bookstack/books/podcraft/02-home-assistant.md).  

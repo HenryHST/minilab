@@ -5,7 +5,7 @@ chapter: home-assistant
 
 # Home Assistant → podcraft
 
-HA läuft auf **pi5cl** (Config unter `/opt/homelab/data/homeassistant/config`, nicht in Git).  
+HA läuft auf **ha02** (`hassio@192.168.0.106`, Config unter `/config`, nicht in Git; früher pi5cl).  
 podcraft: `https://podcraft.stadthagen.dev`
 
 Der Day/Night-Scheduler läuft **in podcraft**. HA dient für manuelle Overrides und optionale Status-Sensoren.
@@ -38,7 +38,7 @@ homeassistant:
 3. **HA-Passwort rotieren** — Username und Passwort erscheinen **einmalig** in der Settings-Card (Copy-Buttons)
 4. Werte sofort in HA `secrets.yaml` übernehmen (nach Reload der Settings-Seite ist der Klartext weg)
 
-## Auf pi5cl: secrets.yaml
+## Auf ha02: secrets.yaml
 
 ```yaml
 podcraft_basic_user: ha
@@ -52,7 +52,7 @@ Service prüfen: `rest_command.podcraft_start_drawio`.
 
 ## Netz
 
-- pi5cl muss `podcraft.stadthagen.dev` erreichen (LAN → Traefik VIP).
+- ha02 muss `podcraft.stadthagen.dev` erreichen (LAN → Traefik VIP).
 - Kein Authentik-Login in HA nötig — nur HTTP Basic.
 - k8s-NetworkPolicy steuert nur Traefik→Pod; die HA-spezifische Einschränkung ist die Traefik-Allowlist auf `/api/v1/workloads`.
 

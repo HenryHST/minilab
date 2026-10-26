@@ -1,5 +1,5 @@
-# Redis — shared cluster cache/broker (paperless, authentik).
-# Image pinned; AOF persistence on Longhorn.
+# Valkey 9.1 (Redis protocol) — shared cluster cache/broker (paperless).
+# Image pinned; AOF persistence on Longhorn. Service DNS stays redis.redis.svc.
 
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -51,7 +51,7 @@ spec:
     spec:
       nodeSelector:
         worker: "true"
-      # redis:*-alpine runs as uid 999; Longhorn PVC is root-owned without fsGroup
+      # valkey:*-alpine runs as uid 999; Longhorn PVC is root-owned without fsGroup
       # → "Can't open or create append-only dir appendonlydir: Permission denied"
       securityContext:
         fsGroup: 999
@@ -60,10 +60,10 @@ spec:
         runAsNonRoot: true
       containers:
         - name: redis
-          image: redis:8-alpine3.23
+          image: valkey/valkey:9.1.2-alpine
           imagePullPolicy: IfNotPresent
           args:
-            - redis-server
+            - valkey-server
             - --appendonly
             - "yes"
             - --save
@@ -76,12 +76,12 @@ spec:
               containerPort: 6379
           readinessProbe:
             exec:
-              command: ["redis-cli", "ping"]
+              command: ["valkey-cli", "ping"]
             initialDelaySeconds: 5
             periodSeconds: 5
           livenessProbe:
             exec:
-              command: ["redis-cli", "ping"]
+              command: ["valkey-cli", "ping"]
             initialDelaySeconds: 15
             periodSeconds: 10
           resources:

@@ -1,7 +1,7 @@
 ---
 title: Deploy und Verify
-book_version: "1.3.3"
-updated: "2026-10-13"
+book_version: "1.3.4"
+updated: "2026-10-26"
 ---
 
 # Deploy und Verify
@@ -24,7 +24,16 @@ kubectl -n authentik get deploy,pods,ingressroute,cronjob,pvc
 
 1. Deployments von Server und Worker sind Ready.
 2. `https://idp.stadthagen.dev` zeigt die Login-Seite mit Titel **Willkommen Stadthagen Home**.
-3. Redis: Secret `AUTHENTIK_REDIS__HOST` zeigt auf `redis.redis.svc.cluster.local`; TCP 6379 aus dem Namespace `authentik` ist offen (NetworkPolicy `redis-ingress`). Ohne Redis wird die Login-Seite spürbar langsam.
+3. Valkey (Redis-Protokoll): Secret `AUTHENTIK_REDIS__HOST` zeigt auf `authentik-redis.authentik.svc.cluster.local`; STS `authentik-redis` Image `valkey/valkey:9.1.2-alpine`; beide Pods Ready. Smoke:
+
+```bash
+kubectl -n authentik get sts,pods -l app.kubernetes.io/component=redis
+kubectl -n authentik exec authentik-redis-0 -- valkey-cli ping   # PONG
+kubectl -n authentik exec authentik-redis-0 -- valkey-cli info replication | rg 'role|connected_slaves'
+kubectl -n authentik exec authentik-redis-1 -- valkey-cli info replication | rg 'role|master_host'
+```
+
+Erwartung: `-0` = `role:master`, `connected_slaves:1`; `-1` = `role:slave`. Optional: Pod `-1` löschen und Rejoin prüfen. Ohne Broker wird die Login-Seite spürbar langsam.
 4. Job aus `authentik-media-sync` hat die Dateien unter `/media/public/branding/` gelegt. Logo, Favicon und `website-work.svg` sind dabei.
 5. CronJobs `authentik-backup-0230` und `authentik-backup-1150` existieren (Europe/Berlin). Media kommt vom PVC-Mount (Scale-to-0); Archive parallel NFS + S3. Siehe `apps/ops/authentik/VERIFY.md`.
 6. Ein OIDC-Login, zum Beispiel Termix über den Reiter External, kommt zurück auf die App.

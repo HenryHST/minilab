@@ -1,6 +1,6 @@
 ---
 title: Architektur
-book_version: "1.1.0"
+book_version: "1.3.4"
 ---
 
 # Architektur
@@ -10,7 +10,7 @@ book_version: "1.1.0"
 - GitOps-App `apps/ops/authentik`. Chart `2026.8.3` von `https://charts.goauthentik.io`, gerendert nach `helm-manifest.yaml`.
 - ApplicationSet `ops`, Wave 2, Namespace `authentik`.
 - Ingress `idp.stadthagen.dev` im Cluster. Von außen erreicht Pangolin denselben Host über Newt und `pangolin-publish` (Kapitel **Externe Ressourcen mit Pangolin**, [ADR-0011](../../../adr/0011-pangolin-public-exposure.md)).
-- Server und Worker laufen im Namespace. Die Datenbank ist die vom Chart mitgebrachte Postgres-Instanz. Backup und Restore liegen daneben, nicht im Chart.
+- Server und Worker laufen im Namespace. Postgres läuft als CNPG-Cluster; Cache/Sessions/Task-Broker über dediziertes **Valkey 9.1** StatefulSet `authentik-redis` (Redis-Protokoll, Primary+Replica). Backup und Restore liegen daneben, nicht im Chart.
 
 ## Steuerung
 

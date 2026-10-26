@@ -1,6 +1,6 @@
 # apps/infra
 
-Platform storage, Kyverno admission (Audit), cluster timezone, node feature labels, shared Redis, Mosquitto MQTT, CloudNativePG operator, and Traefik error / maintenance pages.
+Platform storage, Kyverno admission (Audit), cluster timezone, node feature labels, shared Valkey (Redis protocol), Mosquitto MQTT, CloudNativePG operator, and Traefik error / maintenance pages.
 
 | App | Sync wave | Namespace |
 |-----|-----------|-----------|

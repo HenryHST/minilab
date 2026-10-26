@@ -1,6 +1,6 @@
 ---
 title: Übersicht
-book_version: "1.1.0"
+book_version: "1.3.4"
 ---
 
 # Übersicht
@@ -29,6 +29,7 @@ flowchart LR
 | Namespace | `authentik` |
 | Host | `idp.stadthagen.dev` |
 | Chart | authentik `2026.8.3`, gerendert nach `helm-manifest.yaml` |
+| Valkey | STS `authentik-redis` (`valkey/valkey:9.1.2-alpine`, Redis-Protokoll) |
 | Brand | Stadthagen Home |
 | Konfiguration | OpenTofu in Infra_LAB `terraform/authentik` |
 | Öffentlichkeit | `pangolin-publish`, Ressource `idp` |

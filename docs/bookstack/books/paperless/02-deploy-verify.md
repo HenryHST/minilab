@@ -1,11 +1,11 @@
 ---
 title: Deploy & Verify
-book_version: "1.9.1"
+book_version: "1.9.2"
 ---
 
 # Deploy & Verify
 
-> **Buch** v1.9.1 · Stand: 2026-10-25
+> **Buch** v1.9.2 · Stand: 2026-10-26
 
 ## Voraussetzungen
 
@@ -65,7 +65,7 @@ kubectl -n paperless delete pod -l app=paperless-worker
 ```bash
 kubectl -n argocd get application redis paperless
 kubectl -n paperless get pods,hpa,pvc,job
-kubectl -n redis exec deploy/redis -- redis-cli ping
+kubectl -n redis exec deploy/redis -- valkey-cli ping
 ```
 
 ### Storage-Check

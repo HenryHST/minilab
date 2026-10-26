@@ -5,7 +5,7 @@ book_version: "1.1.0"
 
 # Quellen
 
-- App-README: [`apps/ops/authentik/README.md`](../../../../apps/ops/authentik/README.md)
+- App-README: [`apps/ops/authentik/README.md`](../../../../apps/ops/authentik/README.md) (Valkey STS)
 - Blueprints: [`apps/ops/authentik/BLUEPRINTS.md`](../../../../apps/ops/authentik/BLUEPRINTS.md)
 - Pangolin-Publish: [`apps/ops/pangolin-publish/README.md`](../../../../apps/ops/pangolin-publish/README.md)
 - Newt: [`apps/ops/newt`](../../../../apps/ops/newt)

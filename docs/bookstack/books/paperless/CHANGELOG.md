@@ -1,5 +1,11 @@
 # Changelog — Buch Paperless
 
+## [1.9.2] - 2026-10-26
+
+### Changed
+
+- Shared Broker: Redis → **Valkey 9.1.2-alpine** (`apps/infra/redis`); Verify mit `valkey-cli ping`
+
 ## [1.9.1] - 2026-10-25
 
 ### Added

@@ -1,14 +1,14 @@
 ---
 title: Quellen
-book_version: "1.9.1"
+book_version: "1.9.2"
 ---
 
 # Quellen
 
-> **Buch** v1.9.1 · Stand: 2026-10-25
+> **Buch** v1.9.2 · Stand: 2026-10-26
 
 - App-README: [`apps/dev/paperless/README.md`](../../../../apps/dev/paperless/README.md)
-- Redis: [`apps/infra/redis/README.md`](../../../../apps/infra/redis/README.md)
+- Valkey (shared): [`apps/infra/redis/README.md`](../../../../apps/infra/redis/README.md)
 - ADR-0015: [`docs/adr/0015-backup-restore-cronjobs.md`](../../../adr/0015-backup-restore-cronjobs.md) (Paperless 05:00 UTC Exporter)
 - ADR-0026: [`docs/adr/0026-paperless-ngx.md`](../../../adr/0026-paperless-ngx.md)
 - ADR-0035: [`docs/adr/0035-paperless-cnpg.md`](../../../adr/0035-paperless-cnpg.md)

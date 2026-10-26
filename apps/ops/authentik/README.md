@@ -7,7 +7,7 @@ GitOps install for `idp.stadthagen.dev`. Day-0 blueprints: [BLUEPRINTS.md](BLUEP
 - **Hard** `nodeSelector` / `nodeAffinity`: `worker=true` (Proxmox only). **No** Pi fallback (RWO Longhorn attach wars — BookStack incident 2026-10-14).
 - Do **not** label Pis with `worker=true` (Traefik / Longhorn-disk stay Proxmox-only).
 - server: Chart **HPA** min 2 / max 5 (CPU 75%, scaleDown stabilization 300s); worker **replicas: 2** (fixed). `RollingUpdate`, PDB `minAvailable: 1` (`pdb.yaml`). Media PVC is **RWX**.
-- CNPG **`instances: 2`** + continuous WAL to RustFS; dedicated Redis StatefulSet **2** (primary+replica).
+- CNPG **`instances: 2`** + continuous WAL to RustFS; dedicated Valkey StatefulSet **2** (primary+replica, Redis protocol).
 - Runtime/HA narrative: Infra_LAB BookStack **Authentik Runtime** + `docs/diagrams/authentik/authentik-{scheduling,fail-domains,failover}.html`.
 - Upstream HPA: https://docs.goauthentik.io/sys-mgmt/ops/autoscaling/hpa/
 
@@ -39,24 +39,31 @@ kubectl -n authentik get cluster authentik-pg -o jsonpath='{.status.instances} r
 
 **Follow-up (not in pilot):** (1) mount CA + `verify-full` / `SSLROOTCERT=file:///certs/ca.crt` and update Infra_LAB SecretSpec; (2) same hybrid pattern for Termix (`apps/dev/termix/`).
 
-## Redis
+## Valkey (Redis protocol)
 
-Authentik **requires** Redis for cache, sessions, and the task broker.
+Authentik **requires** a Redis-compatible broker for cache, sessions, and the task broker. Lab runs **Valkey 9.1** (`valkey/valkey:9.1.2-alpine`).
 
 | Piece | Value |
 |-------|--------|
 | Dedicated STS | `redis.yaml` → Service `authentik-redis.authentik.svc.cluster.local:6379` (primary `…-0`) |
+| Image | `valkey/valkey:9.1.2-alpine` (`valkey-server` / `valkey-cli`) |
 | Replicas | 2 (primary + replicaof), PDB `minAvailable: 1`, Longhorn RWO PVCs |
 | Config | `values.yaml` → `authentik.redis.host` → Secret key `AUTHENTIK_REDIS__HOST` |
-| Shared Redis | `apps/infra/redis` remains for **paperless** (and others); Authentik no longer depends on it |
+| Shared Valkey | `apps/infra/redis` remains for **paperless** (and others); Authentik no longer depends on it |
 
 Verify:
 
 ```bash
 kubectl -n authentik get sts,pods,svc -l app.kubernetes.io/component=redis
+kubectl -n authentik get sts authentik-redis -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
 kubectl -n authentik get secret authentik -o jsonpath='{.data.AUTHENTIK_REDIS__HOST}' | base64 -d; echo
+kubectl -n authentik exec authentik-redis-0 -- valkey-cli ping
+kubectl -n authentik exec authentik-redis-0 -- valkey-cli info server | rg redis_version
+kubectl -n authentik exec authentik-redis-0 -- valkey-cli info replication | rg 'role|connected_slaves|master_host'
+kubectl -n authentik exec authentik-redis-1 -- valkey-cli info replication | rg 'role|master_host'
 kubectl -n authentik run redis-probe --rm -i --restart=Never --image=busybox:1.36 \
   --command -- nc -zvw3 authentik-redis.authentik.svc.cluster.local 6379
+# Optional rejoin: kubectl -n authentik delete pod authentik-redis-1
 ```
 
 After changing `values.yaml`, re-render `helm-manifest.yaml` (see Helm below) and sync Application `authentik`.

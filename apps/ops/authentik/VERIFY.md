@@ -9,7 +9,7 @@ Upstream: https://docs.goauthentik.io/sys-mgmt/ops/backup-restore/
 - Bucket `authentik-pg-wal` (PreSync Job `authentik-pg-wal-bucket` or manual `aws s3 mb`)
 - NFS dir `…/authentik-backups` exists
 - CronJobs synced: `authentik-backup-0230`, `authentik-backup-1150`
-- CNPG `instances: 2`, Redis STS `authentik-redis` Ready
+- CNPG `instances: 2`, Valkey STS `authentik-redis` Ready (`valkey/valkey:9.1.2-alpine`)
 
 ## Manual backup smoke (online — IdP stays up)
 

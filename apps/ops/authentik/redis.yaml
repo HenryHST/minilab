@@ -1,4 +1,4 @@
-# Dedicated Redis for Authentik (cache / sessions / broker).
+# Dedicated Valkey 9.1 for Authentik (cache / sessions / broker; Redis protocol).
 # Primary + one replica (StatefulSet). Shared apps/infra/redis stays for paperless etc.
 apiVersion: v1
 kind: ConfigMap
@@ -14,7 +14,7 @@ data:
     set -eu
     ORDINAL="${HOSTNAME##*-}"
     if [ "$ORDINAL" = "0" ]; then
-      exec redis-server \
+      exec valkey-server \
         --appendonly yes \
         --save 60 1 \
         --loglevel warning \
@@ -22,7 +22,7 @@ data:
         --protected-mode no
     fi
     # Replica follows primary DNS of ordinal 0
-    exec redis-server \
+    exec valkey-server \
       --appendonly yes \
       --save 60 1 \
       --loglevel warning \
@@ -109,7 +109,7 @@ spec:
         fsGroup: 999
       containers:
         - name: redis
-          image: redis:8-alpine3.23
+          image: valkey/valkey:9.1.2-alpine
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "/scripts/entrypoint.sh"]
           ports:
@@ -117,12 +117,12 @@ spec:
               containerPort: 6379
           readinessProbe:
             exec:
-              command: ["redis-cli", "ping"]
+              command: ["valkey-cli", "ping"]
             initialDelaySeconds: 5
             periodSeconds: 5
           livenessProbe:
             exec:
-              command: ["redis-cli", "ping"]
+              command: ["valkey-cli", "ping"]
             initialDelaySeconds: 15
             periodSeconds: 10
           resources:

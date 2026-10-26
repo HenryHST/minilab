@@ -6,7 +6,7 @@
 
 ## Kontext
 
-Dokumentenarchiv mit OCR, HPScan-Import und Authentik-Login soll auf nXk3 laufen (Fresh-Start, keine pi1cl-Migration). Redis soll wiederverwendbar als eigene Infra-App liegen.
+Dokumentenarchiv mit OCR, HPScan-Import und Authentik-Login soll auf nXk3 laufen (Fresh-Start, keine pi1cl-Migration). Shared Broker (Valkey 9.1, Redis-Protokoll) soll wiederverwendbar als eigene Infra-App liegen (`apps/infra/redis`).
 
 ## Entscheidung
 
@@ -21,7 +21,7 @@ flowchart LR
   HPScan[un10 HPScan NFS] -->|consume| Web[paperless web]
   Mail[paperless@ IMAP] -->|attachments| Web
   Web --> PG[(postgres 18)]
-  Web --> Redis[redis infra]
+  Web --> Redis[valkey infra]
   Worker[paperless-worker HPA] --> PG
   Worker --> Redis
   Traefik --> Web

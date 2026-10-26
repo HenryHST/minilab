@@ -1,12 +1,12 @@
 # Paperless-ngx
 
-Document management with OCR (deu+eng, deskew/rotate on), Authentik OIDC, Gotenberg + Tika, HPScan NFS consume, shared Redis. PostSync seeds document types, tags, and workflow „Kategorie hinzufügen“.
+Document management with OCR (deu+eng, deskew/rotate on), Authentik OIDC, Gotenberg + Tika, HPScan NFS consume, shared Valkey (Redis protocol). PostSync seeds document types, tags, and workflow „Kategorie hinzufügen“.
 
 | | |
 |--|--|
 | Argo | ApplicationSet `dev`, wave `3`, NS `paperless` |
 | Images | `paperless-ngx:3.3.4`, `postgres:18`, `gotenberg:8.38.0`, `tika:4.1.0`, helpers `k8s-toolbox:1.0.1` |
-| Redis | `redis://redis.redis.svc.cluster.local:6379/0` (`apps/infra/redis`) |
+| Valkey | `redis://redis.redis.svc.cluster.local:6379/0` (`apps/infra/redis`, `valkey/valkey:9.1.2-alpine`) |
 | LAN | https://paperless.stadthagen.dev |
 | Ext | https://paperless-ext.stadthagen.dev (pangolin-publish `enabled: false` until flipped) |
 | OCR workers | Deployment `paperless-worker` + HPA 1–3 (pinned to `nxk3-w01` with web; hostPath media) |
@@ -39,7 +39,7 @@ See `secret.example.yaml.txt`.
 ```bash
 kubectl -n argocd get application paperless redis
 kubectl -n paperless get pods,hpa,ingressroute,pvc,job
-kubectl -n redis exec deploy/redis -- redis-cli ping
+kubectl -n redis exec deploy/redis -- valkey-cli ping
 kubectl -n paperless get secret paperless-imap
 kubectl -n paperless get pods -o wide | rg 'paperless-|paperless-worker'
 ```

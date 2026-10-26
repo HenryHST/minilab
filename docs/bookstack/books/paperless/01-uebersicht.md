@@ -1,11 +1,11 @@
 ---
 title: Übersicht
-book_version: "1.9.1"
+book_version: "1.9.2"
 ---
 
 # Übersicht
 
-> **Buch** v1.9.1 · Stand: 2026-10-25
+> **Buch** v1.9.2 · Stand: 2026-10-26
 
 Paperless-ngx archiviert Dokumente mit OCR (Deutsch + Englisch), importiert Scans vom HPScan-NFS und meldet sich per Authentik an.
 
@@ -13,7 +13,7 @@ Paperless-ngx archiviert Dokumente mit OCR (Deutsch + Englisch), importiert Scan
 flowchart LR
   HPScan[un10 HPScan NFS] -->|consume| Web[paperless]
   Web --> PG[(postgres 18)]
-  Web --> Redis[redis]
+  Web --> Redis[valkey]
   Worker[worker HPA] --> PG
   Traefik --> Web
   Auth[Authentik] --> Web
@@ -23,7 +23,7 @@ flowchart LR
 |--|--|
 | Argo App | `paperless` (ApplicationSet `dev`, Wave 3) |
 | Namespace | `paperless` |
-| Redis | `apps/infra/redis` (Wave 1) |
+| Valkey | `apps/infra/redis` (Wave 1, `valkey/valkey:9.1.2-alpine`, Redis-Protokoll) |
 | LAN | https://paperless.stadthagen.dev |
 | Ext | https://paperless-ext.stadthagen.dev (**disabled** in pangolin-publish) |
 | **Storage** | **Postgres:** CNPG `paperless-pg` auf Longhorn. **App-Daten:** lokale Volumes (`local` PVs, StorageClass `manual-paperless`) auf Worker **`nxk3-w01`** — `/var/lib/paperless-data`, `/var/lib/paperless-media`, `/var/lib/paperless-export`. **Consume:** NFS HPScan. **Backups (Strategie C):** `document_exporter` ZIP → NFS `…/infra01/paperless-backups` + CNPG VolumeSnapshots — Kapitel **Backup & Restore**. |

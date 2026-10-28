@@ -51,8 +51,13 @@ containerSecurityContext:
 
 persistence:
   enabled: true
+  # Existing PVC is 50Gi (Actual ~2Gi). Kubernetes cannot shrink in place;
+  # Longhorn numberOfReplicas=2 cuts scheduled footprint 150→100Gi. Future
+  # greenfield / migrate target: 15Gi.
   size: 50Gi
   storageClass: longhorn
+  annotations:
+    longhorn.io/numberOfReplicas: "2"
   accessModes:
     - ReadWriteOnce
 

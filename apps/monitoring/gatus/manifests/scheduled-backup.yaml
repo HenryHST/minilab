@@ -1,5 +1,6 @@
-# Six-field cron (seconds first). Every 6 hours, :15. RPO is that interval.
-# This is a consistent Longhorn snapshot, not WAL PITR. pg_dump at 01:00 UTC stays.
+# Six-field cron (seconds first). Daily 06:15 UTC (was every 6h — LH actualSize
+# ballooned to ~9Gi on a 2Gi claim from snapshot chains; FS use ~0.6Gi).
+# Consistent Longhorn snapshot, not WAL PITR. pg_dump CronJob remains off-cluster copy.
 apiVersion: postgresql.cnpg.io/v1
 kind: ScheduledBackup
 metadata:
@@ -9,8 +10,8 @@ metadata:
     app.kubernetes.io/name: gatus
     app.kubernetes.io/part-of: gatus
 spec:
-  schedule: "0 15 */6 * * *"
-  immediate: true
+  schedule: "0 15 6 * * *"
+  immediate: false
   method: volumeSnapshot
   backupOwnerReference: cluster
   cluster:

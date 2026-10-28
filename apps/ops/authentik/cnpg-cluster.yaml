@@ -30,7 +30,8 @@ spec:
       secret:
         name: authentik-credentials
   storage:
-    size: 16Gi
+    # Expanded live 2026-10-28 (pg-2 actualSize >16Gi / DiskPressure).
+    size: 32Gi
     storageClass: longhorn
   affinity:
     nodeSelector:

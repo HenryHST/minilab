@@ -27,20 +27,13 @@ spec:
       secret:
         name: gatus-db
   storage:
-    size: 2Gi
+    # Was 2Gi; Longhorn actualSize grew to ~3–9Gi via accumulated VolumeSnapshots
+    # (filesystem use inside PG ~0.6Gi). Expand for headroom + snapshot chain.
+    size: 16Gi
     storageClass: longhorn
   affinity:
     nodeSelector:
       worker: "true"
-    # Avoid nxk3-w02 while kubelet still reports stale OutOfcpu for instance-managers.
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: NotIn
-                values:
-                  - nxk3-w02
     enablePodAntiAffinity: true
     topologyKey: kubernetes.io/hostname
   monitoring:
@@ -53,6 +46,7 @@ spec:
       memory: 1Gi
   backup:
     target: primary
+    retentionPolicy: "7d"
     volumeSnapshot:
       className: longhorn
       online: true

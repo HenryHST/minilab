@@ -4,7 +4,7 @@ global:
   image:
     registry: docker.io
     repository: fosrl/newt
-    tag: "1.19.0"
+    tag: "1.19.1"
 
 newtInstances:
   - name: main-tunnel

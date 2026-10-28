@@ -1,5 +1,15 @@
 # Changelog — Buch BookStack
 
+## [1.4.0] - 2026-10-28
+
+### Added
+
+- **MariaDB ImagePull Fehleranalyse** (Incident 2026-10-28): Distribution→Forgejo-Cutover, STS noch auf `registry.stadthagen.dev`, DB down → HTTP 500; Interim `mariadb:11.8.9`; Hook/Pull-Follow-ups
+
+### Changed
+
+- Übersicht: DB-Zeile und Fehleranalyse-Index; Quellen um MariaDB/Forgejo/`registry-pull` ergänzt
+
 ## [1.3.0] - 2026-10-23
 
 ### Added

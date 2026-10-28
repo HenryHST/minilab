@@ -1,20 +1,18 @@
 ---
 title: Übersicht
-book_version: "1.2.0"
+book_version: "1.4.0"
 ---
-
-
 
 # Übersicht
 
-> **Buch** v1.2.0 · Stand: 2026-10-19
+> **Buch** v1.4.0 · Stand: 2026-10-28
 
 BookStack ist die Wissensdatenbank unter https://book.stadthagen.dev (LAN) und https://book-ext.stadthagen.dev (Internet / Pangolin). GitOps: Argo ApplicationSet `dev`, Namespace `bookstack`, Manifeste unter [`apps/dev/bookstack/`](../../../../apps/dev/bookstack/).
 
 | | |
 |--|--|
 | Image | `lscr.io/linuxserver/bookstack` (Pin im App-README) |
-| DB | MariaDB 11.4 (eigenes StatefulSet) |
+| DB | MariaDB 11.8 (`mariadb:11.8.9` interim Docker Hub; Ziel Forgejo gosu-Rebuild) |
 | Auth | Authentik **OIDC** (`AUTH_METHOD=oidc`, `AUTH_AUTO_INITIATE=false`) |
 | PDF | dompdf + Noto Sans; FPM `memory_limit=512M`, `max_execution_time=300` |
 | Comments | **Global aus** — Setting `app-disable-comments=true` (Bootstrap), kein Kommentar-UI |
@@ -34,3 +32,4 @@ Verify: Seiten-HTML ohne `.comments-list`; in der DB `settings` Key `app-disable
 |--|--|
 | PDF-Export bricht / Timeout / „Keine Zugriffsberechtigung“ | **PDF-Export Fehleranalyse** |
 | OIDC: leerer Toast, Redirect-Schleife, „E-Mail bereits registriert“ | **OIDC-Login Fehleranalyse** |
+| DB down / Argo Degraded nach Registry-Cutover (`ImagePullBackOff`) | **MariaDB ImagePull Fehleranalyse** |

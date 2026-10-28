@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - **BookStack MariaDB** — interim image `mariadb:11.8.9` (Docker Hub); old `registry.stadthagen.dev/dev/mariadb:…` no longer pullable after Distribution cutover. Target later: Forgejo `git.stadthagen.dev/dev/mariadb:11.8.9-gosu1`.
+- **BookStack oidc-relink hook** — default skip path uses public `alpine:3.22` so PostSync is not blocked when Forgejo `k8s-toolbox` pull auth fails.
 - **Image refs** — consumers of `k8s-toolbox`, `vw-restore`, `podcraft` pull from `git.stadthagen.dev/…` (was `registry.stadthagen.dev/…`).
 - **GHA image workflows** — `k8s-toolbox-image`, `vw-restore-image`, `podcraft-image` are `workflow_dispatch` only (lab SoT = Forgejo).
 

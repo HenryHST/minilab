@@ -59,15 +59,14 @@ spec:
   template:
     spec:
       serviceAccountName: bookstack-oidc-relink
-      imagePullSecrets:
-        - name: registry-pull
+      # Public alpine for the default skip path. Toolbox (Forgejo) only needed when enabled=true.
       nodeSelector:
         worker: "true"
         kubernetes.io/arch: amd64
       restartPolicy: Never
       containers:
         - name: relink
-          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
+          image: alpine:3.22
           imagePullPolicy: IfNotPresent
           env:
             - name: MYSQL_PWD
@@ -86,99 +85,16 @@ spec:
                   name: bookstack-oidc-relink
                   key: dry_run
           command:
-            - /bin/bash
+            - /bin/sh
             - -c
             - |
-              set -euo pipefail
-              apk add --no-cache mariadb-client >/dev/null
+              set -eu
 
-              if [[ "${RELINK_ENABLED}" != "true" ]]; then
+              if [ "${RELINK_ENABLED}" != "true" ]; then
                 echo "bookstack-oidc-relink.enabled!=true — skip"
                 exit 0
               fi
 
-              DRY="${RELINK_DRY_RUN:-true}"
-              echo "OIDC relink start dry_run=${DRY}"
-
-              BS_TMP="$(mktemp)"
-              AK_TMP="$(mktemp)"
-              MAP_TMP="$(mktemp)"
-              trap 'rm -f "${BS_TMP}" "${AK_TMP}" "${MAP_TMP}"' EXIT
-
-              mysql -h bookstack-mariadb -u bookstack -N -e "
-                SELECT LOWER(email), IFNULL(external_auth_id,'')
-                FROM users
-                WHERE email IS NOT NULL AND email != ''
-                  AND LOWER(email) NOT IN (
-                    'admin@admin.com',
-                    'guest@example.com',
-                    'gitops-import@localhost'
-                  )
-                ORDER BY email;
-              " > "${BS_TMP}"
-              echo "BookStack OIDC-candidate users: $(wc -l < "${BS_TMP}" | tr -d ' ')"
-
-              echo "Fetching Authentik email→uid map via ak shell..."
-              kubectl -n authentik exec deploy/authentik-worker -c worker -- \
-                ak shell -c '
-              from authentik.core.models import User
-              print("RELINK_MAP_BEGIN")
-              for u in User.objects.exclude(email__isnull=True).exclude(email=""):
-                  em = (u.email or "").strip().lower()
-                  if not em:
-                      continue
-                  print(f"{em}\t{u.uid}")
-              print("RELINK_MAP_END")
-              ' > "${AK_TMP}" 2>&1 || {
-                echo "ak shell failed — see output:" >&2
-                cat "${AK_TMP}" >&2
-                exit 1
-              }
-
-              awk '
-                $0=="RELINK_MAP_BEGIN"{p=1; next}
-                $0=="RELINK_MAP_END"{p=0; next}
-                p && NF>=2 {print}
-              ' "${AK_TMP}" > "${MAP_TMP}"
-              if [[ ! -s "${MAP_TMP}" ]]; then
-                echo "empty Authentik uid map (markers missing?)" >&2
-                tail -n 40 "${AK_TMP}" >&2
-                exit 1
-              fi
-              echo "Authentik users with email: $(wc -l < "${MAP_TMP}" | tr -d ' ')"
-
-              ok=0
-              drift=0
-              missing=0
-              updated=0
-
-              while IFS=$'\t' read -r email old_ext; do
-                [[ -z "${email}" ]] && continue
-                new_uid="$(awk -F'\t' -v e="${email}" 'BEGIN{IGNORECASE=1} $1==e {print $2; exit}' "${MAP_TMP}" || true)"
-                if [[ -z "${new_uid}" ]]; then
-                  echo "WARN: no Authentik user for ${email} — skip"
-                  missing=$((missing + 1))
-                  continue
-                fi
-                if [[ "${old_ext}" == "${new_uid}" ]]; then
-                  echo "OK: ${email}"
-                  ok=$((ok + 1))
-                  continue
-                fi
-                echo "DRIFT: ${email} bookstack=${old_ext:0:16}… authentik=${new_uid:0:16}…"
-                drift=$((drift + 1))
-                if [[ "${DRY}" == "true" ]]; then
-                  echo "  dry_run — would UPDATE external_auth_id"
-                  continue
-                fi
-                mysql -h bookstack-mariadb -u bookstack bookstack -e "
-                  UPDATE users
-                  SET external_auth_id = '$(printf '%s' "${new_uid}" | sed "s/'/\\\\'/g")'
-                  WHERE LOWER(email) = '$(printf '%s' "${email}" | sed "s/'/\\\\'/g")';
-                "
-                echo "  UPDATED"
-                updated=$((updated + 1))
-              done < "${BS_TMP}"
-
-              echo "summary ok=${ok} drift=${drift} updated=${updated} missing_in_authentik=${missing} dry_run=${DRY}"
-              echo "OIDC relink done — set bookstack-oidc-relink.enabled=false (and dry_run=true) after apply"
+              echo "ERROR: enabled=true needs git.stadthagen.dev/ops/k8s-toolbox (and working registry-pull)." >&2
+              echo "Fix Forgejo pull auth, restore the toolbox image on this Job, then re-sync." >&2
+              exit 1

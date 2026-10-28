@@ -35,13 +35,13 @@ spec:
       # Pin to one worker — Longhorn currently has insufficient disk for new volumes (same as termix-postgres)
       nodeSelector:
         kubernetes.io/hostname: nxk3-w01
-      imagePullSecrets:
-        - name: registry-pull
+      # Public Docker Hub until gosu rebuild is published to Forgejo (dev/mariadb).
+      # Old registry.stadthagen.dev ref broke after Distribution cutover (pull secret = git only).
       securityContext:
         fsGroup: 999
       containers:
         - name: mariadb
-          image: registry.stadthagen.dev/dev/mariadb:11.8.9-gosu1
+          image: mariadb:11.8.9
           imagePullPolicy: IfNotPresent
           ports:
             - name: mysql

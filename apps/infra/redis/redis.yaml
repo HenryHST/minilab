@@ -1,21 +1,8 @@
 # Valkey 9.1 (Redis protocol) — shared cluster cache/broker (paperless).
-# Image pinned; AOF persistence on Longhorn. Service DNS stays redis.redis.svc.
+# Ephemeral emptyDir (no Longhorn PVC): broker/cache is disposable; avoids
+# RWO FailedAttach and Terminating-PVC / PodUsingPVC stalls (2026-10-28).
+# Service DNS stays redis.redis.svc. Authentik uses its own STS — not this Service.
 
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: redis-data
-  namespace: redis
-  labels:
-    app: redis
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: longhorn
-  resources:
-    requests:
-      storage: 2Gi
----
 apiVersion: v1
 kind: Service
 metadata:
@@ -41,9 +28,7 @@ metadata:
     app: redis
 spec:
   replicas: 1
-  # RWO Longhorn PVC: RollingUpdate leaves old+new pods both needing the volume
-  # (FailedAttachVolume). Recreate tears down first. Redis 8 → Valkey 9 also needs
-  # a one-time AOF/RDB wipe (RDB format v15 unsupported) — see README.
+  # Recreate kept for predictable restarts (no shared RWO volume anymore).
   strategy:
     type: Recreate
   selector:
@@ -56,8 +41,6 @@ spec:
     spec:
       nodeSelector:
         worker: "true"
-      # valkey:*-alpine runs as uid 999; Longhorn PVC is root-owned without fsGroup
-      # → "Can't open or create append-only dir appendonlydir: Permission denied"
       securityContext:
         fsGroup: 999
         runAsUser: 999
@@ -104,8 +87,7 @@ spec:
               mountPath: /data
       volumes:
         - name: data
-          persistentVolumeClaim:
-            claimName: redis-data
+          emptyDir: {}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

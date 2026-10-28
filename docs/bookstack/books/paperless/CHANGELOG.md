@@ -1,5 +1,12 @@
 # Changelog — Buch Paperless
 
+## [1.11.0] - 2026-10-28
+
+### Changed
+
+- Shared Valkey: Longhorn-PVC entfernt → **emptyDir** (Broker disposable)
+- Incident Redis→Valkey: Appendix **2026-10-28** Terminating PVC / Completed Pod
+
 ## [1.10.0] - 2026-10-26
 
 ### Added

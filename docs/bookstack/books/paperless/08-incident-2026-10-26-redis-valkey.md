@@ -1,14 +1,14 @@
 ---
 title: Incident 2026-10-26 Redis→Valkey
-book_version: "1.10.0"
+book_version: "1.11.0"
 chapter: incident-2026-10-26-redis-valkey
-chapter_version: "1.0.0"
-updated: "2026-10-26"
+chapter_version: "1.1.0"
+updated: "2026-10-28"
 ---
 
 # Incident 2026-10-26: Redis → Valkey Cutover
 
-> **Buch** v1.10.0 · **Kapitel** v1.0.0 · Stand: 2026-10-26
+> **Buch** v1.11.0 · **Kapitel** v1.1.0 · Stand: 2026-10-28
 
 Fehleranalyse: Nach dem Image-Wechsel auf `valkey/valkey:9.1.2-alpine` startete der **shared** Broker (`apps/infra/redis`) nicht; parallel crashte die Authentik-Replica. Paperless-DNS/`PAPERLESS_REDIS` blieben unverändert.
 
@@ -20,7 +20,7 @@ Fehleranalyse: Nach dem Image-Wechsel auf `valkey/valkey:9.1.2-alpine` startete 
 | **Root Cause** | (1) RollingUpdate + RWO-PVC dual-attach; (2) Valkey 9.1 kann Redis-8-AOF/RDB (**format v15**) nicht laden |
 | **Impact** | Shared Broker und Authentik-Task/Cache während Cutover; Apps erwarteten weiter Redis-Protokoll |
 | **Sofortfix** | Argo sync pausieren → scale 0 → `/data` wipen → Recreate / STS scale 2 |
-| **Dauerhaft** | Deploy `strategy: Recreate`; Cutover-Hinweis in READMEs |
+| **Dauerhaft** | Deploy `strategy: Recreate`; ab 2026-10-28 Shared Broker **emptyDir** (kein RWO-PVC) |
 
 Verwandt: Buch **Authentik** → Incident Redis→Valkey; [`apps/infra/redis/README.md`](../../../../apps/infra/redis/README.md); Deploy & Verify (Valkey-Checks).
 
@@ -135,6 +135,17 @@ Danach Argo `syncPolicy.automated` wieder setzen.
 - Wipe nur bei **pausiertem** Argo-selfHeal.
 - DNS/Env der Apps bleiben Redis-Protokoll; Verify mit `valkey-cli`.
 
+## Appendix — 2026-10-28: Terminating PVC / Completed Pod
+
+| | |
+|--|--|
+| **Symptom** | PVC `redis-data` Terminating (`PodUsingPVC`); neuer Redis-Pod Pending; Paperless Init `wait-for-redis` |
+| **Root Cause** | Completed/Succeeded-Pod ohne IP hielt die PVC; Longhorn-Volume bereits NotFound. Zombie-Cleanup (Running ohne podIP) griff nicht |
+| **Sofortfix** | Force-Delete Completed (+ Pending) Pod → PVC weg → Argo recreatet PVC/Deploy |
+| **Dauerhaft** | Shared Valkey auf **`emptyDir`** (kein Longhorn-PVC); Alert `NXk3SharedRedisDown`; Cleanup-Playbook deckt PVC-Blocker (Succeeded/Failed) ab — Infra_LAB `cleanup-zombie-pods.yaml` / BookStack K3s Zombie-Pods |
+
+Broker/Cache bleibt disposable; Authentik-STS unverändert.
+
 ## Quellen
 
 | Ressource | Pfad |
@@ -145,3 +156,4 @@ Danach Argo `syncPolicy.automated` wieder setzen.
 | Archify Incident | `docs/diagrams/archify/redis-valkey-cutover-incident.*` |
 | Archify Diagnose | `docs/diagrams/archify/redis-valkey-cutover-diagnose.*` |
 | Authentik-Kapitel | Buch Authentik → Incident 2026-10-26 |
+| K3s Zombie-Pods | Infra_LAB BookStack K3s → Zombie-Pods |

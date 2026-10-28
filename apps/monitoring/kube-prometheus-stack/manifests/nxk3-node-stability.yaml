@@ -172,3 +172,42 @@ spec:
               systemd timer nxk3-etcd-offsite.timer is not active (requires node_exporter
               systemd collector). Fallback: systemctl list-timers nxk3-etcd-offsite.timer
               on nxk3-cp01; playbook etcd_backup_offsite.yaml.
+
+        # Zombie / blast-radius: Prometheus STS not Ready → empty Endpoints → Kromgo Query Error.
+        - alert: NXk3ZombiePod
+          expr: |
+            kube_statefulset_status_replicas_ready{
+              namespace="monitoring",
+              statefulset="prometheus-kube-prometheus-stack-prometheus"
+            } == 0
+          for: 15m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: "Prometheus STS not Ready (zombie / Kromgo Query Error risk)"
+            description: >-
+              kube-prometheus-stack-prometheus has 0 ready replicas for >15m (often a
+              zombie Unknown pod without podIP after storage incidents; PVC Terminating
+              PodUsingPVC). Kromgo badges show Query Error. Dry-run then apply:
+              ansible-playbook cleanup-zombie-pods.yaml
+              ansible-playbook cleanup-zombie-pods.yaml -e apply_cleanup=true
+              Runbook: Infra_LAB docs/node-stability.md; BookStack K3s → Zombie-Pods.
+
+        # Shared Valkey (Paperless broker). Ephemeral emptyDir — if deploy is down, Paperless
+        # sticks in wait-for-redis. Also covers historical Terminating-PVC / Completed-pod stalls.
+        - alert: NXk3SharedRedisDown
+          expr: |
+            kube_deployment_status_replicas_available{namespace="redis",deployment="redis"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: "Shared redis (Valkey) deployment not available"
+            description: >-
+              deploy/redis in namespace redis has 0 available replicas for >5m (Paperless
+              wait-for-redis). Check: kubectl -n redis get pods,pvc,deploy.
+              Broker uses emptyDir (no Longhorn PVC). If Terminating PVC / Completed pod
+              still blocks: cleanup-zombie-pods.yaml -e apply_cleanup=true.
+              Runbook: Infra_LAB node-stability.md; BookStack Paperless Redis→Valkey appendix.

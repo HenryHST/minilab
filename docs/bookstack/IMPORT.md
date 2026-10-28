@@ -107,6 +107,17 @@ Ops-Doku (Admin): [`../home-assistant/ha02.md`](../home-assistant/ha02.md)
 
 Nach dem Import: Buch in BookStack **beobachten (Watch)**, damit Nutzer bei Seitenänderungen eine E-Mail bekommen. Git-seitige Mails: siehe [`books/home-assistant/BENACHRICHTIGUNGEN.md`](books/home-assistant/BENACHRICHTIGUNGEN.md).
 
+## 4e. Newt
+
+Buch **Newt** — Reihenfolge aus `books/newt/` (**v1.0.0**):
+
+1. Übersicht
+2. Deploy & Verify
+3. Trivy ConfigAudit (SecurityContext; `AVD-KSV-0125` akzeptiert)
+4. Quellen
+
+Manifeste: `apps/ops/newt/`. Argo App `newt` (Wave 0).
+
 ## 5. Automatischer Import (empfohlen)
 
 Cluster-CronJob / PostSync in [`apps/dev/bookstack/`](../../apps/dev/bookstack/) synct Git-Sources (Infra_LAB + minilab) per REST Upsert + SemVer-Gate. Script: [`scripts/bookstack-import/import_books.py`](../../scripts/bookstack-import/import_books.py). Pro Ordner: `meta.yaml` (`book`, `shelf`, optional `mode: files_as_books`).

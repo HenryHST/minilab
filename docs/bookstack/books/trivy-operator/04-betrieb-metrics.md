@@ -1,6 +1,7 @@
 ---
 title: Betrieb und Metrics
-book_version: "1.2.0"
+book_version: "1.3.0"
+updated: "2026-10-28"
 ---
 
 # Betrieb und Metrics
@@ -16,6 +17,12 @@ book_version: "1.2.0"
 `trivyOperator.skipResourceByLabels: kubernetes.io/bootstrapping` — ClusterRoles/Roles mit Label `kubernetes.io/bootstrapping` (API-Server-Defaults: `system:controller:*`, `system:aggregate-to-*`, `cluster-admin` / `edit` / `admin`, …) werden nicht gescannt.
 
 Beispiele, die vorher Headlamp-Noise waren: `system:controller:horizontal-pod-autoscaler` (AVD-KSV-0046), `system:aggregate-to-edit` (0041/0048/…). Nicht patchen — `rbac.authorization.kubernetes.io/autoupdate: true`. Chart-/Operator-Rollen ohne dieses Label bleiben im Scope (z. B. Argo CD, Longhorn).
+
+### App-Findings (akzeptiert / gehärtet)
+
+| App | Kurz | Details |
+|-----|------|---------|
+| **newt** | ConfigAudit: HIGH/LOW gehärtet; **AVD-KSV-0125** (docker.io) akzeptiert | Buch [Newt → Trivy ConfigAudit](../newt/03-trivy-config-audit.md) · Values `apps/ops/newt/values.yaml` |
 
 ## Metrics
 

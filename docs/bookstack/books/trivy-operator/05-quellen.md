@@ -15,3 +15,4 @@ book_version: "1.2.0"
 - Chart-Repo: [aquasecurity/helm-charts](https://aquasecurity.github.io/helm-charts/)
 - CI-Trivy (Infra_LAB): [`.github/workflows/trivy-scan.yml`](https://github.com/HenryHST/Infra_LAB/blob/main/.github/workflows/trivy-scan.yml)
 - Issue: [#91](https://github.com/HenryHST/minilab/issues/91)
+- App-Findings Newt: [../newt/03-trivy-config-audit.md](../newt/03-trivy-config-audit.md)

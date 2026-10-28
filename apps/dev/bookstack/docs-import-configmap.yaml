@@ -1374,8 +1374,8 @@ data:
         $familieRoleName,
         'OIDC group BookStack Familie — view/create/update + export, no delete',
         $familiePermissions,
-    )
-    
+    );
+
     $user = User::query()->where('email', $email)->first();
     if ($user === null) {
         $user = $userRepo->create([
@@ -1460,9 +1460,27 @@ data:
     kubectl -n "${NS}" cp "${TMP}" "${POD}:/tmp/gitops-bootstrap.php" -c bookstack
     rm -f "${TMP}"
 
+    # Fail fast: PsySH may exit 0 even on ParseError.
+    if ! kubectl -n "${NS}" exec "${POD}" -c bookstack -- php -l /tmp/gitops-bootstrap.php; then
+      echo "ERROR: gitops-bootstrap.php failed php -l" >&2
+      exit 1
+    fi
+
+    BOOT_OUT="$(mktemp)"
+    set +e
     kubectl -n "${NS}" exec "${POD}" -c bookstack -- \
       env BOOKSTACK_TOKEN_ID="${BOOKSTACK_TOKEN_ID}" BOOKSTACK_TOKEN_SECRET="${BOOKSTACK_TOKEN_SECRET}" \
-      sh -ceu 'cd /app/www && php artisan tinker --execute="require \"/tmp/gitops-bootstrap.php\";"'
+      sh -ceu 'cd /app/www && php artisan tinker --execute="require \"/tmp/gitops-bootstrap.php\";"' \
+      >"${BOOT_OUT}" 2>&1
+    BOOT_RC=$?
+    set -e
+    cat "${BOOT_OUT}"
+    if [ "${BOOT_RC}" -ne 0 ] || grep -qE 'ParseError|Parse error|Errors parsing' "${BOOT_OUT}"; then
+      echo "ERROR: gitops-bootstrap tinker failed (rc=${BOOT_RC})" >&2
+      rm -f "${BOOT_OUT}"
+      exit 1
+    fi
+    rm -f "${BOOT_OUT}"
 
     kubectl -n "${NS}" exec "${POD}" -c bookstack -- rm -f /tmp/gitops-bootstrap.php || true
     echo "OK: gitops-bootstrap finished"

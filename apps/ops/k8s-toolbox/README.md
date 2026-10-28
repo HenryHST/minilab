@@ -23,7 +23,7 @@ Sources live in the Forgejo repo; this tree under `apps/ops/k8s-toolbox/` is kep
 
 ## Consumers (pin `1.0.1`)
 
-Backup / restore / jobs under: bookstack, termix, authentik, paperless, audiobookshelf, bytestash, karakeep, n8n, vaultwarden, gatus (`status`), longhorn enforcers, registry GC, kubeconfig-user.
+Backup / restore / jobs under: bookstack, termix, authentik, paperless, audiobookshelf, bytestash, karakeep, vaultwarden, gatus (`status`), longhorn enforcers, registry GC, kubeconfig-user.
 
 Pull Secret: `registry-pull` (Infra_LAB `k3s_secrets` / copy from `kube-system`) for `git.stadthagen.dev` / `registry.stadthagen.dev`.
 

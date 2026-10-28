@@ -20,6 +20,6 @@ Paperless-ngx nutzte StatefulSet `paperless-postgres` (Image `postgres:18`, host
 
 ## Konsequenzen
 
-- n8n-Postgres ist nicht umgestellt.
+- (n8n wurde aus Dev entfernt; kein CNPG-Ziel mehr.)
 - `verify-full` / CA-Mount in Paperless bleibt offen.
 - Eine Instanz. Kein sofortiges Löschen des hostPath.

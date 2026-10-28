@@ -1,6 +1,6 @@
 # CloudNativePG
 
-PostgreSQL operator (CloudNativePG) in `cnpg-system`. Clusters: Termix (`termix-rw`) and Authentik (`authentik-pg-rw`). `n8n` and `paperless` are unchanged.
+PostgreSQL operator (CloudNativePG) in `cnpg-system`. Clusters: Termix (`termix-rw`), Authentik (`authentik-pg-rw`), and Paperless (`paperless-pg-rw`).
 
 | | |
 |--|--|

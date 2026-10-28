@@ -35,11 +35,6 @@
       title: "Anmeldung über Authentik (OIDC)",
       kind: "oidc",
     },
-    n8n: {
-      label: "FA",
-      title: "Zugriffsschutz via Authentik ForwardAuth",
-      kind: "fa",
-    },
     hubble: {
       label: "SSO",
       title: "Single Sign-On über Authentik",

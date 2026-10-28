@@ -40,8 +40,6 @@ spec:
     - server: "*"
       namespace: audiobookshelf
     - server: "*"
-      namespace: n8n
-    - server: "*"
       namespace: excalidash
     - server: "*"
       namespace: podcraft

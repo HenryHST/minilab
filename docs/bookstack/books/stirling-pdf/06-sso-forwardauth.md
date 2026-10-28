@@ -8,7 +8,7 @@ book_version: "1.3.0"
 
 > **Buch** v1.3.0 · Stand: 2026-10-16
 
-Stirling-PDF hat **kein** natives OIDC. Schutz wie n8n / Hubble / Registry-UI: **Traefik ForwardAuth** → Authentik Outpost.
+Stirling-PDF hat **kein** natives OIDC. Schutz wie Hubble / Registry-UI: **Traefik ForwardAuth** → Authentik Outpost.
 
 | | |
 |--|--|
@@ -27,7 +27,7 @@ Ownership: Blueprint = Proxy Provider + App + Outpost + PolicyBindings; Terrafor
 
 - Gatus Endpoint `stirling-pdf` (Gruppe `sso`) rot / Alert
 - App selbst erreichbar: `curl` → **HTTP 200**, UI ohne Login
-- Peer-SSO (n8n, hubble, registry-ui): unauthentifiziert **302** → IdP
+- Peer-SSO (hubble, registry-ui): unauthentifiziert **302** → IdP
 
 ### Hypothesen
 
@@ -50,7 +50,7 @@ Beides zusammen → dauerhaft rot, obwohl die App „gesund“ war.
 1. Day-0 Blueprint `day0-stirling-pdf` + Embed in `blueprints-configmap.yaml`
 2. Middleware `stirling-pdf-authentik` + IngressRoute-Bindung
 3. TF-Gruppen + Membership `henry` → `stirling_pdf_admins`
-4. Gatus: `[STATUS] == 302` (wie n8n/hubble/registry-ui)
+4. Gatus: `[STATUS] == 302` (wie hubble/registry-ui)
 5. Bruno Day-0 Smoke: Slug `stirling-pdf` in `10-day0-forwardauth.bru`
 
 minilab Commit `3d90359`; Infra_LAB `ec9d103`.

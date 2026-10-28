@@ -6,7 +6,7 @@
 
 ## Kontext
 
-Postgres läuft als StatefulSet (`n8n`) bzw. als CNPG-Cluster (`termix`, `authentik-pg`, `paperless-pg`, [ADR-0035](0035-paperless-cnpg.md)). Der Operator steht in `cnpg-system`. Termix war der erste Import; Authentik folgte vom Bitnami-Subchart auf Service `authentik-pg-rw` ([ADR-0033](0033-authentik-cnpg.md)).
+Postgres läuft als CNPG-Cluster (`termix`, `authentik-pg`, `paperless-pg`, [ADR-0035](0035-paperless-cnpg.md)). Der Operator steht in `cnpg-system`. Termix war der erste Import; Authentik folgte vom Bitnami-Subchart auf Service `authentik-pg-rw` ([ADR-0033](0033-authentik-cnpg.md)).
 
 ## Entscheidung
 

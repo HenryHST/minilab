@@ -336,20 +336,6 @@ config:
         - "[STATUS] == 200"
         - "has([BODY].uptime) == true"
       alerts: *pushover
-    - name: n8n
-      group: sso
-      url: https://n8n.stadthagen.dev
-      interval: 2m
-      maintenance:
-        start: "03:30"
-        duration: 30m
-        timezone: UTC
-      client:
-        timeout: 10s
-        ignore-redirect: true
-      conditions:
-        - "[STATUS] == 302"
-      alerts: *pushover
     - name: hubble
       group: sso
       url: https://hubble.stadthagen.dev

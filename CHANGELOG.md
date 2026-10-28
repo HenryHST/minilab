@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file.
 
 ### Removed
 
+- **n8n** — removed from Dev: AppSet/AppProject, `apps/dev/n8n`, Day-0 Blueprint `day0-n8n`, Homepage/Gatus, BookStack-Buch; ADR-0028 superseded.
 - **Distribution registry / registry-ui** — removed from AppSet `ops` (cutover to Forgejo; ADR-0027 / Infra_LAB).
 
 ## [0.15.0] - 2026-10-22

@@ -90,7 +90,6 @@ data:
       <img alt="wud" title="WUD — HTTP 200 (/health)" src="/api/v1/endpoints/plattform_wud/health/badge.svg">
       <img alt="forgejo" title="Forgejo — HTTP 200 (/api/healthz)" src="/api/v1/endpoints/plattform_forgejo/health/badge.svg">
       <h2 title="ForwardAuth: unauth erwartet HTTP 302">sso</h2>
-      <img alt="n8n" title="n8n — ForwardAuth, erwartet HTTP 302" src="/api/v1/endpoints/sso_n8n/health/badge.svg">
       <img alt="hubble" title="Hubble UI — ForwardAuth/SSO, erwartet HTTP 302" src="/api/v1/endpoints/sso_hubble/health/badge.svg">
       <img alt="stirling-pdf" title="Stirling PDF — ForwardAuth, erwartet HTTP 302" src="/api/v1/endpoints/sso_stirling-pdf/health/badge.svg">
       <h2 title="Object Storage / Console OIDC">storage</h2>

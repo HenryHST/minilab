@@ -9,7 +9,7 @@ Intervalle: Kernsysteme **1 Minute**, die meisten Apps/SSO/Storage **2 Minuten**
 | `homelab` | HTTP 200 | Authentik, IT Tools, Paperless, BookStack |
 | `apps` | HTTP 200 | Die App antwortet selbst (Tools, Homepage, Vaultwarden `/alive`, Longhorn, Headlamp und weitere) |
 | `plattform` | HTTP 200 auf dem Health-Pfad | Grafana, Prometheus, Alertmanager, Loki, Argo CD, WUD |
-| `sso` | `ignore-redirect`, Status **302** | Traefik und der Authentik-Outpost antworten (n8n, Hubble, Registry UI, Stirling PDF) |
+| `sso` | `ignore-redirect`, Status **302** | Traefik und der Authentik-Outpost antworten (Hubble, Registry UI, Stirling PDF) |
 | `storage` | HTTP 200 | RustFS LAN `/health` und Console-OIDC-Provider |
 | `extern` | HTTP 200, Mail zusätzlich TCP 465 | Pangolin und `mail.henrystadthagen.de`. Port 465 ist der SMTP-Relay der Apps |
 
@@ -33,7 +33,6 @@ NFS-Backup-CronJobs haben ein Fenster von 30 Minuten ab der Cron-Minute, Zeitzon
 | 02:00 UTC | Vaultwarden |
 | 02:30 / 11:50 Europe/Berlin | Authentik (scale-to-0 Backup) |
 | 03:00 UTC | Termix, Audiobookshelf |
-| 03:30 UTC | n8n |
 | 04:00 UTC | BookStack |
 | 05:00 UTC | Paperless |
 | 06:00 UTC | ByteStash |

@@ -37,7 +37,7 @@ Format angelehnt an [Michael Nygard](https://cognitect.com/blog/2011/11/15/docum
 | [0025](0025-nfd.md) | Node Feature Discovery (NFD) | Accepted |
 | [0026](0026-paperless-ngx.md) | Paperless-ngx mit Redis in infra | Accepted |
 | [0027](0027-audiobookshelf.md) | Audiobookshelf (LAN, NFS, Authentik OIDC) | Accepted |
-| [0028](0028-n8n.md) | n8n (Community, ForwardAuth) | Accepted |
+| [0028](0028-n8n.md) | n8n (Community, ForwardAuth) | Superseded (removed) |
 | [0029](0029-mosquitto.md) | Mosquitto (LDAP, LAN LoadBalancer) | Accepted |
 | [0030](0030-cloudnative-pg.md) | CloudNativePG operator | Accepted |
 | [0031](0031-trivy-operator.md) | Trivy Operator (Helm, Vulnerability/Config Audit) | Accepted |

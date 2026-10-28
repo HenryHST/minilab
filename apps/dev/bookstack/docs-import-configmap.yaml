@@ -703,7 +703,7 @@ data:
     
     
     def list_roles(client: BookStackClient) -> list[dict] | None:
-        """Return roles or None if the token lacks settings-manage / roles API access."""
+        """Return roles or None if the token lacks user-roles-manage (/api/roles)."""
         if client.dry_run:
             return [{"id": i + 1, "display_name": n} for i, n in enumerate(FAMILIE_ACL_ROLE_NAMES)]
         url = f"{client.base}/api/roles?count=100&page=1"
@@ -1244,8 +1244,8 @@ data:
     'image-update-all',
         // Content ACL for Regal Familie (import_books.py → /api/content-permissions)
         'restrictions-manage-all',
-        // List roles for ACL role_id lookup (/api/roles)
-        'settings-manage',
+        // List roles for ACL role_id lookup (/api/roles → Permission::UserRolesManage)
+        'user-roles-manage',
     ];
     
     $familiePermissions = [

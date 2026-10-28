@@ -1,6 +1,6 @@
 ---
 title: Übersicht
-book_version: "1.1.0"
+book_version: "1.2.0"
 ---
 
 # Übersicht
@@ -26,7 +26,7 @@ flowchart LR
 |--|--|
 | Argo App | `longhorn` (ApplicationSet `infra`, Wave 1) |
 | Namespace | `longhorn-system` |
-| Chart | longhorn `v1.12.1` |
+| Chart | longhorn `v1.13.0` |
 | StorageClass | `longhorn`, Default, 3 Replikate |
 | UI | `longhorn.stadthagen.dev` |
 

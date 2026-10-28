@@ -1,5 +1,13 @@
 # Changelog — Buch Longhorn
 
+## [1.2.0] - 2026-10-28
+
+### Changed
+
+- Chart pin **v1.12.1 → v1.13.0**
+- `storageOverProvisioningPercentage` **200 → 150** (DiskPressure-Prävention; 80G×6 Proxmox-Disk-Nodes)
+- Docs: Deploy/Architektur/Übersicht auf v1.13.0
+
 ## [1.1.0] - 2026-10-16
 
 ### Notes

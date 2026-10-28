@@ -70,6 +70,28 @@ spec:
               ({{ $value | humanizePercentage }}). Soft DiskPressure triggers at ~15%.
               Check Longhorn usage on Proxmox workers: df -h /; du -sh /var/lib/longhorn.
 
+        # Longhorn disk fill on Proxmox workers (shared root under /var/lib/longhorn).
+        - alert: NXk3LonghornDiskNearFull
+          expr: |
+            (
+              longhorn_disk_usage_bytes
+                / longhorn_disk_capacity_bytes
+            )
+              * on(node) group_left()
+              (kube_node_labels{label_worker="true"} == 1)
+            > 0.85
+          for: 15m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: "Longhorn disk >85% used on {{ $labels.node }}"
+            description: >-
+              Longhorn disk {{ $labels.disk }} on Proxmox worker {{ $labels.node }}
+              is {{ $value | humanizePercentage }} full for >15m. Risk of DiskPressure
+              (soft eviction ~15% free). Check: df -h /; du -sh /var/lib/longhorn;
+              BookStack K3s → Longhorn DiskPressure.
+
         - alert: NXk3LonghornManagerUnavailable
           expr: |
             kube_daemonset_status_number_unavailable{namespace="longhorn-system",daemonset="longhorn-manager"} > 0

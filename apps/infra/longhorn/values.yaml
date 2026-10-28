@@ -1,6 +1,6 @@
-# Longhorn v1.12.1 — https://longhorn.io/docs/1.12.1/deploy/install/install-with-argocd/
+# Longhorn v1.13.0 — https://longhorn.io/docs/1.13.0/deploy/install/install-with-argocd/
 
-# CSI sidecar pins (chart v1.12.1 defaults attacher to v4.12.0)
+# CSI sidecar pins (match chart v1.13.0 defaults)
 image:
   csi:
     attacher:
@@ -24,15 +24,16 @@ defaultSettings:
   createDefaultDiskLabeledNodes: true
   defaultDataPath: /var/lib/longhorn
   defaultReplicaCount: 3
-  # Workers have ~32Gi disks; 100% over-provision left too little schedulable headroom for new PVCs
-  storageOverProvisioningPercentage: "200"
+  # 80G×6 Proxmox disk nodes: 200% over-provision filled root before Longhorn refused
+  # schedules (DiskPressure 2026-10-28). 150% keeps headroom while allowing mild thin provision.
+  storageOverProvisioningPercentage: "150"
   # On node death, force-delete Deployment/STS pods so RWO VolumeAttachments release
   # (trade-off: abrupt pod kill; prefer Proxmox-only scheduling for stateful workloads).
   nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
   # Percent of node allocatable CPU reserved for each Instance Manager (v1).
   # Keep low on 3-allocatable-CPU Proxmox workers so IM can schedule under request pressure
   # (incident 2026-10-21: 150m Guaranteed failed OutOfcpu). Plain integer string — JSON
-  # {"v1":"5","v2":"5"} stays applied=false on Longhorn 1.12.1.
+  # {"v1":"5","v2":"5"} stays applied=false on Longhorn 1.12+/1.13.
   # Per-node override: manifests/im-cpu-enforcer.yaml sets instanceManagerCPURequest=50.
   guaranteedInstanceManagerCPU: "5"
 

@@ -1,13 +1,13 @@
 ---
 title: Deploy und Verify
-book_version: "1.1.0"
+book_version: "1.2.0"
 ---
 
 # Deploy und Verify
 
 ## Voraussetzungen
 
-1. ApplicationSet `infra` enthält `longhorn` (Wave 1, `extras: true`, Chart `v1.12.1`).
+1. ApplicationSet `infra` enthält `longhorn` (Wave 1, `extras: true`, Chart `v1.13.0`).
 2. AppProject `infra` erlaubt Destination `longhorn-system`.
 3. Nodes `nxk3-w01` bis `w03` tragen `node.longhorn.io/create-default-disk=true`.
 4. Der NFS-Export `192.168.0.25:/var/nfs/shared/infra01/longhorn-backups` ist mit NFSv3 erreichbar.

@@ -1,13 +1,13 @@
 ---
 title: Architektur
-book_version: "1.1.0"
+book_version: "1.2.0"
 ---
 
 # Architektur
 
 ## Laufzeit
 
-- GitOps-App `apps/infra/longhorn`. Chart `v1.12.1` von `https://charts.longhorn.io`, Values `values.yaml`, zusätzliche Manifeste unter `manifests/` (`extras: true`).
+- GitOps-App `apps/infra/longhorn`. Chart `v1.13.0` von `https://charts.longhorn.io`, Values `values.yaml`, zusätzliche Manifeste unter `manifests/` (`extras: true`).
 - ApplicationSet `infra`, Wave 1, Namespace `longhorn-system`.
 - Die StorageClass `longhorn` ist die Default-Klasse. `numberOfReplicas` ist 3. Neue Volumes binden sofort (`volumeBindingMode` Immediate).
 - Datenpfad auf dem Node: `/var/lib/longhorn`.

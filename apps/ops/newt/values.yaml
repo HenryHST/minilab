@@ -1,10 +1,29 @@
 # Credentials live in Secret newt-main-tunnel-auth (SecretSpec via Infra_LAB).
 # Chart fossorial/newt 1.5.0 appVersion is 1.12.5 — pin image ahead of chart.
+# Pod + container SC: silence Trivy AVD-KSV-0118/0104/0030/0021 (chart defaults
+# already harden the container; pod-level + seccomp + runAsGroup were missing).
 global:
   image:
     registry: docker.io
     repository: fosrl/newt
     tag: "1.19.1"
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
 
 newtInstances:
   - name: main-tunnel

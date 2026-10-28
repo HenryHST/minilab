@@ -50,7 +50,7 @@ data:
   enforce.sh: |
     #!/bin/sh
     set -eu
-    NODES="${PROXMOX_LONGHORN_NODES:-nxk3-w01 nxk3-w02 nxk3-w03 nxk3-w04}"
+    NODES="${PROXMOX_LONGHORN_NODES:-nxk3-w01 nxk3-w02 nxk3-w03 nxk3-w04 nxk3-w05 nxk3-w06}"
     WANT="${IM_CPU_REQUEST_MILLICORES:-50}"
     for n in $NODES; do
       if ! kubectl get nodes.longhorn.io "$n" >/dev/null 2>&1; then
@@ -92,19 +92,18 @@ spec:
             app.kubernetes.io/component: im-cpu-enforcer
         spec:
           serviceAccountName: longhorn-im-cpu
-          imagePullSecrets:
-            - name: registry-pull
           restartPolicy: Never
           nodeSelector:
             worker: "true"
           containers:
             - name: enforce
-              image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
+              # Public image — avoid Forgejo registry dependency during storage incidents
+              image: rancher/kubectl:v1.32.3
               imagePullPolicy: IfNotPresent
               command: ["/bin/sh", "/scripts/enforce.sh"]
               env:
                 - name: PROXMOX_LONGHORN_NODES
-                  value: "nxk3-w01 nxk3-w02 nxk3-w03 nxk3-w04"
+                  value: "nxk3-w01 nxk3-w02 nxk3-w03 nxk3-w04 nxk3-w05 nxk3-w06"
                 - name: IM_CPU_REQUEST_MILLICORES
                   value: "50"
               volumeMounts:
@@ -134,7 +133,7 @@ metadata:
     app.kubernetes.io/component: im-cpu-enforcer
   annotations:
     argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookFailed
     argocd.argoproj.io/sync-wave: "2"
 spec:
   backoffLimit: 2
@@ -146,19 +145,17 @@ spec:
         app.kubernetes.io/component: im-cpu-enforcer
     spec:
       serviceAccountName: longhorn-im-cpu
-      imagePullSecrets:
-        - name: registry-pull
       restartPolicy: Never
       nodeSelector:
         worker: "true"
       containers:
         - name: enforce
-          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
+          image: rancher/kubectl:v1.32.3
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "/scripts/enforce.sh"]
           env:
             - name: PROXMOX_LONGHORN_NODES
-              value: "nxk3-w01 nxk3-w02 nxk3-w03 nxk3-w04"
+              value: "nxk3-w01 nxk3-w02 nxk3-w03 nxk3-w04 nxk3-w05 nxk3-w06"
             - name: IM_CPU_REQUEST_MILLICORES
               value: "50"
           volumeMounts:

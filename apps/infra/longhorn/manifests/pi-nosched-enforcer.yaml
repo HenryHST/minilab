@@ -87,14 +87,12 @@ spec:
             app.kubernetes.io/component: pi-nosched-enforcer
         spec:
           serviceAccountName: longhorn-pi-nosched
-          imagePullSecrets:
-            - name: registry-pull
           restartPolicy: Never
           nodeSelector:
             worker: "true"
           containers:
             - name: enforce
-              image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
+              image: rancher/kubectl:v1.32.3
               imagePullPolicy: IfNotPresent
               command: ["/bin/sh", "/scripts/enforce.sh"]
               env:

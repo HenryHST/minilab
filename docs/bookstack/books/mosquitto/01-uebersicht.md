@@ -34,4 +34,4 @@ flowchart LR
 | Auth | LDAP-Gruppen `mqtt_users` / `mqtt_admins` |
 | Metrics | Exporter `:9234` · `ServiceMonitor` · Grafana **Mosquitto Broker ($SYS)** |
 
-ADR: [0029-mosquitto](../../../adr/0029-mosquitto.md).
+ADR: [0029-mosquitto](../../../adr/0029-mosquitto.md). Incident PVC/LDAP 2026-10-28: [Kapitel 06](06-incident-2026-10-28-pvc-ldap.md).

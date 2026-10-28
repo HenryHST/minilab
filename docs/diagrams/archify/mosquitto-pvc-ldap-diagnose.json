@@ -1,0 +1,202 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Mosquitto 2026-10-28 — Diagnose & Remediation",
+    "locale": "de",
+    "output": "docs/diagrams/archify/mosquitto-pvc-ldap-diagnose.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/HenryHST/minilab",
+      "revision": "5fae002e727a3db055964a1d70f255f0ba5838dc"
+    },
+    "views": [
+      {
+        "id": "triage",
+        "label": "Triage",
+        "focus": ["symptom", "pvc", "pods", "lh"],
+        "note": "FailedScheduling vs Init:Error trennen."
+      },
+      {
+        "id": "pvcfix",
+        "label": "PVC",
+        "focus": ["scale0", "fdel", "clear", "recreate"],
+        "note": "Blocker löschen, Finalizer nur wenn LH weg."
+      },
+      {
+        "id": "bootfix",
+        "label": "Boot",
+        "focus": ["strip", "restartop", "verify"],
+        "note": "Secret trimmen, Outpost restart, Ready prüfen."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "observe", "label": "Beobachtung" },
+    { "id": "storage", "label": "Storage" },
+    { "id": "auth", "label": "LDAP / Secret" },
+    { "id": "remediate", "label": "Remediation" }
+  ],
+  "phases": [
+    { "id": "triage", "label": "Triage", "fromCol": 0, "toCol": 1 },
+    { "id": "pvc", "label": "PVC freigeben", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "boot", "label": "Boot & Verify", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": [
+    "symptom",
+    "pvc",
+    "pods",
+    "scale0",
+    "fdel",
+    "recreate",
+    "strip",
+    "restartop",
+    "verify"
+  ],
+  "nodes": [
+    {
+      "id": "symptom",
+      "lane": "observe",
+      "col": 0,
+      "type": "external",
+      "label": "Symptom",
+      "sublabel": "FailedScheduling",
+      "width": 140
+    },
+    {
+      "id": "pvc",
+      "lane": "storage",
+      "col": 1,
+      "type": "database",
+      "label": "PVC Status",
+      "sublabel": "Terminating?",
+      "width": 140,
+      "sources": [
+        {
+          "path": "apps/infra/mosquitto/mosquitto.yaml",
+          "line": 7,
+          "end_line": 19,
+          "label": "PVC mosquitto-data"
+        }
+      ]
+    },
+    {
+      "id": "pods",
+      "lane": "observe",
+      "col": 1,
+      "type": "backend",
+      "label": "Pods + LH",
+      "sublabel": "Succeeded / NotFound",
+      "width": 150
+    },
+    {
+      "id": "scale0",
+      "lane": "remediate",
+      "col": 2,
+      "type": "cloud",
+      "label": "Scale 0",
+      "sublabel": "deploy/mosquitto",
+      "width": 130
+    },
+    {
+      "id": "fdel",
+      "lane": "remediate",
+      "col": 3,
+      "type": "security",
+      "label": "Force-Delete",
+      "sublabel": "+ Finalizer clear",
+      "width": 140,
+      "sources": [
+        {
+          "path": "apps/infra/mosquitto/README.md",
+          "line": 13,
+          "end_line": 13,
+          "label": "Data PVC Longhorn"
+        }
+      ]
+    },
+    {
+      "id": "recreate",
+      "lane": "storage",
+      "col": 3,
+      "type": "database",
+      "label": "PVC neu",
+      "sublabel": "Bound + Attach",
+      "width": 130
+    },
+    {
+      "id": "strip",
+      "lane": "auth",
+      "col": 4,
+      "type": "security",
+      "label": "Secret strip",
+      "sublabel": "kein trailing WS",
+      "width": 140,
+      "sources": [
+        {
+          "path": "apps/infra/mosquitto/mosquitto.yaml",
+          "line": 137,
+          "end_line": 138,
+          "label": "Whitespace-Check"
+        }
+      ]
+    },
+    {
+      "id": "restartop",
+      "lane": "auth",
+      "col": 5,
+      "type": "cloud",
+      "label": "Outpost RS",
+      "sublabel": "rollout restart",
+      "width": 130
+    },
+    {
+      "id": "verify",
+      "lane": "observe",
+      "col": 5,
+      "type": "frontend",
+      "label": "Verify",
+      "sublabel": "1/1 + bind OK",
+      "width": 130
+    }
+  ],
+  "edges": [
+    { "from": "symptom", "to": "pvc", "label": "kubectl", "variant": "emphasis" },
+    { "from": "pvc", "to": "pods", "label": "PodUsingPVC" },
+    { "from": "pods", "to": "scale0", "label": "LH NotFound", "variant": "emphasis" },
+    { "from": "scale0", "to": "fdel", "label": "keine Recreate-Race" },
+    { "from": "fdel", "to": "recreate", "label": "apply PVC", "variant": "emphasis" },
+    { "from": "recreate", "to": "strip", "label": "Init:Error?" },
+    { "from": "strip", "to": "restartop", "label": "kein :389" },
+    { "from": "restartop", "to": "verify", "label": "bind OK", "variant": "emphasis" }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Nicht vermischen",
+      "items": [
+        "FailedScheduling = Storage/PVC-Pfad",
+        "Init:Error ldap-preflight = Secret/Outpost",
+        "Beide können hintereinander greifen"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Playbook",
+      "items": [
+        "Infra_LAB cleanup-zombie-pods.yaml",
+        "apply_cleanup + clear_pvc_finalizers",
+        "namespaces=[\"mosquitto\"]"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Dauerhaft",
+      "items": [
+        "SecretSpec ohne trailing whitespace",
+        "LDAP-Outpost nach Authentik-Outage restarten",
+        "Weekly Gate: PVC PodUsingPVC >1h"
+      ]
+    }
+  ]
+}

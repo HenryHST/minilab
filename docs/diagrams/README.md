@@ -16,6 +16,8 @@ Interaktive HTML-Diagramme und BookStack-Exports für die Plattform-Bücher.
 | `podcraft-incident-2026-10-26` | architecture | [podcraft-incident-2026-10-26.html](archify/podcraft-incident-2026-10-26.html) | `archify/exports/podcraft-incident-2026-10-26.png` | podcraft — Incident Missing / HA SSL |
 | `podcraft-diagnose-2026-10-26` | workflow | [podcraft-diagnose-2026-10-26.html](archify/podcraft-diagnose-2026-10-26.html) | `archify/exports/podcraft-diagnose-2026-10-26.png` | podcraft — Diagnose & Remediation |
 | `podcraft-timeline-2026-10-26` | timeline | [podcraft-timeline-2026-10-26.html](archify/podcraft-timeline-2026-10-26.html) | `archify/exports/podcraft-timeline-2026-10-26.png` | podcraft — Incident Timeline |
+| `mosquitto-pvc-ldap-incident` | architecture | [mosquitto-pvc-ldap-incident.html](archify/mosquitto-pvc-ldap-incident.html) | `archify/exports/mosquitto-pvc-ldap-incident.png` | Mosquitto — Incident PVC + LDAP 2026-10-28 |
+| `mosquitto-pvc-ldap-diagnose` | workflow | [mosquitto-pvc-ldap-diagnose.html](archify/mosquitto-pvc-ldap-diagnose.html) | `archify/exports/mosquitto-pvc-ldap-diagnose.png` | Mosquitto — Diagnose & Remediation 2026-10-28 |
 
 ## Archify
 

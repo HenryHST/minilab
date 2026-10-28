@@ -1,0 +1,230 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Incident 2026-10-28: Mosquitto PVC + LDAP",
+    "locale": "de",
+    "output": "docs/diagrams/archify/mosquitto-pvc-ldap-incident.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/HenryHST/minilab",
+      "revision": "5fae002e727a3db055964a1d70f255f0ba5838dc"
+    },
+    "views": [
+      {
+        "id": "fail",
+        "label": "Fehlerkette",
+        "focus": ["sched", "pvcterm", "succ", "pending", "lhgone"],
+        "note": "Succeeded-Pod hält Terminating-PVC → FailedScheduling."
+      },
+      {
+        "id": "boot",
+        "label": "Nach PVC-Fix",
+        "focus": ["newpvc", "preflight", "whitespace", "outpost503", "broker"],
+        "note": "PVC Bound; Preflight → Secret/Outpost → Broker Ready."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "sched",
+      "type": "cloud",
+      "label": "Scheduler",
+      "sublabel": "FailedScheduling",
+      "tag": "Symptom",
+      "pos": [40, 40],
+      "size": [160, 70]
+    },
+    {
+      "id": "pending",
+      "type": "backend",
+      "label": "Pod Pending",
+      "sublabel": "mosquitto-584…",
+      "tag": "Deploy",
+      "pos": [260, 40],
+      "size": [160, 70],
+      "sources": [
+        {
+          "path": "apps/infra/mosquitto/mosquitto.yaml",
+          "line": 417,
+          "end_line": 417,
+          "label": "claimName mosquitto-data"
+        }
+      ]
+    },
+    {
+      "id": "pvcterm",
+      "type": "database",
+      "label": "PVC Terminating",
+      "sublabel": "mosquitto-data",
+      "tag": "Storage",
+      "pos": [480, 40],
+      "size": [170, 70],
+      "sources": [
+        {
+          "path": "apps/infra/mosquitto/mosquitto.yaml",
+          "line": 7,
+          "end_line": 19,
+          "label": "Longhorn PVC 1Gi RWO"
+        }
+      ]
+    },
+    {
+      "id": "succ",
+      "type": "security",
+      "label": "Succeeded Pod",
+      "sublabel": "PodUsingPVC",
+      "tag": "Blocker",
+      "pos": [480, 180],
+      "size": [170, 70]
+    },
+    {
+      "id": "lhgone",
+      "type": "database",
+      "label": "LH Volume",
+      "sublabel": "NotFound",
+      "tag": "Longhorn",
+      "pos": [700, 40],
+      "size": [150, 70]
+    },
+    {
+      "id": "newpvc",
+      "type": "database",
+      "label": "PVC Bound",
+      "sublabel": "neu provisioniert",
+      "tag": "Fix",
+      "pos": [40, 320],
+      "size": [160, 70]
+    },
+    {
+      "id": "preflight",
+      "type": "backend",
+      "label": "ldap-preflight",
+      "sublabel": "Init Container",
+      "tag": "Boot",
+      "pos": [260, 320],
+      "size": [160, 70],
+      "sources": [
+        {
+          "path": "apps/infra/mosquitto/mosquitto.yaml",
+          "line": 108,
+          "end_line": 140,
+          "label": "Whitespace- und Bind-Checks"
+        }
+      ]
+    },
+    {
+      "id": "whitespace",
+      "type": "security",
+      "label": "00-bind.conf",
+      "sublabel": "trailing space",
+      "tag": "Secret",
+      "pos": [480, 320],
+      "size": [160, 70],
+      "sources": [
+        {
+          "path": "apps/infra/mosquitto/mosquitto.yaml",
+          "line": 137,
+          "end_line": 138,
+          "label": "Whitespace-Fehlertext"
+        }
+      ]
+    },
+    {
+      "id": "outpost503",
+      "type": "cloud",
+      "label": "LDAP Outpost",
+      "sublabel": "API 503 → kein :389",
+      "tag": "Authentik",
+      "pos": [700, 320],
+      "size": [170, 70]
+    },
+    {
+      "id": "broker",
+      "type": "frontend",
+      "label": "Mosquitto",
+      "sublabel": "1/1 Ready",
+      "tag": "OK",
+      "pos": [920, 320],
+      "size": [140, 70]
+    }
+  ],
+  "connections": [
+    {
+      "from": "sched",
+      "to": "pending",
+      "label": "PVC being deleted",
+      "variant": "emphasis"
+    },
+    {
+      "from": "pending",
+      "to": "pvcterm",
+      "label": "claim",
+      "variant": "emphasis"
+    },
+    {
+      "from": "succ",
+      "to": "pvcterm",
+      "label": "hält Finalizer",
+      "variant": "security"
+    },
+    {
+      "from": "pvcterm",
+      "to": "lhgone",
+      "label": "Volume weg",
+      "variant": "dashed"
+    },
+    {
+      "from": "newpvc",
+      "to": "preflight",
+      "label": "Attach OK",
+      "variant": "emphasis"
+    },
+    {
+      "from": "whitespace",
+      "to": "preflight",
+      "label": "Init:Error",
+      "variant": "security"
+    },
+    {
+      "from": "preflight",
+      "to": "outpost503",
+      "label": "TCP 389?",
+      "variant": "security"
+    },
+    {
+      "from": "outpost503",
+      "to": "broker",
+      "label": "bind OK",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Root Cause PVC",
+      "items": [
+        "Succeeded-Pod + Pending-Pod → PodUsingPVC",
+        "LH-Volume bereits NotFound; Finalizer hängt",
+        "Cleanup: force-delete Blocker, PVC neu"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Root Cause Boot",
+      "items": [
+        "MOSQUITTO_LDAP_BIND_PASSWORD mit trailing space",
+        "LDAP-Outpost stuck auf alter 503-API",
+        "Restart Outpost + Secret strip → Ready"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Verwandt",
+      "items": [
+        "Infra_LAB cleanup-zombie-pods.yaml (pvc_blocker)",
+        "K3s-Buch: Zombie-Pods / Shared Redis"
+      ]
+    }
+  ]
+}

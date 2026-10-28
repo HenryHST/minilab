@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "b7347ad3-bd9c-4bbe-b7b2-5b42f5489ea8",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/henry/Projects/minilab/.archify/workflow-mosquitto-diagnose-20261028-221400/candidate.json",
+  "output": "/Users/henry/Projects/minilab/docs/diagrams/archify/mosquitto-pvc-ldap-diagnose.html",
+  "specification": {
+    "sha256": "855fd6d4aac9d7c13d676c37296a7741fc60a63525c61be19091d091240b1c5b",
+    "bytes": 5198
+  },
+  "artifact": {
+    "sha256": "a739205450e410e76725376e56477c3c52f449d90840cc01a2bab3bc5e95ba2b",
+    "bytes": 825174
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "138a1339-ed42-4eff-ac5e-9ab22babc41f",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/henry/Projects/minilab/.archify/architecture-mosquitto-pvc-20261028-221400/candidate.json",
+  "output": "/Users/henry/Projects/minilab/docs/diagrams/archify/mosquitto-pvc-ldap-incident.html",
+  "specification": {
+    "sha256": "1bc7df0c379ccaefcc50a0bcf4e98735a15b52a6742630b9c31a5ed5d6a9f8b7",
+    "bytes": 5362
+  },
+  "artifact": {
+    "sha256": "be9e2054f211a100fb9674ac204ed2a93e71fa9563de07c5c8efe8b21128e2a0",
+    "bytes": 827590
+  }
+}

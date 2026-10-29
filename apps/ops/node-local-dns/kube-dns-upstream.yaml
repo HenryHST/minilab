@@ -1,0 +1,23 @@
+# Upstream for cache misses — must NOT be the kube-dns ClusterIP (LRP would loop).
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-dns-upstream
+  namespace: kube-system
+  labels:
+    k8s-app: kube-dns
+    kubernetes.io/name: KubeDNSUpstream
+    app.kubernetes.io/name: node-local-dns
+    app.kubernetes.io/part-of: node-local-dns
+spec:
+  ports:
+    - name: dns
+      port: 53
+      protocol: UDP
+      targetPort: 53
+    - name: dns-tcp
+      port: 53
+      protocol: TCP
+      targetPort: 53
+  selector:
+    k8s-app: kube-dns

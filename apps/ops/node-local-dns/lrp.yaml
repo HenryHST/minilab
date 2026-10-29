@@ -1,0 +1,26 @@
+# Steer kube-dns ClusterIP traffic to the local node-local-dns pod (Cilium KPR).
+# Source: cilium v1.20.2 examples/kubernetes-local-redirect/node-local-dns-lrp.yaml
+apiVersion: cilium.io/v2
+kind: CiliumLocalRedirectPolicy
+metadata:
+  name: nodelocaldns
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: node-local-dns
+    app.kubernetes.io/part-of: node-local-dns
+spec:
+  redirectFrontend:
+    serviceMatcher:
+      serviceName: kube-dns
+      namespace: kube-system
+  redirectBackend:
+    localEndpointSelector:
+      matchLabels:
+        k8s-app: node-local-dns
+    toPorts:
+      - port: "53"
+        name: dns
+        protocol: UDP
+      - port: "53"
+        name: dns-tcp
+        protocol: TCP

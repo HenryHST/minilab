@@ -52,6 +52,10 @@ spec:
             path: apps/ops/system-upgrade-controller
             namespace: system-upgrade
             syncWave: "1"
+          - app: node-local-dns
+            path: apps/ops/node-local-dns
+            namespace: kube-system
+            syncWave: "1"
           - app: kubeconfig-user
             path: apps/ops/kubeconfig-user
             namespace: kubeconfig-user
@@ -63,6 +67,10 @@ spec:
           - app: wud
             path: apps/ops/wud
             namespace: wud
+            syncWave: "3"
+          - app: traefik-manager
+            path: apps/ops/traefik-manager
+            namespace: traefik-manager
             syncWave: "3"
           - app: authentik
             path: apps/ops/authentik

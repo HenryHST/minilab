@@ -12,7 +12,8 @@
 # Cluster facts (nXk3):
 #   - Traefik NS: traefik  (kubernetes.io/metadata.name=traefik)
 #   - Newt NS:    newt     (only if Pangolin publish hits this Service)
-#   - CoreDNS:    kube-system, label k8s-app=kube-dns, UDP/TCP 53
+#   - DNS:        kube-system, labels k8s-app in (kube-dns, node-local-dns), UDP/TCP 53
+#                 (NodeLocal DNSCache via Cilium LRP — allow both backends)
 #
 # Do NOT apply default-deny without the Traefik (and Newt, if used) allow rules.
 ---
@@ -76,14 +77,18 @@ spec:
   policyTypes:
     - Egress
   egress:
-    # Cluster DNS (CoreDNS)
+    # Cluster DNS (CoreDNS + NodeLocal DNSCache backends under Cilium LRP)
     - to:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: kube-system
           podSelector:
-            matchLabels:
-              k8s-app: kube-dns
+            matchExpressions:
+              - key: k8s-app
+                operator: In
+                values:
+                  - kube-dns
+                  - node-local-dns
       ports:
         - protocol: UDP
           port: 53

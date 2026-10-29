@@ -1,0 +1,19 @@
+# Auth is Traefik Manager-native OIDC (Authentik provider traefik-manager) — no ForwardAuth.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-manager
+  namespace: traefik-manager
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`traefik.stadthagen.dev`)
+      kind: Rule
+      services:
+        - name: traefik-manager
+          port: 5000
+  tls:
+    secretName: traefik-tls

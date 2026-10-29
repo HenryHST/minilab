@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: node-local-dns
+  namespace: kube-system
+  labels:
+    k8s-app: node-local-dns
+    app.kubernetes.io/name: node-local-dns
+    app.kubernetes.io/part-of: node-local-dns
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      k8s-app: node-local-dns
+      app.kubernetes.io/name: node-local-dns
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 60s

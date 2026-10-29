@@ -1,0 +1,106 @@
+# Traefik Manager 1.15.4 — central UI with Authentik OIDC.
+# Secret traefik-manager-oauth (Infra_LAB k3s_secrets / SecretSpec TRAEFIK_MANAGER_OAUTH_CLIENT_SECRET).
+# No multi-server agents and no local Traefik file mounts in this iteration.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik-manager
+  namespace: traefik-manager
+  labels:
+    app.kubernetes.io/name: traefik-manager
+    app.kubernetes.io/part-of: traefik-manager
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: traefik-manager
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: traefik-manager
+        app.kubernetes.io/part-of: traefik-manager
+    spec:
+      nodeSelector:
+        worker: "true"
+      securityContext:
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: traefik-manager
+          image: ghcr.io/chr0nzz/traefik-manager:1.15.4@sha256:db016c04be30b76afbf259c5ca4c3667d861805404bc2d572f9ad326e5bf96c1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+          env:
+            - name: TZ
+              value: Europe/Berlin
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: COOKIE_SECURE
+              value: "true"
+            - name: PROXY_FIX_HOPS
+              value: "1"
+            - name: DOMAINS
+              value: stadthagen.dev
+            - name: OIDC_ENABLED
+              value: "true"
+            - name: OIDC_PROVIDER_URL
+              value: https://idp.stadthagen.dev/application/o/traefik-manager/
+            - name: OIDC_CLIENT_ID
+              value: traefik-manager
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: traefik-manager-oauth
+                  key: client-secret
+            - name: OIDC_DISPLAY_NAME
+              value: Authentik
+            - name: OIDC_ALLOWED_GROUPS
+              value: traefik_manager_admins
+            - name: OIDC_GROUPS_CLAIM
+              value: groups
+            - name: OIDC_REDIRECT_URI
+              value: https://traefik.stadthagen.dev/auth/oidc/callback
+            - name: OIDC_AUTO_LOGIN
+              value: "true"
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /login
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+            - name: backups
+              mountPath: /app/backups
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: traefik-manager-config
+        - name: backups
+          persistentVolumeClaim:
+            claimName: traefik-manager-backups

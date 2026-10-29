@@ -1,0 +1,6 @@
+book: NodeLocal DNS
+cover: cover.png
+book_version: "1.0.0"
+updated: "2026-10-29"
+description: NodeLocal DNSCache via Cilium LocalRedirectPolicy — weniger CoreDNS-Last, lokale Cache-Hits
+shelf: Plattform

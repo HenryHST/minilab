@@ -397,7 +397,7 @@ prometheusOperator:
   image:
     registry: quay.io
     repository: prometheus-operator/prometheus-operator
-    tag: v0.94.1
+    tag: v0.94.2
   resources:
     requests:
       cpu: 50m

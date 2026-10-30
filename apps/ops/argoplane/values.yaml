@@ -1,0 +1,58 @@
+# ArgoPlane — Argo CD UI extension backends (metrics, networking, logs, vulnerabilities, events).
+# Chart 1.6.1 / app 1.6.1: oci://ghcr.io/natrontech/charts/argoplane
+# UI + proxy + RBAC are wired by Infra_LAB Ansible role argo_cd (Day-0), not by this chart alone.
+# Styles/branding/docs-service stay off; Trivy Insights remains a separate Ansible extension.
+
+argocd:
+  namespace: argocd
+  # Helper ConfigMaps documenting proxy/RBAC; Ansible applies the live argocd-cm / rbac keys.
+  proxyConfig:
+    enabled: true
+  rbac:
+    enabled: true
+    roles:
+      - role: admin
+        extensions: ["*"]
+  styles:
+    enabled: false
+  branding:
+    enabled: false
+
+extensions:
+  metrics:
+    enabled: true
+    env:
+      PROMETHEUS_URL: "http://kube-prometheus-stack-prometheus.monitoring.svc:9090"
+      LOG_LEVEL: "info"
+    nodeSelector:
+      worker: "true"
+  networking:
+    enabled: true
+    env:
+      HUBBLE_RELAY_URL: "hubble-relay.kube-system.svc:80"
+      LOG_LEVEL: "info"
+    nodeSelector:
+      worker: "true"
+  logs:
+    enabled: true
+    env:
+      LOKI_URL: "http://loki.monitoring.svc:3100"
+      LOG_LEVEL: "info"
+    nodeSelector:
+      worker: "true"
+  vulnerabilities:
+    enabled: true
+    env:
+      LOG_LEVEL: "info"
+    nodeSelector:
+      worker: "true"
+  events:
+    enabled: true
+    env:
+      LOG_LEVEL: "info"
+    nodeSelector:
+      worker: "true"
+
+services:
+  docs:
+    enabled: false

@@ -84,6 +84,15 @@ spec:
             path: apps/ops/hubble-ui
             namespace: kube-system
             syncWave: "2"
+          # Native OCI (Argo ≥3.1): full oci://…/chart + path: . (not chart:). Mixing oci:// with chart: fails.
+          - app: argoplane
+            namespace: argocd
+            syncWave: "2"
+            helmRepo: oci://ghcr.io/natrontech/charts/argoplane
+            helmOci: true
+            helmVersion: "1.6.1"
+            helmReleaseName: argoplane
+            helmValuesFile: apps/ops/argoplane/values.yaml
   template:
     metadata:
       name: "{{ .app }}"
@@ -121,11 +130,15 @@ spec:
           - SkipDryRunOnMissingResource=true
           - RespectIgnoreDifferences=true
   templatePatch: |
-    {{- if dig "helmChart" "" . }}
+    {{- if dig "helmRepo" "" . }}
     spec:
       sources:
         - repoURL: {{ .helmRepo }}
+          {{- if dig "helmOci" false . }}
+          path: {{ dig "helmPath" "." . }}
+          {{- else }}
           chart: {{ .helmChart }}
+          {{- end }}
           targetRevision: {{ .helmVersion }}
           helm:
             releaseName: {{ dig "helmReleaseName" .app . }}

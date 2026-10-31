@@ -16,7 +16,7 @@ spec:
             syncWave: "0"
             helmRepo: https://charts.jetstack.io
             helmChart: cert-manager
-            helmVersion: v1.21.2
+            helmVersion: v1.21.3
             helmReleaseName: cert-manager
             helmValuesFile: apps/ops/cert-manager/values.yaml
           - app: cert-manager-webhook-hetzner
@@ -28,7 +28,7 @@ spec:
             syncWave: "1"
             helmRepo: https://aquasecurity.github.io/helm-charts/
             helmChart: trivy-operator
-            helmVersion: "0.37.0"
+            helmVersion: "0.38.1"
             helmReleaseName: trivy-operator
             helmValuesFile: apps/ops/trivy-operator/values.yaml
           # Distribution registry restored for dual-publish (Forgejo OCI + registry.stadthagen.dev).

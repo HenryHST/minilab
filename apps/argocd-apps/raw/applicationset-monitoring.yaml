@@ -33,7 +33,7 @@ spec:
             syncWave: "1"
             helmRepo: https://prometheus-community.github.io/helm-charts
             helmChart: kube-prometheus-stack
-            helmVersion: "92.0.0"
+            helmVersion: "92.16.1"
             helmReleaseName: kube-prometheus-stack
             helmValuesFile: apps/monitoring/kube-prometheus-stack/values.yaml
             extras: true
@@ -43,7 +43,7 @@ spec:
             syncWave: "3"
             helmRepo: https://grafana-community.github.io/helm-charts
             helmChart: loki
-            helmVersion: "18.11.7"
+            helmVersion: "18.17.1"
             helmReleaseName: loki
             helmValuesFile: apps/monitoring/loki/values.yaml
             extras: true

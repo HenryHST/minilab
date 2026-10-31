@@ -1,15 +1,17 @@
 # error-pages — Traefik errors middleware + catch-all (Helm chart values).
 # Chart: oci://ghcr.io/tarampampam/error-pages/charts/error-pages  (pin in ApplicationSet)
 # Guide: https://github.com/tarampampam/error-pages/blob/master/docs/guides/k8s_ingress_traefik.md
+# HTML: custom lost-in-space + Gatus badges (ConfigMap error-pages-html-template)
 
 config:
   sendSameHttpCode: true
   htmlTemplate:
-    name: lost-in-space
+    # File mounted from ConfigMap; built-in name ignored when custom is set
+    custom: /templates/lost-in-space-gatus.tpl.html
   homepageUrl: https://web.stadthagen.dev
   addLink:
     - label: Status
-      url: https://status.stadthagen.dev
+      url: https://status.stadthagen.dev/uebersicht
     - label: Home
       url: https://web.stadthagen.dev
 
@@ -28,6 +30,14 @@ deployment:
       memory: 32Mi
     limits:
       memory: 64Mi
+  volumes:
+    - name: html-template
+      configMap:
+        name: error-pages-html-template
+  volumeMounts:
+    - name: html-template
+      mountPath: /templates
+      readOnly: true
 
 service:
   type: ClusterIP

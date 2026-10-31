@@ -12,9 +12,31 @@ Upstream: [tarampampam/error-pages](https://github.com/tarampampam/error-pages) 
 | Namespace | `error-pages` |
 | Sync wave | `1` |
 | Helm | OCI `ghcr.io/tarampampam/error-pages/charts` → native Argo Helm + `values.yaml` |
-| Extras | Catch-all `IngressRoute` (websecure, `kubernetes.io/ingress.class: traefik-external`, `tls: {}`) + NetworkPolicy |
+| Extras | Catch-all `IngressRoute`, NetworkPolicy, ConfigMap HTML-Template |
 
-Template: `lost-in-space`. Links: Status (`status.stadthagen.dev`), Home (`web.stadthagen.dev`).
+## Template + Gatus-Badges
+
+Custom HTML: `lost-in-space` + Kern-Health-Badges (Browser lädt öffentliche Gatus-SVGs).
+
+| Datei | Rolle |
+|-------|-------|
+| `templates/lost-in-space-gatus.tpl.html` | SoT für Markup |
+| `manifests/configmap-template.yaml` | ConfigMap → Mount `/templates` |
+| `values.yaml` | `htmlTemplate.custom` + volumes |
+
+Badges (Keys): `homelab_authentik`, `apps_homepage`, `apps_vaultwarden`, `plattform_argocd`, `plattform_grafana`, `plattform_prometheus`, `plattform_forgejo`, `apps_longhorn`, `storage_rustfs`, `extern_pangolin`.  
+Link „Alle Checks“ / Status-Nav → `https://status.stadthagen.dev/uebersicht`. Kein Kromgo (LAN-only).
+
+Nach Template-Edit ConfigMap neu erzeugen:
+
+```bash
+cd apps/infra/error-pages
+kubectl create configmap error-pages-html-template \
+  --from-file=lost-in-space-gatus.tpl.html=templates/lost-in-space-gatus.tpl.html \
+  --namespace=error-pages --dry-run=client -o yaml \
+  | sed '/creationTimestamp/d' > manifests/configmap-template.yaml
+# labels + sync-wave annotation wieder setzen (siehe bestehende CM-YAML)
+```
 
 Middleware Statuscodes: **`500-504`** only (Authentik 401/403 und API-4xx bleiben roh).
 
@@ -30,9 +52,8 @@ Identifier: `error-pages-error-pages@kubernetescrd` auf Entrypoint **websecure**
 ## Verify
 
 ```bash
-kubectl -n error-pages get deploy,svc,middleware,ingressroute
-curl -skI -H 'Accept: text/html' https://no-such.stadthagen.dev/   # Catch-all 404
-# 503: briefly scale a backend to 0, or hit a known failing upstream
+kubectl -n error-pages get deploy,svc,middleware,ingressroute,configmap
+curl -skL -H 'Accept: text/html' https://no-such.stadthagen.dev/ | grep -E 'badge\.svg|Alle Checks'
 ```
 
 ## Docs

@@ -6,17 +6,17 @@ Clusterweite Fehlerseiten hinter Traefik (`error-pages`).
 
 | Fall | Verhalten |
 |------|-----------|
-| Backend liefert **500–504** | Traefik Errors-Middleware → Template `lost-in-space` |
-| Unbekannter Host (kein Ingress) | Catch-all IngressRoute → 404-Seite |
+| Backend liefert **500–504** | Traefik Errors-Middleware → Custom `lost-in-space` + Gatus-Badges |
+| Unbekannter Host (kein Ingress) | Catch-all IngressRoute → 404-Seite (gleiches Template) |
 | Authentik **401/403**, API-4xx | **unverändert** (bewusst kein Rewrite) |
 
-Links auf der Seite: [Status](https://status.stadthagen.dev), [Home](https://web.stadthagen.dev).
+Links: [Status / Übersicht](https://status.stadthagen.dev/uebersicht), [Home](https://web.stadthagen.dev). Badges laden als öffentliche Gatus-SVGs im Browser (Kern-Set; volle Liste auf `/uebersicht`).
 
 ## GitOps
 
 - App: `apps/infra/error-pages/` · Namespace `error-pages` · Sync wave 1
 - Chart: OCI `error-pages` (native Argo Helm); Pin: `applicationset-infra.yaml` → `helmVersion`
-- Extras: Catch-all IngressRoute + NetworkPolicy
+- Extras: Catch-all IngressRoute, NetworkPolicy, ConfigMap HTML-Template (`templates/lost-in-space-gatus.tpl.html`)
 
 ```mermaid
 flowchart LR

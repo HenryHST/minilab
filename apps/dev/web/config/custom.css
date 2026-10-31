@@ -63,3 +63,24 @@
   visibility: visible;
   transform: translateX(-50%) translateY(0);
 }
+
+/* nXk3 robot-heads mascot (cluster Ready → happy / thinking / error) */
+.nxk3-robot-mascot {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 40;
+  width: 100px;
+  height: 100px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  pointer-events: auto;
+  line-height: 0;
+}
+
+.nxk3-robot-mascot canvas {
+  display: block;
+  overflow: visible;
+}

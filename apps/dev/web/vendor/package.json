@@ -1,0 +1,19 @@
+{
+  "name": "homepage-robot-vendor",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Browser ESM bundle of react + robot-heads for web.stadthagen.dev (no CDN at runtime)",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/entry.mjs --bundle --format=esm --platform=browser --minify --outfile=dist/nxk3-robot.mjs --legal-comments=none",
+    "sync-configmap": "node scripts/sync-configmap.mjs"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "robot-heads": "0.3.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}

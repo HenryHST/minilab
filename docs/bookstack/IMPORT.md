@@ -31,6 +31,9 @@ Reihenfolge im Buch **Minilab** (Kapitel = Markdown-Dateien unter `books/minilab
 4. Authentik / SSO
 5. Backup & Restore
 6. Troubleshooting
+7. Error-Pages (falls vorhanden)
+8. kubeconfig-user (falls vorhanden)
+9. Homepage Robot-Heads — `09-homepage-robot-heads.md`
 
 Quellen: Root-`README.md`, `docs/adr/*`, App-READMEs. Kurz halten; auf Git verlinken wo Details nötig sind.
 

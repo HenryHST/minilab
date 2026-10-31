@@ -1,12 +1,12 @@
 ---
 title: Apps & Hosts
-book_version: "1.2.1"
-updated: "2026-10-24"
+book_version: "1.3.0"
+updated: "2026-10-31"
 ---
 
 # Apps & Hosts
 
-> **Buch** v1.2.1 · Stand: 2026-10-24
+> **Buch** v1.3.0 · Stand: 2026-10-31
 
 Kurzübersicht der User-Apps (Details und Sync Waves: Root-README im Git-Repo).
 
@@ -18,7 +18,7 @@ Kurzübersicht der User-Apps (Details und Sync Waves: Root-README im Git-Repo).
 | Registry UI | registry-ui.stadthagen.dev | Joxit; Authentik ForwardAuth + Registry-Basic (`REGISTRY_SECURED`) |
 | Termix | termix.stadthagen.dev | SSH-Terminal, OIDC |
 | Vaultwarden | vw-ext.stadthagen.dev (LAN `vaultwarden.` → Redirect) | Passwort-Safe, SSO |
-| Web (Homepage) | web.stadthagen.dev | Startseite / Widgets |
+| Web (Homepage) | web.stadthagen.dev | Startseite / Widgets; Robot-Heads-Mascot → [Homepage Robot-Heads](09-homepage-robot-heads.md) |
 | Gatus | status.stadthagen.dev | Health-Dashboard, Authentik OIDC, CloudNativePG |
 | Draw.io | drawio.stadthagen.dev | Diagramme |
 | IT Tools / Omni Tools | it-tools / omni-tools | Utility-Apps |

@@ -1,5 +1,21 @@
 # Changelog — Buch Minilab
 
+## [1.4.0] - 2026-10-31
+
+### Changed
+
+- Homepage Robot-Heads: lokales Vendor-Bundle (`/vendor/nxk3-robot.mjs`), Forgejo-Mirror `ops/robot-heads` (8h), Renovate-Gruppe `homepage-robot-vendor`
+
+## [1.3.0] - 2026-10-31
+
+### Added
+
+- Kapitel **Homepage Robot-Heads** — Mascot auf `web.stadthagen.dev`, State aus `/api/widgets/kubernetes`, custom.js/css + ConfigMap
+
+### Changed
+
+- Apps & Hosts: Verweis auf Robot-Heads-Kapitel
+
 ## [1.2.1] - 2026-10-24
 
 ### Changed

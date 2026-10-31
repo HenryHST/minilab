@@ -80,6 +80,16 @@
         "apps/argocd-apps/raw/applicationset-ops.yaml"
       ],
       "groupName": "registry-ui"
+    },
+    {
+      "description": "Homepage robot-heads vendor (local ESM bundle)",
+      "matchManagers": ["npm"],
+      "matchFileNames": ["apps/dev/web/vendor/package.json"],
+      "matchPackageNames": ["robot-heads", "react", "react-dom"],
+      "groupName": "homepage-robot-vendor",
+      "prBodyNotes": [
+        "After merge: `cd apps/dev/web/vendor && npm install && npm run build && npm run sync-configmap`, then commit `dist/nxk3-robot.mjs` + `homepage-robot-vendor.configmap.yaml` and roll Homepage."
+      ]
     }
   ]
 }

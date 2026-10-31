@@ -47,6 +47,9 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /app/config
+            - name: robot-vendor
+              mountPath: /app/public/vendor
+              readOnly: true
           resources:
             requests:
               cpu: 10m
@@ -59,3 +62,7 @@ spec:
             name: homepage-config
         - name: config
           emptyDir: {}
+        - name: robot-vendor
+          configMap:
+            name: homepage-robot-vendor
+            defaultMode: 0444

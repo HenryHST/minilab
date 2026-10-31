@@ -72,7 +72,7 @@ spec:
             syncWave: "1"
             helmRepo: ghcr.io/tarampampam/error-pages/charts
             helmChart: error-pages
-            helmVersion: "4.2.5"
+            helmVersion: "4.2.7"
             helmReleaseName: error-pages
             helmValuesFile: apps/infra/error-pages/values.yaml
             extras: true

@@ -9,7 +9,7 @@ deployment:
 
 image:
   repository: twinproduction/gatus
-  tag: v5.37.0
+  tag: v5.38.0
   pullPolicy: IfNotPresent
 
 # PriorityClass gatus-prefer exists (manifests/priorityclass.yaml, sync-wave -1) but is NOT

@@ -1,5 +1,19 @@
 # Changelog — Buch Paperless
 
+## [1.12.0] - 2026-10-31
+
+### Changed
+
+- Image-Pin **paperless-ngx 3.3.4 → 3.4.1** (Web + Worker)
+- Trivy-/Backup-Kapitel und App-README auf `3.4.1`
+
+### Added (Upstream 3.4.0, Lab-relevant)
+
+- Custom Fields in Workflow-Titel-Templates; relative Datumsabfragen auf Custom Fields
+- PDF-Thumbnails via Poppler (ImageMagick entfernt)
+- OIDC: trusted `amr` kann lokale Paperless-2FA überspringen (Default `mfa`; Authentik-Login nach Upgrade prüfen)
+- Security-Deps (u. a. DRF/msgpack/setuptools) — Trivy-Residuals nach Sync neu bewerten
+
 ## [1.11.0] - 2026-10-28
 
 ### Changed

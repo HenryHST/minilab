@@ -36,7 +36,7 @@ Infra_LAB-Querverweis (hostPath-Prereq): Buch **Infra_LAB** → Kapitel **Paperl
 | Retention NFS | letzte **7** `paperless-*.zip` (+ `.meta`) |
 | PVC Backup | `paperless-backups` (PV `paperless-backups-nfs`, NFSv3 + nolock) |
 | Export-Arbeitsfläche | PVC `paperless-export` → `/usr/src/paperless/export` (hostPath `/var/lib/paperless-export`) |
-| Image-Pin | `ghcr.io/paperless-ngx/paperless-ngx:3.3.4` — **Export und Import gleiche Version** |
+| Image-Pin | `ghcr.io/paperless-ngx/paperless-ngx:3.4.1` — **Export und Import gleiche Version** |
 | Helper | `git.stadthagen.dev/ops/k8s-toolbox:1.0.1` |
 | Restore-Gate | ConfigMap `paperless-restore` (`enabled` / `archive` / `force` / `replicas`) |
 | Manifeste | `apps/dev/paperless/backup-cronjob.yaml`, `restore-bootstrap.yaml`, `scheduled-backup.yaml` |
@@ -54,7 +54,7 @@ Infra_LAB-Querverweis (hostPath-Prereq): Buch **Infra_LAB** → Kapitel **Paperl
 1. NFS-Verzeichnis `…/infra01/paperless-backups` existiert und ist im Cluster als PVC `paperless-backups` Bound.
 2. Deployment `paperless` hat mindestens einen **Running**-Pod (`app=paperless`).
 3. CronJob `paperless-backup-cron` ist deployed (Argo App `paperless` Synced).
-4. Image-Pin bekannt (aktuell `3.3.4`) — steht nach dem Lauf auch in `paperless-*.meta`.
+4. Image-Pin bekannt (aktuell `3.4.1`) — steht nach dem Lauf auch in `paperless-*.meta`.
 
 ### 2.2 Automatik prüfen
 

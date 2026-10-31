@@ -1,6 +1,6 @@
 book: Paperless
 cover: cover.png
-book_version: "1.11.0"
-updated: "2026-10-28"
-description: Paperless-ngx — Dokumente, OCR Deskew, HPScan, Authentik OIDC, Valkey 9.1 ephemeral Broker, Incident Redis→Valkey + PVC 2026-10-28, Dokumenttypen/Tags-Seed, Workflow Kategorie, Backup/Restore, Gotenberg/Tika Smoke, Trivy
+book_version: "1.12.0"
+updated: "2026-10-31"
+description: Paperless-ngx 3.4.1 — Dokumente, OCR Deskew, HPScan, Authentik OIDC, Valkey 9.1 ephemeral Broker, Workflow/Custom-Field-UX, Poppler-Thumbnails, Backup/Restore, Gotenberg/Tika Smoke, Trivy
 shelf: Plattform

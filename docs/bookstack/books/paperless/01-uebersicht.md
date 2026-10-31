@@ -1,13 +1,14 @@
 ---
 title: Übersicht
-book_version: "1.10.0"
+book_version: "1.12.0"
+updated: "2026-10-31"
 ---
 
 # Übersicht
 
-> **Buch** v1.10.0 · Stand: 2026-10-26
+> **Buch** v1.12.0 · Stand: 2026-10-31
 
-Paperless-ngx archiviert Dokumente mit OCR (Deutsch + Englisch), importiert Scans vom HPScan-NFS und meldet sich per Authentik an.
+Paperless-ngx **3.4.1** archiviert Dokumente mit OCR (Deutsch + Englisch), importiert Scans vom HPScan-NFS und meldet sich per Authentik an. Ab 3.4.0: Poppler-Thumbnails, Custom Fields in Workflow-Titeln / relative CF-Datumsfilter — Details in **Deploy & Verify**.
 
 ```mermaid
 flowchart LR

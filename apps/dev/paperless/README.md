@@ -5,7 +5,7 @@ Document management with OCR (deu+eng, deskew/rotate on), Authentik OIDC, Gotenb
 | | |
 |--|--|
 | Argo | ApplicationSet `dev`, wave `3`, NS `paperless` |
-| Images | `paperless-ngx:3.3.4`, `postgres:18`, `gotenberg:8.38.0`, `tika:4.1.0`, helpers `k8s-toolbox:1.0.1` |
+| Images | `paperless-ngx:3.4.1`, `postgres:18`, `gotenberg:8.38.0`, `tika:4.1.0`, helpers `k8s-toolbox:1.0.1` |
 | Valkey | `redis://redis.redis.svc.cluster.local:6379/0` (`apps/infra/redis`, `valkey/valkey:9.1.2-alpine`) |
 | LAN | https://paperless.stadthagen.dev |
 | Ext | https://paperless-ext.stadthagen.dev (pangolin-publish `enabled: false` until flipped) |
@@ -73,7 +73,7 @@ ADR: [`docs/adr/0026-paperless-ngx.md`](../../docs/adr/0026-paperless-ngx.md) ·
 
 Pin helpers to `git.stadthagen.dev/ops/k8s-toolbox:1.0.1`. Remaining **HIGH** on app images need newer upstream releases (do not custom-patch here):
 
-- `paperless-ngx:3.3.4` — DRF ≥3.18.2, urllib3 ≥2.8.0, msgpack ≥1.2.1, setuptools ≥78.1.1
+- `paperless-ngx:3.4.1` — re-check VulnerabilityReports after bump (3.4.0 shipped DRF/msgpack/setuptools security bumps); residual only if still HIGH
 - `gotenberg:8.38.0` — Chromium ≥155.0.8059.79 (or 156.x); wait for next Gotenberg stable
 - CNPG `18.6-202610190957` — newest dated bookworm tag at pin time
 - `k8s-toolbox:1.0.1` still ships kubectl **v1.37.1** (same Go `stdlib`/`x/net` as 1.0.0); further Go hygiene = Forgejo kubectl bump, not a SemVer-only retarget

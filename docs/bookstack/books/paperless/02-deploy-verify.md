@@ -1,11 +1,13 @@
 ---
 title: Deploy & Verify
-book_version: "1.10.0"
+book_version: "1.12.0"
+chapter_version: "1.2.0"
+updated: "2026-10-31"
 ---
 
 # Deploy & Verify
 
-> **Buch** v1.10.0 · Stand: 2026-10-26
+> **Buch** v1.12.0 · **Kapitel** v1.2.0 · Stand: 2026-10-31
 
 ## Voraussetzungen
 
@@ -138,6 +140,20 @@ Job `paperless-inbox-tag` (Wave 5) legt idempotent an:
 - **Arbeitsablauf** `Kategorie hinzufügen` (`order=1`, aktiv): Auslöser *Verarbeitung gestartet* (`CONSUMPTION`), Aktion *Zuordnung* mit benutzerdefiniertem Feld `Kategorie` (ohne festen Wert)
 
 Manifest: `apps/dev/paperless/inbox-tag-job.yaml`. Kein Auto-Matching — Zuordnung manuell bzw. über den Workflow nur das leere Feld.
+
+## Neu ab paperless-ngx 3.4.x (Lab)
+
+Image-Pin **3.4.1** (Web + Worker). Feature-Release **3.4.0** bringt u. a.:
+
+| Funktion | Nutzung im Lab |
+|----------|----------------|
+| Custom Fields in Workflow-**Titel**-Templates | Jinja z. B. `{{ custom_fields \| get_cf_value("Kategorie", "") }}` — sinnvoll, wenn dieselbe Aktion das Feld **mit Wert** setzt; Seed hängt `Kategorie` nur leer an |
+| Relative Datumsabfragen auf Custom Fields | Saved Views / Filter in der UI |
+| PDF-Thumbnails via **Poppler** | automatisch im Official-Image; Preview nach Consume prüfen |
+| OIDC trusted `amr` | Default `PAPERLESS_SOCIAL_ACCOUNT_MFA_TRUSTED_AMR=mfa` — nur relevant bei lokaler Paperless-2FA; Authentik-Login nach Upgrade smoke-testen |
+| UI Upload/Tray/Notifications | ohne Config-Änderung |
+
+Nach Image-Bump: längere erste Readiness (Migrations), dann Smoke-Job und OIDC.
 
 ```bash
 kubectl -n paperless logs job/paperless-inbox-tag | rg 'documenttype|tag |Kategorie|workflow'

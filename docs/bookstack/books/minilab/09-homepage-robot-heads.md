@@ -85,9 +85,10 @@ npm run sync-configmap     # → homepage-robot-vendor.configmap.yaml
 | Upstream | `https://github.com/fayazara/robot-heads.git` |
 | Lab | `https://git.stadthagen.dev/ops/robot-heads` |
 | Mirror | ja, Intervall **8h** |
+| IaC | OpenTofu [`terraform/forgejo`](https://github.com/HenryHST/Infra_LAB/tree/main/terraform/forgejo) — `forgejo_repository.this["robot_heads"]` (`clone_addr` + `mirror`); Adopt importiert vorhandenes Repo |
 | Zweck | Tags/Commits im Lab zum Lesen/Diffen/Audit — **kein** npm-Ersatz |
 
-Day-2 angelegt (UI Migration→Mirror oder `POST /api/v1/repos/migrate`); nicht über OpenTofu `forgejo_repository` (nur normale Repos). Org `ops` ist privat → Repo ist **internal** (Auth nötig für Anon-HTTP); authentifizierter `git ls-remote` zeigt Tags inkl. `v0.3.0`.
+Neuinstallation: `./scripts/reconcile.sh dev` (bzw. Ansible `--tags forgejo-bootstrap`) legt den Mirror an bzw. importiert ihn. Org `ops` ist privat → Repo ist **internal** (Auth nötig für Anon-HTTP); authentifizierter `git ls-remote` zeigt Tags inkl. `v0.3.0`.
 
 ## Renovate
 

@@ -97,7 +97,7 @@ jobs:
 
       - name: Send email
         if: steps.changes.outputs.skip != 'true'
-        uses: dawidd6/action-send-mail@v22
+        uses: dawidd6/action-send-mail@v23
         with:
           server_address: ${{ steps.smtp.outputs.server }}
           server_port: ${{ steps.smtp.outputs.port }}

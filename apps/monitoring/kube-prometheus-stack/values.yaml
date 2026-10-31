@@ -6,6 +6,10 @@ prometheus:
     enabled: false
   prometheusSpec:
     replicas: 1
+    # Prometheus 3.x native OTLP (/api/v1/otlp/v1/metrics on :9090).
+    # Edge/LAN producers (RustFS) stay on otel-collector LB .219:4318 — see apps/monitoring/otel-collector.
+    # NetworkPolicy prometheus-ingress limits :9090 to monitoring/traefik/kromgo (no public OTLP).
+    enableOTLPReceiver: true
     # Proxmox only — Pis OOM during WAL replay (1Gi) → empty Endpoints → Kromgo "query error".
     nodeSelector:
       worker: "true"

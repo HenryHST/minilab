@@ -20,10 +20,12 @@ ADR-0009 setzte Longhorn-Backups auf NFS (UniFi NAS `192.168.0.25`). Für ein de
 
 - Backup-Verfügbarkeit hängt an pi7cl (Strom/Netz/Disk) — Replicas bleiben 3× auf Proxmox.
 - Credentials in SecretSpec (`RUSTFS_*`) und K8s Secret; nicht committen.
-- Prometheus-Metriken von RustFS nur über OTLP/OTel (Follow-up); Gatus deckt Health ab.
+- Prometheus-Metriken von RustFS nur über OTLP → **otel-collector** LAN LB `192.168.0.219:4318` → scrape `:8889` (nicht native Prometheus-OTLP — Edge/Isolation). Gatus deckt Health ab.
+- Cluster-Prometheus hat `enableOTLPReceiver` für optionalen in-cluster Push; RustFS bleibt auf dem Collector.
 - ADR-0009 bleibt historisch gültig für NFS; aktuelles Target ist dieses ADR.
 
 ## Verweise
 
 - BookStack Longhorn: Kapitel **RustFS Backup Store**
+- minilab `apps/monitoring/otel-collector/README.md`
 - Diagramm: Infra_LAB `docs/diagrams/archify/longhorn-rustfs-backup`

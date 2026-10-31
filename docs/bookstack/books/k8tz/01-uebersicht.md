@@ -12,7 +12,7 @@ flowchart LR
 |--|--|
 | Argo App | `k8tz` (ApplicationSet `infra`, Wave 1) |
 | Namespace | `k8tz` |
-| Chart | `k8tz` 0.20.0 |
+| Chart | `k8tz` — Pin: `applicationset-infra.yaml` → `helmVersion` |
 | Strategy | `initContainer` |
 | Opt-out | `k8tz.io/inject: "false"` |
 

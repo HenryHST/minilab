@@ -29,7 +29,7 @@ Diese Schritte sind erledigt. Sie gehören nicht in jede App.
 
 1. Values `apps/infra/cloudnative-pg/values.yaml`: ServiceAccount `postgres-cloud-sa`, `clusterWide: true`, PodMonitor-Label `release: kube-prometheus-stack`. Dashboard: Application `cnpg-grafana`, nicht das Operator-Chart. Snapshot-RBAC: `manifests/rbac-volumesnapshot.yaml`.
 2. NetworkPolicies unter `apps/infra/cloudnative-pg/manifests/`. Ingress 9443 offen, Ingress 8080 nur aus `monitoring`, Egress DNS, API 443/6443 und Instanz-Status 8000.
-3. ApplicationSet `infra`: `path: apps/infra/cloudnative-pg/manifests`, `namespace: cnpg-system`, `syncWave: "1"`, `helmChart: cloudnative-pg`, `helmVersion: "0.27.0"`, `helmReleaseName: cloudnative-pg`, `extras: true`.
+3. ApplicationSet `infra`: `path: apps/infra/cloudnative-pg/manifests`, `namespace: cnpg-system`, `syncWave: "1"`, `helmChart: cloudnative-pg`, `helmVersion` (SoT in `applicationset-infra.yaml`), `helmReleaseName: cloudnative-pg`, `extras: true`.
 4. AppProject `infra`: Destination-Namespace `cnpg-system`.
 5. Sync abwarten und die Checks aus **Deploy und Verify** abhaken.
 

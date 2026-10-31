@@ -18,6 +18,7 @@ Regenerationsbefehl steht im Dateikopf des jeweiligen `helm-manifest.yaml`.
 
 ## Konsequenzen
 
-- Infra-Chart-Upgrades: Version im ApplicationSet / Values bump, Argo rendert.
+- Infra-Chart-Upgrades: `helmVersion` im jeweiligen ApplicationSet (`apps/argocd-apps/raw/applicationset-*.yaml`) / Values bump, Argo rendert. **SoT für Chart-Versionen ist das ApplicationSet**, nicht ADR/BookStack.
+- Renovate (`renovate.json` regex `customManagers`) trackt HTTPS- und OCI-`helmVersion`-Pins und öffnet PRs (Gruppe `applicationset-helm`).
 - User-Helm-Upgrades: Template neu erzeugen, Diff reviewen, committen.
 - Kein CMP und kein Kustomize-Helm nötig.

@@ -2,7 +2,7 @@
 
 Clusterweite Maintenance-/Error-Pages für Traefik (`500–504` + unbekannte Hosts).
 
-Upstream: [tarampampam/error-pages](https://github.com/tarampampam/error-pages) · Chart `4.2.5` · [Traefik guide](https://github.com/tarampampam/error-pages/blob/master/docs/guides/k8s_ingress_traefik.md)
+Upstream: [tarampampam/error-pages](https://github.com/tarampampam/error-pages) · Chart-Pin: `applicationset-infra.yaml` → `helmVersion` · [Traefik guide](https://github.com/tarampampam/error-pages/blob/master/docs/guides/k8s_ingress_traefik.md)
 
 ## Deploy
 

@@ -7,7 +7,7 @@ book_version: "1.4.0"
 
 ## Voraussetzungen
 
-1. ApplicationSet `infra` enthält `cloudnative-pg` (Wave 1, `extras: true`, Chart `0.27.0`).
+1. ApplicationSet `infra` enthält `cloudnative-pg` (Wave 1, `extras: true`; Chart-Pin: `helmVersion` in `applicationset-infra.yaml`).
 2. AppProject `infra` erlaubt Destination `cnpg-system`.
 3. Prometheus wählt PodMonitore mit `release: kube-prometheus-stack`.
 4. `VolumeSnapshotClass` `longhorn` und Deployment `snapshot-controller` in `longhorn-system` sind da.

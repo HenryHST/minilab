@@ -17,7 +17,7 @@ flowchart LR
 |--|--|
 | Argo App | `nfd` (ApplicationSet `infra`, Wave 1) |
 | Namespace | `node-feature-discovery` |
-| Chart | `node-feature-discovery` 0.19.0 (OCI) |
+| Chart | `node-feature-discovery` (OCI) — Pin: `applicationset-infra.yaml` → `helmVersion` |
 | Metrics | `prometheus.enable: true` (PodMonitors) |
 
 ADR: [0025-nfd](../../../adr/0025-nfd.md).

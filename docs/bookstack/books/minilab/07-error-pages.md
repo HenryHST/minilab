@@ -15,7 +15,7 @@ Links auf der Seite: [Status](https://status.stadthagen.dev), [Home](https://web
 ## GitOps
 
 - App: `apps/infra/error-pages/` · Namespace `error-pages` · Sync wave 1
-- Chart: OCI `error-pages` 4.2.5 (native Argo Helm)
+- Chart: OCI `error-pages` (native Argo Helm); Pin: `applicationset-infra.yaml` → `helmVersion`
 - Extras: Catch-all IngressRoute + NetworkPolicy
 
 ```mermaid

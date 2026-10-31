@@ -12,7 +12,7 @@ book_version: "1.4.0"
 - ServiceAccount `postgres-cloud-sa`. ClusterRole und Binding kommen aus dem Chart. Kein zusätzliches User-ClusterRole. `rbac.aggregateClusterRoles` bleibt aus.
 - Requests 50m CPU / 128Mi, Limit 256Mi.
 - Webhook-Zertifikate bleiben im Chart (`cnpg-webhook-service:443` → Pod `:9443`). cert-manager für `Cluster.spec.certificates` ist nicht eingerichtet.
-- Grafana-Dashboard kommt nicht aus Chart 0.27.0. Application `cnpg-grafana` (Chart `cluster` 0.0.5) legt ConfigMap `cnpg-grafana-dashboard` in `monitoring` ab, Label `grafana_dashboard=1`.
+- Grafana-Dashboard kommt nicht aus dem Operator-Chart. Application `cnpg-grafana` (Chart `cluster`; Pin: `applicationset-monitoring.yaml` → `helmVersion`) legt ConfigMap `cnpg-grafana-dashboard` in `monitoring` ab, Label `grafana_dashboard=1`.
 
 ## NetworkPolicy
 

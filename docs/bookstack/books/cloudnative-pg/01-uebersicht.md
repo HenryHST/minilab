@@ -26,7 +26,7 @@ flowchart LR
 |--|--|
 | Argo App | `cloudnative-pg` (ApplicationSet `infra`, Wave 1) |
 | Namespace | `cnpg-system` nur für den Operator |
-| Chart | `cloudnative-pg` 0.27.0, Operator 1.28.0 |
+| Chart | `cloudnative-pg` — Pin: `applicationset-infra.yaml` → `helmVersion` |
 | ServiceAccount | `postgres-cloud-sa` |
 | Erster Cluster | `termix` im Namespace `termix` |
 

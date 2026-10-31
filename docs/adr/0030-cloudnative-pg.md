@@ -10,11 +10,11 @@ Postgres läuft als CNPG-Cluster (`termix`, `authentik-pg`, `paperless-pg`, [ADR
 
 ## Entscheidung
 
-- **Ownership:** ApplicationSet `infra`, Wave 1, native Helm ([ADR-0014](0014-helm-strategie.md), [ADR-0022](0022-apps-bucket-applicationsets.md)). Chart `cloudnative-pg` `0.27.0` (Operator 1.28.0).
+- **Ownership:** ApplicationSet `infra`, Wave 1, native Helm ([ADR-0014](0014-helm-strategie.md), [ADR-0022](0022-apps-bucket-applicationsets.md)). Chart `cloudnative-pg` — Pin: `applicationset-infra.yaml` → `helmVersion` (Operator folgt Chart-`appVersion`).
 - **Namespace:** `cnpg-system` nur für den Operator. Künftige `Cluster` liegen im Namespace der App.
 - **RBAC:** ServiceAccount `postgres-cloud-sa`. ClusterRole und ClusterRoleBinding kommen aus dem Chart (CRDs, Pods, PVCs, Secrets, Webhooks, cluster-wide watch). Zusätzlich `cloudnative-pg-volumesnapshot` für `VolumeSnapshot`. `rbac.aggregateClusterRoles: false`.
 - **NetworkPolicy:** Ingress Webhook `:9443` (kube-apiserver, beliebige Quelle) und Metrics `:8080` nur aus `monitoring`. Egress DNS sowie TCP 443/6443 zur API. Kein cluster-weites Default-Deny.
-- **Metrics:** PodMonitor des Operators mit `release: kube-prometheus-stack`. Instanz-PodMonitore liegen bei der App (Termix: `podmonitor.yaml`). `monitoring.enablePodMonitor` steht auf `false`. PrometheusRule `cnpg-alerts`. Grafana-Dashboard über Application `cnpg-grafana` (Chart `cluster` 0.0.5), nicht über Chart 0.27.0.
+- **Metrics:** PodMonitor des Operators mit `release: kube-prometheus-stack`. Instanz-PodMonitore liegen bei der App (Termix: `podmonitor.yaml`). `monitoring.enablePodMonitor` steht auf `false`. PrometheusRule `cnpg-alerts`. Grafana-Dashboard über Application `cnpg-grafana` (Chart `cluster`; Pin in `applicationset-monitoring.yaml`), nicht über das Operator-Chart.
 - **Zertifikate:** Operator-Webhook bleibt Chart-intern. **Termix**, **Authentik (`authentik-pg`)** und **Paperless (`paperless-pg`)** nutzen Hybrid-TLS: Server-CA/TLS via cert-manager (`cnpg-certificates.yaml` je Namespace), Client/Replication weiter Operator-managed ([Certificates](https://cloudnative-pg.io/docs/current/certificates), [ADR-0033](0033-authentik-cnpg.md)). Apps bleiben vorerst bei `sslmode=require` (Termix zusätzlich `uselibpqcompat=true`).
 - **Capability-Levels:** Der Operator bringt das volle Upstream-Set mit ([capability levels](https://cloudnative-pg.io/docs/current/operator_capability_levels)). Aktiv ist ein Cluster mit einer Instanz.
 - **Tests:** Upstream-E2E ([e2e](https://cloudnative-pg.io/docs/current/e2e)) nicht im Homelab. Smoke: Pod Ready, CRD `clusters.postgresql.cnpg.io`, Prometheus-Target.

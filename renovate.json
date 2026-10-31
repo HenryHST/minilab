@@ -3,19 +3,70 @@
   "extends": [
     "config:recommended"
   ],
+  "customManagers": [
+    {
+      "description": "ApplicationSet HTTPS Helm chart pins (helmRepo + helmChart + helmVersion)",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^apps\\/argocd-apps\\/raw\\/applicationset-.*\\.yaml$/"
+      ],
+      "matchStrings": [
+        "helmRepo:\\s+[\"']?(?<registryUrl>https://[^\"'\\s]+)[\"']?[ \\t]*\\r?\\n[ \\t]+helmChart:\\s+[\"']?(?<depName>[^\"'\\s]+)[\"']?[ \\t]*\\r?\\n[ \\t]+helmVersion:\\s+[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
+      ],
+      "datasourceTemplate": "helm",
+      "versioningTemplate": "helm"
+    },
+    {
+      "description": "ApplicationSet OCI Helm pins with separate helmChart (error-pages, nfd, …)",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^apps\\/argocd-apps\\/raw\\/applicationset-.*\\.yaml$/"
+      ],
+      "matchStrings": [
+        "helmRepo:\\s+[\"']?(?<registryUrl>[a-zA-Z0-9][a-zA-Z0-9.-]*(?:\\.[a-zA-Z0-9.-]+)+/[^\"'\\s]+)[\"']?[ \\t]*\\r?\\n[ \\t]+helmChart:\\s+[\"']?(?<depName>[^\"'\\s]+)[\"']?[ \\t]*\\r?\\n[ \\t]+helmVersion:\\s+[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "helm",
+      "packageNameTemplate": "{{{registryUrl}}}/{{{depName}}}"
+    },
+    {
+      "description": "ApplicationSet native OCI Helm pins (oci://… chart URL, helmOci)",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^apps\\/argocd-apps\\/raw\\/applicationset-.*\\.yaml$/"
+      ],
+      "matchStrings": [
+        "helmRepo:\\s+[\"']?oci://(?<depName>[^\"'\\s]+)[\"']?[ \\t]*\\r?\\n[ \\t]+helmOci:\\s*true[ \\t]*\\r?\\n[ \\t]+helmVersion:\\s+[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "helm"
+    }
+  ],
   "packageRules": [
     {
-      "description": "Distribution registry image (infra/registry)",
+      "description": "Group ApplicationSet Helm chart bumps",
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["apps/argocd-apps/raw/applicationset-*.yaml"],
+      "groupName": "applicationset-helm"
+    },
+    {
+      "description": "Ignore commented Kyverno pin in applicationset-infra.yaml",
+      "matchPackageNames": ["kyverno"],
+      "matchFileNames": ["apps/argocd-apps/raw/applicationset-infra.yaml"],
+      "enabled": false
+    },
+    {
+      "description": "Distribution registry image (ops/registry)",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["docker.io/library/registry", "library/registry", "registry"],
-      "matchFileNames": ["infra/registry/**"],
+      "matchFileNames": ["apps/ops/registry/**"],
       "groupName": "kube-registry"
     },
     {
       "description": "Registry GC kubectl helper image",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["docker.io/alpine/k8s", "alpine/k8s"],
-      "matchFileNames": ["infra/registry/**"],
+      "matchFileNames": ["apps/ops/registry/**"],
       "groupName": "kube-registry"
     },
     {
@@ -25,8 +76,8 @@
         "docker-registry-ui"
       ],
       "matchFileNames": [
-        "infra/registry-ui/**",
-        "apps/argocd-apps/raw/infra-applicationset.yaml"
+        "apps/ops/registry-ui/**",
+        "apps/argocd-apps/raw/applicationset-ops.yaml"
       ],
       "groupName": "registry-ui"
     }

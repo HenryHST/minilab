@@ -1,6 +1,6 @@
 ---
 title: Übersicht
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Übersicht
@@ -49,6 +49,7 @@ Kapiteltexte sind Englisch (Quell-Repo). Übersicht und Meta sind Deutsch.
 - [Helm](26-helm.md)
 - [Kubernetes Q&A](27-k8s_qa.md)
 - [kubectl](28-kubectl.md)
+- [Kubernetes Complete Notes](35-k8s-complete-notes.md)
 - [Minikube](29-minikube.md)
 - [OpenSSL](30-openssl.md)
 - [Terraform](31-terraform.md)

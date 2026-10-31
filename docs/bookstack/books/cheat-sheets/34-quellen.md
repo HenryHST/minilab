@@ -1,6 +1,6 @@
 ---
 title: Quellen
-book_version: "1.0.0"
+book_version: "1.1.0"
 ---
 
 # Quellen
@@ -9,4 +9,5 @@ book_version: "1.0.0"
 - Dieses Buch: Snapshot unter `docs/bookstack/books/cheat-sheets/` in minilab — **kein** automatischer Sync aus dem Upstream
 - Ausgeschlossen: `tools/k8s-pro-best-practices/` (LICENSE/README/Best-Practices-Docset) — bei Bedarf separat im Upstream lesen
 - BookStack-Import: ConfigMap `bookstack-import-sources` (Source `minilab-docs`), Ordner unter `docs/bookstack/books/`
+- **Kubernetes Complete Notes** (`35-k8s-complete-notes.md`): adaptiert aus Lehrnotizen von Rakesh Kumar
 

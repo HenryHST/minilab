@@ -11,7 +11,7 @@ Bei Backend-Ausfällen und unbekannten Hosts liefert Traefik leere oder plain-te
 ## Entscheidung
 
 - **Ownership:** GitOps via ApplicationSet `infra` + native Argo Helm OCI ([ADR-0014](0014-helm-strategie.md)), Namespace `error-pages`, sync wave `1`.
-- **Chart:** `error-pages` (`ghcr.io/tarampampam/error-pages/charts`); Pin: `applicationset-infra.yaml` → `helmVersion`. Template `app-down`.
+- **Chart:** `error-pages` (`ghcr.io/tarampampam/error-pages/charts`); Pin: `applicationset-infra.yaml` → `helmVersion`. Template `lost-in-space`.
 - **Middleware-Statuscodes:** nur **`500-504`** (Gateway / Backend down). Kein Rewrite von Authentik-401/403 oder API-4xx.
 - **Catch-all:** `IngressRoute` auf Entrypoint `websecure`, `HostRegexp(.+)`, `priority: 1`, `sendSameHttpCode: true`.
 - **Traefik-Verdrahtung (Infra_LAB Ansible):** `providers.kubernetesCRD.allowCrossNamespace=true` und Entrypoint-Middleware `error-pages-error-pages@kubernetescrd` auf `websecure`.

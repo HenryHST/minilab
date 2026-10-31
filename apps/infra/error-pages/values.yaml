@@ -5,7 +5,7 @@
 config:
   sendSameHttpCode: true
   htmlTemplate:
-    name: app-down
+    name: lost-in-space
   homepageUrl: https://web.stadthagen.dev
   addLink:
     - label: Status

@@ -6,7 +6,7 @@ Clusterweite Fehlerseiten hinter Traefik (`error-pages`).
 
 | Fall | Verhalten |
 |------|-----------|
-| Backend liefert **500–504** | Traefik Errors-Middleware → Template `app-down` |
+| Backend liefert **500–504** | Traefik Errors-Middleware → Template `lost-in-space` |
 | Unbekannter Host (kein Ingress) | Catch-all IngressRoute → 404-Seite |
 | Authentik **401/403**, API-4xx | **unverändert** (bewusst kein Rewrite) |
 

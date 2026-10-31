@@ -14,7 +14,7 @@ Upstream: [tarampampam/error-pages](https://github.com/tarampampam/error-pages) 
 | Helm | OCI `ghcr.io/tarampampam/error-pages/charts` → native Argo Helm + `values.yaml` |
 | Extras | Catch-all `IngressRoute` (websecure, `kubernetes.io/ingress.class: traefik-external`, `tls: {}`) + NetworkPolicy |
 
-Template: `app-down`. Links: Status (`status.stadthagen.dev`), Home (`web.stadthagen.dev`).
+Template: `lost-in-space`. Links: Status (`status.stadthagen.dev`), Home (`web.stadthagen.dev`).
 
 Middleware Statuscodes: **`500-504`** only (Authentik 401/403 und API-4xx bleiben roh).
 

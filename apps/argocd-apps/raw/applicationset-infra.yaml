@@ -37,7 +37,7 @@ spec:
             syncWave: "1"
             helmRepo: https://k8tz.github.io/k8tz/
             helmChart: k8tz
-            helmVersion: "0.21.0"
+            helmVersion: "0.22.0"
             helmReleaseName: k8tz
             helmValuesFile: apps/infra/k8tz/values.yaml
           - app: nfd

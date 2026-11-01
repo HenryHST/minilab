@@ -1,7 +1,8 @@
 # Authentik Postgres on CloudNativePG. Import from Bitnami is done and removed:
 # a recreated volume must not dial authentik-postgresql again.
-# Recovery: Longhorn VolumeSnapshot (ScheduledBackup authentik-pg-snapshot)
-# plus online pg_dump CronJob to NFS/S3. Continuous WAL→S3 pending Barman Cloud Plugin.
+# Recovery: Longhorn VolumeSnapshot (ScheduledBackup authentik-pg-snapshot),
+# continuous WAL via Barman Cloud Plugin → RustFS ObjectStore authentik-pg-wal,
+# plus online pg_dump CronJob to NFS/S3.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -38,8 +39,17 @@ spec:
       worker: "true"
     enablePodAntiAffinity: true
     topologyKey: kubernetes.io/hostname
+  # enablePodMonitor is deprecated and omits release: kube-prometheus-stack.
+  # Metrics: PodMonitor authentik-pg-instances (podmonitor.yaml) — already scraping.
   monitoring:
     enablePodMonitor: false
+  # Barman Cloud Plugin sidecar (standard-bookworm has no in-tree barman binaries).
+  # ObjectStore: cnpg-objectstore.yaml → RustFS s3://authentik-pg-wal/
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: authentik-pg-wal
   resources:
     requests:
       cpu: 100m
@@ -53,6 +63,4 @@ spec:
       className: longhorn
       online: true
       snapshotOwnerReference: backup
-    # barmanObjectStore removed 2026-11-01: standard image has no barman-cloud binaries
-    # (ContinuousArchivingFailing → WAL fill). Re-add via Barman Cloud Plugin later.
-    # volumeSnapshot + authentik-backup CronJob remain.
+    # In-tree barmanObjectStore removed 2026-11-01 (Incident). WAL/base via plugins above.

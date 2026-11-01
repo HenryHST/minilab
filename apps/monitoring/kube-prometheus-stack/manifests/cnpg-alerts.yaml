@@ -1,6 +1,8 @@
-# CloudNativePG instance and snapshot-backup alerts.
-# cnpg_collector_up comes from the instance PodMonitor (port metrics).
-# Last-backup age covers a failed or missed ScheduledBackup. There is no WAL archive.
+# CloudNativePG instance, WAL-archive, and backup alerts.
+# Adapted from wrmilling/k3s-gitops default/cloudnative-pg/cluster/prometheus-rules.yaml
+# (PGWalArchivingStalled, LastFailedArchiveTime, PGBackupStale) + local availability rules.
+# Metrics: instance PodMonitors (port metrics) with release: kube-prometheus-stack.
+# Do NOT copy in-tree barmanObjectStore from that repo — use Barman Cloud Plugin.
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -23,16 +25,114 @@ spec:
               The instance exporter `cnpg_collector_up` has been 0 for 5 minutes.
               Check: kubectl -n {{ $labels.namespace }} get cluster,pods
 
+        - alert: CloudNativePGReplicationLag
+          expr: cnpg_pg_replication_lag > 300
+          for: 5m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'CloudNativePG {{ $labels.pod }} replication lag >5m'
+            description: |
+              Standby lag is {{ $value | humanizeDuration }}.
+              Check: kubectl -n {{ $labels.namespace }} get cluster,pods -l cnpg.io/cluster
+
+    - name: cnpg.backup
+      rules:
+        # Timestamp is only reported by the instance that took the backup (others report 0).
         - alert: CloudNativePGBackupStale
           expr: |
-            (time() - cnpg_collector_last_available_backup_timestamp) > 8 * 3600
-            and cnpg_collector_last_available_backup_timestamp > 0
+            time() - max by (namespace, cluster) (
+              cnpg_collector_last_available_backup_timestamp
+            ) > 8 * 3600
+            and max by (namespace, cluster) (
+              cnpg_collector_last_available_backup_timestamp
+            ) > 0
           for: 15m
           labels:
             severity: warning
             source: prometheus
           annotations:
-            summary: 'CloudNativePG {{ $labels.namespace }}/{{ $labels.pod }} has no successful backup for 8h'
+            summary: 'CloudNativePG {{ $labels.namespace }}/{{ $labels.cluster }} has no successful backup for 8h'
             description: |
-              The last successful backup is older than the 6-hour snapshot schedule.
+              Last successful backup is older than the 6-hour VolumeSnapshot schedule
+              (and optional daily plugin base backup).
               Check: kubectl -n {{ $labels.namespace }} get backup,scheduledbackup
+
+        - alert: PGBackupStale
+          expr: |
+            time() - max by (namespace, cnpg_cluster) (
+              label_replace(
+                cnpg_collector_last_available_backup_timestamp,
+                "cnpg_cluster", "$1", "pod", "(.+)-[0-9]+"
+              )
+            ) > 36 * 3600
+            and max by (namespace, cnpg_cluster) (
+              label_replace(
+                cnpg_collector_last_available_backup_timestamp,
+                "cnpg_cluster", "$1", "pod", "(.+)-[0-9]+"
+              )
+            ) > 0
+          for: 1h
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'No CNPG base backup for {{ $labels.cnpg_cluster }} in 36h'
+            description: |
+              Last available base backup is {{ $value | humanizeDuration }} old.
+              Check ScheduledBackup / Backup CRs and object-store / VolumeSnapshot status.
+
+    - name: cnpg.wal
+      rules:
+        - alert: PGWalArchivingStalled
+          expr: |
+            max by (namespace, pod) (
+              cnpg_pg_stat_archiver_seconds_since_last_archival
+            ) > 1800
+          for: 15m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'WAL archiving stalled on {{ $labels.namespace }}/{{ $labels.pod }}'
+            description: |
+              No WAL archival for {{ $value | humanizeDuration }} (archive_timeout ~5m).
+              PITR is falling behind; PVC may fill (see Incident 2026-11-01).
+              Check ContinuousArchiving condition, Barman Cloud Plugin sidecar, ObjectStore → RustFS.
+              BookStack: k3s → CNPG Day-2 Monitoring.
+
+        - alert: LastFailedArchiveTime
+          expr: |
+            delta(cnpg_pg_stat_archiver_last_failed_time[5m]) > 0
+          for: 1m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'WAL archiving failed on {{ $labels.namespace }}/{{ $labels.pod }}'
+            description: |
+              `cnpg_pg_stat_archiver_last_failed_time` advanced in the last 5m.
+              Check plugin/ObjectStore credentials and RustFS reachability before WAL fills the PVC.
+
+        - alert: CloudNativePGPVCNearFull
+          expr: |
+            (
+              kubelet_volume_stats_used_bytes{
+                namespace=~"authentik|termix|status|paperless",
+                persistentvolumeclaim=~".+-\\d+$"
+              }
+                / kubelet_volume_stats_capacity_bytes{
+                  namespace=~"authentik|termix|status|paperless",
+                  persistentvolumeclaim=~".+-\\d+$"
+                }
+            ) > 0.80
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'CNPG PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} >80% full'
+            description: |
+              Instance data volume is {{ $value | humanizePercentage }} used.
+              Expand storage and/or reclaim WAL; see Authentik incidents 2026-10-25 / 2026-11-01.

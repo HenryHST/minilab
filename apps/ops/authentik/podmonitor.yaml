@@ -1,4 +1,6 @@
-# Replaces the deprecated Cluster field monitoring.enablePodMonitor.
+# Metrics for authentik-pg (Day-2). Replaces deprecated Cluster monitoring.enablePodMonitor
+# (that field omits release: kube-prometheus-stack and would not be scraped).
+# Verified: Prometheus job authentik/authentik-pg-instances scrapes cnpg_collector_up.
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:

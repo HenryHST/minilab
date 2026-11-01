@@ -4,8 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-11-01
+
+**CNPG Day-2** (WAL/Backup-Alerts, Barman Cloud Plugin → RustFS), Authentik in-tree-barman-Fix (#170), Forgejo als Lab-Registry. Begleit-Release Plattform: [Infra_LAB v1.18.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.18.0).
+
 ### Added
 
+- **CNPG Day-2** — PrometheusRules `cnpg-alerts` (WAL stall / failed archive / backup stale / PVC >80%, adapted from wrmilling/k3s-gitops); Barman Cloud Plugin (`apps/infra/plugin-barman-cloud` chart 0.8.1) + Authentik `ObjectStore authentik-pg-wal` → RustFS; ScheduledBackup `authentik-pg-plugin`.
 - **Forgejo** — `apps/dev/forgejo` (Helm chart 17.3.1, app **16.0.6**): Git + Lab OCI registry, Traefik IngressRoute `git.stadthagen.dev`, backup CronJob → RustFS, Actions runner on `nxk3-w06`, Affinity w05/w06; AppSet `dev` wave 3.
 - **Image repos (Forgejo)** — SoT builds: `dev/vw-restore`, `ops/k8s-toolbox`, `dev/podcraft` → `git.stadthagen.dev/{dev,ops}/…` via Actions (label `docker`).
 - **pangolin-publish** — `git-ext` resource prepared with `enabled: false`.
@@ -16,6 +21,10 @@ All notable changes to this project will be documented in this file.
 - **BookStack oidc-relink hook** — default skip path uses public `alpine:3.22` so PostSync is not blocked when Forgejo `k8s-toolbox` pull auth fails.
 - **Image refs** — consumers of `k8s-toolbox`, `vw-restore`, `podcraft` pull from `git.stadthagen.dev/…` (was `registry.stadthagen.dev/…`).
 - **GHA image workflows** — `k8s-toolbox-image`, `vw-restore-image`, `podcraft-image` are `workflow_dispatch` only (lab SoT = Forgejo).
+
+### Fixed
+
+- **Authentik CNPG** — remove in-tree `barmanObjectStore` / barman ScheduledBackup on `standard-bookworm` (WAL fill → IdP 503); PVC **48 Gi** (#170).
 
 ### Removed
 

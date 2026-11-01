@@ -1,0 +1,22 @@
+# Barman Cloud CNPG-I plugin — chart 0.8.1 / app v0.15.1
+# Must live in the same namespace as the CloudNativePG operator (cnpg-system).
+# Docs: https://cloudnative-pg.io/plugin-barman-cloud/docs/installation/
+# ObjectStore CRs stay in app namespaces (e.g. authentik/authentik-pg-wal).
+
+replicaCount: 1
+logLevel: info
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 64Mi
+  limits:
+    memory: 256Mi
+
+crds:
+  create: true
+
+certificate:
+  createClientCertificate: true
+  createServerCertificate: true
+  createIssuer: true

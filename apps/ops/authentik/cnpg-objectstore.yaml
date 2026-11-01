@@ -1,0 +1,40 @@
+# Barman Cloud Plugin ObjectStore → RustFS (pi7cl).
+# Replaces deprecated in-tree Cluster.spec.backup.barmanObjectStore.
+# Docs: https://cloudnative-pg.io/plugin-barman-cloud/docs/usage/
+# Bucket ensured by PreSync Job cnpg-wal-bucket-job.yaml.
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: authentik-pg-wal
+  namespace: authentik
+  labels:
+    app.kubernetes.io/name: authentik
+    app.kubernetes.io/part-of: authentik
+    app.kubernetes.io/component: cnpg-objectstore
+  annotations:
+    # After plugin CRD exists; cluster (wave -1) references this name in plugins.
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  retentionPolicy: "7d"
+  configuration:
+    destinationPath: s3://authentik-pg-wal/
+    endpointURL: http://192.168.0.107:9000
+    s3Credentials:
+      accessKeyId:
+        name: authentik-backup-s3
+        key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        name: authentik-backup-s3
+        key: AWS_SECRET_ACCESS_KEY
+    wal:
+      compression: gzip
+      maxParallel: 2
+    data:
+      compression: gzip
+  instanceSidecarConfiguration:
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        memory: 256Mi

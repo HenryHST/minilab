@@ -1,7 +1,7 @@
 # Authentik Postgres on CloudNativePG. Import from Bitnami is done and removed:
 # a recreated volume must not dial authentik-postgresql again.
-# Recovery: Longhorn VolumeSnapshot (ScheduledBackup authentik-pg-snapshot),
-# continuous WAL to RustFS (barmanObjectStore), plus online pg_dump CronJob to NFS/S3.
+# Recovery: Longhorn VolumeSnapshot (ScheduledBackup authentik-pg-snapshot)
+# plus online pg_dump CronJob to NFS/S3. Continuous WAL→S3 pending Barman Cloud Plugin.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -30,8 +30,8 @@ spec:
       secret:
         name: authentik-credentials
   storage:
-    # Expanded live 2026-10-28 (pg-2 actualSize >16Gi / DiskPressure).
-    size: 32Gi
+    # 2026-11-01: 48Gi after WAL pile-up (broken in-tree barman) + Longhorn expand.
+    size: 48Gi
     storageClass: longhorn
   affinity:
     nodeSelector:
@@ -53,21 +53,6 @@ spec:
       className: longhorn
       online: true
       snapshotOwnerReference: backup
-    # Continuous WAL + base backups to RustFS (pi7cl). Bucket must exist:
-    #   aws --endpoint-url http://192.168.0.107:9000 s3 mb s3://authentik-pg-wal
-    # Credentials reuse authentik-backup-s3 (same RustFS user as app archives).
-    barmanObjectStore:
-      destinationPath: s3://authentik-pg-wal/
-      endpointURL: http://192.168.0.107:9000
-      s3Credentials:
-        accessKeyId:
-          name: authentik-backup-s3
-          key: AWS_ACCESS_KEY_ID
-        secretAccessKey:
-          name: authentik-backup-s3
-          key: AWS_SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-        maxParallel: 2
-      data:
-        compression: gzip
+    # barmanObjectStore removed 2026-11-01: standard image has no barman-cloud binaries
+    # (ContinuousArchivingFailing → WAL fill). Re-add via Barman Cloud Plugin later.
+    # volumeSnapshot + authentik-backup CronJob remain.

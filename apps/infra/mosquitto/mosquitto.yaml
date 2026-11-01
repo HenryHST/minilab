@@ -123,6 +123,13 @@ data:
     pw=${line#auth_opt_ldap_bind_password }
     # Drop CR/LF leftovers from secret files (grep -n1 still keeps \\r on some renders)
     pw=$(printf '%s' "$pw" | tr -d '\r\n')
+    pw_raw_len=${#pw}
+    # #region agent log
+    # Safe shape only (no password): first/last byte hex + whitespace flags for debug session.
+    _fh=$(printf '%s' "$pw" | head -c1 | od -An -tx1 | tr -d ' \n')
+    _lh=$(printf '%s' "$pw" | tail -c1 | od -An -tx1 | tr -d ' \n')
+    echo "ldap-preflight: debug pw_len=${pw_raw_len} first_hex=${_fh:-none} last_hex=${_lh:-none}" >&2
+    # #endregion
 
     if [ -z "$url" ] || [ -z "$host" ] || [ -z "$port" ] || [ "$port" = "$hostport" ]; then
       echo "ldap-preflight: rendered mosquitto.conf has no auth_opt_ldap_url ldap://host:port." >&2
@@ -133,10 +140,12 @@ data:
       echo "ldap-preflight: Secret mosquitto/mosquitto-ldap must contain that line. Source is SecretSpec MOSQUITTO_LDAP_BIND_PASSWORD." >&2
       exit 1
     fi
-    if [[ "$pw" =~ ^[[:space:]] ]] || [[ "$pw" =~ [[:space:]]$ ]]; then
-      echo "ldap-preflight: LDAP bind password has leading or trailing whitespace." >&2
-      echo "ldap-preflight: Authentik then returns invalid credentials. Set MOSQUITTO_LDAP_BIND_PASSWORD to the exact Terraform ldapservice_password." >&2
-      exit 1
+    # Tolerate stale SecretSpec trailing spaces (tls-bootstrap should already trim; keep as safety net).
+    pw_trim=$(printf '%s' "$pw" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    if [ "$pw" != "$pw_trim" ]; then
+      echo "ldap-preflight: trimmed leading/trailing whitespace from bind password (len ${pw_raw_len} -> ${#pw_trim})." >&2
+      echo "ldap-preflight: re-run ansible-playbook site.yaml --tags secrets so mosquitto-ldap matches Terraform ldapservice_password." >&2
+      pw=$pw_trim
     fi
 
     emit() {
@@ -281,12 +290,19 @@ spec:
               chmod 600 /mosquitto/certs/tls.key
 
               cp /config-src/mosquitto.conf /config/mosquitto.conf
-              BIND_LINE=$(grep -E '^auth_opt_ldap_bind_password ' /ldap-secret/00-bind.conf | head -n1)
+              BIND_LINE=$(grep -E '^auth_opt_ldap_bind_password ' /ldap-secret/00-bind.conf | head -n1 | tr -d '\r')
               if [ -z "${BIND_LINE}" ]; then
                 echo "tls-bootstrap: Secret mosquitto/mosquitto-ldap has no line 'auth_opt_ldap_bind_password <password>'." >&2
                 echo "tls-bootstrap: Set SecretSpec MOSQUITTO_LDAP_BIND_PASSWORD to Terraform ldapservice_password, then ansible-playbook site.yaml --tags secrets." >&2
                 exit 1
               fi
+              # SecretSpec/age values sometimes keep a trailing space; Authentik bind rejects it.
+              PW=${BIND_LINE#auth_opt_ldap_bind_password }
+              PW_TRIM=$(printf '%s' "$PW" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+              if [ "$PW" != "$PW_TRIM" ]; then
+                echo "tls-bootstrap: trimmed leading/trailing whitespace from LDAP bind password (len ${#PW} -> ${#PW_TRIM})." >&2
+              fi
+              BIND_LINE="auth_opt_ldap_bind_password ${PW_TRIM}"
               # Insert bind password immediately after auth_plugin line (same conf file as plugin).
               awk -v line="$BIND_LINE" '
                 { print }

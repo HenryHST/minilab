@@ -1,6 +1,6 @@
-# Six-field cron (seconds first). VolumeSnapshot every 6h.
-# barmanObjectStore ScheduledBackup removed 2026-11-01 (standard image lacks barman-cloud;
-# migrate to Barman Cloud Plugin before re-enabling). Online pg_dump CronJob remains.
+# Six-field cron (seconds first). VolumeSnapshot every 6h + daily plugin base backup.
+# WAL streams continuously via Barman Cloud Plugin ObjectStore authentik-pg-wal (RustFS).
+# Online pg_dump CronJob remains the portable off-cluster copy (NFS + S3 archive).
 apiVersion: postgresql.cnpg.io/v1
 kind: ScheduledBackup
 metadata:
@@ -18,3 +18,23 @@ spec:
     name: authentik-pg
   target: primary
   online: true
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: authentik-pg-plugin
+  namespace: authentik
+  labels:
+    app.kubernetes.io/name: authentik
+    app.kubernetes.io/part-of: authentik
+    app.kubernetes.io/component: barman-plugin-backup
+spec:
+  schedule: "0 30 3 * * *"
+  immediate: false
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
+  backupOwnerReference: cluster
+  cluster:
+    name: authentik-pg
+  target: primary

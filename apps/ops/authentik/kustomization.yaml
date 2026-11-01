@@ -13,6 +13,7 @@ resources:
   - media-sync-bootstrap-job.yaml
   - cnpg-certificates.yaml
   - cnpg-wal-bucket-job.yaml
+  - cnpg-objectstore.yaml
   - cnpg-cluster.yaml
   - scheduled-backup.yaml
   - podmonitor.yaml

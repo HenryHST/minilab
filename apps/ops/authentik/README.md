@@ -7,7 +7,7 @@ GitOps install for `idp.stadthagen.dev`. Day-0 blueprints: [BLUEPRINTS.md](BLUEP
 - **Hard** `nodeSelector` / `nodeAffinity`: `worker=true` (Proxmox only). **No** Pi fallback (RWO Longhorn attach wars — BookStack incident 2026-10-14).
 - Do **not** label Pis with `worker=true` (Traefik / Longhorn-disk stay Proxmox-only).
 - server: Chart **HPA** min 2 / max 5 (CPU 75%, scaleDown stabilization 300s); worker **replicas: 2** (fixed). `RollingUpdate`, PDB `minAvailable: 1` (`pdb.yaml`). Media PVC is **RWX**.
-- CNPG **`instances: 2`** + continuous WAL to RustFS; dedicated Valkey StatefulSet **2** (primary+replica, Redis protocol).
+- CNPG **`instances: 2`** + continuous WAL via Barman Cloud Plugin → RustFS; dedicated Valkey StatefulSet **2** (primary+replica, Redis protocol).
 - Runtime/HA narrative: Infra_LAB BookStack **Authentik Runtime** + `docs/diagrams/authentik/authentik-{scheduling,fail-domains,failover}.html`.
 - Upstream HPA: https://docs.goauthentik.io/sys-mgmt/ops/autoscaling/hpa/
 
@@ -23,7 +23,8 @@ Postgres is Cluster `authentik-pg` (Service `authentik-pg-rw`, PG17, Longhorn 8G
 | Backup path | Detail |
 |-------------|--------|
 | VolumeSnapshot | `ScheduledBackup authentik-pg-snapshot` every 6h |
-| WAL + barman base | `barmanObjectStore` → RustFS `s3://authentik-pg-wal/` (PreSync Job creates bucket); daily `authentik-pg-barman` |
+| WAL + plugin base | Barman Cloud Plugin + `ObjectStore authentik-pg-wal` → RustFS (PreSync Job creates bucket); daily `authentik-pg-plugin` |
+| Metrics | PodMonitor `authentik-pg-instances` (`release: kube-prometheus-stack`); `enablePodMonitor: false` |
 | Portable archive | Online `pg_dump` CronJob → NFS + `s3://authentik-backups/` |
 
 Cutover notes: [09-cnpg-migration](../../docs/bookstack/books/authentik/09-cnpg-migration.md), [ADR-0033](../../docs/adr/0033-authentik-cnpg.md).

@@ -66,6 +66,15 @@ spec:
             helmReleaseName: cloudnative-pg
             helmValuesFile: apps/infra/cloudnative-pg/values.yaml
             extras: true
+          # CNPG-I Barman Cloud plugin (WAL/base → ObjectStore). Same ns as operator.
+          - app: plugin-barman-cloud
+            namespace: cnpg-system
+            syncWave: "2"
+            helmRepo: https://cloudnative-pg.github.io/charts
+            helmChart: plugin-barman-cloud
+            helmVersion: "0.8.1"
+            helmReleaseName: plugin-barman-cloud
+            helmValuesFile: apps/infra/plugin-barman-cloud/values.yaml
           - app: error-pages
             path: apps/infra/error-pages/manifests
             namespace: error-pages

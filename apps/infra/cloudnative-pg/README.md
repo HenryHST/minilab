@@ -10,6 +10,7 @@ PostgreSQL operator (CloudNativePG) in `cnpg-system`. Clusters: Termix (`termix-
 | Metrics | Operator PodMonitor port `metrics` (8080), label `release: kube-prometheus-stack` |
 | Dashboard | Application `cnpg-grafana`, chart `cluster` 0.0.5, namespace `monitoring` |
 | Snapshots | `VolumeSnapshotClass` `longhorn`; controller ships with the Longhorn app |
+| WAL / S3 | Sibling app `plugin-barman-cloud` (CNPG-I); ObjectStores live in app namespaces |
 | Webhook | Chart-managed certs on `cnpg-webhook-service:443` → pod `:9443` |
 
 ## Verify

@@ -1,4 +1,4 @@
-# Ensure RustFS bucket for CNPG WAL / barmanObjectStore exists (idempotent).
+# Ensure RustFS bucket for CNPG WAL (Barman Cloud Plugin ObjectStore) exists (idempotent).
 apiVersion: batch/v1
 kind: Job
 metadata:

@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- **CNPG Day-2** — PrometheusRules `cnpg-alerts` (WAL stall / failed archive / backup stale / PVC >80%, adapted from wrmilling/k3s-gitops); Barman Cloud Plugin (`apps/infra/plugin-barman-cloud` chart 0.8.1) + Authentik `ObjectStore authentik-pg-wal` → RustFS; ScheduledBackup `authentik-pg-plugin`.
 - **Forgejo** — `apps/dev/forgejo` (Helm chart 17.3.1, app **16.0.6**): Git + Lab OCI registry, Traefik IngressRoute `git.stadthagen.dev`, backup CronJob → RustFS, Actions runner on `nxk3-w06`, Affinity w05/w06; AppSet `dev` wave 3.
 - **Image repos (Forgejo)** — SoT builds: `dev/vw-restore`, `ops/k8s-toolbox`, `dev/podcraft` → `git.stadthagen.dev/{dev,ops}/…` via Actions (label `docker`).
 - **pangolin-publish** — `git-ext` resource prepared with `enabled: false`.

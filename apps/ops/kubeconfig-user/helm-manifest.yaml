@@ -172,7 +172,7 @@ spec:
         - name: registry-pull
       containers:
         - name: write-kubeconfig
-          image: "git.stadthagen.dev/ops/k8s-toolbox:1.0.1"
+          image: "git.stadthagen.dev/ops/k8s-toolbox:1.0.2-slim"
           imagePullPolicy: IfNotPresent
           env:
             - name: NAMESPACE

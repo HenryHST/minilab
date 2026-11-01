@@ -76,15 +76,14 @@ spec:
         spec:
           serviceAccountName: paperless-gt-smoke
           restartPolicy: Never
-          # k8s-toolbox is linux/amd64; avoid Pi arm64 ImagePullBackOff
+          # Toolbox multi-arch 1.0.2+; pin Proxmox workers for report I/O.
           nodeSelector:
             worker: "true"
-            kubernetes.io/arch: amd64
           imagePullSecrets:
             - name: registry-pull
           containers:
             - name: smoke
-              image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
+              image: git.stadthagen.dev/ops/k8s-toolbox:1.0.2
               imagePullPolicy: IfNotPresent
               securityContext:
                 allowPrivilegeEscalation: false

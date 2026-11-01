@@ -1,7 +1,7 @@
 name: k8s-toolbox image
 
 # Lab SoT: https://git.stadthagen.dev/ops/k8s-toolbox (.forgejo/workflows/image.yml)
-# → git.stadthagen.dev/ops/k8s-toolbox. This GHA workflow is dispatch-only (optional GHCR).
+# → git.stadthagen.dev/ops/k8s-toolbox (+ Dist mirror). This GHA workflow is dispatch-only (optional GHCR).
 
 on:
   workflow_dispatch:
@@ -22,6 +22,10 @@ jobs:
       contents: read
       packages: write
       id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [full, slim]
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -59,10 +63,21 @@ jobs:
             echo "::error::Invalid SemVer '${VER}' (expected X.Y.Z from VERSION, dispatch, or tag k8s-toolbox-v*)"
             exit 1
           fi
+          VARIANT="${{ matrix.variant }}"
+          if [ "${VARIANT}" = "slim" ]; then
+            TAG="${VER}-slim"
+            LATEST_TAG="latest-slim"
+          else
+            TAG="${VER}"
+            LATEST_TAG="latest"
+          fi
           MAJOR="${VER%%.*}"
           REST="${VER#*.}"
           MINOR="${REST%%.*}"
           echo "version=${VER}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "latest_tag=${LATEST_TAG}" >> "$GITHUB_OUTPUT"
+          echo "variant=${VARIANT}" >> "$GITHUB_OUTPUT"
           echo "major=${MAJOR}" >> "$GITHUB_OUTPUT"
           echo "minor=${MAJOR}.${MINOR}" >> "$GITHUB_OUTPUT"
           echo "sha=$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
@@ -74,11 +89,9 @@ jobs:
         with:
           images: ${{ env.IMAGE }}
           tags: |
-            type=raw,value=${{ steps.version.outputs.version }}
-            type=raw,value=${{ steps.version.outputs.minor }}
-            type=raw,value=${{ steps.version.outputs.major }}
-            type=raw,value=latest
-            type=sha,prefix=sha-,format=short
+            type=raw,value=${{ steps.version.outputs.tag }}
+            type=raw,value=${{ steps.version.outputs.latest_tag }}
+            type=sha,prefix=sha-,suffix=-${{ matrix.variant }},format=short
 
       - name: Build and push
         id: build
@@ -90,11 +103,12 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            VERSION=${{ steps.version.outputs.version }}
+            VARIANT=${{ steps.version.outputs.variant }}
+            VERSION=${{ steps.version.outputs.tag }}
             VCS_REF=${{ github.sha }}
             BUILD_DATE=${{ steps.version.outputs.date }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=k8s-toolbox-${{ matrix.variant }}
+          cache-to: type=gha,mode=max,scope=k8s-toolbox-${{ matrix.variant }}
           provenance: true
           sbom: true
 
@@ -107,7 +121,7 @@ jobs:
           DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           set -euo pipefail
-          ROOTFS="${{ runner.temp }}/k8s-toolbox-rootfs"
+          ROOTFS="${{ runner.temp }}/k8s-toolbox-rootfs-${{ matrix.variant }}"
           mkdir -p "$ROOTFS"
           crane export --platform linux/amd64 "${{ env.IMAGE }}@${DIGEST}" - | tar -x -C "$ROOTFS"
           echo "rootfs=${ROOTFS}" >> "$GITHUB_OUTPUT"

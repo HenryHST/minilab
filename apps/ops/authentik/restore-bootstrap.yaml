@@ -100,14 +100,13 @@ spec:
       serviceAccountName: authentik-restore
       imagePullSecrets:
         - name: registry-pull
-      # k8s-toolbox is linux/amd64 only — avoid Pi arm64 ErrImagePull (blocks Argo PostSync)
+      # Toolbox multi-arch 1.0.2+; pin Proxmox workers (RWO / PostSync).
       nodeSelector:
         worker: "true"
-        kubernetes.io/arch: amd64
       restartPolicy: Never
       containers:
         - name: restore
-          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
+          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.2
           imagePullPolicy: IfNotPresent
           env:
             - name: PGHOST

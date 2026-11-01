@@ -92,6 +92,7 @@ spec:
             worker: "true"
           containers:
             - name: enforce
+              # Exception: public rancher/kubectl — no Forgejo pull during storage incidents.
               image: rancher/kubectl:v1.32.3
               imagePullPolicy: IfNotPresent
               command: ["/bin/sh", "/scripts/enforce.sh"]

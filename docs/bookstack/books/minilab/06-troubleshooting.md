@@ -4,9 +4,9 @@
 
 ## Trivy / CVE auf Helper-Images
 
-Jobs melden noch `alpine/k8s`, `:1.0.0` oder alte CNPG-Tags → Manifeste auf **`k8s-toolbox:1.0.1`** (amd64+arm64, Forgejo + `registry.stadthagen.dev`) bzw. dated CNPG-`standard-bookworm`-Tags prüfen. cert-manager Findings zu **CVE-2026-84304**: Chart-Pin **v1.21.2**.
+Jobs melden noch `alpine/k8s`, `:1.0.0` oder alte CNPG-Tags → Manifeste auf **`k8s-toolbox:1.0.2`** (amd64+arm64, Forgejo + `registry.stadthagen.dev`) bzw. dated CNPG-`standard-bookworm`-Tags prüfen. cert-manager Findings zu **CVE-2026-84304**: Chart-Pin **v1.21.2**.
 
-Go-Findings (`stdlib` / `x/net`) in Backup-/Restore-Jobs trotz `1.0.1`: Image enthält weiterhin kubectl **v1.37.1** — kubectl-Bump im Repo `ops/k8s-toolbox` (Forgejo), nicht nur Tag-Wechsel. Paperless-App-/Gotenberg-HIGHs: Buch **Paperless** → [Trivy & CVE-Hygiene](../../paperless/06-trivy-cve-hygiene.md).
+Go-Findings (`stdlib` / `x/net`) in Backup-/Restore-Jobs trotz `1.0.2`: Image enthält weiterhin kubectl **v1.37.1** — kubectl-Bump im Repo `ops/k8s-toolbox` (Forgejo), nicht nur Tag-Wechsel. Paperless-App-/Gotenberg-HIGHs: Buch **Paperless** → [Trivy & CVE-Hygiene](../../paperless/06-trivy-cve-hygiene.md).
 
 ## App synct nicht / OutOfSync
 

@@ -59,10 +59,10 @@ spec:
   template:
     spec:
       serviceAccountName: bookstack-oidc-relink
-      # Public alpine for the default skip path. Toolbox (Forgejo) only needed when enabled=true.
+      # Public alpine for the default skip path (no Forgejo pull when enabled=false).
+      # When enabling: switch image to git.stadthagen.dev/ops/k8s-toolbox:1.0.2 + registry-pull.
       nodeSelector:
         worker: "true"
-        kubernetes.io/arch: amd64
       restartPolicy: Never
       containers:
         - name: relink
@@ -95,6 +95,6 @@ spec:
                 exit 0
               fi
 
-              echo "ERROR: enabled=true needs git.stadthagen.dev/ops/k8s-toolbox (and working registry-pull)." >&2
-              echo "Fix Forgejo pull auth, restore the toolbox image on this Job, then re-sync." >&2
+              echo "ERROR: enabled=true needs git.stadthagen.dev/ops/k8s-toolbox:1.0.2 + registry-pull on this Job." >&2
+              echo "Replace alpine:3.22 with the toolbox full image, then re-sync." >&2
               exit 1

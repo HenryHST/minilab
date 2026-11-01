@@ -37,7 +37,7 @@ Infra_LAB-Querverweis (hostPath-Prereq): Buch **Infra_LAB** → Kapitel **Paperl
 | PVC Backup | `paperless-backups` (PV `paperless-backups-nfs`, NFSv3 + nolock) |
 | Export-Arbeitsfläche | PVC `paperless-export` → `/usr/src/paperless/export` (hostPath `/var/lib/paperless-export`) |
 | Image-Pin | `ghcr.io/paperless-ngx/paperless-ngx:3.4.1` — **Export und Import gleiche Version** |
-| Helper | `git.stadthagen.dev/ops/k8s-toolbox:1.0.1` |
+| Helper | `git.stadthagen.dev/ops/k8s-toolbox:1.0.2` |
 | Restore-Gate | ConfigMap `paperless-restore` (`enabled` / `archive` / `force` / `replicas`) |
 | Manifeste | `apps/dev/paperless/backup-cronjob.yaml`, `restore-bootstrap.yaml`, `scheduled-backup.yaml` |
 

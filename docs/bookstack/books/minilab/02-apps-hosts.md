@@ -38,7 +38,7 @@ Workloads liegen unter `apps/{infra,monitoring,ops,dev}/` und werden von vier Ap
 
 | Image | Verwendung |
 |-------|------------|
-| `git.stadthagen.dev/ops/k8s-toolbox:1.0.1` | Backup-/Restore-/GC-Jobs (ersetzt `alpine/k8s`); Multi-Arch; Mirror `registry.stadthagen.dev/ops/k8s-toolbox` |
+| `git.stadthagen.dev/ops/k8s-toolbox:1.0.2` (+ `-slim`) | Backup/Restore = full; GC/Theme/kubeconfig = slim; Multi-Arch; Mirror `registry.stadthagen.dev` |
 | Jetstack cert-manager **v1.21.2** | TLS / DNS-01 (CVE-2026-84304 / grpc) |
 
 Build/CI: Forgejo `ops/k8s-toolbox` (SoT) · Sync-Tree `apps/ops/k8s-toolbox/` · optional GHCR `ghcr.io/henryhst/k8s-toolbox`. Pull: Secret `registry-pull`.

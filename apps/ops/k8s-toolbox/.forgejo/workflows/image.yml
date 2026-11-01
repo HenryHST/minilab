@@ -1,0 +1,137 @@
+# Lab SoT build for ops/k8s-toolbox.
+# Sync this file into https://git.stadthagen.dev/ops/k8s-toolbox (.forgejo/workflows/image.yml).
+# Runner label `docker` = DinD on w06. Actions URL: self (data.forgejo.org).
+#
+# Secrets: REGISTRY_USER / REGISTRY_TOKEN (Forgejo OCI write:package),
+#          DIST_REGISTRY_USER / DIST_REGISTRY_PASSWORD (registry.stadthagen.dev).
+name: image
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: SemVer override (empty = VERSION file)
+        required: false
+        default: ""
+
+env:
+  FORGEJO_IMAGE: git.stadthagen.dev/ops/k8s-toolbox
+  DIST_IMAGE: registry.stadthagen.dev/ops/k8s-toolbox
+
+jobs:
+  build:
+    runs-on: docker
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [full, slim]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        run: |
+          set -euo pipefail
+          FILE_VER="$(tr -d '[:space:]' < VERSION)"
+          VER="${{ github.event.inputs.tag }}"
+          if [ -z "${VER}" ]; then
+            if [[ "${GITHUB_REF_NAME:-}" == v* ]]; then
+              VER="${GITHUB_REF_NAME#v}"
+            else
+              VER="${FILE_VER}"
+            fi
+          fi
+          if ! [[ "${VER}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-].*)?$ ]]; then
+            echo "::error::Invalid SemVer '${VER}'"
+            exit 1
+          fi
+          VARIANT="${{ matrix.variant }}"
+          if [ "${VARIANT}" = "slim" ]; then
+            TAG="${VER}-slim"
+            LATEST_TAG="latest-slim"
+          else
+            TAG="${VER}"
+            LATEST_TAG="latest"
+          fi
+          echo "version=${VER}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "latest_tag=${LATEST_TAG}" >> "$GITHUB_OUTPUT"
+          echo "variant=${VARIANT}" >> "$GITHUB_OUTPUT"
+          echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          echo "sha=$(echo "${GITHUB_SHA}" | cut -c1-7)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Forgejo OCI
+        uses: docker/login-action@v3
+        with:
+          registry: git.stadthagen.dev
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_TOKEN }}
+
+      - name: Log in to Distribution registry
+        uses: docker/login-action@v3
+        with:
+          registry: registry.stadthagen.dev
+          username: ${{ secrets.DIST_REGISTRY_USER }}
+          password: ${{ secrets.DIST_REGISTRY_PASSWORD }}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: true
+          sbom: true
+          build-args: |
+            VARIANT=${{ steps.version.outputs.variant }}
+            VERSION=${{ steps.version.outputs.tag }}
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ steps.version.outputs.date }}
+          tags: |
+            ${{ env.FORGEJO_IMAGE }}:${{ steps.version.outputs.tag }}
+            ${{ env.FORGEJO_IMAGE }}:${{ steps.version.outputs.latest_tag }}
+            ${{ env.DIST_IMAGE }}:${{ steps.version.outputs.tag }}
+            ${{ env.DIST_IMAGE }}:${{ steps.version.outputs.latest_tag }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.version.outputs.tag }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.variant=${{ steps.version.outputs.variant }}
+
+      - name: Export rootfs for Trivy (avoid OCI SBOM false positives)
+        id: rootfs
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          ROOTFS="${RUNNER_TEMP:-/tmp}/k8s-toolbox-rootfs-${{ matrix.variant }}"
+          rm -rf "${ROOTFS}"
+          mkdir -p "${ROOTFS}"
+          docker buildx imagetools inspect "${FORGEJO_IMAGE}:${TAG}" --format '{{json .}}' >/dev/null
+          # Prefer crane when available; fallback to docker create/export of amd64
+          if command -v crane >/dev/null 2>&1; then
+            crane export --platform linux/amd64 "${FORGEJO_IMAGE}@${DIGEST}" - | tar -x -C "${ROOTFS}"
+          else
+            CID="$(docker create --platform linux/amd64 "${FORGEJO_IMAGE}:${TAG}")"
+            docker export "${CID}" | tar -x -C "${ROOTFS}"
+            docker rm "${CID}" >/dev/null
+          fi
+          echo "rootfs=${ROOTFS}" >> "$GITHUB_OUTPUT"
+
+      - name: Trivy FS scan (CRITICAL/HIGH)
+        run: |
+          set -euo pipefail
+          docker run --rm -v "${{ steps.rootfs.outputs.rootfs }}:/rootfs:ro" \
+            aquasec/trivy:latest fs --severity CRITICAL,HIGH --exit-code 1 \
+            --ignore-unfixed --scanners vuln /rootfs

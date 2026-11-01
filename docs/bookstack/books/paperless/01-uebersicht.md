@@ -35,7 +35,7 @@ OIDC-Zugang und Dokumentgruppen (Familien / vs-nfd): Kapitel **OIDC-Gruppen**.
 
 Media-Dateinamen folgen `{{created_year}}_{{correspondent}}_{{title}}` (`PAPERLESS_FILENAME_FORMAT` in Web- und Worker-Deployment). Nach Format-Wechsel bestehende Dateien per `document_renamer` umbenennen — Details: Kapitel **Deploy & Verify**.
 
-Image-Pins und Trivy-Residuals (Gotenberg/Paperless Upstream, `k8s-toolbox:1.0.1`): Kapitel **Trivy & CVE-Hygiene**.
+Image-Pins und Trivy-Residuals (Gotenberg/Paperless Upstream, `k8s-toolbox:1.0.2`): Kapitel **Trivy & CVE-Hygiene**.
 
 Backup/Restore (Exporter-ZIP, Restore-Gate, Verifikation V1–V14): Kapitel **Backup & Restore**.
 

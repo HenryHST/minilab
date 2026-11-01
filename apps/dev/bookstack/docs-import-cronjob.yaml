@@ -90,7 +90,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: import
-              image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
+              image: git.stadthagen.dev/ops/k8s-toolbox:1.0.2
               imagePullPolicy: IfNotPresent
               env:
                 - name: BOOKSTACK_URL
@@ -129,7 +129,7 @@ spec:
                     echo "SKIP: Secret bookstack-import not set (BOOKSTACK_API_TOKEN_* via SecretSpec)"
                     exit 0
                   fi
-                  apk add --no-cache git python3 py3-pip >/dev/null
+                  # full toolbox already has git/python/pip; only need PyYAML
                   pip3 install --break-system-packages --root-user-action=ignore --quiet 'PyYAML>=6.0.1'
                   sh /config/gitops-bootstrap.sh
                   exec sh /config/docs-import-run.sh
@@ -181,7 +181,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: import
-          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
+          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.2
           imagePullPolicy: IfNotPresent
           env:
             - name: BOOKSTACK_URL
@@ -220,7 +220,7 @@ spec:
                 echo "SKIP: Secret bookstack-import not set (BOOKSTACK_API_TOKEN_* via SecretSpec)"
                 exit 0
               fi
-              apk add --no-cache git python3 py3-pip >/dev/null
+              # full toolbox already has git/python/pip; only need PyYAML
               pip3 install --break-system-packages --root-user-action=ignore --quiet 'PyYAML>=6.0.1'
               sh /config/gitops-bootstrap.sh
               exec sh /config/docs-import-run.sh

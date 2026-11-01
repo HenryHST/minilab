@@ -1,5 +1,11 @@
 # Changelog — Buch Paperless
 
+## [Unreleased]
+
+### Changed
+
+- Helper-Pin **k8s-toolbox:1.0.2** / `:1.0.2-slim` (inbox/mail); amd64-only nodeSelector an Toolbox-Jobs gelockert
+
 ## [1.12.0] - 2026-10-31
 
 ### Changed

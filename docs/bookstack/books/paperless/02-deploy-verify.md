@@ -170,7 +170,7 @@ kubectl -n paperless logs job/paperless-inbox-tag | rg 'documenttype|tag |Katego
 - OCR: `PAPERLESS_OCR_DESKEW` / `OCR_ROTATE_PAGES` = `true` in Web + Worker
 - Seed: Dokumententypen/Tags/Workflow `Kategorie hinzufügen` nach PostSync sichtbar (UI Einstellungen)
 - Gotenberg/Tika: CronJob `paperless-gt-smoke` (alle 6h) oder manuell nach Image-Bump — siehe [Gotenberg & Tika Smoke](05-gotenberg-tika-smoke.md)
-- Trivy/CVE-Pins und akzeptierte Residuals: [Trivy & CVE-Hygiene](06-trivy-cve-hygiene.md) (Helper `k8s-toolbox:1.0.1`)
+- Trivy/CVE-Pins und akzeptierte Residuals: [Trivy & CVE-Hygiene](06-trivy-cve-hygiene.md) (Helper `k8s-toolbox:1.0.2`)
 
 ## Troubleshooting: FailedMount / path does not exist
 

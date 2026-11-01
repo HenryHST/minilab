@@ -2,5 +2,5 @@ book: Minilab
 cover: cover.png
 book_version: "1.4.0"
 updated: "2026-10-31"
-description: Plattform, Apps, GitOps, Backup, Homepage Robot-Heads, kubeconfig-user, k8s-toolbox 1.0.1 / CVE-Hygiene (nXk3 Homelab)
+description: Plattform, Apps, GitOps, Backup, Homepage Robot-Heads, kubeconfig-user, k8s-toolbox 1.0.2 full/slim / CVE-Hygiene (nXk3 Homelab)
 shelf: Plattform

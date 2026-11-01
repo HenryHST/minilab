@@ -1,5 +1,11 @@
 # Changelog — Buch Minilab
 
+## [1.4.1] - 2026-11-01
+
+### Changed
+
+- Apps & Hosts / Troubleshooting: Helper-Pin **`k8s-toolbox:1.0.2`** (+ `-slim` für kubectl-only Jobs)
+
 ## [1.4.0] - 2026-10-31
 
 ### Changed

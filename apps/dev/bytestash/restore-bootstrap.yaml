@@ -98,7 +98,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: restore
-          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
+          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.2
           imagePullPolicy: IfNotPresent
           env:
             - name: RESTORE_ENABLED

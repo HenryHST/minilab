@@ -18,11 +18,10 @@ spec:
         - name: registry-pull
       nodeSelector:
         worker: "true"
-        kubernetes.io/arch: amd64
       restartPolicy: OnFailure
       containers:
         - name: mail-inbox
-          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.1
+          image: git.stadthagen.dev/ops/k8s-toolbox:1.0.2-slim
           env:
             - name: IMAP_PASSWORD
               valueFrom:

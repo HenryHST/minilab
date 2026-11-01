@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **k8s-toolbox 1.0.2** — Alpine 3.24 Docs/SoT-Labels, kubectl SHA256, full+slim Variants (SBOM+provenance Forgejo/GHA); Consumer-Pins; slim für GC/Theme/Permissions/kubeconfig/paperless-inbox; aws-cli im full-Image; amd64-Pins an Multi-Arch-Jobs gelockert; Longhorn-Enforcer bleiben `rancher/kubectl` (dokumentierte Ausnahme).
+
 ## [0.16.0] - 2026-11-01
 
 **CNPG Day-2** (WAL/Backup-Alerts, Barman Cloud Plugin → RustFS), Authentik in-tree-barman-Fix (#170), Forgejo als Lab-Registry. Begleit-Release Plattform: [Infra_LAB v1.18.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v1.18.0).

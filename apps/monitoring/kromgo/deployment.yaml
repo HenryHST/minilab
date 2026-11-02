@@ -18,7 +18,7 @@ spec:
         worker: "true"
       containers:
         - name: kromgo
-          image: ghcr.io/home-operations/kromgo:0.16.1
+          image: ghcr.io/home-operations/kromgo:0.16.3
           ports:
             - name: http
               containerPort: 8080

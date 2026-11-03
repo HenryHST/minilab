@@ -134,14 +134,8 @@ grafana:
           editable: false
           options:
             path: /var/lib/grafana/dashboards/authentik
-        - name: homeassistant
-          orgId: 1
-          folder: Home Assistant
-          type: file
-          disableDeletion: false
-          editable: false
-          options:
-            path: /var/lib/grafana/dashboards/homeassistant
+        # homeassistant: removed — gnetId 16888 is Longhorn, not HA; left ${DS_PROMETHEUS}
+        # unresolved and polluted the Home Assistant folder. Longhorn: sidecar manifest.
         - name: hetzner
           orgId: 1
           folder: Hetzner Cloud
@@ -179,10 +173,8 @@ grafana:
       authentik:
         gnetId: 14837
         datasource: Prometheus
-    homeassistant:
-      overview:
-        gnetId: 16888
-        datasource: Prometheus
+    # homeassistant: removed (gnetId 16888 was Longhorn Monitoring & Backups).
+    # Longhorn: manifests/dashboard-longhorn.yaml (sidecar, folder Longhorn).
     hetzner:
       servers-load-balancers:
         gnetId: 20257

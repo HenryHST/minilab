@@ -58,6 +58,12 @@ extraEnv:
     value: "false"
   - name: UP_UNIFI_DEFAULT_SITE_0
     value: default
+  # Client DPI Grafana dashboards need these; default is false → DPI Site/Client: 0/0.
+  # save_traffic also required on older paths / Network 9.x for client DPI via v2 API.
+  - name: UP_UNIFI_DEFAULT_SAVE_DPI
+    value: "true"
+  - name: UP_UNIFI_DEFAULT_SAVE_TRAFFIC
+    value: "true"
   - name: UP_PROMETHEUS_DISABLE
     value: "false"
   - name: UP_PROMETHEUS_NAMESPACE

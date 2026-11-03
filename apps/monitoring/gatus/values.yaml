@@ -82,6 +82,52 @@ config:
         - openid
         - profile
         - email
+  # Brand aligned with Authentik (Infra_LAB modules/brand): accent #2563eb, primary #1d4ed8.
+  # Logo/favicon served publicly from /uebersicht/branding/ (Authentik /media is not HTTP-exposed).
+  ui:
+    title: "Status | Stadthagen Home"
+    description: "Status und Endpoint-Gesundheit für Stadthagen Home"
+    header: "Stadthagen Home"
+    dashboard-heading: "Status"
+    dashboard-subheading: "Endpoint-Gesundheit in Echtzeit"
+    login-subtitle: "Status-Dashboard"
+    logo: "https://status.stadthagen.dev/uebersicht/branding/logo.png"
+    link: "https://idp.stadthagen.dev"
+    favicon:
+      default: "https://status.stadthagen.dev/uebersicht/branding/favicon.png"
+      size16x16: "https://status.stadthagen.dev/uebersicht/branding/favicon.png"
+      size32x32: "https://status.stadthagen.dev/uebersicht/branding/favicon.png"
+    dark-mode: true
+    buttons:
+      - name: Authentik
+        link: "https://idp.stadthagen.dev"
+      - name: Umgebung
+        link: "https://status.stadthagen.dev/uebersicht/"
+    custom-css: |
+      :root {
+        --ak-accent: #2563eb;
+        --ak-primary: #1d4ed8;
+      }
+      a { color: var(--ak-accent); }
+      a:hover { color: var(--ak-primary); }
+      header a, .header a, nav a {
+        color: var(--ak-accent);
+      }
+      button, .button, a.button, .btn {
+        border-color: var(--ak-accent);
+      }
+      button:hover, .button:hover, a.button:hover, .btn:hover {
+        background-color: var(--ak-accent);
+        border-color: var(--ak-primary);
+      }
+      /* Soft dark surfaces similar to Authentik frosted panels */
+      body {
+        background: #0f172a;
+      }
+      .endpoint-group, .endpoint, .card, [class*="Endpoint"] {
+        border-radius: 0.75rem;
+        border-color: rgba(255, 255, 255, 0.12);
+      }
   alerting:
     pushover:
       application-token: ${PUSHOVER_APP_TOKEN}

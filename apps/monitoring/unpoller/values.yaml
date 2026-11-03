@@ -33,6 +33,8 @@ upConfig: |
   disable = true
   [unifi]
   dynamic = false
+  save_dpi = true
+  save_traffic = true
   [loki]
   disable = true
 

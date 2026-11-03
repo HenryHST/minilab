@@ -39,6 +39,8 @@ stringData:
     disable = true
     [unifi]
     dynamic = false
+    save_dpi = true
+    save_traffic = true
     [loki]
     disable = true
 ---
@@ -121,6 +123,10 @@ spec:
               value: "false"
             - name: UP_UNIFI_DEFAULT_SITE_0
               value: default
+            - name: UP_UNIFI_DEFAULT_SAVE_DPI
+              value: "true"
+            - name: UP_UNIFI_DEFAULT_SAVE_TRAFFIC
+              value: "true"
             - name: UP_PROMETHEUS_DISABLE
               value: "false"
             - name: UP_PROMETHEUS_NAMESPACE

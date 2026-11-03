@@ -35,6 +35,9 @@ prometheus:
     serviceMonitorSelector: {}
     podMonitorNamespaceSelector: {}
     podMonitorSelector: {}
+    # Bearer for HA /api/prometheus (SecretSpec HA_PROMETHEUS_TOKEN → ha-prometheus-token/token)
+    secrets:
+      - ha-prometheus-token
     additionalScrapeConfigs:
       - job_name: pexpve01
         scrape_interval: 15s
@@ -56,11 +59,23 @@ prometheus:
         static_configs:
           - targets:
               - pangolin.stadthagen.dev:9100
-      - job_name: homeassistant
+      # HA OS addon prometheus_node_exporter on ha02
+      - job_name: ha02-node
         scrape_interval: 15s
         static_configs:
           - targets:
               - ha02.stadthagen.dev:9100
+      # Home Assistant entity metrics (package prometheus.yaml on ha02)
+      - job_name: homeassistant
+        scrape_interval: 30s
+        metrics_path: /api/prometheus
+        scheme: http
+        authorization:
+          type: Bearer
+          credentials_file: /etc/prometheus/secrets/ha-prometheus-token/token
+        static_configs:
+          - targets:
+              - 192.168.0.106:8123
       - job_name: unpoller
         scrape_interval: 15s
         static_configs:
@@ -134,8 +149,8 @@ grafana:
           editable: false
           options:
             path: /var/lib/grafana/dashboards/authentik
-        # homeassistant: removed — gnetId 16888 is Longhorn, not HA; left ${DS_PROMETHEUS}
-        # unresolved and polluted the Home Assistant folder. Longhorn: sidecar manifest.
+        # homeassistant: sidecar manifests/dashboard-homeassistant.yaml (folder Home Assistant).
+        # gnetId 16888 was Longhorn (moved); gnetId 17500 is unrelated node-exporter "Home".
         - name: hetzner
           orgId: 1
           folder: Hetzner Cloud
@@ -173,7 +188,7 @@ grafana:
       authentik:
         gnetId: 14837
         datasource: Prometheus
-    # homeassistant: removed (gnetId 16888 was Longhorn Monitoring & Backups).
+    # homeassistant: manifests/dashboard-homeassistant.yaml (sidecar).
     # Longhorn: manifests/dashboard-longhorn.yaml (sidecar, folder Longhorn).
     hetzner:
       servers-load-balancers:

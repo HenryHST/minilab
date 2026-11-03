@@ -1,0 +1,16 @@
+# Populated by Ansible k3s_secrets from SecretSpec HA_PROMETHEUS_TOKEN.
+# Create Long-Lived Access Token in HA (Profile → Security → Long-lived access tokens),
+# then:
+#   secretspec set HA_PROMETHEUS_TOKEN --profile cluster --provider cluster_age
+#   ansible-playbook site.yaml --tags secrets
+#
+# Mounted via prometheusSpec.secrets → /etc/prometheus/secrets/ha-prometheus-token/token
+# Used by scrape job homeassistant (Bearer for /api/prometheus).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ha-prometheus-token
+  namespace: monitoring
+type: Opaque
+stringData:
+  token: "REPLACE_WITH_HA_LONG_LIVED_ACCESS_TOKEN"

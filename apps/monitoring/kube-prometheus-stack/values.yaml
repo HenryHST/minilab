@@ -118,14 +118,6 @@ grafana:
     dashboardproviders.yaml:
       apiVersion: 1
       providers:
-        - name: unpoller
-          orgId: 1
-          folder: UniFi Poller
-          type: file
-          disableDeletion: false
-          editable: false
-          options:
-            path: /var/lib/grafana/dashboards/unpoller
         - name: argocd
           orgId: 1
           folder: Argo CD
@@ -177,31 +169,8 @@ grafana:
         # cert-manager: provisioned via manifests/dashboard-cert-manager.yaml (sidecar).
         # gnetId 20340 download leaves ${DS_PROMETHEUS} unresolved → empty panels.
   dashboards:
-    unpoller:
-      client-dpi:
-        gnetId: 11310
-        revision: 1
-        datasource: Prometheus
-      network-sites:
-        gnetId: 11311
-        revision: 1
-        datasource: Prometheus
-      usw-insights:
-        gnetId: 11312
-        revision: 1
-        datasource: Prometheus
-      usg-insights:
-        gnetId: 11313
-        revision: 1
-        datasource: Prometheus
-      uap-insights:
-        gnetId: 11314
-        revision: 1
-        datasource: Prometheus
-      client-insights:
-        gnetId: 11315
-        revision: 1
-        datasource: Prometheus
+    # unpoller: removed — grafana.com gnetId 11310–11315 return empty stubs;
+    # provision via manifests/dashboard-unpoller-*.yaml (sidecar).
     argocd:
       operational-overview:
         gnetId: 19993
@@ -292,6 +261,11 @@ grafana:
     dashboards:
       enabled: true
       label: grafana_dashboard
+      # Place ConfigMaps with annotation grafana_folder into that folder
+      # (e.g. UniFi Poller). Without this, sidecar JSON lands in General.
+      folderAnnotation: grafana_folder
+      provider:
+        foldersFromFilesStructure: true
     datasources:
       enabled: true
       label: grafana_datasource

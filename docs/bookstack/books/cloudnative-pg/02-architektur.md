@@ -1,6 +1,6 @@
 ---
 title: Architektur
-book_version: "1.4.0"
+book_version: "1.5.0"
 ---
 
 # Architektur
@@ -25,8 +25,11 @@ Pod-Selector `app.kubernetes.io/name=cloudnative-pg`.
 | Egress | 53 UDP/TCP | DNS |
 | Egress | 443, 6443 | Kubernetes-API |
 | Egress | 8000 | Instanz-Status der Cluster |
+| Egress | **9090** | CNPG-Plugins in `cnpg-system` (z. B. **barman-cloud** gRPC) |
 
 Die zweite Policy `cloudnative-pg-instance-status` erlaubt 8000 noch einmal. Regeln addieren sich. Ohne 8000 bleibt jeder Cluster auf `Instance Status Extraction Error`.
+
+**Ohne Egress TCP 9090** kann der Operator Barman-Cloud-Plugin-Hooks nicht erreichen → Cluster-Phase *cannot proceed … interacting with plugins*, dangling PVCs, App-DBs (z. B. Authentik) ohne Primary. Incident: Infra_LAB Authentik [2026-11-04 IdP/Registry-Kaskade](https://github.com/HenryHST/Infra_LAB/blob/main/docs/bookstack/books/authentik/13-incident-2026-11-04-idp-registry-cascade.md). Manifest: `apps/infra/cloudnative-pg/manifests/networkpolicy.yaml`.
 
 ## Cluster
 

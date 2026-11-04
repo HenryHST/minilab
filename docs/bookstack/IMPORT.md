@@ -43,17 +43,20 @@ Kapitel aus `books/anleitungen/` übernehmen (einfache Sprache, nummerierte Schr
 
 ## 4a. Vaultwarden
 
-Buch **Vaultwarden** — Reihenfolge aus `books/vaultwarden/`:
+Buch **Vaultwarden** — Reihenfolge aus `books/vaultwarden/` (aktuell **v1.3.0**):
 
 1. Übersicht
 2. Hosts & DOMAIN
 3. OIDC mit Authentik
 4. Secrets
-5. Pangolin Publish
-6. Netzwerk & Ingress
-7. Backup & Restore
-8. Betrieb
-9. Quellen
+5. Helm / GitOps
+6. Pangolin Publish
+7. Netzwerk & Ingress
+8. Backup & Restore
+9. SMTP / Emergency
+10. Betrieb
+11. Quellen
+12. Incident 2026-11-04 ImagePull-Kaskade (Kurz; Detail: Infra_LAB Authentik 13)
 
 URL (kanonisch): `https://vw-ext.stadthagen.dev` · Manifeste: `apps/dev/vaultwarden/`.
 

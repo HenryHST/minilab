@@ -1,6 +1,6 @@
 book: Cloudnative-pg
 cover: cover.png
-book_version: "1.4.1"
-updated: "2026-10-11"
-description: CloudNativePG — Operator in cnpg-system, Onboarding weiterer Datenbanken
+book_version: "1.5.0"
+updated: "2026-11-04"
+description: CloudNativePG — Operator in cnpg-system, Onboarding weiterer Datenbanken; Operator-NP Egress :9090 für Barman-Cloud-Plugin
 shelf: Plattform

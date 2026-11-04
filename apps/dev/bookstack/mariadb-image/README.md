@@ -3,7 +3,8 @@
 | | |
 |--|--|
 | Runtime (interim) | `mariadb:11.8.9` (Docker Hub) in [`mariadb.yaml`](../mariadb.yaml) |
-| Target (Forgejo) | `git.stadthagen.dev/dev/mariadb:11.8.9-gosu1` |
+| Target (Forgejo) | `git.stadthagen.dev/dev/mariadb:<VERSION>` (SoT repo + `.forgejo/workflows/image.yml`) |
+| Tag file | [`VERSION`](VERSION) (current **11.8.9-gosu1**) |
 | Base | `mariadb:11.8.9` + `gosu` 1.19 built with Go 1.25.7 |
 | Clears | CVE-2025-68121 in `/usr/local/bin/gosu` |
 
@@ -11,6 +12,7 @@ Lab Distribution `registry.stadthagen.dev` is no longer used for this image. Pub
 
 ```bash
 cd apps/dev/bookstack/mariadb-image
+VER="$(tr -d '[:space:]' < VERSION)"
 docker buildx build --platform linux/amd64 \
-  -t git.stadthagen.dev/dev/mariadb:11.8.9-gosu1 --push .
+  -t "git.stadthagen.dev/dev/mariadb:${VER}" --push .
 ```

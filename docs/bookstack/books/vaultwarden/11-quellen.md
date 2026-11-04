@@ -1,6 +1,6 @@
 ---
 title: Quellen
-book_version: "1.2.0"
+book_version: "1.3.0"
 ---
 
 # Quellen
@@ -34,6 +34,9 @@ book_version: "1.2.0"
 - Secrets: `ansible/playbooks/k3s_cluster/secrets/` (`vaultwarden-oauth` / `-admin` / `-smtp`)
 - k3s-README: Abschnitt Vaultwarden SSO + Pangolin ext
 - ADR-0008 Pangolin Ownership
+- Incident 2026-11-04 ImagePull-Kaskade (Kurz): [12-incident-2026-11-04-imagepull-cascade.md](12-incident-2026-11-04-imagepull-cascade.md)
+- Incident 2026-11-04 ausführlich: Infra_LAB Authentik [13-incident-2026-11-04-idp-registry-cascade.md](https://github.com/HenryHST/Infra_LAB/blob/main/docs/bookstack/books/authentik/13-incident-2026-11-04-idp-registry-cascade.md)
+- vw-restore Pull-Secret Ownership: Infra_LAB [k3s 11-vw-restore-image-pull](https://github.com/HenryHST/Infra_LAB/blob/main/docs/bookstack/books/k3s/11-vw-restore-image-pull.md)
 
 ## Upstream (historisch)
 

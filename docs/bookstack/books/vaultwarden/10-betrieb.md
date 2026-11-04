@@ -1,6 +1,6 @@
 ---
 title: Betrieb
-book_version: "1.2.0"
+book_version: "1.3.0"
 ---
 
 # Betrieb
@@ -24,6 +24,7 @@ book_version: "1.2.0"
 - [ ] `kubectl -n vaultwarden get deploy,svc,ingressroute,networkpolicy,secret`
 - [ ] Backup-CronJob Schedule `0 2,14 * * *`; letztes Successful Job optional prüfen
 - [ ] Restore-UI `https://vw-restore.stadthagen.dev` (Authentik, `vaultwarden_admins`)
+- [ ] PreSync Job `vw-restore-image-pull` Complete (bei ImagePull/503: [Incident 2026-11-04](12-incident-2026-11-04-imagepull-cascade.md))
 - [ ] Pangolin-Status: keine Dual-Write-Warnung für `vw-ext`
 
 ```bash

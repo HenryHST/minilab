@@ -1,6 +1,7 @@
 # Operator webhook must accept kube-apiserver (any source). Metrics only from monitoring.
-# Egress: DNS, Kubernetes API (in-cluster :443 and node :6443), and instance
-# status HTTPS :8000 (Cluster pods in app namespaces).
+# Egress: DNS, Kubernetes API (in-cluster :443 and node :6443), instance
+# status HTTPS :8000 (Cluster pods in app namespaces), and CNPG plugins
+# (barman-cloud gRPC :9090 in cnpg-system).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -39,3 +40,6 @@ spec:
           port: 6443
         - protocol: TCP
           port: 8000
+        # CNPG plugin gRPC (barman-cloud.cloudnative-pg.io ClusterIP :9090)
+        - protocol: TCP
+          port: 9090

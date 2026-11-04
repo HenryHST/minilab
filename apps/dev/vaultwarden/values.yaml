@@ -1,0 +1,97 @@
+# Vaultwarden — minilab fork of gissilabs/vaultwarden (ADR-0014)
+# Regenerieren:
+#   helm template vaultwarden ./charts/vaultwarden \
+#     -f values.yaml --namespace vaultwarden --skip-tests > helm-manifest.yaml
+
+fullnameOverride: vaultwarden
+
+image:
+  repository: vaultwarden/server
+  tag: "1.37.5"
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+strategy:
+  type: Recreate
+
+# Keep legacy label for NetworkPolicy / backup CronJob selectors.
+podLabels:
+  app: vaultwarden
+
+nodeSelector:
+  kubernetes.io/hostname: nxk3-w02
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 512Mi
+
+persistence:
+  enabled: true
+  existingClaim: vaultwarden-data
+
+service:
+  type: ClusterIP
+  httpPort: 80
+
+ingress:
+  enabled: false
+
+# LAN IngressRoute + middlewares stay as Plain YAML (sso-to-ext redirect).
+ingressRoute:
+  enabled: false
+
+httpRoute:
+  enabled: false
+
+probes:
+  path: /alive
+  liveness:
+    initialDelaySeconds: 15
+    periodSeconds: 20
+  readiness:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+vaultwarden:
+  domain: https://vw-ext.stadthagen.dev
+  allowSignups: false
+  allowInvitation: true
+  enableWebVault: true
+  enableSends: true
+
+  admin:
+    enabled: true
+    existingSecret: vaultwarden-admin
+    existingSecretKey: ADMIN_TOKEN
+
+  emergency:
+    enabled: true
+    reminder: "0 3 * * * *"
+    timeout: "0 7 * * * *"
+
+  smtp:
+    enabled: true
+    host: mail.henrystadthagen.de
+    port: "465"
+    security: force_tls
+    from: auto@henrystadthagen.de
+    fromName: Vaultwarden
+    existingSecret: vaultwarden-smtp
+
+  push:
+    enabled: false
+
+  sso:
+    enabled: true
+    authority: https://idp.stadthagen.dev/application/o/vaultwarden/
+    clientId: vaultwarden
+    scopes: openid email profile offline_access
+    signupsMatchEmail: true
+    allowUnknownEmailVerification: false
+    pkce: true
+    existingSecret: vaultwarden-oauth
+    existingSecretClientSecretKey: SSO_CLIENT_SECRET

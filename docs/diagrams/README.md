@@ -18,6 +18,9 @@ Interaktive HTML-Diagramme und BookStack-Exports für die Plattform-Bücher.
 | `podcraft-timeline-2026-10-26` | timeline | [podcraft-timeline-2026-10-26.html](archify/podcraft-timeline-2026-10-26.html) | `archify/exports/podcraft-timeline-2026-10-26.png` | podcraft — Incident Timeline |
 | `mosquitto-pvc-ldap-incident` | architecture | [mosquitto-pvc-ldap-incident.html](archify/mosquitto-pvc-ldap-incident.html) | `archify/exports/mosquitto-pvc-ldap-incident.png` | Mosquitto — Incident PVC + LDAP 2026-10-28 |
 | `mosquitto-pvc-ldap-diagnose` | workflow | [mosquitto-pvc-ldap-diagnose.html](archify/mosquitto-pvc-ldap-diagnose.html) | `archify/exports/mosquitto-pvc-ldap-diagnose.png` | Mosquitto — Diagnose & Remediation 2026-10-28 |
+| `vaultwarden-architektur` | architecture | [vaultwarden-architektur.html](archify/vaultwarden-architektur.html) | `archify/exports/vaultwarden-architektur.png` | Vaultwarden — Übersicht |
+| `vaultwarden-helm-gitops` | architecture | [vaultwarden-helm-gitops.html](archify/vaultwarden-helm-gitops.html) | `archify/exports/vaultwarden-helm-gitops.png` | Vaultwarden — Helm / GitOps |
+| `vaultwarden-smtp-secrets` | dataflow | [vaultwarden-smtp-secrets.html](archify/vaultwarden-smtp-secrets.html) | `archify/exports/vaultwarden-smtp-secrets.png` | Vaultwarden — Secrets & SMTP |
 
 ## Archify
 

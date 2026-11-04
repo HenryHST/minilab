@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "1f085526-4697-4222-8d64-20746b11ecf1",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/henry/Projects/minilab/docs/diagrams/archify/vaultwarden-architektur.json",
+  "output": "/Users/henry/Projects/minilab/docs/diagrams/archify/vaultwarden-architektur.html",
+  "specification": {
+    "sha256": "3d59344e183ef11e658aa239eb5d5a6bc94abf8ae78988d0dc99b084ebcd408d",
+    "bytes": 5281
+  },
+  "artifact": {
+    "sha256": "3fed483843abe63e72ef8639bd95ae59e8df1c96ff79e002a5abf281a6a04147",
+    "bytes": 831006
+  }
+}

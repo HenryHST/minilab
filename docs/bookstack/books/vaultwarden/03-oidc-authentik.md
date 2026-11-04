@@ -1,6 +1,6 @@
 ---
 title: OIDC mit Authentik
-book_version: "1.1.1"
+book_version: "1.2.0"
 ---
 
 # OIDC mit Authentik
@@ -56,4 +56,4 @@ Mitgliedschaft: Infra_LAB `access_control_users.tf`.
 | Login nach IdP bricht ab | Redirect-URI / `DOMAIN` stimmen nicht |
 | Account wird abgelehnt | `email_verified` / Custom-Scope fehlt |
 
-Siehe [Betrieb](08-betrieb.md).
+Secrets-Fluss: [Secrets](04-secrets.md). Betrieb: [Betrieb](10-betrieb.md).

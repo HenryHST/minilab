@@ -1,6 +1,6 @@
 book: Vaultwarden
 cover: cover.png
-book_version: "1.1.4"
-updated: "2026-10-11"
-description: Vaultwarden 1.37.2 auf nXk3 — Bitwarden-kompatibel, Authentik-OIDC, kanonischer Host vw-ext, Backup/Restore-UI
+book_version: "1.2.0"
+updated: "2026-11-04"
+description: Vaultwarden 1.37.5 auf nXk3 — Helm-Fork (ADR-0014), Authentik-OIDC, SMTP/Emergency Access, kanonischer Host vw-ext, Backup/Restore-UI
 shelf: Plattform

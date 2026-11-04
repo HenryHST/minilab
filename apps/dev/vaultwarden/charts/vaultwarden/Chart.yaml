@@ -1,0 +1,24 @@
+apiVersion: v2
+name: vaultwarden
+description: Unofficial Bitwarden compatible server written in Rust (minilab fork of gissilabs/vaultwarden)
+type: application
+version: 1.4.2+minilab.1
+appVersion: "1.37.5"
+icon: https://raw.githubusercontent.com/dani-garcia/vaultwarden/main/resources/vaultwarden-icon.svg
+home: https://github.com/dani-garcia/vaultwarden
+keywords:
+  - bitwarden
+  - bitwarden_rs
+  - password
+  - vaultwarden
+sources:
+  - https://github.com/dani-garcia/vaultwarden
+  - https://github.com/gissilabs/charts/tree/master/vaultwarden
+annotations:
+  minilab.stadthagen.dev/forkOf: gissilabs/vaultwarden@1.4.2
+  minilab.stadthagen.dev/upstream: https://github.com/gissilabs/charts
+maintainers:
+  - name: Silvio Gissi
+    email: silvio@gissilabs.com
+  - name: minilab
+    email: auto@henrystadthagen.de

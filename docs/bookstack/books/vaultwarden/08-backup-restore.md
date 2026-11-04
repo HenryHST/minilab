@@ -1,6 +1,6 @@
 ---
 title: Backup und Restore
-book_version: "1.1.4"
+book_version: "1.2.0"
 ---
 
 # Backup & Restore

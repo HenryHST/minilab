@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Vaultwarden Helm → GitOps",
+    "quality_profile": "showcase",
+    "output": "docs/diagrams/archify/vaultwarden-helm-gitops.html",
+    "views": [
+      {
+        "id": "author",
+        "label": "Author",
+        "focus": ["upstream", "fork", "values", "template"],
+        "note": "Einmal pullen, lokal forken, Site-Values, helm template --skip-tests."
+      },
+      {
+        "id": "sync",
+        "label": "Sync",
+        "focus": ["git", "argo", "cluster"],
+        "note": "Plain Directory ApplicationSet; kein helmRepo zur Laufzeit."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "upstream",
+      "type": "external",
+      "label": "gissilabs",
+      "sublabel": "vaultwarden 1.4.2",
+      "tag": "once",
+      "pos": [40, 80],
+      "size": [150, 64]
+    },
+    {
+      "id": "fork",
+      "type": "backend",
+      "label": "Chart Fork",
+      "sublabel": "charts/vaultwarden",
+      "tag": "+minilab.1",
+      "pos": [240, 80],
+      "size": [160, 64]
+    },
+    {
+      "id": "values",
+      "type": "database",
+      "label": "values.yaml",
+      "sublabel": "Site nXk3",
+      "pos": [240, 220],
+      "size": [160, 64]
+    },
+    {
+      "id": "template",
+      "type": "backend",
+      "label": "helm template",
+      "sublabel": "--skip-tests",
+      "tag": "ADR-0014",
+      "pos": [460, 150],
+      "size": [160, 64]
+    },
+    {
+      "id": "git",
+      "type": "cloud",
+      "label": "minilab Git",
+      "sublabel": "helm-manifest + extras",
+      "pos": [680, 80],
+      "size": [170, 64]
+    },
+    {
+      "id": "argo",
+      "type": "cloud",
+      "label": "Argo App",
+      "sublabel": "Plain Directory",
+      "tag": "wave 3",
+      "pos": [680, 220],
+      "size": [170, 64]
+    },
+    {
+      "id": "cluster",
+      "type": "backend",
+      "label": "nXk3",
+      "sublabel": "ns vaultwarden",
+      "tag": "self-heal",
+      "pos": [900, 150],
+      "size": [140, 64]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Chart + Values",
+      "wraps": ["fork", "values", "template"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "up-fork",
+      "from": "upstream",
+      "to": "fork",
+      "label": "helm pull",
+      "variant": "dashed"
+    },
+    {
+      "id": "fork-tpl",
+      "from": "fork",
+      "to": "template",
+      "label": "chart",
+      "variant": "emphasis"
+    },
+    {
+      "id": "val-tpl",
+      "from": "values",
+      "to": "template",
+      "label": "-f",
+      "variant": "emphasis"
+    },
+    {
+      "id": "tpl-git",
+      "from": "template",
+      "to": "git",
+      "label": "commit",
+      "variant": "emphasis"
+    },
+    {
+      "id": "git-argo",
+      "from": "git",
+      "to": "argo",
+      "label": "source",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "argo-cl",
+      "from": "argo",
+      "to": "cluster",
+      "label": "sync",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "SoT",
+      "items": [
+        "Chart lokal im Repo",
+        "Argo ohne helmRepo"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Regen",
+      "items": [
+        "helm template … > helm-manifest.yaml",
+        "Extras bleiben Plain YAML"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Upstream",
+      "items": [
+        "nur einmalige Vorlage",
+        "Diffs optional manuell"
+      ]
+    }
+  ]
+}

@@ -1,21 +1,22 @@
 ---
 title: Hosts und DOMAIN
-book_version: "1.1.1"
+book_version: "1.2.0"
 ---
 
 # Hosts & DOMAIN
 
-Vaultwarden baut OIDC-Callback und API-URLs aus der Env `DOMAIN` — nicht aus dem Request-Host.
+Vaultwarden baut OIDC-Callback und API-URLs aus der Env `DOMAIN` — nicht aus dem Request-Host. Architektur-Überblick: [Übersicht](01-uebersicht.md).
 
 | Host | Rolle |
 |------|--------|
 | `https://vw-ext.stadthagen.dev` | Kanonisch: `DOMAIN`, Web-Vault, SSO, Bitwarden-Clients |
 | `https://vaultwarden.stadthagen.dev` | Traefik-LAN; Middleware leitet **alles** nach `vw-ext` um |
 
-In `deployment.yaml`:
+In Site-`values.yaml` / `helm-manifest.yaml`:
 
 ```yaml
-DOMAIN: https://vw-ext.stadthagen.dev
+vaultwarden:
+  domain: https://vw-ext.stadthagen.dev
 ```
 
 ## Warum ein Host
@@ -29,4 +30,4 @@ Deshalb: Authentik-Launch = `vw-ext`, Clients = `vw-ext`, LAN nur noch Redirect.
 
 In Bitwarden-Apps / Browser-Extensions die Server-URL auf `https://vw-ext.stadthagen.dev` setzen (nicht die LAN-URL).
 
-Details Pangolin: [Pangolin Publish](05-pangolin-publish.md). Infra_LAB-Buch: Kapitel *Pangolin Ext: BookStack & Vaultwarden*.
+Details Pangolin: [Pangolin Publish](06-pangolin-publish.md). Infra_LAB-Buch: Kapitel *Pangolin Ext: BookStack & Vaultwarden*.

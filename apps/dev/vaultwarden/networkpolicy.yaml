@@ -15,24 +15,25 @@ spec:
   policyTypes:
     - Ingress
   ingress:
+    # Chart listens on ROCKET_PORT 8080 (Service :80 → targetPort http).
     - from:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: vaultwarden
       ports:
         - protocol: TCP
-          port: 80
+          port: 8080
     - from:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: traefik
       ports:
         - protocol: TCP
-          port: 80
+          port: 8080
     - from:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: newt
       ports:
         - protocol: TCP
-          port: 80
+          port: 8080

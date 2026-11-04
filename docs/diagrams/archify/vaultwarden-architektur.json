@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Vaultwarden auf nXk3",
+    "quality_profile": "showcase",
+    "output": "docs/diagrams/archify/vaultwarden-architektur.html",
+    "views": [
+      {
+        "id": "access",
+        "label": "Zugriff",
+        "focus": ["client", "pangolin", "traefik", "svc", "pod"],
+        "note": "Kanonisch vw-ext; LAN vaultwarden.* redirected auf Ext."
+      },
+      {
+        "id": "auth",
+        "label": "OIDC",
+        "focus": ["client", "pod", "authentik"],
+        "note": "Authentik Slug vaultwarden; SSO_CLIENT_SECRET aus Secret."
+      },
+      {
+        "id": "data",
+        "label": "Daten",
+        "focus": ["pod", "pvc", "backup", "nfs"],
+        "note": "SQLite auf PVC; NFS-Backup 02:00/14:00 UTC."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "client",
+      "type": "external",
+      "label": "Client",
+      "sublabel": "Web / Bitwarden App",
+      "pos": [40, 200],
+      "size": [150, 64]
+    },
+    {
+      "id": "pangolin",
+      "type": "cloud",
+      "label": "Pangolin",
+      "sublabel": "vw-ext",
+      "tag": "Newt",
+      "pos": [240, 120],
+      "size": [140, 64]
+    },
+    {
+      "id": "traefik",
+      "type": "cloud",
+      "label": "Traefik",
+      "sublabel": "IngressRoute",
+      "tag": "LAN redirect",
+      "pos": [240, 280],
+      "size": [140, 64]
+    },
+    {
+      "id": "svc",
+      "type": "backend",
+      "label": "Service",
+      "sublabel": ":80 → 8080",
+      "tag": "ClusterIP",
+      "pos": [440, 200],
+      "size": [140, 64]
+    },
+    {
+      "id": "pod",
+      "type": "backend",
+      "label": "Vaultwarden",
+      "sublabel": "1.37.5 · w02",
+      "tag": "Recreate",
+      "pos": [640, 200],
+      "size": [150, 64]
+    },
+    {
+      "id": "authentik",
+      "type": "security",
+      "label": "Authentik",
+      "sublabel": "OIDC",
+      "tag": "idp.stadthagen.dev",
+      "pos": [640, 40],
+      "size": [150, 64]
+    },
+    {
+      "id": "pvc",
+      "type": "database",
+      "label": "PVC data",
+      "sublabel": "2Gi SQLite",
+      "tag": "longhorn-loki-local",
+      "pos": [840, 200],
+      "size": [150, 64]
+    },
+    {
+      "id": "backup",
+      "type": "backend",
+      "label": "Backup Cron",
+      "sublabel": "02:00 + 14:00",
+      "pos": [640, 360],
+      "size": [150, 64]
+    },
+    {
+      "id": "nfs",
+      "type": "cloud",
+      "label": "NFS",
+      "sublabel": "Retention 14",
+      "pos": [1040, 360],
+      "size": [140, 64]
+    },
+    {
+      "id": "restore",
+      "type": "frontend",
+      "label": "Restore-UI",
+      "sublabel": "vw-restore",
+      "tag": "ForwardAuth",
+      "pos": [440, 360],
+      "size": [140, 64]
+    },
+    {
+      "id": "smtp",
+      "type": "external",
+      "label": "SMTP",
+      "sublabel": "mail.henrystadthagen.de",
+      "tag": ":465",
+      "pos": [1040, 40],
+      "size": [160, 64]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "ns vaultwarden",
+      "wraps": ["svc", "pod", "pvc", "backup", "restore"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "client-pangolin",
+      "from": "client",
+      "to": "pangolin",
+      "label": "HTTPS vw-ext",
+      "variant": "emphasis"
+    },
+    {
+      "id": "client-traefik",
+      "from": "client",
+      "to": "traefik",
+      "label": "LAN → redirect",
+      "variant": "dashed"
+    },
+    {
+      "id": "pangolin-svc",
+      "from": "pangolin",
+      "to": "svc",
+      "label": "Newt",
+      "variant": "emphasis"
+    },
+    {
+      "id": "traefik-svc",
+      "from": "traefik",
+      "to": "svc",
+      "label": "websecure"
+    },
+    {
+      "id": "svc-pod",
+      "from": "svc",
+      "to": "pod",
+      "label": "http",
+      "variant": "emphasis"
+    },
+    {
+      "id": "pod-auth",
+      "from": "pod",
+      "to": "authentik",
+      "label": "OIDC",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "pod-pvc",
+      "from": "pod",
+      "to": "pvc",
+      "label": "/data",
+      "variant": "emphasis"
+    },
+    {
+      "id": "pod-smtp",
+      "from": "pod",
+      "to": "smtp",
+      "label": "Invite / Emergency",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "backup-pod",
+      "from": "backup",
+      "to": "pod",
+      "label": "archive",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "backup-nfs",
+      "from": "backup",
+      "to": "nfs",
+      "label": "tar.gz"
+    },
+    {
+      "id": "restore-backup",
+      "from": "restore",
+      "to": "backup",
+      "label": "uses archives",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Hosts",
+      "items": [
+        "vw-ext.stadthagen.dev kanonisch (DOMAIN + Clients)",
+        "vaultwarden.stadthagen.dev → Redirect (CSP)"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "GitOps",
+      "items": [
+        "Helm-Fork → helm-manifest.yaml (ADR-0014)",
+        "Extras: IngressRoute, Backup, Restore-UI"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Secrets",
+      "items": [
+        "vaultwarden-oauth / -admin / -smtp",
+        "Infra_LAB SecretSpec → Ansible --tags secrets"
+      ]
+    }
+  ]
+}

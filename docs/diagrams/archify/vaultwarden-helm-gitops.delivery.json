@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "0c7cf265-c589-41ac-a544-3fd58d87bf8d",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/henry/Projects/minilab/docs/diagrams/archify/vaultwarden-helm-gitops.json",
+  "output": "/Users/henry/Projects/minilab/docs/diagrams/archify/vaultwarden-helm-gitops.html",
+  "specification": {
+    "sha256": "f1f8b97b3abe21e367a2b5bfe7e0efea723ef52e0dd362e4d2acff2cdb1962e5",
+    "bytes": 3502
+  },
+  "artifact": {
+    "sha256": "54aee43bff76974370f0e6089ee4e1fb8eb9f929c463adeef6a8d0915e52342e",
+    "bytes": 819536
+  }
+}

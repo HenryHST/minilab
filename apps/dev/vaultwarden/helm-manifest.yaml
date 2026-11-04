@@ -1,0 +1,214 @@
+# Regenerieren:
+#   helm template vaultwarden ./charts/vaultwarden -f values.yaml --namespace vaultwarden --skip-tests > helm-manifest.yaml
+# Chart: charts/vaultwarden (fork gissilabs/vaultwarden 1.4.2 → 1.4.2+minilab.1)
+
+---
+# Source: vaultwarden/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: vaultwarden
+  labels:
+    helm.sh/chart: vaultwarden-1.4.2_minilab.1
+    app.kubernetes.io/name: vaultwarden
+    app.kubernetes.io/instance: vaultwarden
+    app.kubernetes.io/version: "1.37.5"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: vaultwarden
+    app.kubernetes.io/instance: vaultwarden
+
+---
+# Source: vaultwarden/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaultwarden
+  labels:
+    helm.sh/chart: vaultwarden-1.4.2_minilab.1
+    app.kubernetes.io/name: vaultwarden
+    app.kubernetes.io/instance: vaultwarden
+    app.kubernetes.io/version: "1.37.5"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vaultwarden
+      app.kubernetes.io/instance: vaultwarden
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vaultwarden
+        app.kubernetes.io/instance: vaultwarden
+        app: vaultwarden
+    spec:
+      serviceAccountName: default
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 65534
+      containers:
+        - name: vaultwarden
+          securityContext:
+            runAsGroup: 65534
+            runAsUser: 65534
+          image: "vaultwarden/server:1.37.5"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: ROCKET_PORT
+              value: "8080"
+            - name: SIGNUPS_ALLOWED
+              value: "false"
+            - name: SIGNUPS_VERIFY
+              value: "false"
+            - name: REQUIRE_DEVICE_EMAIL
+              value: "false"
+            - name: EMAIL_ATTEMPTS_LIMIT
+              value: "3"
+            - name: EMAIL_EXPIRATION_TIME
+              value: "600"
+            - name: INVITATIONS_ALLOWED
+              value: "true"
+            - name: INVITATION_EXPIRATION_HOURS
+              value: "120"
+            - name: PASSWORD_HINTS_ALLOWED
+              value: "true"
+            - name: SHOW_PASSWORD_HINT
+              value: "false"
+            - name: CLIENT_SUPPRESS_ONBOARDING
+              value: "false"
+            - name: WEB_VAULT_ENABLED
+              value: "true"
+            - name: SENDS_ALLOWED
+              value: "true"
+            - name: ORG_CREATION_USERS
+              value: "all"
+            - name: ORG_EVENTS_ENABLED
+              value: "false"
+            - name: EMAIL_CHANGE_ALLOWED
+              value: "true"
+            - name: DB_CONNECTION_RETRIES
+              value: "15"
+            - name: DATABASE_MAX_CONNS
+              value: "10"
+            - name: DATABASE_MIN_CONNS
+              value: "2"
+            - name: DATABASE_IDLE_TIMEOUT
+              value: "600"
+            - name: ENABLE_DB_WAL
+              value: "true"
+            - name: DOMAIN
+              value: "https://vw-ext.stadthagen.dev"
+            - name: ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: vaultwarden-admin
+                  key: ADMIN_TOKEN
+            - name: EMERGENCY_ACCESS_ALLOWED
+              value: "true"
+            - name: EMERGENCY_NOTIFICATION_REMINDER_SCHEDULE
+              value: "0 3 * * * *"
+            - name: EMERGENCY_REQUEST_TIMEOUT_SCHEDULE
+              value: "0 7 * * * *"
+            - name: SMTP_HOST
+              value: "mail.henrystadthagen.de"
+            - name: SMTP_FROM
+              value: "auto@henrystadthagen.de"
+            - name: SMTP_FROM_NAME
+              value: "Vaultwarden"
+            - name: SMTP_SECURITY
+              value: "force_tls"
+            - name: SMTP_PORT
+              value: "465"
+            - name: SMTP_AUTH_MECHANISM
+              value: "Plain"
+            - name: SMTP_TIMEOUT
+              value: "15"
+            - name: SMTP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: vaultwarden-smtp
+                  key: smtp-user
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: vaultwarden-smtp
+                  key: smtp-password
+            - name: SMTP_EMBED_IMAGES
+              value: "true"
+            - name: ICON_SERVICE
+              value: "internal"
+            - name: ICON_CACHE_TTL
+              value: "2592000"
+            - name: ICON_CACHE_NEGTTL
+              value: "259200"
+            - name: ICON_REDIRECT_CODE
+              value: "302"
+            - name: SSO_ENABLED
+              value: "true"
+            - name: SSO_SIGNUPS_MATCH_EMAIL
+              value: "true"
+            - name: SSO_ALLOW_UNKNOWN_EMAIL_VERIFICATION
+              value: "false"
+            - name: SSO_AUTHORITY
+              value: "https://idp.stadthagen.dev/application/o/vaultwarden/"
+            - name: SSO_SCOPES
+              value: "openid email profile offline_access"
+            - name: SSO_PKCE
+              value: "true"
+            - name: SSO_CLIENT_ID
+              value: "vaultwarden"
+            - name: SSO_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: vaultwarden-oauth
+                  key: SSO_CLIENT_SECRET
+            - name: SSO_AUTH_ONLY_NOT_SESSION
+              value: "false"
+            - name: SSO_CLIENT_CACHE_EXPIRATION
+              value: "0"
+            - name: SSO_DEBUG_TOKENS
+              value: "false"
+            - name: PURGE_INCOMPLETE_SSO_AUTH
+              value: "0 20 0 * * *"
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /alive
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /alive
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+          - name: vaultwarden
+            mountPath: /data
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              cpu: 50m
+              memory: 128Mi
+      volumes:
+      - name: vaultwarden
+        persistentVolumeClaim:
+          claimName: "vaultwarden-data"
+      nodeSelector:
+        kubernetes.io/hostname: nxk3-w02

@@ -6,7 +6,7 @@ global:
   image:
     registry: docker.io
     repository: fosrl/newt
-    tag: "1.19.1"
+    tag: "1.20.0"
   podAnnotations:
     # Chart values.schema forbids nested objects under podSecurityContext.
     container.seccomp.security.alpha.kubernetes.io/pod: runtime/default

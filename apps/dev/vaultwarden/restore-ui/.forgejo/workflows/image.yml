@@ -1,0 +1,107 @@
+# Lab SoT build for dev/vw-restore.
+# Sync this file into https://git.stadthagen.dev/dev/vw-restore (.forgejo/workflows/image.yml).
+# Runner label `docker` = DinD on w06. Actions URL: self (data.forgejo.org).
+#
+# Secrets: REGISTRY_USER / REGISTRY_TOKEN (Forgejo OCI write:package)
+name: image
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: SemVer override (empty = VERSION file)
+        required: false
+        default: ""
+
+env:
+  FORGEJO_IMAGE: git.stadthagen.dev/dev/vw-restore
+
+jobs:
+  build:
+    runs-on: docker
+    steps:
+      - name: Checkout
+        uses: https://data.forgejo.org/actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        run: |
+          set -euo pipefail
+          FILE_VER="$(tr -d '[:space:]' < VERSION)"
+          VER="${{ github.event.inputs.tag }}"
+          if [ -z "${VER}" ]; then
+            if [[ "${GITHUB_REF_NAME:-}" == v* ]]; then
+              VER="${GITHUB_REF_NAME#v}"
+            else
+              VER="${FILE_VER}"
+            fi
+          fi
+          if ! [[ "${VER}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-].*)?$ ]]; then
+            echo "::error::Invalid SemVer '${VER}'"
+            exit 1
+          fi
+          echo "version=${VER}" >> "$GITHUB_OUTPUT"
+          echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          echo "sha=$(echo "${GITHUB_SHA}" | cut -c1-7)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: https://data.forgejo.org/docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: https://data.forgejo.org/docker/setup-buildx-action@v3
+
+      - name: Log in to Forgejo OCI
+        uses: https://data.forgejo.org/docker/login-action@v3
+        with:
+          registry: git.stadthagen.dev
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_TOKEN }}
+
+      - name: Build and push
+        id: build
+        uses: https://data.forgejo.org/docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: true
+          sbom: true
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ steps.version.outputs.date }}
+          tags: |
+            ${{ env.FORGEJO_IMAGE }}:${{ steps.version.outputs.version }}
+            ${{ env.FORGEJO_IMAGE }}:latest
+          labels: |
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Export rootfs for Trivy (avoid OCI SBOM false positives)
+        id: rootfs
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          TAG: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          ROOTFS="${RUNNER_TEMP:-/tmp}/vw-restore-rootfs"
+          rm -rf "${ROOTFS}"
+          mkdir -p "${ROOTFS}"
+          if command -v crane >/dev/null 2>&1; then
+            crane export --platform linux/amd64 "${FORGEJO_IMAGE}@${DIGEST}" - | tar -x -C "${ROOTFS}"
+          else
+            CID="$(docker create --platform linux/amd64 "${FORGEJO_IMAGE}:${TAG}")"
+            docker export "${CID}" | tar -x -C "${ROOTFS}"
+            docker rm "${CID}" >/dev/null
+          fi
+          echo "rootfs=${ROOTFS}" >> "$GITHUB_OUTPUT"
+
+      - name: Trivy FS scan (CRITICAL/HIGH)
+        run: |
+          set -euo pipefail
+          docker run --rm -v "${{ steps.rootfs.outputs.rootfs }}:/rootfs:ro" \
+            aquasec/trivy:latest fs --severity CRITICAL,HIGH --exit-code 1 \
+            --ignore-unfixed --scanners vuln /rootfs

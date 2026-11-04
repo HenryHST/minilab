@@ -92,16 +92,25 @@ spec:
                 echo "runner token file empty"
                 exit 1
               fi
+              JOB_IMAGE="ghcr.io/catthehacker/ubuntu:act-22.04"
               while true; do
-                # Job image must include docker CLI (node:* does not) — DinD is reached via DOCKER_HOST TLS
+                # Job image needs BOTH node (JS Actions like checkout@v4) and docker CLI
+                # (build-push / login). DinD is reached via DOCKER_HOST TLS (envs below).
+                # docker:*-cli has no node → "exec: node: not found". Plain node:* has no docker.
                 forgejo-runner register --no-interactive \
                   --token "${RUNNER_SECRET}" \
                   --name "${RUNNER_NAME}" \
                   --instance "${FORGEJO_INSTANCE_URL}" \
-                  --labels "docker:docker://docker:27.5.1-cli" && break
+                  --labels "docker:docker://${JOB_IMAGE}" && break
                 echo "register failed; retry in 5s"
                 sleep 5
               done
+              # forgejo-runner register has been observed keeping a stale docker:// mapping
+              # under label "docker"; force the job image into .runner before daemon start.
+              if [ -f /data/.runner ]; then
+                sed -i -E "s|\"docker:docker://[^\"]+\"|\"docker:docker://${JOB_IMAGE}\"|" /data/.runner
+                echo "pinned .runner labels:"; cat /data/.runner
+              fi
               forgejo-runner generate-config > /data/config.yml
               sed -i -e 's|network: .*|network: host|' /data/config.yml
               sed -i -e 's|^  envs:$|  envs:\n    DOCKER_HOST: tcp://localhost:2376\n    DOCKER_TLS_VERIFY: 1\n    DOCKER_CERT_PATH: /certs/client|' /data/config.yml

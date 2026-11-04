@@ -125,7 +125,9 @@ gitea:
     #   PASSWD: via additionalConfigSources secret forgejo-db
     actions:
       ENABLED: true
-      DEFAULT_ACTIONS_URL: self
+      # Resolve actions/checkout@v4 etc. from Forgejo's public action mirror.
+      # `self` requires local mirrors under git.stadthagen.dev/actions/* (not seeded yet).
+      DEFAULT_ACTIONS_URL: https://data.forgejo.org
     admin:
       DISABLE_REGULAR_ORG_CREATION: true
       DEFAULT_EMAIL_NOTIFICATIONS: enabled

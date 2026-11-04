@@ -15,7 +15,7 @@ Self-hosted Git + **Lab container registry** (replaces Distribution `registry.st
 | Backup | CronJob → RustFS bucket `forgejo-backups` |
 | Metrics | `/metrics` on Service `forgejo-http` (ServiceMonitor); Ingress excludes PathPrefix `/metrics` |
 | Grafana | `https://grafana.stadthagen.dev/d/forgejo-overview` (folder Forgejo) |
-| Actions | `DEFAULT_ACTIONS_URL: self` (workflows use Forgejo Actions, not github.com by default) |
+| Actions | `DEFAULT_ACTIONS_URL: https://data.forgejo.org` (Forgejo action mirror; not github.com) |
 | Security | rootless image + `podSecurityContext`/`containerSecurityContext` UID 1000, `runAsNonRoot`, drop ALL |
 
 ## Secrets (Infra_LAB `k3s_secrets`)

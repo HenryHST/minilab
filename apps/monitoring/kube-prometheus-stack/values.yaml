@@ -264,7 +264,7 @@ grafana:
     image:
       registry: quay.io
       repository: kiwigrid/k8s-sidecar
-      tag: "2.14.1"
+      tag: "2.14.3"
     dashboards:
       enabled: true
       label: grafana_dashboard

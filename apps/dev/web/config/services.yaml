@@ -19,10 +19,6 @@
           username: "{{HOMEPAGE_VAR_PROXMOX_USER}}"
           password: "{{HOMEPAGE_VAR_PROXMOX_TOKEN}}"
           fields: ["vms", "lxc", "resources.cpu", "resources.mem"]
-    - Traefik:
-        href: https://traefik.stadthagen.dev
-        icon: traefik.png
-        description: Ingress LB 192.168.0.215
     - Authentik:
         id: authentik
         href: https://idp.stadthagen.dev

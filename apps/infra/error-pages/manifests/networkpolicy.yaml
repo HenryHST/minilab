@@ -1,4 +1,4 @@
-# Allow Traefik (errors middleware + catch-all) to reach error-pages.
+# Allow Cilium Gateway edge to reach error-pages (open port 8080).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

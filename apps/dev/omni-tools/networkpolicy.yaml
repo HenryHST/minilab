@@ -1,4 +1,4 @@
-# omni-tools: ingress allow Traefik + in-namespace (Vaultwarden/Termix pattern).
+# omni-tools: ingress allow Cilium Gateway (open port) + in-namespace.
 # Namespace is omnitools. No Newt — not published via pangolin-publish. Egress left open.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

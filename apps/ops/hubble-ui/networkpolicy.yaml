@@ -1,4 +1,4 @@
-# Hubble UI: allow Traefik (+ kube-system) to frontend port.
+# Hubble UI: allow Cilium Gateway (open port) to frontend port.
 # Workload owned by Cilium Helm (Ansible); labels k8s-app=hubble-ui.
 # Frontend container listens on 8081 (Service maps 80→8081).
 apiVersion: networking.k8s.io/v1

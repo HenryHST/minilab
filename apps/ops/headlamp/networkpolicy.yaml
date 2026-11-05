@@ -1,4 +1,4 @@
-# Headlamp: ingress allow Traefik + in-namespace (Vaultwarden/Termix pattern).
+# Headlamp: ingress allow Cilium Gateway (open port) + in-namespace.
 # Lives in kube-system; pod port is 4466 (Service maps 80→http/4466).
 # No Newt. Egress left open (OIDC to Authentik, plugin downloads, apiserver).
 apiVersion: networking.k8s.io/v1

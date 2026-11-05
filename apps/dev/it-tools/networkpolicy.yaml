@@ -1,4 +1,4 @@
-# it-tools: ingress allow Traefik + in-namespace (Vaultwarden/Termix pattern).
+# it-tools: ingress allow Cilium Gateway (open port) + in-namespace.
 # No Newt — not published via pangolin-publish. Egress left open.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

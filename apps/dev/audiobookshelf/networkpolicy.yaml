@@ -1,4 +1,4 @@
-# Audiobookshelf: ingress allow Traefik + in-namespace. No Newt (LAN-only).
+# Audiobookshelf: ingress allow Cilium Gateway (open port) + in-namespace. No Newt (LAN-only).
 # Egress left open (Authentik OIDC, cover art, podcasts).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

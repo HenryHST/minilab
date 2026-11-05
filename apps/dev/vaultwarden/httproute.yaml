@@ -1,4 +1,5 @@
-# LAN host redirects to vw-ext (DOMAIN / SSO / CSP require one public host).
+# LAN host proxies to nginx redirect → vw-ext (DOMAIN / SSO / CSP require one public host).
+# Cilium returns 404 for RequestRedirect-only HTTPRoute rules (no backendRefs allowed with redirect).
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: ReferenceGrant
 metadata:
@@ -34,10 +35,6 @@ spec:
         - path:
             type: PathPrefix
             value: /
-      filters:
-        - type: RequestRedirect
-          requestRedirect:
-            scheme: https
-            hostname: vw-ext.stadthagen.dev
-            port: 443
-            statusCode: 302
+      backendRefs:
+        - name: vaultwarden-lan-redirect
+          port: 8080

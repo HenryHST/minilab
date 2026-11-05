@@ -1,0 +1,51 @@
+# Migrated from Traefik IngressRoute → Cilium Gateway API HTTPRoute.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: gateway-tls-bookstack-tls
+  namespace: bookstack
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    namespace: gateway-system
+  to:
+  - group: ''
+    kind: Secret
+    name: bookstack-tls
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: bookstack
+  namespace: bookstack
+  labels:
+    app.kubernetes.io/name: bookstack
+    app.kubernetes.io/part-of: bookstack
+spec:
+  parentRefs:
+  - name: nxk3
+    namespace: gateway-system
+    sectionName: https-book
+  hostnames:
+  - book.stadthagen.dev
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    filters:
+    - type: ResponseHeaderModifier
+      responseHeaderModifier:
+        set:
+        - name: Strict-Transport-Security
+          value: max-age=31536000; includeSubDomains
+        - name: X-Content-Type-Options
+          value: nosniff
+        - name: X-XSS-Protection
+          value: 1; mode=block
+        - name: X-Frame-Options
+          value: DENY
+    backendRefs:
+    - name: bookstack
+      port: 80

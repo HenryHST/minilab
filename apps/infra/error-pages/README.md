@@ -1,8 +1,10 @@
 # error-pages
 
-Clusterweite Maintenance-/Error-Pages für Traefik (`500–504` + unbekannte Hosts).
+Clusterweite Maintenance-/Error-Pages für den Cilium Gateway edge (`404`, `500–504` via Envoy CEC in Infra_LAB).
 
-Upstream: [tarampampam/error-pages](https://github.com/tarampampam/error-pages) · Chart-Pin: `applicationset-infra.yaml` → `helmVersion` · [Traefik guide](https://github.com/tarampampam/error-pages/blob/master/docs/guides/k8s_ingress_traefik.md)
+Upstream: [tarampampam/error-pages](https://github.com/tarampampam/error-pages) · Chart-Pin: `applicationset-infra.yaml` → `helmVersion`
+
+Wiring: [ADR-0024](../../../docs/adr/0024-error-pages.md), [ADR-0038](../../../docs/adr/0038-cilium-gateway-api.md). Traefik Middleware / HostRegexp-Catch-all removed.
 
 ## Deploy
 
@@ -12,7 +14,7 @@ Upstream: [tarampampam/error-pages](https://github.com/tarampampam/error-pages) 
 | Namespace | `error-pages` |
 | Sync wave | `1` |
 | Helm | OCI `ghcr.io/tarampampam/error-pages/charts` → native Argo Helm + `values.yaml` |
-| Extras | Catch-all `IngressRoute`, NetworkPolicy, ConfigMap HTML-Template |
+| Extras | NetworkPolicy, ConfigMap HTML-Template (kein IngressRoute) |
 
 ## Template + Gatus-Badges
 
@@ -38,24 +40,13 @@ kubectl create configmap error-pages-html-template \
 # labels + sync-wave annotation wieder setzen (siehe bestehende CM-YAML)
 ```
 
-Middleware Statuscodes: **`500-504`** only (Authentik 401/403 und API-4xx bleiben roh).
-
-## Traefik (Infra_LAB)
-
-Entrypoint-Middleware und `allowCrossNamespace` leben in der Ansible-Traefik-Role (`henryhst.k3s.traefik`), nicht in dieser App.
-
-1. Diese App zuerst syncen (Middleware CRD `error-pages` im NS `error-pages`)
-2. Dann: `ansible-playbook site.yaml --tags traefik --limit nxk3-cp01`
-
-Identifier: `error-pages-error-pages@kubernetescrd` auf Entrypoint **websecure**.
-
-## Verify
+## Smoke (nach Gateway-Cutover)
 
 ```bash
-kubectl -n error-pages get deploy,svc,middleware,ingressroute,configmap
-curl -skL -H 'Accept: text/html' https://no-such.stadthagen.dev/ | grep -E 'badge\.svg|Alle Checks'
+# Backend up
+kubectl -n error-pages get svc error-pages
+# CEC present (Infra_LAB)
+kubectl -n gateway-system get cec
+# Force 404 via unknown path on a known host (expects styled page if CEC wired)
+curl -skI https://web.stadthagen.dev/__no_such_path__ | head
 ```
-
-## Docs
-
-ADR-0024 · BookStack Buch Minilab · Issue [#83](https://github.com/HenryHST/minilab/issues/83).

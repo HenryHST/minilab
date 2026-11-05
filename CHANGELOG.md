@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **Edge: Traefik → Cilium Gateway API** — all app `IngressRoute`s → `HTTPRoute` + TLS `ReferenceGrant`; central `apps/infra/gateway` (`gateway-system/nxk3`, VIP `.215`); Authentik ForwardAuth → `ExternalAuth` (`/auth/envoy`); error-pages Catch-all/Middleware removed (CEC in Infra_LAB); NetworkPolicies allow from `kube-system`; `traefik-manager` AppSet entry disabled. See [ADR-0038](docs/adr/0038-cilium-gateway-api.md), `apps/infra/gateway/MIGRATION.md`.
 - **k8s-toolbox 1.0.2** — Alpine 3.24 Docs/SoT-Labels, kubectl SHA256, full+slim Variants (SBOM+provenance Forgejo/GHA); Consumer-Pins; slim für GC/Theme/Permissions/kubeconfig/paperless-inbox; aws-cli im full-Image; amd64-Pins an Multi-Arch-Jobs gelockert; Longhorn-Enforcer bleiben `rancher/kubectl` (dokumentierte Ausnahme).
 
 ## [0.16.0] - 2026-11-01

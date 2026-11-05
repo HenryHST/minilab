@@ -1,0 +1,39 @@
+# Migrated from Traefik IngressRoute → Cilium Gateway API HTTPRoute.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: gateway-tls-bytestash-tls
+  namespace: bytestash
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    namespace: gateway-system
+  to:
+  - group: ''
+    kind: Secret
+    name: bytestash-tls
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: bytestash
+  namespace: bytestash
+  labels:
+    app.kubernetes.io/name: bytestash
+    app.kubernetes.io/part-of: bytestash
+spec:
+  parentRefs:
+  - name: nxk3
+    namespace: gateway-system
+    sectionName: https-bytestash
+  hostnames:
+  - bytestash.stadthagen.dev
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: bytestash
+      port: 5000

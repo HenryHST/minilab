@@ -1,0 +1,28 @@
+# Allow HTTPRoutes in app namespaces to ExternalAuth → ak-outpost-* Services.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: httproute-externalauth-outposts
+  namespace: authentik
+  labels:
+    app.kubernetes.io/part-of: authentik
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: kube-system
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: registry-ui
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: stirling-pdf
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: vaultwarden
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: podcraft
+  to:
+  - group: ''
+    kind: Service

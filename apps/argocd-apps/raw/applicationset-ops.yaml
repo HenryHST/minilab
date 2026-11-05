@@ -68,10 +68,11 @@ spec:
             path: apps/ops/wud
             namespace: wud
             syncWave: "3"
-          - app: traefik-manager
-            path: apps/ops/traefik-manager
-            namespace: traefik-manager
-            syncWave: "3"
+          # Deprecated: Traefik edge replaced by Cilium Gateway API (apps/infra/gateway).
+          # - app: traefik-manager
+          #   path: apps/ops/traefik-manager
+          #   namespace: traefik-manager
+          #   syncWave: "3"
           - app: authentik
             path: apps/ops/authentik
             namespace: authentik

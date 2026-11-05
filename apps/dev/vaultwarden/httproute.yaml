@@ -1,0 +1,48 @@
+# LAN host redirects to vw-ext (DOMAIN / SSO / CSP require one public host).
+# Was Traefik Middleware sso-to-ext (redirectRegex).
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: gateway-tls-vaultwarden-tls
+  namespace: vaultwarden
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: gateway-system
+  to:
+    - group: ""
+      kind: Secret
+      name: vaultwarden-tls
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: vaultwarden
+  namespace: vaultwarden
+  labels:
+    app.kubernetes.io/name: vaultwarden
+    app.kubernetes.io/part-of: vaultwarden
+spec:
+  parentRefs:
+    - name: nxk3
+      namespace: gateway-system
+      sectionName: https-vaultwarden
+  hostnames:
+    - vaultwarden.stadthagen.dev
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            hostname: vw-ext.stadthagen.dev
+            statusCode: 302
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            set:
+              - name: Strict-Transport-Security
+                value: max-age=31536000; includeSubDomains
+              - name: X-Content-Type-Options
+                value: nosniff
+              - name: X-Frame-Options
+                value: DENY

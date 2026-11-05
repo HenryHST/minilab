@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
-# Day-0: ForwardAuth for vw-restore.stadthagen.dev (Vaultwarden Restore UI)
+# Day-0: ExternalAuth (Gateway API) for vw-restore.stadthagen.dev (Vaultwarden Restore UI)
 # Owner: minilab blueprints — NOT managed by Infra_LAB terraform/authentik OAuth
-# Service name must stay ak-outpost-vw-restore (Traefik middleware).
+# Service name must stay ak-outpost-vw-restore (HTTPRoute ExternalAuth).
 # Access group vaultwarden_admins is created by Terraform (authentik_vaultwarden.tf).
 version: 1
 metadata:

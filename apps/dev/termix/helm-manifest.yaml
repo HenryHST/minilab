@@ -254,27 +254,3 @@ spec:
             topologyKey: kubernetes.io/hostname
 
 ---
-# Source: termix/templates/traefik-ingressroute.yaml
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: termix
-  labels:
-    helm.sh/chart: termix-0.1.0
-    app.kubernetes.io/name: termix
-    app.kubernetes.io/instance: termix
-    app.kubernetes.io/version: "2.9.2"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    kubernetes.io/ingress.class: traefik-external
-spec:
-  entryPoints:
-    - websecure
-  routes:
-    - match: Host(`termix.stadthagen.dev`) && PathPrefix(`/`)
-      kind: Rule
-      services:
-        - name: termix
-          port: 8080
-  tls:
-    secretName: termix-tls

@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
-# Day-0: ForwardAuth for podcraft.stadthagen.dev
+# Day-0: ExternalAuth (Gateway API) for podcraft.stadthagen.dev
 # Owner: minilab blueprints — NOT managed by Infra_LAB terraform/authentik OAuth
-# Service name must stay ak-outpost-podcraft (Traefik middleware).
+# Service name must stay ak-outpost-podcraft (HTTPRoute ExternalAuth).
 # Access group podcraft_admins is created by Terraform (authentik_podcraft.tf).
 version: 1
 metadata:

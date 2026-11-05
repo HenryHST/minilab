@@ -20,8 +20,8 @@ resources:
   - backup-cronjob.yaml
   - restore-bootstrap.yaml
   - certificate.yaml
-  - ingressroute.yaml
-  - default-headers.yaml
+  - httproute.yaml
+  - referencegrant-externalauth.yaml
   - blueprints-configmap.yaml
   - pdb.yaml
 patches:

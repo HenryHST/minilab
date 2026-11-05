@@ -1,0 +1,91 @@
+# Migrated from Traefik IngressRoute.
+# Rule order: Basic-auth machine API → public shell/assets → Authentik ExternalAuth.
+# Traefik ipAllowList (LAN) is not expressible on HTTPRoute; rely on VIP + NetworkPolicy.
+# Long OCR-style timeouts not needed here.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: gateway-tls-podcraft-tls
+  namespace: podcraft
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: gateway-system
+  to:
+    - group: ""
+      kind: Secret
+      name: podcraft-tls
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: podcraft
+  namespace: podcraft
+  labels:
+    app.kubernetes.io/name: podcraft
+    app.kubernetes.io/part-of: podcraft
+spec:
+  parentRefs:
+    - name: nxk3
+      namespace: gateway-system
+      sectionName: https-podcraft
+  hostnames:
+    - podcraft.stadthagen.dev
+  rules:
+    # HA machine clients: Basic Authorization (no ExternalAuth).
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/v1/workloads
+          headers:
+            - name: Authorization
+              type: RegularExpression
+              value: "(?i)^Basic "
+      backendRefs:
+        - name: podcraft
+          port: 8080
+    # Public shell + assets (Pulse login).
+    - matches:
+        - path:
+            type: Exact
+            value: /
+        - path:
+            type: Exact
+            value: /login
+        - path:
+            type: PathPrefix
+            value: /static
+        - path:
+            type: Exact
+            value: /healthz
+      backendRefs:
+        - name: podcraft
+          port: 8080
+    # Browser OIDC: Authentik ExternalAuth (Envoy path).
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: ExternalAuth
+          externalAuth:
+            protocol: HTTP
+            backendRef:
+              name: ak-outpost-podcraft
+              namespace: authentik
+              port: 9000
+            http:
+              path: /outpost.goauthentik.io/auth/envoy
+              allowedHeaders:
+                - Cookie
+                - Authorization
+              allowedResponseHeaders:
+                - X-authentik-username
+                - X-authentik-groups
+                - X-authentik-email
+                - X-authentik-name
+                - X-authentik-uid
+      backendRefs:
+        - name: podcraft
+          port: 8080

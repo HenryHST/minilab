@@ -40,10 +40,7 @@ service:
 ingress:
   enabled: false
 
-# LAN HTTPRoute (RequestRedirect → vw-ext) stays as Plain YAML.
-ingressRoute:
-  enabled: false
-
+# LAN edge: Plain YAML HTTPRoute (httproute.yaml / lan-redirect.yaml), not Helm.
 httpRoute:
   enabled: false
 

@@ -253,24 +253,6 @@ ingress:
   # -- TLS configuration
   tls: []
 
-# -- Traefik IngressRoute CRD configuration
-ingressRoute:
-  # -- Enable Traefik IngressRoute
-  enabled: false
-  # -- Use new CRD (Traefik 2.10+, traefik.io namespace)
-  newCRD: true
-  # -- IngressRoute hostname
-  host: ""
-  # -- IngressRoute annotations (e.g. kubernetes.io/ingress.class)
-  annotations: {}
-  # -- Traefik entrypoints
-  entrypoints:
-    - websecure
-  # -- Traefik middlewares
-  middlewares: []
-  # -- TLS configuration
-  tls: {}
-
 # -- HTTPRoute configuration. ref: https://gateway-api.sigs.k8s.io/api-types/httproute/
 httpRoute:
   # -- Enabled HTTPRoute

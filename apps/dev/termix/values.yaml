@@ -145,15 +145,4 @@ guacd:
 ingress:
   enabled: false
 
-traefik:
-  ingressRoute:
-    enabled: true
-    entryPoints:
-      - websecure
-    host: termix.stadthagen.dev
-    pathPrefix: /
-    tls:
-      enabled: true
-      secretName: termix-tls
-    annotations:
-      kubernetes.io/ingress.class: traefik-external
+# Edge: Cilium Gateway HTTPRoute (apps/dev/termix/httproute.yaml); no Traefik.

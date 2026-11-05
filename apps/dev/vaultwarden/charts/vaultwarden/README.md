@@ -79,12 +79,6 @@ The default value for Embed Images on email option changed from false to true.
 | ingress.enabled | bool | `false` | Enable Ingress |
 | ingress.host | string | `""` | Ingress hostname |
 | ingress.tls | list | `[]` | TLS configuration |
-| ingressRoute.enabled | bool | `false` | Enable Traefik IngressRoute |
-| ingressRoute.entrypoints | list | `["websecure"]` | Traefik entrypoints |
-| ingressRoute.host | string | `""` | IngressRoute hostname |
-| ingressRoute.middlewares | list | `[]` | Traefik middlewares |
-| ingressRoute.newCRD | bool | `false` | Use new CRD (Traefik 2.10+, traefik.io namespace) |
-| ingressRoute.tls | object | `{}` | TLS configuration |
 | initContainers | list | `[]` | Init containers (container spec) |
 | nameOverride | string | `""` | Name override |
 | nodeSelector | object | `{}` | Node selector |

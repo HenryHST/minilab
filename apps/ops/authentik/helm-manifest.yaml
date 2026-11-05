@@ -143,17 +143,6 @@ rules:
       - list
       - patch
   - apiGroups:
-      - traefik.containo.us
-      - traefik.io
-    resources:
-      - middlewares
-    verbs:
-      - get
-      - create
-      - delete
-      - list
-      - patch
-  - apiGroups:
       - gateway.networking.k8s.io
     resources:
       - httproutes

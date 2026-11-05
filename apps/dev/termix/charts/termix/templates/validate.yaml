@@ -1,6 +1,3 @@
-{{- if and .Values.ingress.enabled .Values.traefik.ingressRoute.enabled -}}
-{{- fail "ingress and traefik.ingressRoute cannot both be enabled" -}}
-{{- end -}}
 {{- if and (eq .Values.database.dialect "sqlite") (or (gt (int .Values.replicaCount) 1) .Values.autoscaling.enabled) -}}
 {{- fail "SQLite supports only one replica; use Postgres or MySQL before enabling replicas or autoscaling" -}}
 {{- end -}}

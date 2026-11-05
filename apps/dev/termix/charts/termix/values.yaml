@@ -49,20 +49,6 @@ ingress:
           pathType: Prefix
   tls: []
 
-traefik:
-  ingressRoute:
-    enabled: false
-    entryPoints:
-      - websecure
-    host: termix.example.com
-    pathPrefix: /
-    tls:
-      enabled: true
-      secretName: ""
-      certResolver: ""
-    middlewares: []
-    annotations: {}
-
 resources: {}
 
 autoscaling:

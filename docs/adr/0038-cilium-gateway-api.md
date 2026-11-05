@@ -21,4 +21,4 @@ Alle LAN-Apps nutzten Traefik `IngressRoute` + optional ForwardAuth-Middleware. 
 
 - Cutover braucht synchronen Merge dieses Branches mit Infra_LAB Traefik-off + Gateway enable.
 - Experimental-Channel CRDs für `ExternalAuth` vorausgesetzt (Cilium Gateway API install).
-- Chart-Templates mit Traefik-IngressRoute (termix/vaultwarden charts) bleiben ungenutzt / disabled; Plain YAML ist maßgeblich.
+- Chart-Templates Traefik-IngressRoute (termix/vaultwarden) und App `traefik-manager` entfernt; Plain YAML HTTPRoute ist maßgeblich.

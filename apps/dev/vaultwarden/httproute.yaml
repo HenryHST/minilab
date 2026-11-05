@@ -39,4 +39,5 @@ spec:
           requestRedirect:
             scheme: https
             hostname: vw-ext.stadthagen.dev
+            port: 443
             statusCode: 302

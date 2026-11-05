@@ -10,7 +10,7 @@
 #   B) Add egress deny only after listing DNS + every required destination.
 #
 # Cluster facts (nXk3):
-#   - Traefik NS: traefik  (kubernetes.io/metadata.name=traefik)
+#   - Edge: Cilium Gateway (kube-system)  (kubernetes.io/metadata.name=traefik)
 #   - Newt NS:    newt     (only if Pangolin publish hits this Service)
 #   - DNS:        kube-system, labels k8s-app in (kube-dns, node-local-dns), UDP/TCP 53
 #                 (NodeLocal DNSCache via Cilium LRP — allow both backends)
@@ -43,11 +43,11 @@ spec:
       ports:
         - protocol: TCP
           port: {{PORT}}
-    # LAN / Traefik IngressRoute
+    # LAN / Cilium Gateway HTTPRoute
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: traefik
+              kubernetes.io/metadata.name: kube-system
       ports:
         - protocol: TCP
           port: {{PORT}}

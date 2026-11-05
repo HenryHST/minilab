@@ -1,0 +1,39 @@
+# Migrated from Traefik IngressRoute → Cilium Gateway API HTTPRoute.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: gateway-tls-it-tools-tls
+  namespace: it-tools
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    namespace: gateway-system
+  to:
+  - group: ''
+    kind: Secret
+    name: it-tools-tls
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: it-tools
+  namespace: it-tools
+  labels:
+    app.kubernetes.io/name: it-tools
+    app.kubernetes.io/part-of: it-tools
+spec:
+  parentRefs:
+  - name: nxk3
+    namespace: gateway-system
+    sectionName: https-it-tools
+  hostnames:
+  - it-tools.stadthagen.dev
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: it-tools
+      port: 80

@@ -1,0 +1,39 @@
+# Migrated from Traefik IngressRoute → Cilium Gateway API HTTPRoute.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: gateway-tls-paperless-tls
+  namespace: paperless
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    namespace: gateway-system
+  to:
+  - group: ''
+    kind: Secret
+    name: paperless-tls
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: paperless
+  namespace: paperless
+  labels:
+    app.kubernetes.io/name: paperless
+    app.kubernetes.io/part-of: paperless
+spec:
+  parentRefs:
+  - name: nxk3
+    namespace: gateway-system
+    sectionName: https-paperless
+  hostnames:
+  - paperless.stadthagen.dev
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: paperless-web
+      port: 8000

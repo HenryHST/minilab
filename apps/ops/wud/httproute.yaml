@@ -1,0 +1,40 @@
+# Migrated from Traefik IngressRoute. /metrics stays off the public host
+# (RegularExpression; scrape via ServiceMonitor). Auth is WUD-native OIDC.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: gateway-tls-wupd-tls
+  namespace: wud
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: gateway-system
+  to:
+    - group: ""
+      kind: Secret
+      name: wupd-tls
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: wud
+  namespace: wud
+  labels:
+    app.kubernetes.io/name: wud
+    app.kubernetes.io/part-of: wud
+spec:
+  parentRefs:
+    - name: nxk3
+      namespace: gateway-system
+      sectionName: https-wupd
+  hostnames:
+    - wupd.stadthagen.dev
+  rules:
+    - matches:
+        - path:
+            type: RegularExpression
+            value: ^/(?!metrics(/|$)).*
+      backendRefs:
+        - name: wud
+          port: 3000

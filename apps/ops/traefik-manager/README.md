@@ -1,27 +1,7 @@
-# traefik-manager — Traefik Manager 1.15.4
+# traefik-manager — DEPRECATED
 
-Central [Traefik Manager](https://github.com/chr0nzz/traefik-manager) UI for the lab, published at `https://traefik.stadthagen.dev` via nXk3 Traefik (Cilium VIP `.215`).
+Traefik Manager UI for the former Traefik edge. **Deprecated** after the Cilium Gateway API cutover ([ADR-0038](../../../docs/adr/0038-cilium-gateway-api.md)).
 
-| | |
-|---|---|
-| Namespace | `traefik-manager` |
-| URL | `https://traefik.stadthagen.dev` |
-| Image | `ghcr.io/chr0nzz/traefik-manager:1.15.4` (digest-pinned) |
-| Auth | App-native OIDC → Authentik provider `traefik-manager`; group `traefik_manager_admins` |
-| Storage | PVC `traefik-manager-config` → `/app/config`; PVC `traefik-manager-backups` → `/app/backups` |
-| Sync wave | `3` (ApplicationSet `ops`) |
-
-## Prerequisites (Infra_LAB)
-
-1. Terraform `terraform/authentik`: provider/app `traefik-manager`, redirect `https://traefik.stadthagen.dev/auth/oidc/callback`, pinned `traefik_manager_oauth_client_secret`, henry in `traefik_manager_admins`.
-2. SecretSpec: `TRAEFIK_MANAGER_OAUTH_CLIENT_SECRET` (same value as TF pin).
-3. `ansible-playbook site.yaml --tags secrets` → Secret `traefik-manager-oauth` (`client-secret`).
-4. UniFi DNS `traefik` → `use_traefik_lb = true` (→ `192.168.0.215`).
-
-Without Secret `traefik-manager-oauth` the pod stays in `CreateContainerConfigError`.
-
-## Out of scope (this iteration)
-
-- Multi-server Traefik Manager agents on Docker hosts
-- Managing k3s Traefik CRDs as a file target
-- Replacing host dashboards (`traefik1` / `traefik3` / `traefik5`) or legacy `tm-manager.stadthagen.dev`
+- AppSet entry in `applicationset-ops.yaml` is commented out (prune on sync).
+- Manifests remain in-tree for reference / possible delete in a follow-up.
+- Edge is now `apps/infra/gateway` (`gateway-system/nxk3` on VIP `.215`).

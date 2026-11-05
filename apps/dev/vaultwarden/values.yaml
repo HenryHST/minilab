@@ -40,7 +40,7 @@ service:
 ingress:
   enabled: false
 
-# LAN IngressRoute + middlewares stay as Plain YAML (sso-to-ext redirect).
+# LAN HTTPRoute (RequestRedirect → vw-ext) stays as Plain YAML.
 ingressRoute:
   enabled: false
 

@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
-# Day-0 (Plan B): ForwardAuth for registry-ui.stadthagen.dev
+# Day-0 (Plan B): ExternalAuth (Gateway API) for registry-ui.stadthagen.dev
 # Owner: minilab blueprints — NOT managed by Infra_LAB terraform/authentik
-# Service name must stay ak-outpost-registry-ui (Traefik middleware).
+# Service name must stay ak-outpost-registry-ui (HTTPRoute ExternalAuth).
 # Access groups registry_ui_admins / registry_ui_users are created by Terraform; bindings here.
 version: 1
 metadata:

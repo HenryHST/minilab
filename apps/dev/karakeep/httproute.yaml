@@ -1,0 +1,39 @@
+# Migrated from Traefik IngressRoute → Cilium Gateway API HTTPRoute.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: gateway-tls-karakeep-tls
+  namespace: karakeep
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    namespace: gateway-system
+  to:
+  - group: ''
+    kind: Secret
+    name: karakeep-tls
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: karakeep
+  namespace: karakeep
+  labels:
+    app.kubernetes.io/name: karakeep
+    app.kubernetes.io/part-of: karakeep
+spec:
+  parentRefs:
+  - name: nxk3
+    namespace: gateway-system
+    sectionName: https-karakeep
+  hostnames:
+  - karakeep.stadthagen.dev
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: karakeep
+      port: 3000

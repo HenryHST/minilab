@@ -1,6 +1,6 @@
-# error-pages — Traefik errors middleware + catch-all (Helm chart values).
+# error-pages — backend for Cilium Gateway Envoy CEC (404/5xx). Helm chart values.
 # Chart: oci://ghcr.io/tarampampam/error-pages/charts/error-pages  (pin in ApplicationSet)
-# Guide: https://github.com/tarampampam/error-pages/blob/master/docs/guides/k8s_ingress_traefik.md
+# Wiring: Infra_LAB cni_cilium CEC + ADR-0024 / ADR-0038 (no Traefik Middleware).
 # HTML: custom lost-in-space + Gatus badges (ConfigMap error-pages-html-template)
 
 config:

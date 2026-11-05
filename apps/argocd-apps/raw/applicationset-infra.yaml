@@ -75,6 +75,10 @@ spec:
             helmVersion: "0.8.1"
             helmReleaseName: plugin-barman-cloud
             helmValuesFile: apps/infra/plugin-barman-cloud/values.yaml
+          - app: gateway
+            path: apps/infra/gateway
+            namespace: gateway-system
+            syncWave: "0"
           - app: error-pages
             path: apps/infra/error-pages/manifests
             namespace: error-pages

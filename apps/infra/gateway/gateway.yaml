@@ -1,0 +1,479 @@
+# Central Cilium Gateway for nXk3 edge (VIP 192.168.0.215).
+# Source of truth for HTTPS listeners; Ansible bootstraps argocd until sync.
+# Apps attach via HTTPRoute parentRefs → gateway-system/nxk3.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gateway-system
+  labels:
+    app.kubernetes.io/name: cilium-gateway
+    app.kubernetes.io/part-of: nxk3
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: nxk3
+  namespace: gateway-system
+  labels:
+    app.kubernetes.io/name: nxk3
+    app.kubernetes.io/part-of: nxk3
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  gatewayClassName: cilium
+  infrastructure:
+    annotations:
+      lbipam.cilium.io/ips: "192.168.0.215"
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-alert-manager
+      protocol: HTTPS
+      port: 443
+      hostname: "alert-manager.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: alertmanager-tls
+            namespace: monitoring
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-argocd
+      protocol: HTTPS
+      port: 443
+      hostname: "argocd.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: argocd-tls
+            namespace: argocd
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-audiobookshelf
+      protocol: HTTPS
+      port: 443
+      hostname: "audiobookshelf.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: audiobookshelf-tls
+            namespace: audiobookshelf
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-book
+      protocol: HTTPS
+      port: 443
+      hostname: "book.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: bookstack-tls
+            namespace: bookstack
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-bytestash
+      protocol: HTTPS
+      port: 443
+      hostname: "bytestash.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: bytestash-tls
+            namespace: bytestash
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-drawio
+      protocol: HTTPS
+      port: 443
+      hostname: "drawio.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: drawio-tls
+            namespace: drawio
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-excalidash
+      protocol: HTTPS
+      port: 443
+      hostname: "excalidash.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: excalidash-tls
+            namespace: excalidash
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-git
+      protocol: HTTPS
+      port: 443
+      hostname: "git.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: forgejo-tls
+            namespace: forgejo
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-grafana
+      protocol: HTTPS
+      port: 443
+      hostname: "grafana.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: grafana-tls
+            namespace: monitoring
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-headlamp
+      protocol: HTTPS
+      port: 443
+      hostname: "headlamp.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: headlamp-tls
+            namespace: kube-system
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-hubble
+      protocol: HTTPS
+      port: 443
+      hostname: "hubble.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: hubble-tls
+            namespace: kube-system
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-idp
+      protocol: HTTPS
+      port: 443
+      hostname: "idp.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: idp-tls
+            namespace: authentik
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-it-tools
+      protocol: HTTPS
+      port: 443
+      hostname: "it-tools.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: it-tools-tls
+            namespace: it-tools
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-karakeep
+      protocol: HTTPS
+      port: 443
+      hostname: "karakeep.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: karakeep-tls
+            namespace: karakeep
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-kromgo
+      protocol: HTTPS
+      port: 443
+      hostname: "kromgo.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: kromgo-tls
+            namespace: kromgo
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-loki
+      protocol: HTTPS
+      port: 443
+      hostname: "loki.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: loki-tls
+            namespace: monitoring
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-longhorn
+      protocol: HTTPS
+      port: 443
+      hostname: "longhorn.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: longhorn-tls
+            namespace: longhorn-system
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-omni-tools
+      protocol: HTTPS
+      port: 443
+      hostname: "omni-tools.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: omni-tools-tls
+            namespace: omnitools
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-paperless
+      protocol: HTTPS
+      port: 443
+      hostname: "paperless.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: paperless-tls
+            namespace: paperless
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-pgweb
+      protocol: HTTPS
+      port: 443
+      hostname: "pgweb.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: pgweb-tls
+            namespace: pgweb
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-podcraft
+      protocol: HTTPS
+      port: 443
+      hostname: "podcraft.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: podcraft-tls
+            namespace: podcraft
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-prometheus
+      protocol: HTTPS
+      port: 443
+      hostname: "prometheus.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: prometheus-tls
+            namespace: monitoring
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-registry-ui
+      protocol: HTTPS
+      port: 443
+      hostname: "registry-ui.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: registry-ui-tls
+            namespace: registry-ui
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-registry
+      protocol: HTTPS
+      port: 443
+      hostname: "registry.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: registry-tls
+            namespace: kube-system
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-rustfs
+      protocol: HTTPS
+      port: 443
+      hostname: "rustfs.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: rustfs-tls
+            namespace: rustfs
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-searxng
+      protocol: HTTPS
+      port: 443
+      hostname: "searxng.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: searxng-tls
+            namespace: searxng
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-status
+      protocol: HTTPS
+      port: 443
+      hostname: "status.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: status-tls
+            namespace: status
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-stirling-pdf
+      protocol: HTTPS
+      port: 443
+      hostname: "stirling-pdf.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: stirling-pdf-tls
+            namespace: stirling-pdf
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-termix
+      protocol: HTTPS
+      port: 443
+      hostname: "termix.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: termix-tls
+            namespace: termix
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-vaultwarden
+      protocol: HTTPS
+      port: 443
+      hostname: "vaultwarden.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: vaultwarden-tls
+            namespace: vaultwarden
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-vw-restore
+      protocol: HTTPS
+      port: 443
+      hostname: "vw-restore.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: vw-restore-tls
+            namespace: vaultwarden
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-web
+      protocol: HTTPS
+      port: 443
+      hostname: "web.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: web-tls
+            namespace: homepage
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-wupd
+      protocol: HTTPS
+      port: 443
+      hostname: "wupd.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: wupd-tls
+            namespace: wud
+      allowedRoutes:
+        namespaces:
+          from: All
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nxk3-http-redirect
+  namespace: gateway-system
+spec:
+  parentRefs:
+    - name: nxk3
+      namespace: gateway-system
+      sectionName: http
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301

@@ -1,0 +1,52 @@
+# Migrated from Traefik IngressRoute. /metrics excluded via RegularExpression
+# (was !PathPrefix(`/metrics`)); scrape via ClusterIP ServiceMonitor.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: gateway-tls-forgejo-tls
+  namespace: forgejo
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: gateway-system
+  to:
+    - group: ""
+      kind: Secret
+      name: forgejo-tls
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: forgejo
+  namespace: forgejo
+  labels:
+    app.kubernetes.io/name: forgejo
+    app.kubernetes.io/part-of: forgejo
+spec:
+  parentRefs:
+    - name: nxk3
+      namespace: gateway-system
+      sectionName: https-git
+  hostnames:
+    - git.stadthagen.dev
+  rules:
+    - matches:
+        - path:
+            type: RegularExpression
+            value: ^/(?!metrics(/|$)).*
+      filters:
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            set:
+              - name: Strict-Transport-Security
+                value: max-age=31536000; includeSubDomains
+              - name: X-Content-Type-Options
+                value: nosniff
+              - name: X-XSS-Protection
+                value: "1; mode=block"
+              - name: X-Frame-Options
+                value: DENY
+      backendRefs:
+        - name: forgejo-http
+          port: 3000

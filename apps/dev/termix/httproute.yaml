@@ -1,0 +1,39 @@
+# Gateway API HTTPRoute (was Traefik IngressRoute in helm-manifest).
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: gateway-tls-termix-tls
+  namespace: termix
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    namespace: gateway-system
+  to:
+  - group: ''
+    kind: Secret
+    name: termix-tls
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: termix
+  namespace: termix
+  labels:
+    app.kubernetes.io/name: termix
+    app.kubernetes.io/part-of: termix
+spec:
+  parentRefs:
+  - name: nxk3
+    namespace: gateway-system
+    sectionName: https-termix
+  hostnames:
+  - termix.stadthagen.dev
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: termix
+      port: 8080

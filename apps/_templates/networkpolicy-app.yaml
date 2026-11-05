@@ -10,12 +10,12 @@
 #   B) Add egress deny only after listing DNS + every required destination.
 #
 # Cluster facts (nXk3):
-#   - Edge: Cilium Gateway (kube-system)  (kubernetes.io/metadata.name=traefik)
+#   - Edge: Cilium Gateway (open app port; Envoy = reserved:ingress/host)
 #   - Newt NS:    newt     (only if Pangolin publish hits this Service)
 #   - DNS:        kube-system, labels k8s-app in (kube-dns, node-local-dns), UDP/TCP 53
 #                 (NodeLocal DNSCache via Cilium LRP — allow both backends)
 #
-# Do NOT apply default-deny without the Traefik (and Newt, if used) allow rules.
+# Do NOT apply default-deny without the Gateway edge port allow (and Newt, if used).
 ---
 # 1) Default deny ingress for selected pods (empty ingress list via policyTypes only
 #    would also work with a separate deny; here deny is implied once any Ingress policy

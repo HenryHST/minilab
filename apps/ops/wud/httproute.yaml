@@ -1,5 +1,6 @@
-# Migrated from Traefik IngressRoute. /metrics stays off the public host
-# (RegularExpression; scrape via ServiceMonitor). Auth is WUD-native OIDC.
+# Migrated from Traefik IngressRoute. Auth is WUD-native OIDC.
+# /metrics was excluded with !PathPrefix; RE2 has no negative lookahead — scrape
+# via ServiceMonitor (ClusterIP). Public path is PathPrefix `/`.
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: ReferenceGrant
 metadata:
@@ -33,8 +34,8 @@ spec:
   rules:
     - matches:
         - path:
-            type: RegularExpression
-            value: ^/(?!metrics(/|$)).*
+            type: PathPrefix
+            value: /
       backendRefs:
         - name: wud
           port: 3000

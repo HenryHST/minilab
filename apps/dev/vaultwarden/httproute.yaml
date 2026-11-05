@@ -1,5 +1,4 @@
 # LAN host redirects to vw-ext (DOMAIN / SSO / CSP require one public host).
-# Was Traefik Middleware sso-to-ext (redirectRegex).
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: ReferenceGrant
 metadata:
@@ -31,18 +30,13 @@ spec:
   hostnames:
     - vaultwarden.stadthagen.dev
   rules:
-    - filters:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
         - type: RequestRedirect
           requestRedirect:
             scheme: https
             hostname: vw-ext.stadthagen.dev
             statusCode: 302
-        - type: ResponseHeaderModifier
-          responseHeaderModifier:
-            set:
-              - name: Strict-Transport-Security
-                value: max-age=31536000; includeSubDomains
-              - name: X-Content-Type-Options
-                value: nosniff
-              - name: X-Frame-Options
-                value: DENY

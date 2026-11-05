@@ -20,11 +20,8 @@ spec:
       ports:
         - protocol: TCP
           port: 3000
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: kube-system
-      ports:
+    # Cilium Gateway edge (Envoy uses reserved:ingress/host — not kube-system pods)
+    - ports:
         - protocol: TCP
           port: 3000
 ---
@@ -50,11 +47,8 @@ spec:
       ports:
         - protocol: TCP
           port: 9090
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: kube-system
-      ports:
+    # Cilium Gateway edge (Envoy uses reserved:ingress/host — not kube-system pods)
+    - ports:
         - protocol: TCP
           port: 9090
     # kromgo (LAN badge proxy) — PromQL queries only; see apps/monitoring/kromgo
@@ -86,10 +80,7 @@ spec:
       ports:
         - protocol: TCP
           port: 9093
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: kube-system
-      ports:
+    # Cilium Gateway edge (Envoy uses reserved:ingress/host — not kube-system pods)
+    - ports:
         - protocol: TCP
           port: 9093

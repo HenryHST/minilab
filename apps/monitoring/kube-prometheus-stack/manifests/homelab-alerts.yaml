@@ -347,3 +347,50 @@ spec:
             description: |
               Cilium health checks report unreachable nodes for over 10 minutes.
               Check node networking and: kubectl -n kube-system exec ds/cilium -c cilium-agent -- cilium-health status
+
+    - name: gateway.edge
+      rules:
+        - alert: GatewaySmokeJobFailed
+          expr: |
+            kube_job_status_failed{namespace="gateway-system", job_name=~"gateway-smoke-.*"} > 0
+          for: 5m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Gateway smoke Job {{ $labels.job_name }} failed'
+            description: |
+              CronJob `gateway-system/gateway-smoke` produced a failed Job (VIP host-matrix).
+              Check: kubectl -n gateway-system logs job/{{ $labels.job_name }}
+              Manual: kubectl -n gateway-system create job --from=cronjob/gateway-smoke smoke-manual
+
+        - alert: GatewaySmokeStale
+          expr: |
+            (time() - kube_cronjob_status_last_successful_time{namespace="gateway-system", cronjob="gateway-smoke"}) > 1800
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Gateway smoke CronJob last success >30m ago'
+            description: |
+              No successful `gateway-smoke` run for over 30 minutes.
+              Check: kubectl -n gateway-system get cronjob,jobs -l app.kubernetes.io/name=gateway-smoke
+
+        - alert: GatewayL2LeaseOnForbiddenNode
+          expr: |
+            kube_lease_owner{
+              namespace="kube-system",
+              lease="cilium-l2announce-gateway-system-cilium-gateway-nxk3",
+              lease_holder=~"pi7cl|nxk3-cp.*"
+            } == 1
+          for: 5m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: 'Gateway VIP L2 lease on forbidden node {{ $labels.lease_holder }}'
+            description: |
+              Lease `cilium-l2announce-gateway-system-cilium-gateway-nxk3` is held by `{{ $labels.lease_holder }}`
+              (must not be pi7cl or control-plane). See Cilium L2AnnouncementPolicy excludes / Incident 2026-10-25.
+              Check: kubectl -n kube-system get lease cilium-l2announce-gateway-system-cilium-gateway-nxk3 -o yaml

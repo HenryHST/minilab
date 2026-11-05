@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Gateway smoke CronJob** — `gateway-system/gateway-smoke` every 15m; PrometheusRules `GatewaySmokeJobFailed` / `GatewaySmokeStale` / `GatewayL2LeaseOnForbiddenNode`.
+
 ### Changed
 
 - **NetworkPolicy template** — Gateway open-port pattern (not kube-system); Traefik comments → Cilium Gateway; ExternalAuth matrix in `apps/infra/gateway/EXTERNALAUTH.md`.

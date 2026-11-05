@@ -11,6 +11,13 @@ Central `Gateway` `gateway-system/nxk3` on VIP `192.168.0.215` (same as former T
 
 **Ownership:** this AppSet app is the listener source of truth after GitOps sync. Infra_LAB Ansible bootstraps `https-argocd` so Argo can come up before this app syncs.
 
-**Error pages:** 404/5xx via Cilium Envoy CEC (Infra_LAB `cni_cilium`), not Traefik Middleware / HostRegexp catch-all.
+**Error pages:** branded Gateway 5xx via CEC is **off** (Cilium skips bare HCM; Infra_LAB ADR-0028). App `error-pages` remains for manual use.
 
-**Auth:** Authentik ForwardAuth → HTTPRoute `ExternalAuth` (`/outpost.goauthentik.io/auth/envoy`).
+**Auth:** HTTPRoute `ExternalAuth` → Authentik Envoy outposts — see [`EXTERNALAUTH.md`](EXTERNALAUTH.md).
+
+**Smoke:** CronJob `gateway-system/gateway-smoke` every 15m (VIP `.215`). Alerts in `homelab-alerts` group `gateway.edge`.
+
+```bash
+kubectl -n gateway-system create job --from=cronjob/gateway-smoke smoke-manual
+kubectl -n gateway-system logs job/smoke-manual -f
+```

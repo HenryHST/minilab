@@ -1,0 +1,129 @@
+# Continuous Gateway edge smoke (VIP .215). Failures → PrometheusRule GatewaySmokeJobFailed.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-smoke-script
+  namespace: gateway-system
+  labels:
+    app.kubernetes.io/name: gateway-smoke
+    app.kubernetes.io/part-of: nxk3-gateway
+data:
+  smoke.sh: |
+    #!/bin/sh
+    # Cluster CronJob smoke against Cilium Gateway VIP (mirrors Infra_LAB scripts/nxk3-gateway-smoke.sh).
+    set -eu
+    VIP="${VIP:-192.168.0.215}"
+    fail=0
+    echo "nXk3 Gateway smoke VIP=${VIP}"
+    echo "----"
+    check() {
+      host="$1"
+      codes="$2"
+      code="$(curl -sk --connect-timeout 5 --max-time 15 \
+        --resolve "${host}:443:${VIP}" \
+        -o /dev/null -w '%{http_code}' \
+        "https://${host}/" || echo "000")"
+      ok=0
+      oldifs=$IFS
+      IFS=,
+      for a in $codes; do
+        if [ "$code" = "$a" ]; then
+          ok=1
+          break
+        fi
+      done
+      IFS=$oldifs
+      if [ "$ok" -eq 1 ]; then
+        echo "PASS ${host} → ${code}"
+      else
+        echo "FAIL ${host} → ${code} (want ${codes})"
+        fail=1
+      fi
+    }
+    check argocd.stadthagen.dev "200,302"
+    check idp.stadthagen.dev "200,302"
+    check git.stadthagen.dev "200,302,303,401"
+    check grafana.stadthagen.dev "200,302"
+    check prometheus.stadthagen.dev "200,302"
+    check longhorn.stadthagen.dev "200,302"
+    check registry.stadthagen.dev "200,401"
+    check hubble.stadthagen.dev "200,302,401"
+    check book.stadthagen.dev "200,302"
+    check vaultwarden.stadthagen.dev "200,302"
+    check web.stadthagen.dev "200,302"
+    check rustfs.stadthagen.dev "200,302,401,403"
+    echo "----"
+    redir="$(curl -sk --connect-timeout 5 --max-time 10 \
+      --resolve "argocd.stadthagen.dev:80:${VIP}" \
+      -o /dev/null -w '%{http_code}' \
+      "http://argocd.stadthagen.dev/" || echo "000")"
+    case "$redir" in
+      301|302|308) echo "PASS HTTP→HTTPS redirect → ${redir}" ;;
+      *) echo "FAIL HTTP→HTTPS redirect → ${redir} (want 301/302/308)"; fail=1 ;;
+    esac
+    if [ "$fail" -ne 0 ]; then
+      echo "RESULT FAIL"
+      exit 1
+    fi
+    echo "RESULT PASS"
+    exit 0
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: gateway-smoke
+  namespace: gateway-system
+  labels:
+    app.kubernetes.io/name: gateway-smoke
+    app.kubernetes.io/part-of: nxk3-gateway
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gateway-smoke
+    spec:
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: gateway-smoke
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: smoke
+              image: curlimages/curl:8.11.1
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: VIP
+                  value: "192.168.0.215"
+              command: ["/bin/sh", "/scripts/smoke.sh"]
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 64Mi
+          volumes:
+            - name: script
+              configMap:
+                name: gateway-smoke-script
+                defaultMode: 0555

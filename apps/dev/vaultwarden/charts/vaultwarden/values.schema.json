@@ -128,39 +128,6 @@
                 }
             }
         },
-        "ingressRoute": {
-            "description": "Traefik IngressRoute CRD configuration",
-            "type": "object",
-            "properties": {
-                "enabled": {
-                    "description": "Enable Traefik IngressRoute",
-                    "type": "boolean"
-                },
-                "entrypoints": {
-                    "description": "Traefik entrypoints",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "host": {
-                    "description": "IngressRoute hostname",
-                    "type": "string"
-                },
-                "middlewares": {
-                    "description": "Traefik middlewares",
-                    "type": "array"
-                },
-                "newCRD": {
-                    "description": "Use new CRD (Traefik 2.10+, traefik.io namespace)",
-                    "type": "boolean"
-                },
-                "tls": {
-                    "description": "TLS configuration",
-                    "type": "object"
-                }
-            }
-        },
         "initContainers": {
             "description": "Init containers (container spec)",
             "type": "array"

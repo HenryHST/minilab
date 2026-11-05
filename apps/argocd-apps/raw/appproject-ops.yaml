@@ -32,8 +32,6 @@ spec:
     - server: "*"
       namespace: wud
     - server: "*"
-      namespace: traefik-manager
-    - server: "*"
       namespace: argocd
   clusterResourceWhitelist:
     - group: "*"

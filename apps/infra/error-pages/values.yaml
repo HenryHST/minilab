@@ -15,12 +15,9 @@ config:
     - label: Home
       url: https://web.stadthagen.dev
 
+# OCI chart still accepts this key — must stay false (no Traefik Middleware CRDs).
 traefikMiddleware:
-  # Traefik removed (ADR-0028 / Gateway cutover); keep chart key off.
   enabled: false
-  statusCodes:
-    - "500-504"
-  query: "/{status}"
 
 deployment:
   replicas: 1

@@ -16,7 +16,7 @@ helm template vaultwarden ./charts/vaultwarden \
   -f values.yaml --namespace vaultwarden --skip-tests > helm-manifest.yaml
 ```
 
-Extras (IngressRoute, Backup, Restore-UI, NetworkPolicy, Certificate) bleiben Plain YAML neben dem Manifest.
+Extras (HTTPRoute, Backup, Restore-UI, NetworkPolicy, Certificate) bleiben Plain YAML neben dem Manifest.
 
 ## Doku
 

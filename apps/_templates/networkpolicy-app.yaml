@@ -3,23 +3,21 @@
 # Copy into apps/<app>/networkpolicy.yaml and replace placeholders:
 #   {{NAMESPACE}}  e.g. vaultwarden
 #   {{APP_LABEL}}  pod label key/value selecting the workload
-#   {{PORT}}       container/service port Traefik or Newt dial
+#   {{PORT}}       container/service port the Gateway (or Newt) dials
 #
 # Modes:
 #   A) Ingress-only (recommended start) — egress stays open (OIDC, NFS, DB, …).
 #   B) Add egress deny only after listing DNS + every required destination.
 #
 # Cluster facts (nXk3):
-#   - Edge: Cilium Gateway (open app port; Envoy = reserved:ingress/host)
+#   - Edge: Cilium Gateway — Envoy uses reserved:ingress / host networking, NOT
+#     kube-system pods. Allow the app port with an open ingress rule (ports only).
 #   - Newt NS:    newt     (only if Pangolin publish hits this Service)
 #   - DNS:        kube-system, labels k8s-app in (kube-dns, node-local-dns), UDP/TCP 53
-#                 (NodeLocal DNSCache via Cilium LRP — allow both backends)
 #
-# Do NOT apply default-deny without the Gateway edge port allow (and Newt, if used).
+# Do NOT use namespaceSelector kube-system for Gateway ingress (that was Traefik).
+# Do NOT apply default-deny without the open Gateway edge port allow (and Newt, if used).
 ---
-# 1) Default deny ingress for selected pods (empty ingress list via policyTypes only
-#    would also work with a separate deny; here deny is implied once any Ingress policy
-#    selects the pod — allow rules below are the only permitted sources.)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -43,12 +41,8 @@ spec:
       ports:
         - protocol: TCP
           port: {{PORT}}
-    # LAN / Cilium Gateway HTTPRoute
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: kube-system
-      ports:
+    # Cilium Gateway edge (Envoy = reserved:ingress/host — open port)
+    - ports:
         - protocol: TCP
           port: {{PORT}}
     # OPTIONAL — uncomment only if Pangolin Newt publishes this Service
@@ -60,8 +54,7 @@ spec:
     #     - protocol: TCP
     #       port: {{PORT}}
 ---
-# 2) OPTIONAL egress lockdown — enable only after inventory of outbound deps.
-#    Adding policyTypes: [Egress] with a short allow-list DENIES everything else.
+# OPTIONAL egress lockdown — enable only after inventory of outbound deps.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -77,7 +70,6 @@ spec:
   policyTypes:
     - Egress
   egress:
-    # Cluster DNS (CoreDNS + NodeLocal DNSCache backends under Cilium LRP)
     - to:
         - namespaceSelector:
             matchLabels:
@@ -94,27 +86,7 @@ spec:
           port: 53
         - protocol: TCP
           port: 53
-    # Same namespace (DB, redis, …)
     - to:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: {{NAMESPACE}}
-    # EXAMPLE — Authentik OIDC (in-cluster or via Service/Ingress)
-    # - to:
-    #     - namespaceSelector:
-    #         matchLabels:
-    #           kubernetes.io/metadata.name: authentik
-    #   ports:
-    #     - protocol: TCP
-    #       port: 80
-    # EXAMPLE — HTTPS to public IdP / APIs (broad; prefer NS selector when possible)
-    # - to:
-    #     - ipBlock:
-    #         cidr: 0.0.0.0/0
-    #         except:
-    #           - 10.0.0.0/8
-    #           - 192.168.0.0/16
-    #           - 172.16.0.0/12
-    #   ports:
-    #     - protocol: TCP
-    #       port: 443

@@ -1,4 +1,4 @@
-# Homepage (web): ingress allow Traefik + in-namespace (Vaultwarden/Termix pattern).
+# Homepage (web): ingress allow Cilium Gateway (open port) + in-namespace.
 # Namespace is homepage. No Newt — not published via pangolin-publish. Egress left open
 # (widgets/API calls to cluster services and external URLs).
 apiVersion: networking.k8s.io/v1

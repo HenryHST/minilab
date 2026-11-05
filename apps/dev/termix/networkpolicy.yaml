@@ -1,4 +1,4 @@
-# Ingress-only: allow Traefik (LAN host) + Newt (Pangolin publish) + in-namespace.
+# Ingress-only: allow Cilium Gateway (open port) + Newt (Pangolin publish) + in-namespace.
 # Egress unrestricted (OIDC, Postgres, guacd).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

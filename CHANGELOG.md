@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **NetworkPolicy template** — Gateway open-port pattern (not kube-system); Traefik comments → Cilium Gateway; ExternalAuth matrix in `apps/infra/gateway/EXTERNALAUTH.md`.
+
 ### Fixed
 
 - **Gateway cutover follow-ups** — NetworkPolicies open app ports for Cilium Gateway (`reserved:ingress`/host); forgejo/wud drop unsupported RE2 negative-lookahead paths; vaultwarden LAN redirect with PathPrefix + 302; Authentik `idp-tls` ReferenceGrant as standalone manifest.

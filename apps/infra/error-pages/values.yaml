@@ -16,8 +16,8 @@ config:
       url: https://web.stadthagen.dev
 
 traefikMiddleware:
-  enabled: true
-  # Gateway / backend down only — do not rewrite Authentik 401/403 or API 4xx
+  # Traefik removed (ADR-0028 / Gateway cutover); keep chart key off.
+  enabled: false
   statusCodes:
     - "500-504"
   query: "/{status}"

@@ -41,7 +41,7 @@ spec:
           headers:
             - name: Authorization
               type: RegularExpression
-              value: "(?i)^Basic "
+              value: "[Bb]asic.+"
       backendRefs:
         - name: podcraft
           port: 8080

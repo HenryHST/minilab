@@ -14,11 +14,8 @@ spec:
   policyTypes:
     - Ingress
   ingress:
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: kube-system
-      ports:
+    # Cilium Gateway edge (Envoy uses reserved:ingress/host — not kube-system pods)
+    - ports:
         - protocol: TCP
           port: 3000
     - from:

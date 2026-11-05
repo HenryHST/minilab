@@ -1,5 +1,6 @@
-# Migrated from Traefik IngressRoute. /metrics excluded via RegularExpression
-# (was !PathPrefix(`/metrics`)); scrape via ClusterIP ServiceMonitor.
+# Migrated from Traefik IngressRoute.
+# /metrics exclusion via negative-lookahead Regex is unsupported (RE2); scrape via
+# ClusterIP ServiceMonitor. Public path is PathPrefix `/`.
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: ReferenceGrant
 metadata:
@@ -33,8 +34,8 @@ spec:
   rules:
     - matches:
         - path:
-            type: RegularExpression
-            value: ^/(?!metrics(/|$)).*
+            type: PathPrefix
+            value: /
       filters:
         - type: ResponseHeaderModifier
           responseHeaderModifier:

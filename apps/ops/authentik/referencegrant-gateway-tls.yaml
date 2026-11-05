@@ -1,0 +1,18 @@
+# Applied independently of HTTPRoute so Gateway listener https-idp can resolve
+# idp-tls even while the Authentik app waits on CNPG health.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: gateway-tls-idp-tls
+  namespace: authentik
+  labels:
+    app.kubernetes.io/part-of: authentik
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: gateway-system
+  to:
+    - group: ""
+      kind: Secret
+      name: idp-tls

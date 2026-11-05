@@ -1,19 +1,5 @@
 # Migrated from Traefik IngressRoute → Cilium Gateway API HTTPRoute.
-apiVersion: gateway.networking.k8s.io/v1beta1
-kind: ReferenceGrant
-metadata:
-  name: gateway-tls-idp-tls
-  namespace: authentik
-spec:
-  from:
-  - group: gateway.networking.k8s.io
-    kind: Gateway
-    namespace: gateway-system
-  to:
-  - group: ''
-    kind: Secret
-    name: idp-tls
----
+# TLS ReferenceGrant: referencegrant-gateway-tls.yaml
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -24,28 +10,28 @@ metadata:
     app.kubernetes.io/part-of: authentik
 spec:
   parentRefs:
-  - name: nxk3
-    namespace: gateway-system
-    sectionName: https-idp
+    - name: nxk3
+      namespace: gateway-system
+      sectionName: https-idp
   hostnames:
-  - idp.stadthagen.dev
+    - idp.stadthagen.dev
   rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /
-    filters:
-    - type: ResponseHeaderModifier
-      responseHeaderModifier:
-        set:
-        - name: Strict-Transport-Security
-          value: max-age=31536000; includeSubDomains
-        - name: X-Content-Type-Options
-          value: nosniff
-        - name: X-XSS-Protection
-          value: 1; mode=block
-        - name: X-Frame-Options
-          value: DENY
-    backendRefs:
-    - name: authentik-server
-      port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            set:
+              - name: Strict-Transport-Security
+                value: max-age=31536000; includeSubDomains
+              - name: X-Content-Type-Options
+                value: nosniff
+              - name: X-XSS-Protection
+                value: "1; mode=block"
+              - name: X-Frame-Options
+                value: DENY
+      backendRefs:
+        - name: authentik-server
+          port: 80

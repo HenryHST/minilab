@@ -20,6 +20,7 @@ resources:
   - backup-cronjob.yaml
   - restore-bootstrap.yaml
   - certificate.yaml
+  - referencegrant-gateway-tls.yaml
   - httproute.yaml
   - referencegrant-externalauth.yaml
   - blueprints-configmap.yaml

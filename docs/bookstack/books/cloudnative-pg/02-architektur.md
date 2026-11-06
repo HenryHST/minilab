@@ -1,6 +1,6 @@
 ---
 title: Architektur
-book_version: "1.5.0"
+book_version: "1.6.0"
 ---
 
 # Architektur
@@ -41,21 +41,32 @@ Das ServiceAccount des Clusters heißt wie der Cluster. Kollidiert der Name mit 
 
 PodMonitor des Operators: Label `release: kube-prometheus-stack`, Port `metrics` (8080).
 
-`monitoring.enablePodMonitor: false` am Cluster. Das Feld ist veraltet und setzt das Release-Label nicht. Jede Datenbank bringt einen eigenen PodMonitor mit (Termix: `apps/dev/termix/podmonitor.yaml`, Port `metrics` 9187). PrometheusRule `cnpg-alerts` in `monitoring` feuert, wenn `cnpg_collector_up` 5 Minuten 0 ist oder der letzte erfolgreiche Backup-Zeitstempel älter als 8 Stunden ist.
+`monitoring.enablePodMonitor: false` am Cluster. Das Feld ist veraltet und setzt das Release-Label nicht. Jede Datenbank bringt einen eigenen PodMonitor mit (Termix, Authentik, Gatus, Paperless: je `podmonitor.yaml`, Port `metrics`). PrometheusRule `cnpg-alerts` in `monitoring` deckt Availability, Backup-Staleness, WAL-Archive und `ready_instances` ab (siehe Kapitel **Production Failure Patterns**).
+
+## HA / Anti-Affinity
+
+Bei `instances >= 2`: `enablePodAntiAffinity: true` und `topologyKey: kubernetes.io/hostname`. Lab-Regel: mindestens **`instances + 1`** Worker mit `worker=true`, sonst bleibt nach Drain eine Replica **Pending**. Escape Hatch und Drain-Schritte: Infra_LAB K3s **CNPG Ops Runbook**.
+
+## Probes / Checkpoint
+
+Enge Liveness während langer CHECKPOINT (Longhorn) kann SIGKILL → Fence → Promotion mit WAL-Lücke auslösen. Authentik setzt bewusst `spec.probes.liveness` (längere Toleranz) und `postgresql.parameters.checkpoint_completion_target: "0.9"`. Grafana/Day-2: Metrik `cnpg_collector_pg_stat_bgwriter_checkpoint_sync_time`.
 
 ## Backup
 
-Volume-Snapshots, kein WAL-Archiv. Ohne Object Store gibt es kein Point-in-Time-Recovery zwischen den Snapshots.
+**Default (Termix, Paperless, Gatus):** VolumeSnapshots + `retentionPolicy: 7d` + App-`pg_dump`. Ohne Object Store kein PITR zwischen den Snapshots.
+
+**Authentik (PITR-Referenz):** zusätzlich Barman Cloud Plugin → RustFS `ObjectStore authentik-pg-wal` (`isWALArchiver: true`). Kein in-tree `barmanObjectStore` auf `standard-bookworm` (Binary fehlt — Incident 2026-11-01).
 
 | | |
 |--|--|
 | Klasse | `VolumeSnapshotClass` `longhorn`, Driver `driver.longhorn.io`, `type: snap` |
 | Controller | `snapshot-controller` v8.6.0 in `longhorn-system` (Longhorn-App, Extras) |
-| Cluster | `spec.backup.volumeSnapshot.className: longhorn`, online, `snapshotOwnerReference: backup` |
+| Cluster | `spec.backup.volumeSnapshot.className: longhorn`, online, `snapshotOwnerReference: backup`, `retentionPolicy: 7d` |
 | Plan | `ScheduledBackup`, Cron mit Sekunden, alle 6 Stunden (`0 15 */6 * * *`), `method: volumeSnapshot` |
+| WAL/PITR | nur Authentik: Plugin `barman-cloud.cloudnative-pg.io` + ObjectStore |
 | Zweite Kopie | `pg_dump` der App, unverändert |
 
-Restore ist ein neuer `Cluster` mit `bootstrap.recovery.volumeSnapshots`, nicht das Einspielen des SQL-Dumps. Der Dump bleibt die Kopie außerhalb des Clusters.
+Restore Snapshot: neuer `Cluster` mit `bootstrap.recovery.volumeSnapshots`. PITR: Recovery gegen ObjectStore — `targetTime` erst nach Katalog-Check (Ops-Runbook). Der Dump bleibt die Kopie außerhalb des Clusters.
 
 ```mermaid
 flowchart LR
@@ -63,4 +74,6 @@ flowchart LR
   Backup --> Snap[VolumeSnapshot]
   Snap --> Longhorn
   Primary[Primary] --> Dump[pg_dump NFS]
+  Primary --> Plugin[Barman_Plugin]
+  Plugin --> RustFS[ObjectStore_RustFS]
 ```

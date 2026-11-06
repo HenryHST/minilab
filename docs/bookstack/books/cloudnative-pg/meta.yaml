@@ -1,6 +1,6 @@
 book: Cloudnative-pg
 cover: cover.png
-book_version: "1.5.0"
-updated: "2026-11-04"
-description: CloudNativePG — Operator in cnpg-system, Onboarding weiterer Datenbanken; Operator-NP Egress :9090 für Barman-Cloud-Plugin
+book_version: "1.6.0"
+updated: "2026-11-06"
+description: CloudNativePG — Operator in cnpg-system, Onboarding weiterer Datenbanken; Operator-NP Egress :9090 für Barman-Cloud-Plugin; Perun production failure patterns (Alerts, HA, PITR, probes); Authentik WAL/PITR-Referenz
 shelf: Plattform

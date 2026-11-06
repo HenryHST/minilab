@@ -1,14 +1,16 @@
 ---
 title: Quellen
-book_version: "1.4.0"
+book_version: "1.6.0"
 ---
 
 # Quellen
 
 - App-README: [`apps/infra/cloudnative-pg/README.md`](../../../../apps/infra/cloudnative-pg/README.md)
 - ADR-0030: [`docs/adr/0030-cloudnative-pg.md`](../../../adr/0030-cloudnative-pg.md)
+- ADR-0033 Authentik CNPG: [`docs/adr/0033-authentik-cnpg.md`](../../../adr/0033-authentik-cnpg.md)
 - Architektur: [`docs/diagrams/archify/cnpg-architektur.html`](../../../diagrams/archify/cnpg-architektur.html)
 - Onboarding: [`docs/diagrams/archify/cnpg-onboarding.html`](../../../diagrams/archify/cnpg-onboarding.html)
+- Dieses Buch: [Production Failure Patterns](06-production-failure-patterns.md)
 - Pilot-Cutover: Buch **Termix**, Kapitel **Migration**
 - Installation: [cloudnative-pg.io installation](https://cloudnative-pg.io/docs/current/installation_upgrade/)
 - Capability levels: [operator capability levels](https://cloudnative-pg.io/docs/current/operator_capability_levels)
@@ -18,3 +20,6 @@ book_version: "1.4.0"
 - Grafana: Application `cnpg-grafana`, Chart `cluster` 0.0.5
 - Zertifikate: [certificates](https://cloudnative-pg.io/docs/current/certificates)
 - Issue: [HenryHST/minilab#70](https://github.com/HenryHST/minilab/issues/70)
+- Perun: [five failure patterns](https://perun.au/insights/cloudnative-pg-production)
+- Infra_LAB Day-2 Monitoring: [19-cnpg-day2-monitoring.md](https://github.com/HenryHST/Infra_LAB/blob/main/docs/bookstack/books/k3s/19-cnpg-day2-monitoring.md)
+- Infra_LAB Ops Runbook: [22-cnpg-ops-runbook.md](https://github.com/HenryHST/Infra_LAB/blob/main/docs/bookstack/books/k3s/22-cnpg-ops-runbook.md)

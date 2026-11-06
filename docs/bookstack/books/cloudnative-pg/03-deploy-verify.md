@@ -1,6 +1,6 @@
 ---
 title: Deploy und Verify
-book_version: "1.4.0"
+book_version: "1.6.0"
 ---
 
 # Deploy und Verify

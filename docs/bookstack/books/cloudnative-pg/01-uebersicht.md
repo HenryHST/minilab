@@ -1,6 +1,6 @@
 ---
 title: Übersicht
-book_version: "1.5.0"
+book_version: "1.6.0"
 ---
 
 # Übersicht
@@ -30,4 +30,4 @@ flowchart LR
 | ServiceAccount | `postgres-cloud-sa` |
 | Erster Cluster | `termix` im Namespace `termix` |
 
-ADR: [0030-cloudnative-pg](../../../adr/0030-cloudnative-pg.md). Nächste Datenbank: Kapitel **Onboarding**. Cutover einer bestehenden DB: Buch **Termix**, Kapitel **Migration**.
+ADR: [0030-cloudnative-pg](../../../adr/0030-cloudnative-pg.md). Nächste Datenbank: Kapitel **Onboarding**. Cutover einer bestehenden DB: Buch **Termix**, Kapitel **Migration**. Lab-Härtung aus Perun: Kapitel **Production Failure Patterns**.

@@ -1,6 +1,6 @@
 # ADR-0033: Authentik Postgres auf CloudNativePG
 
-- **Status:** Accepted
+- **Status:** Accepted (amended 2026-11-06)
 - **Datum:** 2026-10-06
 - **Kontext:** `apps/ops/authentik/`, Companion Infra_LAB ADR-0024
 
@@ -10,18 +10,20 @@ Authentik (IdP) lief mit dem Bitnami-PostgreSQL-Subchart (`postgresql.enabled: t
 
 ## Entscheidung
 
-- Cluster **`authentik-pg`** im Namespace `authentik` (nicht `authentik`, um SA-Namenskollisionen zu vermeiden).
-- Image `ghcr.io/cloudnative-pg/postgresql:17`, 1 Instanz, 8Gi `longhorn`.
+- Cluster **`authentik-pg`** im Namespace `authentik`.
+- Image `ghcr.io/cloudnative-pg/postgresql:17…-standard-bookworm`.
+- **Live (2026-11):** `instances: 2`, PVC **48Gi** `longhorn` (nach WAL-Incidents 2026-10-25 / 2026-11-01 expandiert; ursprünglich 1×/8Gi beim Cutover).
 - Einmaliger Import `bootstrap.initdb.import.type: microservice` von `authentik-postgresql` (`sslmode: disable`), danach Import-Block entfernt.
 - App: `postgresql.enabled: false`, `authentik.postgresql.host: authentik-pg-rw`, Secret-Key `AUTHENTIK_POSTGRESQL__SSLMODE=require`.
 - Secret `authentik-credentials`: zusätzlich `username` / `password` für CNPG (gleicher Wert wie `AUTHENTIK_PG_PASSWORD`).
-- **Hybrid-TLS (Pilot):** Server-CA + Server-TLS über cert-manager im Namespace `authentik` (`cnpg-certificates.yaml` → Secret `authentik-pg-server-tls`, Label `cnpg.io/reload`). Cluster setzt `certificates.serverCASecret` / `serverTLSSecret`. Client/streaming_replica bleiben Operator-managed. App bleibt vorerst bei `sslmode=require` (kein CA-Mount).
-- Backup: `ScheduledBackup` VolumeSnapshot + bestehender `pg_dump`-CronJob auf `authentik-pg-rw` / NFS.
-- Bitnami-StatefulSet entfernt; PVC `data-authentik-postgresql-0` bleibt vorerst als Rollback-Kopie Bound.
+- **Hybrid-TLS:** Server-CA + Server-TLS über cert-manager (`cnpg-certificates.yaml` → Secret `authentik-pg-server-tls`). Client/streaming_replica bleiben Operator-managed. App bei `sslmode=require`.
+- **Backup:** VolumeSnapshot (`retentionPolicy: 7d`) + online `pg_dump`; **WAL/PITR** via Barman Cloud Plugin → RustFS ObjectStore `authentik-pg-wal` (kein in-tree `barmanObjectStore` auf `standard-bookworm`).
+- **HA:** `enablePodAntiAffinity` + `nodeSelector.worker=true`; mind. `instances+1` Worker.
+- **Probes (Perun #05):** `spec.probes.liveness` mit längerer Toleranz; `checkpoint_completion_target: "0.9"`.
+- Bitnami-StatefulSet entfernt; PVC `data-authentik-postgresql-0` war Rollback-Kopie.
 
 ## Konsequenzen
 
-- IdP-Cutover braucht ein kurzes Wartungsfenster (server/worker auf 0).
-- Argo ApplicationSet kann `syncPolicy.automated` zurücksetzen — während des Imports Self-Heal pausieren oder Replicas manuell halten.
-- Weitere Apps (z. B. paperless) können dieselbe Vorlage nutzen ([Termix Migration](../bookstack/books/termix/04-migration.md), [Authentik CNPG](../bookstack/books/authentik/09-cnpg-migration.md)).
-- **Folge:** optional `verify-full` mit CA-Mount (`AUTHENTIK_POSTGRESQL__SSLROOTCERT=file:///certs/ca.crt`) und Companion-SecretSpec. Termix nutzt dasselbe Hybrid-Muster (`apps/dev/termix/cnpg-certificates.yaml`).
+- IdP hängt an ContinuousArchiving (Plugin :9090 / ObjectStore); siehe Incidents 2026-11-01 / 2026-11-04.
+- BookStack: minilab [Production Failure Patterns](../bookstack/books/cloudnative-pg/06-production-failure-patterns.md); Infra_LAB K3s Ops-Runbook + Authentik Ausfallsicherheit.
+- Weitere Apps nutzen dieselbe Vorlage ohne WAL/ObjectStore, bis PITR explizit nötig ist.

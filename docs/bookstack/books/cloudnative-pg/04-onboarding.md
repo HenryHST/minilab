@@ -1,6 +1,6 @@
 ---
 title: Onboarding
-book_version: "1.4.0"
+book_version: "1.6.0"
 ---
 
 # Onboarding
@@ -51,7 +51,7 @@ Diese Schritte sind erledigt. Sie gehören nicht in jede App.
 1. **Operator Ready.** Ohne healthy Operator kein Cluster anlegen.
 2. **Secret.** Keys `username` und `password`. Ein abweichender Key der alten Datenbank (`POSTGRES_PASSWORD`) darf daneben stehen, solange die Quelle läuft.
 3. **PVC-Probe.** Ein Wegwerf-PVC in Zielgröße und StorageClass. `Pending` heißt Abbruch: Probe löschen, App nicht umstellen.
-4. **Cluster-CR** im App-Ordner, Namespace der App. PodMonitor als eigenes Manifest mit Label `release: kube-prometheus-stack`, nicht `monitoring.enablePodMonitor`. `spec.backup.volumeSnapshot.className: longhorn` und ein `ScheduledBackup` mit `method: volumeSnapshot`. Bei Import: `bootstrap.initdb.import.type: microservice`, Quelle ohne TLS mit `sslmode: disable`. Den Import-Block und `externalClusters` nach dem Cutover entfernen. Der Import läuft nur beim ersten Bootstrap.
+4. **Cluster-CR** im App-Ordner, Namespace der App. **PodMonitor Pflicht** als eigenes Manifest mit Label `release: kube-prometheus-stack`, nicht `monitoring.enablePodMonitor`. `spec.backup.volumeSnapshot.className: longhorn`, `retentionPolicy: "7d"`, und ein `ScheduledBackup` mit `method: volumeSnapshot`. Bei HA (`instances >= 2`): Anti-Affinity + mind. `instances+1` Worker; Escape Hatch `cnpg.io/podAntiAffinity: preferred` nur Day-2. **Kein Pooler** default (Apps → `*-rw`; nie `poolMode: transaction` ohne App-Audit). Bei Import: `bootstrap.initdb.import.type: microservice`, Quelle ohne TLS mit `sslmode: disable`. Den Import-Block und `externalClusters` nach dem Cutover entfernen. Der Import läuft nur beim ersten Bootstrap.
 5. **Healthy.** `kubectl -n <ns> get cluster <name>` zeigt `Cluster in healthy state`. Timeout auf Port 8000 ist die Operator-Policy, kein Datenfehler. Fehlendes ServiceAccount-Token: Namenskollision mit einem Konto ohne Automount.
 6. **App-URL.** `postgresql://<user>:<password>@<name>-rw.<ns>.svc.cluster.local:5432/<db>?sslmode=require`. Node-`pg` zusätzlich `uselibpqcompat=true`, sonst scheitert `require` an der Operator-CA. Backup und Restore: `PGHOST=<name>-rw`, `PGSSLMODE=require`.
 7. **Prüfen.** App-Logs `postgres database ready`, Login, ein fachlicher Datensatz, ein `pg_dump` gegen `<name>-rw`. hostPath der Quelle erst danach löschen.

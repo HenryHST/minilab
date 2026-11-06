@@ -10,7 +10,7 @@ Document management with OCR (deu+eng, deskew/rotate on), Authentik OIDC, Gotenb
 | LAN | https://paperless.stadthagen.dev |
 | Ext | https://paperless-ext.stadthagen.dev (pangolin-publish `enabled: false` until flipped) |
 | OCR workers | Deployment `paperless-worker` + HPA 1–3 (pinned to `nxk3-w01` with web; hostPath media) |
-| Storage | **Postgres:** CNPG `paperless-pg` (Longhorn). **App:** hostPath/local on `nxk3-w01` — `/var/lib/paperless-{data,media,export}` (`media-pvc.yaml`). **Consume:** HPScan NFS. **Backups (C):** `document_exporter` ZIP → NFS `…/infra01/paperless-backups` + CNPG snapshots |
+| Storage | **Postgres:** CNPG `paperless-pg` (Longhorn, `retentionPolicy: 7d`). **Metrics:** `podmonitor.yaml` (`paperless-pg-instances`). **App:** hostPath/local on `nxk3-w01` — `/var/lib/paperless-{data,media,export}` (`media-pvc.yaml`). **Consume:** HPScan NFS. **Backups (C):** `document_exporter` ZIP → NFS `…/infra01/paperless-backups` + CNPG snapshots |
 | IMAP inbox | `paperless@stadthagen.dev` @ `mail.henrystadthagen.de:993` (Secret `paperless-imap`, PostSync `mail-inbox-job`) |
 | OIDC groups | Access: `paperless_admins` / `paperless_users`. Document: `familie_stadthagen` / `familie_erdmann` / `vs-nfd` (PostSync `inbox-tag-job`; Authentik membership in Infra_LAB) |
 

@@ -43,6 +43,7 @@ spec:
       memory: 1Gi
   backup:
     target: primary
+    retentionPolicy: "7d"
     volumeSnapshot:
       className: longhorn
       online: true

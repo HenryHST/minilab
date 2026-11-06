@@ -37,6 +37,23 @@ spec:
               Standby lag is {{ $value | humanizeDuration }}.
               Check: kubectl -n {{ $labels.namespace }} get cluster,pods -l cnpg.io/cluster
 
+        # Perun pattern 03: required anti-affinity + drain can leave a replica Pending.
+        - alert: CloudNativePGInstancesMissing
+          expr: |
+            cnpg_collector_cluster_ready_instances
+              < cnpg_collector_cluster_instances
+          for: 5m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'CloudNativePG {{ $labels.namespace }}/{{ $labels.cluster }} ready_instances below instances'
+            description: |
+              ready_instances is below spec.instances for 5m (expr value {{ $value }}).
+              Often a Pending replica after drain with required pod anti-affinity
+              when worker count == instances. Check: kubectl -n {{ $labels.namespace }} get cluster,pods -o wide
+              Escape hatch: annotation cnpg.io/podAntiAffinity=preferred (see K3s CNPG Ops Runbook).
+
     - name: cnpg.backup
       rules:
         # Timestamp is only reported by the instance that took the backup (others report 0).
@@ -136,3 +153,43 @@ spec:
             description: |
               Instance data volume is {{ $value | humanizePercentage }} used.
               Expand storage and/or reclaim WAL; see Authentik incidents 2026-10-25 / 2026-11-01.
+
+        # Perun pattern 01: object-store throttle → pg_wal fills PVC before total PVC alert.
+        # CNPG PVC name matches the instance pod name; join capacity via label_replace.
+        - alert: CloudNativePGWalDirectoryHigh
+          expr: |
+            (
+              cnpg_collector_pg_wal_directory_size
+              / on (namespace, pod) group_left
+                label_replace(
+                  kubelet_volume_stats_capacity_bytes{
+                    namespace=~"authentik|termix|status|paperless",
+                    persistentvolumeclaim=~".+-\\d+$"
+                  },
+                  "pod", "$1", "persistentvolumeclaim", "(.+)"
+                )
+            ) > 0.75
+          for: 10m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'CNPG pg_wal on {{ $labels.namespace }}/{{ $labels.pod }} >75% of PVC'
+            description: |
+              `pg_wal` directory is {{ $value | humanizePercentage }} of PVC capacity.
+              Likely stalled WAL archive (Barman plugin / ObjectStore). Reclaim WAL and
+              fix ContinuousArchiving before PANIC / failover with RPO gap.
+              BookStack: k3s → CNPG Day-2 Monitoring / Ops Runbook.
+
+        - alert: CloudNativePGWalArchiveErrors
+          expr: |
+            increase(cnpg_pg_stat_archiver_failed_count[15m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'WAL archive errors on {{ $labels.namespace }}/{{ $labels.pod }}'
+            description: |
+              `pg_stat_archiver.failed_count` increased in the last 15m.
+              Check Barman Cloud Plugin, ObjectStore credentials, and RustFS reachability.

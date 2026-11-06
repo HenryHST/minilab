@@ -56,6 +56,16 @@ spec:
       memory: 512Mi
     limits:
       memory: 1Gi
+  # Perun pattern 05: avoid SIGKILL during long CHECKPOINT on Longhorn (tight liveness → fence → RPO gap).
+  # Defaults are timeoutSeconds=5 / failureThreshold≈3 (~30s). Lab: 30s timeout × 6 failures ≈ 60s+ tolerance.
+  probes:
+    liveness:
+      timeoutSeconds: 30
+      periodSeconds: 10
+      failureThreshold: 6
+  postgresql:
+    parameters:
+      checkpoint_completion_target: "0.9"
   backup:
     target: primary
     retentionPolicy: "7d"

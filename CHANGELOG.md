@@ -4,26 +4,35 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-06
+
+**Major:** GitOps-Edge auf **Cilium Gateway API** (Traefik Hard-Cutover). Alle App-Routen als `HTTPRoute`; zentral `apps/infra/gateway` (VIP `.215`). Begleit-Release Plattform: [Infra_LAB v2.0.0](https://github.com/HenryHST/Infra_LAB/releases/tag/v2.0.0). PRs #179–#184.
+
 ### Added
 
-- **Gateway smoke CronJob** — `gateway-system/gateway-smoke` every 15m; PrometheusRules `GatewaySmokeJobFailed` / `GatewaySmokeStale` / `GatewayL2LeaseOnForbiddenNode`.
+- **Gateway stack** — `apps/infra/gateway` (`gateway-system/nxk3`), `MIGRATION.md`, `EXTERNALAUTH.md` (Matrix der ExternalAuth-HTTPRoutes).
+- **Gateway smoke CronJob** — `gateway-system/gateway-smoke` alle 15 min; PrometheusRules `GatewaySmokeJobFailed` / `GatewaySmokeStale` / `GatewayL2LeaseOnForbiddenNode`.
+- **Vaultwarden** — vendored Helm (SMTP + Emergency Access); amd64 `nodeSelector` am Restore-Job; Buch-Updates ImagePull-Kaskade.
+- **Monitoring** — HA Prometheus scrape + Home-Assistant-Dashboard; UniFi Poller DPI (`save_dpi` / `save_traffic`) + Grafana sidecar restore; Longhorn Grafana via sidecar.
+- **Gatus** — UI-Branding an Authentik Stadthagen Home angeglichen.
+- **CNPG** — Operator-Egress TCP 9090 zum Barman-Plugin; CloudNative-PG Buch 1.5.0.
 
 ### Changed
 
-- **NetworkPolicy template** — Gateway open-port pattern (not kube-system); Traefik comments → Cilium Gateway; ExternalAuth matrix in `apps/infra/gateway/EXTERNALAUTH.md`.
+- **Edge: Traefik → Cilium Gateway API** — alle App-`IngressRoute`s → `HTTPRoute` + TLS `ReferenceGrant`; Authentik ForwardAuth → `ExternalAuth` (`/auth/envoy`); error-pages Catch-all/Middleware entfernt (CEC in Infra_LAB). Siehe [ADR-0038](docs/adr/0038-cilium-gateway-api.md), `apps/infra/gateway/MIGRATION.md`.
+- **NetworkPolicy template** — Gateway open-port (nicht kube-system); Kommentare Traefik → Cilium Gateway / `reserved:ingress`.
+- **k8s-toolbox 1.0.2** — Alpine 3.24, kubectl SHA256, full+slim (SBOM+provenance); Consumer-Pins; slim für GC/Theme/Permissions/kubeconfig/paperless-inbox; aws-cli im full-Image.
+- **Forgejo Actions** — act job image + absolute action URLs (unblock Actions).
+- Image/Chart bumps — u. a. Vaultwarden, WUD, unpoller, searxng, gotenberg, kromgo, k8s-sidecar, geoipupdate, ApplicationSet Helm.
 
 ### Fixed
 
-- **Gateway cutover follow-ups** — NetworkPolicies open app ports for Cilium Gateway (`reserved:ingress`/host); forgejo/wud drop unsupported RE2 negative-lookahead paths; vaultwarden LAN redirect with PathPrefix + 302; Authentik `idp-tls` ReferenceGrant as standalone manifest.
+- **Gateway cutover follow-ups** — NetworkPolicies öffnen App-Ports für Cilium Gateway; forgejo/wud ohne RE2 negative-lookahead paths; vaultwarden LAN redirect via nginx (PathPrefix + 302; RequestRedirect-only 404); Authentik `idp-tls` ReferenceGrant standalone; monitoring NP-Namespace.
+- **Mosquitto** — LDAP bind password whitespace trim; Preflight-Debug entfernt.
 
 ### Removed
 
-- **Traefik chart leftovers** — termix/vaultwarden IngressRoute templates; `traefik-manager` app; Authentik helm-manifest Traefik Middleware RBAC; AppProject `traefik-manager` namespace.
-
-### Changed
-
-- **Edge: Traefik → Cilium Gateway API** — all app `IngressRoute`s → `HTTPRoute` + TLS `ReferenceGrant`; central `apps/infra/gateway` (`gateway-system/nxk3`, VIP `.215`); Authentik ForwardAuth → `ExternalAuth` (`/auth/envoy`); error-pages Catch-all/Middleware removed (CEC in Infra_LAB). See [ADR-0038](docs/adr/0038-cilium-gateway-api.md), `apps/infra/gateway/MIGRATION.md`.
-- **k8s-toolbox 1.0.2** — Alpine 3.24 Docs/SoT-Labels, kubectl SHA256, full+slim Variants (SBOM+provenance Forgejo/GHA); Consumer-Pins; slim für GC/Theme/Permissions/kubeconfig/paperless-inbox; aws-cli im full-Image; amd64-Pins an Multi-Arch-Jobs gelockert; Longhorn-Enforcer bleiben `rancher/kubectl` (dokumentierte Ausnahme).
+- **Traefik chart leftovers** — termix/vaultwarden IngressRoute templates; `traefik-manager` App + AppProject-Namespace; Authentik helm-manifest Traefik Middleware RBAC; error-pages Traefik-Middleware.
 
 ## [0.16.0] - 2026-11-01
 

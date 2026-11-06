@@ -394,3 +394,20 @@ spec:
               Lease `cilium-l2announce-gateway-system-cilium-gateway-nxk3` is held by `{{ $labels.lease_holder }}`
               (must not be pi7cl or control-plane). See Cilium L2AnnouncementPolicy excludes / Incident 2026-10-25.
               Check: kubectl -n kube-system get lease cilium-l2announce-gateway-system-cilium-gateway-nxk3 -o yaml
+
+    # Perun prometheus-operator pattern 05: scrape latency approaching timeout/interval.
+    - name: baseline.prometheus
+      rules:
+        - alert: PrometheusScrapeNearTimeout
+          expr: |
+            scrape_duration_seconds{job!=""} > 8
+          for: 15m
+          labels:
+            severity: warning
+            source: prometheus
+          annotations:
+            summary: 'Scrape of {{ $labels.job }}/{{ $labels.instance }} near timeout ({{ $value }}s)'
+            description: |
+              Scrape duration >8s for 15m (global scrapeTimeout 10s / scrapeInterval 30s).
+              Overlapping or timed-out scrapes corrupt rate()/increase(). Check target /metrics latency.
+              BookStack: k3s → Prometheus Operator Perun stance.

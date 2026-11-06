@@ -67,6 +67,8 @@ Inhibit (Auszug): critical unterdrückt warning bei gleichem `namespace`+`alertn
 (nicht `pod` — kube-state-metrics-Alerts teilen sonst denselben Pod und würden
 `NXk3PiNodeNotReady` unter `NXk3NodeNotReady` suppressen und den HA-Webhook blockieren);
 `PVENodeDown` unterdrückt warning mit gleichem `instance`.
+Entspricht Perun Prometheus-Operator Pattern 04 (zu breite Inhibition) — Lab-Fix und Gates:
+Infra_LAB [K3s Kap. 24](https://github.com/HenryHST/Infra_LAB/blob/main/docs/bookstack/books/k3s/24-prometheus-operator-stance.md) · ADR-0040.
 
 ---
 

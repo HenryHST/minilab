@@ -29,8 +29,12 @@ prometheus:
         memory: 512Mi
       limits:
         memory: 2Gi
+    # Perun pattern 05: timeout must stay strictly below interval (avoids overlapping scrapes / rate() gaps).
     scrapeInterval: 30s
+    scrapeTimeout: 10s
     evaluationInterval: 30s
+    # Empty selectors = pick up all SM/PM in the cluster (lab convention). App monitors still
+    # label release: kube-prometheus-stack for future tightening and docs consistency.
     serviceMonitorNamespaceSelector: {}
     serviceMonitorSelector: {}
     podMonitorNamespaceSelector: {}

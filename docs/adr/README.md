@@ -46,6 +46,8 @@ Format angelehnt an [Michael Nygard](https://cognitect.com/blog/2011/11/15/docum
 | [0033](0033-authentik-cnpg.md) | Authentik Postgres auf CloudNativePG | Accepted |
 | [0034](0034-gatus-cnpg.md) | Gatus statt Uptime Kuma, Postgres auf CloudNativePG | Accepted |
 | [0035](0035-paperless-cnpg.md) | Paperless-ngx Postgres auf CloudNativePG | Accepted |
+| [0039](0039-krr-report-only.md) | KRR — report-only, kein Auto-Apply | Accepted |
+| [0040](0040-prometheus-operator-perun.md) | Prometheus Operator — Perun-Gates (Lab) | Accepted |
 
 ## Neues ADR anlegen
 

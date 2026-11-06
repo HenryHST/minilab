@@ -19,7 +19,7 @@ controllers:
       karakeep:
         image:
           repository: ghcr.io/karakeep-app/karakeep
-          tag: "0.34.0"
+          tag: "0.34.1"
           pullPolicy: IfNotPresent
         env:
           # Host-aware OAuth (LAN + karakeep-ext): do not pin NEXTAUTH_URL

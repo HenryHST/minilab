@@ -69,9 +69,8 @@ controllers:
         - name: data
           accessMode: ReadWriteOnce
           size: 5Gi
+          # Replica count via StorageClass/Longhorn Volume — PVC annotations ignored.
           storageClass: longhorn
-          annotations:
-            longhorn.io/numberOfReplicas: "2"
           globalMounts:
             - path: /data
 

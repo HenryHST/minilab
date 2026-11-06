@@ -4,7 +4,8 @@ Prometheus metric badges on `https://kromgo.stadthagen.dev` (Argo app `kromgo`, 
 
 ## Deploy
 
-- Image pin: `ghcr.io/home-operations/kromgo:0.16.1`
+- Image pin: `ghcr.io/home-operations/kromgo:0.16.3`
+- Pod labels: Phase-1 dual-write `app` + `app.kubernetes.io/name` (Service/NP selectors still `app:`)
 - ConfigMap `kromgo-config` → `/config/config.yaml`
 - Env `KROMGO_PROMETHEUS_URL` → `kube-prometheus-stack-prometheus.monitoring.svc:9090`
 - `nodeSelector: worker=true` (Proxmox only — Pis cannot sustain Prometheus; empty Endpoints → badge “query error”)

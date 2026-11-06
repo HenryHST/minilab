@@ -1,0 +1,33 @@
+name: metadata-lint
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/**"
+      - "scripts/metadata_lint.py"
+      - "scripts/test_metadata_lint.py"
+      - "scripts/run-metadata-lint.sh"
+      - "scripts/testdata/metadata_lint/**"
+      - ".github/workflows/metadata-lint.yml"
+  pull_request:
+    paths:
+      - "apps/**"
+      - "scripts/metadata_lint.py"
+      - "scripts/test_metadata_lint.py"
+      - "scripts/run-metadata-lint.sh"
+      - "scripts/testdata/metadata_lint/**"
+      - ".github/workflows/metadata-lint.yml"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install PyYAML
+        run: pip install pyyaml
+      - name: Metadata lint
+        run: ./scripts/run-metadata-lint.sh

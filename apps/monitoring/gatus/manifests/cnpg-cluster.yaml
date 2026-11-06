@@ -14,6 +14,7 @@ metadata:
   labels:
     app.kubernetes.io/name: gatus
     app.kubernetes.io/part-of: gatus
+    app.kubernetes.io/component: postgresql
 spec:
   instances: 2
   imageName: ghcr.io/cloudnative-pg/postgresql:16.15-202610190958-standard-bookworm

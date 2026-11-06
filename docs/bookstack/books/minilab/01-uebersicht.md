@@ -17,7 +17,7 @@ Minilab ist das GitOps-Homelab auf dem **nXk3**-Cluster. Diese BookStack-Instanz
 
 ## Bücher in dieser Wiki
 
-- **Minilab** — Plattform, Apps, GitOps, Backup (für Admins / IT)
+- **Minilab** — Plattform, Apps, GitOps, Backup, [Labels & Annotations](10-metadata-conventions.md) (für Admins / IT)
 - **Anleitungen** — Step-by-Step für Nutzer ohne IT-Hintergrund
 
 ## Git-Spiegel

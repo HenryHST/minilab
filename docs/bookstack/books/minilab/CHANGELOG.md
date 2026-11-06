@@ -1,5 +1,11 @@
 # Changelog — Buch Minilab
 
+## [1.5.0] - 2026-11-06
+
+### Added
+
+- Kapitel **Labels & Annotations** — Lab-Contract, Dual-Write Phase 1, CNPG reload Label, grafana_folder, Longhorn PVC No-Op, newt seccomp Follow-up; Lint-Script
+
 ## [1.4.1] - 2026-11-01
 
 ### Changed

@@ -3,6 +3,10 @@ kind: Deployment
 metadata:
   name: kromgo
   namespace: kromgo
+  labels:
+    app.kubernetes.io/name: kromgo
+    app.kubernetes.io/part-of: kromgo
+    app.kubernetes.io/managed-by: argocd
 spec:
   replicas: 1
   selector:
@@ -11,7 +15,11 @@ spec:
   template:
     metadata:
       labels:
+        # Phase 1 dual-write — selectors stay on app: until Phase 2
         app: kromgo
+        app.kubernetes.io/name: kromgo
+        app.kubernetes.io/part-of: kromgo
+        app.kubernetes.io/managed-by: argocd
     spec:
       # Same pin as Gatus/Grafana — avoid Pis (Prometheus reachability + ARM pressure).
       nodeSelector:

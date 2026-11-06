@@ -8,7 +8,10 @@ global:
     repository: fosrl/newt
     tag: "1.20.0"
   podAnnotations:
-    # Chart values.schema forbids nested objects under podSecurityContext.
+    # DEPRECATED alpha annotation — chart values.schema forbids nested objects
+    # under podSecurityContext (no seccompProfile there). Prefer only
+    # securityContext.seccompProfile when the chart schema allows dropping this.
+    # Follow-up: remove once fossorial/newt schema accepts pod-level seccompProfile.
     container.seccomp.security.alpha.kubernetes.io/pod: runtime/default
   podSecurityContext:
     runAsNonRoot: true

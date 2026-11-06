@@ -416,8 +416,6 @@ spec:
             name: data
   volumeClaimTemplates: 
     - metadata:
-        annotations:
-          longhorn.io/numberOfReplicas: "2"
         name: data
       spec:
         accessModes:

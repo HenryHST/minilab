@@ -2,8 +2,15 @@
 #
 # Copy into apps/<app>/networkpolicy.yaml and replace placeholders:
 #   {{NAMESPACE}}  e.g. vaultwarden
-#   {{APP_LABEL}}  pod label key/value selecting the workload
+#   {{APP_LABEL}}  value for BOTH app and app.kubernetes.io/name (dual-write)
 #   {{PORT}}       container/service port the Gateway (or Newt) dials
+#
+# Label contract (Phase 1 — dual-write):
+#   Pod templates MUST set:
+#     app: {{APP_LABEL}}
+#     app.kubernetes.io/name: {{APP_LABEL}}
+#   NetworkPolicy / Service podSelector stays on app: until Phase 2 flips selectors.
+#   See docs/bookstack/books/minilab/10-metadata-conventions.md
 #
 # Modes:
 #   A) Ingress-only (recommended start) — egress stays open (OIDC, NFS, DB, …).
@@ -27,6 +34,7 @@ metadata:
     app.kubernetes.io/name: {{NAMESPACE}}
     app.kubernetes.io/part-of: {{NAMESPACE}}
 spec:
+  # Phase 1: select on legacy app: (pods must dual-write app + app.kubernetes.io/name)
   podSelector:
     matchLabels:
       app: {{APP_LABEL}}

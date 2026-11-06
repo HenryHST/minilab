@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: demo-server-tls
+  annotations:
+    cnpg.io/reload: ""
+type: kubernetes.io/tls
+data:
+  tls.crt: YQ==
+  tls.key: YQ==

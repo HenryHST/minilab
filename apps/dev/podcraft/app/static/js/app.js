@@ -7,6 +7,7 @@ import {
   parseSizeMb,
 } from "./calendar.js";
 import { paintScheduleClock, parseHm, scheduleClockShellHtml } from "./schedule-clock.js";
+import { timezoneSelectHtml } from "./timezones.js";
 
 const PREF = {
   locale: "podcraft.locale",
@@ -301,7 +302,7 @@ function isAvatarSrcOk(url) {
 }
 
 function avatarImgHtml(src, pos) {
-  return `<img src="${escapeHtml(src)}" alt="" draggable="false" style="object-position:${pos.x}% ${pos.y}%" />`;
+  return `<img src="${escapeHtml(src)}" alt="" draggable="false" style="${avatarFrameStyle(pos)}" />`;
 }
 
 function avatarHtml(size = 40) {
@@ -326,6 +327,33 @@ function ensureAvatarEdit() {
     state.avatarEdit = { src: state.avatarUrl, pos: { ...state.avatarPos }, error: "" };
   }
   return state.avatarEdit;
+}
+
+/** Zoom so square avatars still have crop room; object-position alone is a no-op then. */
+const AVATAR_ZOOM = 1.35;
+
+function avatarFrameStyle(pos) {
+  const z = AVATAR_ZOOM;
+  const x = clampPct(pos?.x ?? 50) / 100;
+  const y = clampPct(pos?.y ?? 50) / 100;
+  const left = (1 - z) * x * 100;
+  const top = (1 - z) * y * 100;
+  return `width:${z * 100}%;height:${z * 100}%;max-width:none;position:absolute;left:${left}%;top:${top}%;object-fit:cover;`;
+}
+
+function applyAvatarFrame(img, pos) {
+  if (!img) return;
+  const z = AVATAR_ZOOM;
+  const x = clampPct(pos?.x ?? 50) / 100;
+  const y = clampPct(pos?.y ?? 50) / 100;
+  img.style.width = `${z * 100}%`;
+  img.style.height = `${z * 100}%`;
+  img.style.maxWidth = "none";
+  img.style.position = "absolute";
+  img.style.left = `${(1 - z) * x * 100}%`;
+  img.style.top = `${(1 - z) * y * 100}%`;
+  img.style.objectFit = "cover";
+  img.style.objectPosition = "50% 50%";
 }
 
 function clampPct(n) {
@@ -1006,21 +1034,30 @@ function pageSchedule() {
           </div>
         </div>
       </article>
-      <article class="card">
-        <h2>${escapeHtml(t(state.locale, "dayNight"))}</h2>
-        <form id="schedule-form" class="form-grid">
-          <div class="form-row">
-            <label>${escapeHtml(t(state.locale, "startTime"))}<input name="start" type="time" value="${escapeHtml(state.schedule?.start || "06:30")}" /></label>
-            <label>${escapeHtml(t(state.locale, "endTime"))}<input name="end" type="time" value="${escapeHtml(state.schedule?.end || "23:45")}" /></label>
-          </div>
-          <label>${escapeHtml(t(state.locale, "timezone"))}<input name="timezone" value="${escapeHtml(state.schedule?.timezone || "Europe/Berlin")}" /></label>
-          <label>${escapeHtml(t(state.locale, "scheduleEnabled"))}
+      <article class="card schedule-daynight-card">
+        <div class="card-head"><h2>${escapeHtml(t(state.locale, "dayNight"))}</h2></div>
+        <form id="schedule-form" class="form-grid schedule-form">
+          <label class="field field-time">${escapeHtml(t(state.locale, "startTime"))}
+            <input name="start" type="time" value="${escapeHtml(state.schedule?.start || "06:30")}" />
+          </label>
+          <label class="field field-time">${escapeHtml(t(state.locale, "endTime"))}
+            <input name="end" type="time" value="${escapeHtml(state.schedule?.end || "23:45")}" />
+          </label>
+          <label class="field field-tz">${escapeHtml(t(state.locale, "timezone"))}
+            <select name="timezone" data-tooltip="${escapeHtml(t(state.locale, "timezoneHint"))}">
+              ${timezoneSelectHtml(state.schedule?.timezone || "Europe/Berlin", state.locale)}
+            </select>
+            <span class="field-hint">${escapeHtml(t(state.locale, "timezoneHint"))}</span>
+          </label>
+          <label class="field field-enabled">${escapeHtml(t(state.locale, "scheduleEnabled"))}
             <select name="enabled">
-              <option value="true" ${state.schedule?.enabled ? "selected" : ""}>on</option>
-              <option value="false" ${!state.schedule?.enabled ? "selected" : ""}>off</option>
+              <option value="true" ${state.schedule?.enabled ? "selected" : ""}>${escapeHtml(t(state.locale, "enabledOn"))}</option>
+              <option value="false" ${!state.schedule?.enabled ? "selected" : ""}>${escapeHtml(t(state.locale, "enabledOff"))}</option>
             </select>
           </label>
-          <button class="btn primary" type="submit">${escapeHtml(t(state.locale, "save"))}</button>
+          <div class="schedule-daynight-actions">
+            <button class="btn primary" type="submit">${escapeHtml(t(state.locale, "save"))}</button>
+          </div>
         </form>
       </article>
     </section>`;
@@ -1588,7 +1625,7 @@ function bindSettings(root) {
 
   const paintPos = () => {
     const img = avatar.querySelector("img");
-    if (img) img.style.objectPosition = `${edit.pos.x}% ${edit.pos.y}%`;
+    applyAvatarFrame(img, edit.pos);
     posX.value = String(edit.pos.x);
     posY.value = String(edit.pos.y);
     root.querySelector("#avatarPosXVal").textContent = `${edit.pos.x}%`;

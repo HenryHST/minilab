@@ -1,5 +1,5 @@
 # Migrated from Traefik IngressRoute.
-# Rule order: Basic-auth machine API (workloads only) → public shell/assets → Authentik ExternalAuth.
+# Rule order: Basic workloads → public shell → outpost paths → Authentik ExternalAuth catch-all.
 # Restore API /api/v1/restore must NEVER match the Basic bypass — only workloads PathPrefix + Basic header.
 # Traefik ipAllowList (LAN) is not expressible on HTTPRoute; rely on VIP + NetworkPolicy.
 # Long OCR-style timeouts not needed here.
@@ -63,6 +63,15 @@ spec:
       backendRefs:
         - name: podcraft
           port: 8080
+    # Authentik outpost (sign_out / callback / start) — must NOT hit FastAPI.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /outpost.goauthentik.io
+      backendRefs:
+        - name: ak-outpost-podcraft
+          namespace: authentik
+          port: 9000
     # Browser OIDC: Authentik ExternalAuth (Envoy path).
     - matches:
         - path:

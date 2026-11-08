@@ -67,5 +67,8 @@ def login_page() -> FileResponse:
 
 
 @app.get("/settings")
-def settings_page() -> FileResponse:
+@app.get("/schedule")
+@app.get("/restore/vaultwarden")
+@app.get("/logs")
+def spa_routes() -> FileResponse:
     return FileResponse(_STATIC / "index.html")

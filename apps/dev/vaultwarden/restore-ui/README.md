@@ -1,25 +1,17 @@
-# vw-restore
+# vw-restore → merged into podcraft
 
-Vaultwarden restore UI (lab).
+**Status:** deprecated / merged (2026-11-07)
 
-- Lab image (SoT): `git.stadthagen.dev/dev/vw-restore:<semver>`
-- Forgejo repo: https://git.stadthagen.dev/dev/vw-restore (`.forgejo/workflows/image.yml`)
-- Optional GHCR: `ghcr.io/henryhst/vw-restore` (dispatch-only GHA)
-- SemVer: file [`VERSION`](VERSION); Forgejo tag `vX.Y.Z` or workflow_dispatch
-- Runtime host: `https://vw-restore.stadthagen.dev`
+The Vaultwarden restore UI no longer deploys as a standalone app.
 
-Sources live in the Forgejo repo; this tree under `restore-ui/` is kept for VERSION sync and local builds. K8s manifests stay in minilab.
+| Was | Now |
+|-----|-----|
+| Host `vw-restore.stadthagen.dev` | `podcraft.stadthagen.dev/restore/vaultwarden` |
+| Image `git.stadthagen.dev/dev/vw-restore` | `git.stadthagen.dev/dev/podcraft` (restore code included) |
+| Day-0 `day0-vw-restore` | removed via blueprint `state: absent`; use `day0-podcraft` |
+| Jinja UI in this tree | FastAPI JSON `/api/v1/restore/*` + SPA in podcraft |
 
-## Local build
+Jobs, ConfigMap `vaultwarden-restore`, and PVCs remain in namespace `vaultwarden`.
+See `../RESTORE-UI-MERGED.md` and `../podcraft-restore-rbac.yaml`.
 
-```bash
-cd apps/dev/vaultwarden/restore-ui
-VER="$(tr -d '[:space:]' < VERSION)"
-docker buildx build --platform linux/amd64 \
-  -t "git.stadthagen.dev/dev/vw-restore:${VER}" \
-  --push .
-```
-
-## Deploy note
-
-Cluster pulls `git.stadthagen.dev/dev/vw-restore` via Secret `registry-pull`. Prefer digest pin in Deployment + PreSync Job after a release.
+Do **not** continue building or publishing `dev/vw-restore`.

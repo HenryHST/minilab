@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from app.auth import Principal, require_user
+from app.auth import Principal, require_workload_access
 from app.config import state
 from app import k8s
 
@@ -70,7 +70,7 @@ def _out(status: k8s.WorkloadStatus) -> WorkloadOut:
 
 
 @router.get("/workloads", response_model=list[WorkloadOut])
-def list_workloads(_: Principal = Depends(require_user)) -> list[WorkloadOut]:
+def list_workloads(_: Principal = Depends(require_workload_access)) -> list[WorkloadOut]:
     out: list[WorkloadOut] = []
     for spec in state.workloads.values():
         try:
@@ -82,7 +82,7 @@ def list_workloads(_: Principal = Depends(require_user)) -> list[WorkloadOut]:
 
 @router.get("/workloads/{workload_id}", response_model=WorkloadOut)
 def get_workload(
-    workload_id: str, _: Principal = Depends(require_user)
+    workload_id: str, _: Principal = Depends(require_workload_access)
 ) -> WorkloadOut:
     spec = state.workloads.get(workload_id)
     if not spec:
@@ -95,7 +95,7 @@ def get_workload(
 
 @router.post("/workloads/{workload_id}/start", response_model=WorkloadOut)
 def start_workload(
-    workload_id: str, user: Principal = Depends(require_user)
+    workload_id: str, user: Principal = Depends(require_workload_access)
 ) -> WorkloadOut:
     spec = state.workloads.get(workload_id)
     if not spec:
@@ -108,7 +108,7 @@ def start_workload(
 
 @router.post("/workloads/{workload_id}/stop", response_model=WorkloadOut)
 def stop_workload(
-    workload_id: str, user: Principal = Depends(require_user)
+    workload_id: str, user: Principal = Depends(require_workload_access)
 ) -> WorkloadOut:
     spec = state.workloads.get(workload_id)
     if not spec:

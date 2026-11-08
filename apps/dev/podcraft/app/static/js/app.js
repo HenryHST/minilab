@@ -1,146 +1,105 @@
 import { normalizeLocale, t } from "./i18n.js";
 
-const narrowViewport =
-  typeof matchMedia === "function" && matchMedia("(max-width: 640px)").matches;
+const PREF = {
+  locale: "podcraft.locale",
+  theme: "podcraft.theme",
+  sidebar: "podcraft.sidebarExpanded",
+  clock: "podcraft.showClock",
+  avatar: "podcraft.avatarUrl",
+  basic: "podcraft.basic",
+};
 
 const state = {
-  locale: normalizeLocale(localStorage.getItem("podcraft.locale") || navigator.language?.slice(0, 2)),
-  theme: localStorage.getItem("podcraft.theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"),
+  locale: normalizeLocale(localStorage.getItem(PREF.locale) || navigator.language?.slice(0, 2)),
+  theme: localStorage.getItem(PREF.theme) || "dark",
+  sidebarExpanded: localStorage.getItem(PREF.sidebar) === "1",
+  showClock: localStorage.getItem(PREF.clock) !== "0",
+  avatarUrl: localStorage.getItem(PREF.avatar) || "",
   me: null,
   schedule: null,
   workloads: [],
-  basicAuth: localStorage.getItem("podcraft.basic") || "",
-  logPaused: false,
-  // Narrow: always start minimized (ignore sticky localStorage "0" from older sessions).
-  logMinimized: narrowViewport || localStorage.getItem("podcraft.logMinimized") === "1",
-  // Narrow: keep guide closed so workload rows fit the first screen (short-vh probe H6).
-  guideOpen: !narrowViewport && localStorage.getItem("podcraft.guideDismissed") !== "1",
+  archives: [],
+  jobs: { active: [], recent: [] },
+  selectedArchive: "latest",
+  basicAuth: localStorage.getItem(PREF.basic) || "",
   route: location.pathname,
   error: "",
-  /** One-time HA basic credentials after rotate (client-only). */
+  toast: "",
+  logPaused: false,
   haBasicOnce: null,
   haPassVisible: false,
+  userCardOpen: false,
+  menuOpen: false,
+  logoutOpen: false,
 };
+
+let tipEl;
+let clockTimer;
+let logTimer;
+
+function perms() {
+  return state.me?.permissions || {};
+}
+
+function firstAllowedRoute() {
+  const p = perms();
+  if (p.dashboard) return "/";
+  if (p.restore) return "/restore/vaultwarden";
+  if (p.settings) return "/settings";
+  return "/";
+}
+
+function routeAllowed(path) {
+  const p = perms();
+  if (path === "/" || path === "") return !!p.dashboard;
+  if (path.startsWith("/schedule")) return !!p.schedule;
+  if (path.startsWith("/restore")) return !!p.restore;
+  if (path.startsWith("/settings")) return !!p.settings;
+  if (path.startsWith("/logs")) return !!p.logs;
+  return false;
+}
 
 function applyChrome() {
   document.documentElement.dataset.theme = state.theme;
   document.documentElement.lang = state.locale;
   const icon = document.querySelector('link[rel="icon"][data-theme-icon]');
-  if (icon) {
-    icon.href = brandLogoSrc();
-  }
+  if (icon) icon.href = brandLogoSrc();
 }
 
 function brandLogoSrc() {
   return state.theme === "light" ? "/static/brand/logo-light.svg" : "/static/brand/logo-dark.svg";
 }
 
-function brandMarkHtml(size = 36) {
-  return `<img class="brand-mark" src="${brandLogoSrc()}" alt="" width="${size}" height="${size}" />`;
-}
-
-function miniPulseSvg() {
-  // Explicit end tags — self-closing SVG nodes have broken HTML nesting on iOS Safari.
-  return `<svg class="mini-pulse" viewBox="0 0 28 12" aria-hidden="true"><path d="M1 6 H6 L8 3 L11 9 L14 2 L17 8 L19 6 H27" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>`;
-}
-
 function headers(json = true) {
   const h = {};
-  if (json) h["Accept"] = "application/json";
-  if (state.basicAuth) h["Authorization"] = `Basic ${state.basicAuth}`;
+  if (json) h.Accept = "application/json";
+  if (state.basicAuth) h.Authorization = `Basic ${state.basicAuth}`;
   return h;
 }
 
 async function api(path, opts = {}) {
-  // redirect:manual — Traefik ForwardAuth may 302 to IdP; treat as unauthenticated.
   const res = await fetch(path, {
     ...opts,
     redirect: "manual",
     headers: { ...headers(), ...(opts.headers || {}) },
   });
-  const redirected =
-    res.type === "opaqueredirect" ||
-    (res.status >= 300 && res.status < 400);
+  const redirected = res.type === "opaqueredirect" || (res.status >= 300 && res.status < 400);
   if (res.status === 401 || redirected) {
     state.me = null;
     throw Object.assign(new Error("unauthorized"), { status: 401 });
   }
   if (!res.ok) {
     const detail = await res.text();
-    throw new Error(detail || res.statusText);
+    throw Object.assign(new Error(detail || res.statusText), { status: res.status });
   }
   if (res.status === 204) return null;
   return res.json();
 }
 
 function el(html) {
-  const t = document.createElement("template");
-  t.innerHTML = html.trim();
-  return t.content.firstElementChild;
-}
-
-function logoutHref() {
-  // Authentik ForwardAuth outpost (single-app); Ingress is managed by the outpost.
-  return "/outpost.goauthentik.io/sign_out";
-}
-
-function doLogout() {
-  localStorage.removeItem("podcraft.basic");
-  state.basicAuth = "";
-  state.me = null;
-  // Always hit Authentik sign_out when OIDC/both; harmless redirect if already logged out.
-  window.location.href = logoutHref();
-}
-
-function tip(key) {
-  return `data-tip="${escapeHtml(t(state.locale, key))}" title="${escapeHtml(t(state.locale, key))}"`;
-}
-
-function topControls({ showHelp = false } = {}) {
-  return `
-    <div class="top-actions">
-      <button class="chip ${state.theme === "light" ? "active" : ""}" data-action="theme-light" type="button" ${tip("tipThemeLight")} aria-label="${t(state.locale, "tipThemeLight")}">☀</button>
-      <button class="chip ${state.theme === "dark" ? "active" : ""}" data-action="theme-dark" type="button" ${tip("tipThemeDark")} aria-label="${t(state.locale, "tipThemeDark")}">☾</button>
-      <button class="chip ${state.locale === "de" ? "active" : ""}" data-action="lang-de" type="button" ${tip("tipLangDe")}>DE</button>
-      <button class="chip ${state.locale === "en" ? "active" : ""}" data-action="lang-en" type="button" ${tip("tipLangEn")}>EN</button>
-      ${showHelp ? `<button class="chip ${state.guideOpen ? "active" : ""}" data-action="toggle-guide" type="button" ${tip("tipHelp")}>?</button>` : ""}
-      ${state.me ? `<span class="user-pill">${t(state.locale, "user")}: ${escapeHtml(state.me.username)}</span>` : ""}
-      ${state.me ? `<a class="chip" href="/settings" ${tip("tipSettings")}>${t(state.locale, "settings")}</a>` : ""}
-      ${state.me ? `<button class="chip" data-action="logout" type="button" ${tip("tipLogout")}>${t(state.locale, "logout")}</button>` : ""}
-    </div>`;
-}
-
-function guideHtml() {
-  if (!state.guideOpen) return "";
-  return `
-    <section class="guide-card" id="guide-card" aria-label="${t(state.locale, "guideTitle")}">
-      <div class="guide-head">
-        <div>
-          <h2>${t(state.locale, "guideTitle")}</h2>
-          <p class="guide-lead">${t(state.locale, "guideLead")}</p>
-        </div>
-        <button class="btn ghost" type="button" data-action="dismiss-guide" ${tip("tipHelp")}>✕</button>
-      </div>
-      <ol class="guide-steps">
-        <li><span class="guide-step-num">1</span><span>${t(state.locale, "guideStep1")}</span></li>
-        <li><span class="guide-step-num">2</span><span>${t(state.locale, "guideStep2")}</span></li>
-        <li><span class="guide-step-num">3</span><span>${t(state.locale, "guideStep3")}</span></li>
-        <li><span class="guide-step-num">4</span><span>${t(state.locale, "guideStep4")}</span></li>
-        <li><span class="guide-step-num">5</span><span>${t(state.locale, "guideStep5")}</span></li>
-      </ol>
-      <div class="guide-actions">
-        <button class="btn" type="button" data-action="dismiss-guide">${t(state.locale, "guideDismiss")}</button>
-      </div>
-    </section>`;
-}
-
-function pulseSvg(active) {
-  return `
-    <div class="pulse-wrap ${active ? "pulse-active" : "pulse-idle"}">
-      <svg class="pulse-svg" viewBox="0 0 600 60" preserveAspectRatio="none" aria-hidden="true">
-        <path class="pulse-path" d="M0 30 H80 L100 30 L115 10 L130 50 L145 20 L160 30 H240 L255 30 L270 8 L285 52 L300 18 L315 30 H400 L415 30 L430 12 L445 48 L460 22 L475 30 H600"></path>
-      </svg>
-    </div>`;
+  const tpl = document.createElement("template");
+  tpl.innerHTML = html.trim();
+  return tpl.content.firstElementChild;
 }
 
 function escapeHtml(s) {
@@ -149,6 +108,84 @@ function escapeHtml(s) {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+function logoutHref() {
+  return "/outpost.goauthentik.io/sign_out";
+}
+
+function doLogout() {
+  localStorage.removeItem(PREF.basic);
+  state.basicAuth = "";
+  state.me = null;
+  window.location.href = logoutHref();
+}
+
+function navIcon(name) {
+  const icons = {
+    dashboard:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 13h7V4H4v9zm9 7h7V4h-7v16zM4 20h7v-5H4v5z"/></svg>',
+    schedule:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg>',
+    restore:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v10m0 0 3.5-3.5M12 13 8.5 9.5M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3"/></svg>',
+    settings:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9c.3.6.9 1 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+    logs: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M7 4h10v16H7z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>',
+    logout:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H4"/><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/></svg>',
+  };
+  return icons[name] || "";
+}
+
+function ensureTooltip() {
+  if (!tipEl) {
+    tipEl = document.createElement("div");
+    tipEl.id = "tooltip";
+    tipEl.setAttribute("role", "tooltip");
+    tipEl.hidden = true;
+    document.body.appendChild(tipEl);
+  }
+}
+
+function hideTooltip() {
+  if (!tipEl) return;
+  tipEl.hidden = true;
+  tipEl.classList.remove("show");
+}
+
+function showTooltip(anchor) {
+  ensureTooltip();
+  const text = anchor.getAttribute("data-tooltip");
+  if (!text) return;
+  if (!state.sidebarExpanded && !state.menuOpen && !anchor.hasAttribute("data-tooltip-always")) {
+    /* mini sidebar: show */
+  } else if (state.sidebarExpanded && anchor.getAttribute("data-tooltip-when") === "mini") {
+    return;
+  }
+  tipEl.textContent = text;
+  tipEl.hidden = false;
+  const r = anchor.getBoundingClientRect();
+  tipEl.style.left = `${Math.min(window.innerWidth - 12, r.right + 8)}px`;
+  tipEl.style.top = `${Math.max(8, r.top + r.height / 2 - 12)}px`;
+  requestAnimationFrame(() => tipEl.classList.add("show"));
+}
+
+function bindTooltips(root) {
+  root.querySelectorAll("[data-tooltip]").forEach((node) => {
+    node.addEventListener("mouseenter", () => showTooltip(node));
+    node.addEventListener("mouseleave", hideTooltip);
+    node.addEventListener("focus", () => showTooltip(node));
+    node.addEventListener("blur", hideTooltip);
+  });
+}
+
+function navigate(path, { replace = false } = {}) {
+  if (replace) history.replaceState({}, "", path);
+  else history.pushState({}, "", path);
+  state.route = path;
+  state.menuOpen = false;
+  render();
 }
 
 function phaseLabel(phase) {
@@ -163,21 +200,9 @@ function phaseLabel(phase) {
   return t(state.locale, key);
 }
 
-function phaseClass(phase) {
-  return String(phase || "unknown").toLowerCase();
-}
-
-function statusDotClass(phase) {
-  if (phase === "Running") return "on";
-  if (phase === "Degraded" || phase === "Starting") return "warn";
-  if (phase === "Failed") return "err";
-  return "";
-}
-
 function workloadIconHtml(w) {
   const letter = escapeHtml((w.id || "?").slice(0, 2).toUpperCase());
   if (w.icon) {
-    // No inline onerror HTML — attribute payloads with </div> corrupt the tree on WebKit.
     return `<img class="workload-icon" src="${escapeHtml(w.icon)}" alt="" width="44" height="44" loading="lazy" data-fallback="${letter}" />`;
   }
   return `<div class="workload-icon fallback" aria-hidden="true">${letter}</div>`;
@@ -195,58 +220,182 @@ function bindWorkloadIcons(root) {
   });
 }
 
-/** WebKit can nest the list under <svg> when markup is misparsed; put it back. */
-function repairWorkloadDom(root) {
-  const list = root.querySelector(".workload-list");
-  const section = root.querySelector(".section-head")?.parentElement;
-  if (list?.closest("svg") && section) section.appendChild(list);
-}
-
-function liveBadgeHtml(phase) {
-  const live = phase === "Running";
-  const cls = phaseClass(phase);
-  return `
-    <span class="live-badge ${cls}" ${tip("tipLive")}>
-      ${live ? miniPulseSvg() : `<span class="status-dot ${statusDotClass(phase)}"></span>`}
-      ${escapeHtml(phaseLabel(phase))}
-    </span>`;
-}
-
-function scheduleColsHtml(w) {
-  if (!w.schedule) {
-    return `<div class="time-cols muted-cols"><div class="time-col"><span class="time-label">${t(state.locale, "scheduleOff")}</span><span class="time-value">—</span></div></div>`;
+function avatarHtml(size = 40) {
+  const url = state.avatarUrl;
+  const letter = escapeHtml((state.me?.username || "?").slice(0, 1).toUpperCase());
+  if (url && /^https:\/\//i.test(url) && !/\.svg(\?|$)/i.test(url)) {
+    return `<span class="avatar" style="width:${size}px;height:${size}px"><img src="${escapeHtml(url)}" alt="" /></span>`;
   }
-  const start = state.schedule?.start || "—";
-  const end = state.schedule?.end || "—";
-  const day = t(state.locale, "today");
-  return `
-    <div class="time-cols">
-      <div class="time-col">
-        <span class="time-label">${t(state.locale, "started")}</span>
-        <span class="time-value">${escapeHtml(start)} · ${day}</span>
-      </div>
-      <div class="time-col">
-        <span class="time-label">${t(state.locale, "stopAt")}</span>
-        <span class="time-value">${escapeHtml(end)} · ${day}</span>
-      </div>
-    </div>`;
+  return `<span class="avatar" style="width:${size}px;height:${size}px">${letter}</span>`;
 }
 
-function workloadDetailHtml(w) {
-  const rs = w.replicaset;
-  const pods = Array.isArray(w.pods) ? w.pods : [];
-  const rsText = rs ? `${escapeHtml(rs.name)} · ${rs.ready}/${rs.desired}` : "—";
-  const podText = pods.length
-    ? pods.map((p) => `${escapeHtml(p.name)} (${escapeHtml(p.phase)})`).join(", ")
-    : "—";
+function clockText() {
+  const now = new Date();
+  return now.toLocaleString(state.locale === "de" ? "de-DE" : "en-GB", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function shellStart(activePage) {
+  const p = perms();
+  const items = [
+    p.dashboard && { id: "dashboard", path: "/", label: "navDashboard", icon: "dashboard" },
+    p.schedule && { id: "schedule", path: "/schedule", label: "navSchedule", icon: "schedule" },
+    p.restore && { id: "restore", path: "/restore/vaultwarden", label: "navRestore", icon: "restore" },
+    p.settings && { id: "settings", path: "/settings", label: "navSettings", icon: "settings" },
+    p.logs && { id: "logs", path: "/logs", label: "navLogs", icon: "logs" },
+  ].filter(Boolean);
+
+  const nav = items
+    .map(
+      (item) => `
+      <button type="button" class="${activePage === item.id ? "active" : ""}" data-nav="${item.path}"
+        data-tooltip="${escapeHtml(t(state.locale, item.label))}" data-tooltip-when="mini"
+        aria-label="${escapeHtml(t(state.locale, item.label))}">
+        ${navIcon(item.icon)}
+        <span class="label">${escapeHtml(t(state.locale, item.label))}</span>
+      </button>`,
+    )
+    .join("");
+
+  const groups = (state.me?.groups || [])
+    .map((g) => `<span class="chip">${escapeHtml(g)}</span>`)
+    .join("") || `<span class="hint">—</span>`;
+
   return `
-    <details class="workload-details">
-      <summary>${t(state.locale, "details")}</summary>
-      <div class="workload-status">
-        <span>${t(state.locale, "replicaset")}: <code>${rsText}</code></span>
-        <span>${t(state.locale, "pods")}: <code>${podText}</code></span>
+  <a class="skip-link" href="#main">${escapeHtml(t(state.locale, "skipToContent"))}</a>
+  <div class="app ${state.sidebarExpanded ? "sidebar-expanded" : ""} ${state.menuOpen ? "menu-open" : ""}">
+    <aside class="sidebar" id="sidebar" aria-label="Navigation">
+      <button type="button" class="avatar-btn" id="avatarBtn" data-tooltip="${escapeHtml(t(state.locale, "tipUser"))}" data-tooltip-always
+        aria-expanded="${state.userCardOpen}" aria-controls="userCard" aria-label="${escapeHtml(t(state.locale, "tipUser"))}">
+        ${avatarHtml(40)}
+      </button>
+      <div class="user-card ${state.userCardOpen ? "open" : ""}" id="userCard">
+        <strong>${escapeHtml(state.me?.display_name || state.me?.username || "")}</strong>
+        <div class="hint">${escapeHtml(state.me?.email || state.me?.username || "")}</div>
+        <div class="hint">${escapeHtml(t(state.locale, "groups"))}</div>
+        <div class="groups">${groups}</div>
       </div>
-    </details>`;
+      <nav class="nav">${nav}</nav>
+      <div class="sidebar-foot">
+        <button type="button" class="logout-btn" id="logoutBtn" data-tooltip="${escapeHtml(t(state.locale, "tipLogout"))}" data-tooltip-when="mini" aria-label="${escapeHtml(t(state.locale, "logout"))}">
+          ${navIcon("logout")}
+          <span class="label">${escapeHtml(t(state.locale, "logout"))}</span>
+        </button>
+        <button type="button" class="collapse-btn" id="collapseBtn"
+          aria-expanded="${state.sidebarExpanded}"
+          data-tooltip="${escapeHtml(t(state.locale, state.sidebarExpanded ? "navCollapse" : "navExpand"))}">
+          <span aria-hidden="true">${state.sidebarExpanded ? "«" : "»"}</span>
+          <span class="label">${escapeHtml(t(state.locale, state.sidebarExpanded ? "navCollapse" : "navExpand"))}</span>
+        </button>
+      </div>
+    </aside>
+    <div class="main-wrap">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button type="button" class="icon-btn menu-btn" id="menuBtn" aria-label="${escapeHtml(t(state.locale, "menuOpen"))}">☰</button>
+          <img class="brand-mark" src="${brandLogoSrc()}" alt="podcraft" width="40" height="40" />
+          ${state.showClock ? `<div class="headline-clock" id="headlineClock" aria-live="polite">${escapeHtml(clockText())}</div>` : `<strong>podcraft</strong>`}
+        </div>
+        <div class="top-actions">
+          <button type="button" class="ghost-btn" id="langBtn" data-tooltip="${escapeHtml(t(state.locale, "tipLang"))}" data-tooltip-always>${state.locale.toUpperCase()}</button>
+          <button type="button" class="icon-btn" id="themeBtn" data-tooltip="${escapeHtml(t(state.locale, "tipTheme"))}" data-tooltip-always>${state.theme === "light" ? "☀" : "☾"}</button>
+        </div>
+      </header>
+      <main class="content" id="main">
+        ${state.toast ? `<div class="toast" role="status">${escapeHtml(state.toast)}</div>` : ""}
+        ${state.error ? `<div class="error-banner">${escapeHtml(state.error)}</div>` : ""}
+`;
+}
+
+function shellEnd() {
+  return `
+      </main>
+    </div>
+  </div>
+  ${
+    state.logoutOpen
+      ? `<div class="modal-backdrop" id="logoutModal" role="presentation">
+          <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="logoutTitle">
+            <h2 id="logoutTitle">${escapeHtml(t(state.locale, "logoutConfirmTitle"))}</h2>
+            <p>${escapeHtml(t(state.locale, "logoutConfirmBody"))}</p>
+            <div class="modal-actions">
+              <button type="button" class="btn" id="logoutCancel">${escapeHtml(t(state.locale, "cancel"))}</button>
+              <button type="button" class="btn danger" id="logoutConfirm">${escapeHtml(t(state.locale, "logout"))}</button>
+            </div>
+          </div>
+        </div>`
+      : ""
+  }`;
+}
+
+function bindShell(root) {
+  root.querySelectorAll("[data-nav]").forEach((btn) => {
+    btn.addEventListener("click", () => navigate(btn.dataset.nav));
+  });
+  root.querySelector("#menuBtn")?.addEventListener("click", () => {
+    state.menuOpen = !state.menuOpen;
+    render();
+  });
+  root.querySelector("#collapseBtn")?.addEventListener("click", () => {
+    state.sidebarExpanded = !state.sidebarExpanded;
+    localStorage.setItem(PREF.sidebar, state.sidebarExpanded ? "1" : "0");
+    render();
+  });
+  root.querySelector("#avatarBtn")?.addEventListener("click", () => {
+    state.userCardOpen = !state.userCardOpen;
+    render();
+  });
+  root.querySelector("#logoutBtn")?.addEventListener("click", () => {
+    state.logoutOpen = true;
+    render();
+    queueMicrotask(() => root.querySelector("#logoutCancel")?.focus());
+  });
+  root.querySelector("#logoutCancel")?.addEventListener("click", () => {
+    state.logoutOpen = false;
+    render();
+  });
+  root.querySelector("#logoutConfirm")?.addEventListener("click", () => doLogout());
+  root.querySelector("#langBtn")?.addEventListener("click", () => {
+    state.locale = state.locale === "de" ? "en" : "de";
+    localStorage.setItem(PREF.locale, state.locale);
+    applyChrome();
+    render();
+  });
+  root.querySelector("#themeBtn")?.addEventListener("click", () => {
+    state.theme = state.theme === "dark" ? "light" : "dark";
+    localStorage.setItem(PREF.theme, state.theme);
+    applyChrome();
+    render();
+  });
+  const modal = root.querySelector("#logoutModal");
+  if (modal) {
+    modal.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        state.logoutOpen = false;
+        render();
+      }
+      if (e.key === "Tab") {
+        const focusable = [...modal.querySelectorAll("button")];
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    });
+  }
+  bindTooltips(root);
 }
 
 function renderLogin() {
@@ -254,382 +403,439 @@ function renderLogin() {
   root.innerHTML = "";
   root.append(
     el(`
-    <div class="login-view">
-      <div class="login-top">${topControls()}</div>
+    <div class="login-shell">
       <div class="login-card">
-        <div class="brand">${brandMarkHtml(64)}</div>
+        <img src="${brandLogoSrc()}" alt="" width="72" height="72" />
         <h1>podcraft</h1>
-        <p>${t(state.locale, "tagline")}</p>
+        <p class="hint">${escapeHtml(t(state.locale, "tagline"))}</p>
         <div class="login-actions">
-          <a class="btn btn-oidc" href="/auth/start">
-            <img class="btn-oidc-icon" src="/static/brand/authentik.svg" alt="" width="28" height="28" />
-            <span>${t(state.locale, "loginOidc")}</span>
+          <a class="btn-oidc" href="/auth/start">
+            <img src="/static/brand/authentik.svg" alt="" width="24" height="24" />
+            <span>${escapeHtml(t(state.locale, "loginOidc"))}</span>
           </a>
-          <details>
-            <summary class="chip" style="display:inline-block;cursor:pointer">${t(state.locale, "loginBasic")}</summary>
-            <form id="basic-form" class="form-grid" style="margin-top:0.75rem;text-align:left">
-              <label>${t(state.locale, "username")}<input name="user" autocomplete="username" required /></label>
-              <label>${t(state.locale, "password")}<input name="pass" type="password" autocomplete="current-password" required /></label>
-              <button class="btn" type="submit">${t(state.locale, "signIn")}</button>
-            </form>
-          </details>
+          <div class="divider"><span>${escapeHtml(t(state.locale, "loginOr"))}</span></div>
+          <form id="basic-form" class="form-grid" novalidate>
+            <label>${escapeHtml(t(state.locale, "username"))}<input name="user" autocomplete="username" /></label>
+            <label>${escapeHtml(t(state.locale, "password"))}<input name="pass" type="password" autocomplete="current-password" /></label>
+            <button class="btn primary" type="submit">${escapeHtml(t(state.locale, "loginLocal"))}</button>
+          </form>
+          ${state.error ? `<p class="error-banner">${escapeHtml(state.error)}</p>` : ""}
         </div>
-        ${state.error ? `<p class="error-banner">${escapeHtml(state.error)}</p>` : ""}
+        <div class="top-actions" style="justify-content:center;margin-top:1rem">
+          <button type="button" class="ghost-btn" id="langBtn">${state.locale.toUpperCase()}</button>
+          <button type="button" class="icon-btn" id="themeBtn">${state.theme === "light" ? "☀" : "☾"}</button>
+        </div>
       </div>
     </div>`),
   );
   root.querySelector("#basic-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const token = btoa(`${fd.get("user")}:${fd.get("pass")}`);
-    state.basicAuth = token;
-    localStorage.setItem("podcraft.basic", token);
+    const user = String(fd.get("user") || "").trim();
+    const pass = String(fd.get("pass") || "");
+    if (!user || !pass) {
+      state.error = "Mock:/ local credentials required";
+      renderLogin();
+      return;
+    }
+    state.basicAuth = btoa(`${user}:${pass}`);
+    localStorage.setItem(PREF.basic, state.basicAuth);
     state.error = "";
     await boot();
   });
-  bindChrome(root);
+  root.querySelector("#langBtn")?.addEventListener("click", () => {
+    state.locale = state.locale === "de" ? "en" : "de";
+    localStorage.setItem(PREF.locale, state.locale);
+    applyChrome();
+    renderLogin();
+  });
+  root.querySelector("#themeBtn")?.addEventListener("click", () => {
+    state.theme = state.theme === "dark" ? "light" : "dark";
+    localStorage.setItem(PREF.theme, state.theme);
+    applyChrome();
+    renderLogin();
+  });
 }
 
-function renderApp() {
-  const root = document.getElementById("app");
-  const active = !!state.schedule?.active_now;
-  const title = active
-    ? t(state.locale, "scheduleOnlineUntil", { end: state.schedule?.end || "—" })
-    : t(state.locale, "scheduleOfflineUntil", { start: state.schedule?.start || "—" });
-
-  if (state.route.startsWith("/settings")) {
-    const once = state.haBasicOnce;
-    const passShown = state.haPassVisible && once?.password;
-    root.innerHTML = "";
-    root.append(
-      el(`
-      <div class="app-shell">
-        <header class="topbar">
-          <a class="brand" href="/">
-            ${brandMarkHtml(36)}
-            <span class="brand-name">podcraft</span>
-          </a>
-          ${topControls({ showHelp: false })}
-        </header>
-        <main class="main">
-          <div class="settings-card">
-            <h1>${t(state.locale, "settings")}</h1>
-            <form id="settings-form" class="form-grid">
-              <label><span>${t(state.locale, "scheduleEnabled")}</span>
-                <select name="enabled">
-                  <option value="true" ${state.schedule?.enabled ? "selected" : ""}>on</option>
-                  <option value="false" ${!state.schedule?.enabled ? "selected" : ""}>off</option>
-                </select>
-              </label>
-              <div class="form-row">
-                <label>${t(state.locale, "startTime")}<input name="start" value="${escapeHtml(state.schedule?.start || "06:30")}" pattern="\\d{2}:\\d{2}" required /></label>
-                <label>${t(state.locale, "endTime")}<input name="end" value="${escapeHtml(state.schedule?.end || "23:45")}" pattern="\\d{2}:\\d{2}" required /></label>
-              </div>
-              <label>${t(state.locale, "timezone")}<input name="timezone" value="${escapeHtml(state.schedule?.timezone || "Europe/Berlin")}" required /></label>
-              <p class="hint">${t(state.locale, "authHint")}: ${escapeHtml(state.me?.configured_auth_mode || "—")} · ${t(state.locale, "version")}: ${escapeHtml(state.me?.version || "—")}</p>
-              <button class="btn" type="submit">${t(state.locale, "save")}</button>
-            </form>
-            <section class="ha-api-block" aria-label="${t(state.locale, "haApiTitle")}">
-              <h2>${t(state.locale, "haApiTitle")}</h2>
-              <p class="hint">${t(state.locale, "haApiHelp")}</p>
-              <p class="hint">${t(state.locale, "haApiDocsHint")}</p>
-              <button class="btn secondary" type="button" data-action="ha-rotate" id="ha-rotate-btn">${t(state.locale, "haApiRotate")}</button>
-              ${
-                once
-                  ? `<div class="ha-api-once">
-                      <p class="hint">${t(state.locale, "haApiOnceHint")}</p>
-                      <label><span>${t(state.locale, "username")}</span>
-                        <div class="ha-api-row">
-                          <input readonly value="${escapeHtml(once.username)}" id="ha-basic-user" />
-                          <button class="chip" type="button" data-action="ha-copy-user">${t(state.locale, "haApiCopyUser")}</button>
-                        </div>
-                      </label>
-                      <label><span>${t(state.locale, "password")}</span>
-                        <div class="ha-api-row">
-                          <input readonly type="${passShown ? "text" : "password"}" value="${escapeHtml(once.password)}" id="ha-basic-pass" class="mono" />
-                          <button class="chip" type="button" data-action="ha-toggle-pass">${passShown ? t(state.locale, "haApiHidePass") : t(state.locale, "haApiShowPass")}</button>
-                          <button class="chip" type="button" data-action="ha-copy-pass">${t(state.locale, "haApiCopyPass")}</button>
-                        </div>
-                      </label>
-                    </div>`
-                  : ""
-              }
-              ${state.error && state.route.startsWith("/settings") ? `<p class="error-banner">${escapeHtml(state.error)}</p>` : ""}
-            </section>
-          </div>
-        </main>
-        ${logPanelHtml()}
-      </div>`),
-    );
-    root.querySelector("#settings-form")?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      state.schedule = await api("/api/v1/schedule", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", ...headers() },
-        body: JSON.stringify({
-          enabled: fd.get("enabled") === "true",
-          start: fd.get("start"),
-          end: fd.get("end"),
-          timezone: fd.get("timezone"),
-        }),
-      });
-      await boot();
-    });
-    root.querySelector("[data-action=ha-rotate]")?.addEventListener("click", async (ev) => {
-      const btn = ev.currentTarget;
-      btn.disabled = true;
-      btn.textContent = t(state.locale, "haApiRotating");
-      state.error = "";
-      try {
-        const data = await api("/api/v1/auth/ha-basic/rotate", { method: "POST" });
-        state.haBasicOnce = { username: data.username, password: data.password };
-        state.haPassVisible = false;
-      } catch (err) {
-        state.error = String(err.message || err);
-      }
-      renderApp();
-    });
-    root.querySelector("[data-action=ha-toggle-pass]")?.addEventListener("click", () => {
-      state.haPassVisible = !state.haPassVisible;
-      renderApp();
-    });
-    const copyField = async (id, labelBtn) => {
-      const elInput = root.querySelector(id);
-      if (!elInput) return;
-      try {
-        await navigator.clipboard.writeText(elInput.value);
-        if (labelBtn) {
-          const prev = labelBtn.textContent;
-          labelBtn.textContent = t(state.locale, "haApiCopied");
-          setTimeout(() => {
-            labelBtn.textContent = prev;
-          }, 1200);
-        }
-      } catch {
-        elInput.select();
-      }
-    };
-    root.querySelector("[data-action=ha-copy-user]")?.addEventListener("click", (e) => {
-      copyField("#ha-basic-user", e.currentTarget);
-    });
-    root.querySelector("[data-action=ha-copy-pass]")?.addEventListener("click", (e) => {
-      copyField("#ha-basic-pass", e.currentTarget);
-    });
-    bindChrome(root);
-    bindLog(root);
-    return;
-  }
-
+function pageDashboard() {
+  const running = state.workloads.filter((w) => (w.desired || 0) > 0).length;
+  const stopped = state.workloads.length - running;
   const rows = state.workloads
     .map((w) => {
       const on = w.desired > 0;
       const phase = w.phase || (on ? "Running" : "Stopped");
-      const meta = w.description || `${w.namespace}/${w.deployment}`;
       return `
-        <div class="workload-row" data-id="${escapeHtml(w.id)}">
-          ${workloadIconHtml(w)}
-          <div class="workload-id">
-            <h2>${escapeHtml(w.id)}</h2>
-            <p class="workload-meta">${escapeHtml(meta)} · ${t(state.locale, "ready")} ${w.ready}/${w.desired}</p>
-            ${workloadDetailHtml(w)}
-          </div>
-          ${liveBadgeHtml(phase)}
-          ${scheduleColsHtml(w)}
-          <div class="workload-actions">
-            ${
-              on
-                ? `<button class="icon-btn danger" data-action="stop" data-id="${escapeHtml(w.id)}" type="button" ${tip("tipStop")} aria-label="${t(state.locale, "stop")}"><span class="icon-stop"></span></button>`
-                : `<button class="icon-btn primary" data-action="start" data-id="${escapeHtml(w.id)}" type="button" ${tip("tipStart")} aria-label="${t(state.locale, "start")}"><span class="icon-play"></span></button>`
-            }
-          </div>
-        </div>`;
+      <div class="workload-row">
+        ${workloadIconHtml(w)}
+        <div class="workload-id">
+          <h3>${escapeHtml(w.id)}</h3>
+          <p class="workload-meta">${escapeHtml(w.description || `${w.namespace}/${w.deployment}`)} · ${t(state.locale, "ready")} ${w.ready}/${w.desired}</p>
+        </div>
+        <span class="badge ${on ? "live" : "idle"}" data-tooltip="${escapeHtml(t(state.locale, "tipLive"))}">${escapeHtml(phaseLabel(phase))}</span>
+        <div>
+          ${
+            on
+              ? `<button class="icon-btn danger" data-action="stop" data-id="${escapeHtml(w.id)}" type="button" aria-label="${escapeHtml(t(state.locale, "stop"))}">■</button>`
+              : `<button class="icon-btn primary" data-action="start" data-id="${escapeHtml(w.id)}" type="button" aria-label="${escapeHtml(t(state.locale, "start"))}">▶</button>`
+          }
+        </div>
+      </div>`;
     })
     .join("");
 
-  root.innerHTML = "";
-  root.append(
-    el(`
-    <div class="app-shell">
-      <header class="topbar">
-        <a class="brand" href="/">
-          ${brandMarkHtml(36)}
-          <span class="brand-name">podcraft</span>
-        </a>
-        ${topControls({ showHelp: true })}
-      </header>
-      <main class="main">
-        ${state.error ? `<div class="error-banner">${escapeHtml(state.error)}</div>` : ""}
-        ${guideHtml()}
-        <section class="schedule-band ${active ? "is-live" : "is-idle"}">
-          <div class="schedule-band-copy">
-            <h1>${title}</h1>
-            <p class="schedule-meta">${t(state.locale, "scheduleWindow", {
+  return `
+    <section aria-label="${escapeHtml(t(state.locale, "navDashboard"))}">
+      <div class="kpi-row">
+        <div class="kpi"><div class="val">${state.workloads.length}</div><div class="lbl">${escapeHtml(t(state.locale, "kpiWorkloads"))}</div></div>
+        <div class="kpi"><div class="val">${running}</div><div class="lbl">${escapeHtml(t(state.locale, "kpiRunning"))}</div></div>
+        <div class="kpi"><div class="val">${stopped}</div><div class="lbl">${escapeHtml(t(state.locale, "kpiStopped"))}</div></div>
+      </div>
+      <article class="card">
+        <h2>${escapeHtml(t(state.locale, "workloads"))}</h2>
+        <div class="workload-list">${rows || `<p class="hint">${escapeHtml(t(state.locale, "loading"))}</p>`}</div>
+      </article>
+    </section>`;
+}
+
+function pageSchedule() {
+  const active = !!state.schedule?.active_now;
+  const status = active ? t(state.locale, "scheduleLive") : t(state.locale, "scheduleIdle");
+  return `
+    <section aria-label="${escapeHtml(t(state.locale, "navSchedule"))}">
+      <article class="card">
+        <p class="sr-only" id="scheduleSr">${escapeHtml(
+          t(state.locale, "scheduleStatusSr", {
+            status,
+            start: state.schedule?.start || "—",
+            end: state.schedule?.end || "—",
+          }),
+        )}</p>
+        <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem">
+          <span class="badge ${active ? "live" : "idle"}">${escapeHtml(status)}</span>
+          <span class="hint">${escapeHtml(
+            t(state.locale, "scheduleWindow", {
               start: state.schedule?.start || "—",
               end: state.schedule?.end || "—",
               tz: state.schedule?.timezone || "—",
-            })}</p>
+            }),
+          )}</span>
+        </div>
+        <h2>${escapeHtml(t(state.locale, "dayNight"))}</h2>
+        <form id="schedule-form" class="form-grid">
+          <div class="form-row">
+            <label>${escapeHtml(t(state.locale, "startTime"))}<input name="start" type="time" value="${escapeHtml(state.schedule?.start || "06:30")}" /></label>
+            <label>${escapeHtml(t(state.locale, "endTime"))}<input name="end" type="time" value="${escapeHtml(state.schedule?.end || "23:45")}" /></label>
           </div>
-          ${pulseSvg(active)}
-        </section>
-        <section>
-          <div class="section-head">
-            <h2>${t(state.locale, "workloads")}</h2>
-            ${
-              !state.guideOpen
-                ? `<button class="chip" type="button" data-action="toggle-guide" ${tip("tipHelp")}>${t(state.locale, "guideShow")}</button>`
-                : ""
-            }
+          <label>${escapeHtml(t(state.locale, "timezone"))}<input name="timezone" value="${escapeHtml(state.schedule?.timezone || "Europe/Berlin")}" /></label>
+          <label>${escapeHtml(t(state.locale, "scheduleEnabled"))}
+            <select name="enabled">
+              <option value="true" ${state.schedule?.enabled ? "selected" : ""}>on</option>
+              <option value="false" ${!state.schedule?.enabled ? "selected" : ""}>off</option>
+            </select>
+          </label>
+          <button class="btn primary" type="submit">${escapeHtml(t(state.locale, "save"))}</button>
+        </form>
+      </article>
+    </section>`;
+}
+
+function pageRestore() {
+  const archives = [
+    `<button type="button" class="archive-item ${state.selectedArchive === "latest" ? "selected" : ""}" data-archive="latest">
+      <span>${escapeHtml(t(state.locale, "restoreLatest"))}</span><span class="hint">auto</span>
+    </button>`,
+    ...state.archives.map(
+      (a) => `<button type="button" class="archive-item ${state.selectedArchive === a.name ? "selected" : ""}" data-archive="${escapeHtml(a.name)}">
+        <span>${escapeHtml(a.name)}</span><span class="hint">${escapeHtml(a.size_h)}</span>
+      </button>`,
+    ),
+  ].join("");
+
+  const jobRow = (j) =>
+    `<div class="job-item"><span>${escapeHtml(j.name)}</span><span class="hint">${escapeHtml(j.status)} · ${escapeHtml(j.archive)}</span></div>`;
+
+  return `
+    <section aria-label="${escapeHtml(t(state.locale, "restoreTitle"))}">
+      <div class="restore-layout">
+        <div>
+          <article class="card">
+            <h2>${escapeHtml(t(state.locale, "restoreArchives"))}</h2>
+            <div class="archive-list" id="archiveList">${archives || `<p class="hint">${escapeHtml(t(state.locale, "restoreEmpty"))}</p>`}</div>
+            <form id="restore-form" class="form-grid" style="margin-top:1rem">
+              <label><input type="checkbox" name="force" /> ${escapeHtml(t(state.locale, "restoreForce"))}</label>
+              <label>${escapeHtml(t(state.locale, "restoreConfirm"))}<input name="confirm" autocomplete="off" placeholder="RESTORE" /></label>
+              <button class="btn primary" type="submit">${escapeHtml(t(state.locale, "restoreStart"))}</button>
+            </form>
+          </article>
+          <article class="card">
+            <h2>${escapeHtml(t(state.locale, "restoreJobs"))}</h2>
+            <div class="hint">${escapeHtml(t(state.locale, "restoreActive"))}</div>
+            <div class="job-list">${(state.jobs.active || []).map(jobRow).join("") || "—"}</div>
+            <div class="hint" style="margin-top:0.75rem">${escapeHtml(t(state.locale, "restoreRecent"))}</div>
+            <div class="job-list">${(state.jobs.recent || []).map(jobRow).join("") || "—"}</div>
+          </article>
+        </div>
+        <article class="card">
+          <h2>Job logs</h2>
+          <div class="log-box" id="restoreLog">${escapeHtml(state.jobs.active?.[0]?.logs || state.selectedJobLogs || "")}</div>
+        </article>
+      </div>
+    </section>`;
+}
+
+function pageSettings() {
+  const once = state.haBasicOnce;
+  const passShown = state.haPassVisible && once?.password;
+  return `
+    <section aria-label="${escapeHtml(t(state.locale, "settings"))}">
+      <article class="card">
+        <h2>${escapeHtml(t(state.locale, "settings"))}</h2>
+        <form id="settings-form" class="form-grid">
+          <label><input type="checkbox" name="showClock" ${state.showClock ? "checked" : ""} /> ${escapeHtml(t(state.locale, "showClock"))}</label>
+          <label>${escapeHtml(t(state.locale, "avatarUrl"))}<input name="avatarUrl" type="url" value="${escapeHtml(state.avatarUrl)}" placeholder="https://…" /></label>
+          <p class="hint">${escapeHtml(t(state.locale, "avatarHelp"))}</p>
+          <p class="hint">${escapeHtml(t(state.locale, "authHint"))}: ${escapeHtml(state.me?.configured_auth_mode || "—")} · ${escapeHtml(t(state.locale, "version"))}: ${escapeHtml(state.me?.version || "—")}</p>
+          <button class="btn primary" type="submit">${escapeHtml(t(state.locale, "save"))}</button>
+        </form>
+      </article>
+      ${
+        perms().ha
+          ? `<article class="card">
+              <h2>${escapeHtml(t(state.locale, "haApiTitle"))}</h2>
+              <p class="hint">${escapeHtml(t(state.locale, "haApiHelp"))}</p>
+              <button class="btn" type="button" id="ha-rotate">${escapeHtml(t(state.locale, "haApiRotate"))}</button>
+              ${
+                once
+                  ? `<div class="form-grid" style="margin-top:0.75rem">
+                      <p class="hint">${escapeHtml(t(state.locale, "haApiOnceHint"))}</p>
+                      <label>${escapeHtml(t(state.locale, "username"))}<input readonly id="ha-user" value="${escapeHtml(once.username)}" /></label>
+                      <label>${escapeHtml(t(state.locale, "password"))}<input readonly id="ha-pass" type="${passShown ? "text" : "password"}" value="${escapeHtml(once.password)}" class="mono" /></label>
+                      <div class="top-actions">
+                        <button type="button" class="ghost-btn" id="ha-toggle">${escapeHtml(t(state.locale, passShown ? "haApiHidePass" : "haApiShowPass"))}</button>
+                      </div>
+                    </div>`
+                  : ""
+              }
+            </article>`
+          : ""
+      }
+    </section>`;
+}
+
+function pageLogs() {
+  return `
+    <section aria-label="${escapeHtml(t(state.locale, "logs"))}">
+      <article class="card">
+        <div class="top-actions" style="justify-content:space-between;margin-bottom:0.75rem">
+          <h2 style="margin:0">${escapeHtml(t(state.locale, "logs"))}</h2>
+          <div class="top-actions">
+            <button type="button" class="ghost-btn" id="log-pause">${escapeHtml(t(state.locale, state.logPaused ? "resume" : "pause"))}</button>
+            <button type="button" class="ghost-btn" id="log-clear">${escapeHtml(t(state.locale, "clear"))}</button>
           </div>
-          <div class="workload-list">${rows || `<p class="hint">${t(state.locale, "loading")}</p>`}</div>
-        </section>
-      </main>
-      ${logPanelHtml()}
-    </div>`),
-  );
+        </div>
+        <div class="log-box" id="log-body" role="log" tabindex="0"></div>
+      </article>
+    </section>`;
+}
+
+function activePageId() {
+  const path = state.route;
+  if (path.startsWith("/schedule")) return "schedule";
+  if (path.startsWith("/restore")) return "restore";
+  if (path.startsWith("/settings")) return "settings";
+  if (path.startsWith("/logs")) return "logs";
+  return "dashboard";
+}
+
+function renderApp() {
+  if (!routeAllowed(state.route)) {
+    state.toast = t(state.locale, "forbiddenToast");
+    navigate(firstAllowedRoute(), { replace: true });
+    return;
+  }
+
+  const page = activePageId();
+  let body = "";
+  if (page === "dashboard") body = pageDashboard();
+  else if (page === "schedule") body = pageSchedule();
+  else if (page === "restore") body = pageRestore();
+  else if (page === "settings") body = pageSettings();
+  else if (page === "logs") body = pageLogs();
+
+  const root = document.getElementById("app");
+  root.innerHTML = shellStart(page) + body + shellEnd();
+  bindShell(root);
+  bindWorkloadIcons(root);
 
   root.querySelectorAll("[data-action=start],[data-action=stop]").forEach((btn) => {
     btn.addEventListener("click", async () => {
-      const id = btn.dataset.id;
-      const action = btn.dataset.action;
-      btn.disabled = true;
       try {
-        await api(`/api/v1/workloads/${id}/${action}`, { method: "POST" });
-        await refreshData();
-        renderApp();
+        await api(`/api/v1/workloads/${btn.dataset.id}/${btn.dataset.action}`, { method: "POST" });
+        await refreshWorkloads();
+        render();
       } catch (err) {
         state.error = String(err.message || err);
-        renderApp();
+        render();
       }
     });
   });
-  bindChrome(root);
-  bindLog(root);
-  bindWorkloadIcons(root);
-  repairWorkloadDom(root);
-}
 
-function logPanelHtml() {
-  return `
-    <aside class="log-panel ${state.logMinimized ? "minimized" : ""}" id="log-panel">
-      <div class="log-head">
-        <strong>${t(state.locale, "logs")}</strong>
-        <div>
-          <button type="button" data-log="pause">${state.logPaused ? t(state.locale, "resume") : t(state.locale, "pause")}</button>
-          <button type="button" data-log="clear">${t(state.locale, "clear")}</button>
-          <button type="button" data-log="minmax">${state.logMinimized ? t(state.locale, "expand") : t(state.locale, "minimize")}</button>
-        </div>
-      </div>
-      <div class="log-body" id="log-body"></div>
-    </aside>`;
-}
+  root.querySelector("#schedule-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    state.schedule = await api("/api/v1/schedule", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...headers() },
+      body: JSON.stringify({
+        enabled: fd.get("enabled") === "true",
+        start: fd.get("start"),
+        end: fd.get("end"),
+        timezone: fd.get("timezone"),
+      }),
+    });
+    render();
+  });
 
-function bindChrome(root) {
-  root.querySelectorAll("[data-action]").forEach((btn) => {
-    const a = btn.dataset.action;
-    if (a === "logout") {
-      btn.addEventListener("click", () => doLogout());
-      return;
-    }
-    if (a === "dismiss-guide") {
-      btn.addEventListener("click", () => {
-        state.guideOpen = false;
-        localStorage.setItem("podcraft.guideDismissed", "1");
-        renderApp();
-      });
-      return;
-    }
-    if (a === "toggle-guide") {
-      btn.addEventListener("click", () => {
-        state.guideOpen = !state.guideOpen;
-        localStorage.setItem("podcraft.guideDismissed", state.guideOpen ? "0" : "1");
-        renderApp();
-      });
-      return;
-    }
-    if (!a?.startsWith("theme") && !a?.startsWith("lang")) return;
+  root.querySelectorAll("[data-archive]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      if (a === "theme-light") state.theme = "light";
-      if (a === "theme-dark") state.theme = "dark";
-      if (a === "lang-de") state.locale = "de";
-      if (a === "lang-en") state.locale = "en";
-      localStorage.setItem("podcraft.theme", state.theme);
-      localStorage.setItem("podcraft.locale", state.locale);
-      applyChrome();
-      if (state.me) renderApp();
-      else renderLogin();
+      state.selectedArchive = btn.dataset.archive;
+      render();
     });
   });
-}
 
-function bindLog(root) {
-  const body = root.querySelector("#log-body");
-  root.querySelectorAll("[data-log]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const a = btn.dataset.log;
-      if (a === "pause") {
-        state.logPaused = !state.logPaused;
-        renderApp();
-      } else if (a === "clear") {
-        await api("/api/v1/logs", { method: "DELETE" });
-        if (body) body.textContent = "";
-      } else if (a === "minmax") {
-        state.logMinimized = !state.logMinimized;
-        localStorage.setItem("podcraft.logMinimized", state.logMinimized ? "1" : "0");
-        renderApp();
+  root.querySelector("#restore-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    state.error = "";
+    try {
+      const out = await api("/api/v1/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers() },
+        body: JSON.stringify({
+          archive: state.selectedArchive || "latest",
+          confirm: String(fd.get("confirm") || ""),
+          force: fd.get("force") === "on",
+        }),
+      });
+      await refreshRestore();
+      if (out?.job) {
+        const job = await api(`/api/v1/restore/jobs/${out.job}`);
+        state.selectedJobLogs = job?.logs || "";
       }
-    });
+      render();
+    } catch (err) {
+      state.error = String(err.message || err);
+      render();
+    }
   });
+
+  root.querySelector("#settings-form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    state.showClock = fd.get("showClock") === "on";
+    localStorage.setItem(PREF.clock, state.showClock ? "1" : "0");
+    const url = String(fd.get("avatarUrl") || "").trim();
+    if (url && (!/^https:\/\//i.test(url) || /\.svg(\?|$)/i.test(url))) {
+      state.error = "Avatar URL must be https and not SVG";
+      render();
+      return;
+    }
+    state.avatarUrl = url;
+    localStorage.setItem(PREF.avatar, url);
+    state.error = "";
+    render();
+  });
+
+  root.querySelector("#ha-rotate")?.addEventListener("click", async () => {
+    try {
+      const data = await api("/api/v1/auth/ha-basic/rotate", { method: "POST" });
+      state.haBasicOnce = { username: data.username, password: data.password };
+      state.haPassVisible = false;
+      render();
+    } catch (err) {
+      state.error = String(err.message || err);
+      render();
+    }
+  });
+  root.querySelector("#ha-toggle")?.addEventListener("click", () => {
+    state.haPassVisible = !state.haPassVisible;
+    render();
+  });
+
+  root.querySelector("#log-pause")?.addEventListener("click", () => {
+    state.logPaused = !state.logPaused;
+    render();
+  });
+  root.querySelector("#log-clear")?.addEventListener("click", async () => {
+    await api("/api/v1/logs", { method: "DELETE" });
+    const body = document.getElementById("log-body");
+    if (body) body.textContent = "";
+  });
+
+  if (page === "logs") refreshLogBody();
+  tickClock();
 }
 
-function appendLog(entry) {
-  if (state.logPaused) return;
-  const body = document.getElementById("log-body");
-  if (!body) return;
-  const line = `[${new Date(entry.ts * 1000).toLocaleTimeString()}] ${entry.level} ${entry.message}\n`;
-  body.textContent += line;
-  body.scrollTop = body.scrollHeight;
-}
-
-let es;
-function connectLogs() {
-  if (es) es.close();
-  const url = state.basicAuth
-    ? `/api/v1/logs/stream`
-    : `/api/v1/logs/stream`;
-  // EventSource cannot set Authorization; poll fallback when basic auth is used.
-  if (state.basicAuth) {
-    setInterval(async () => {
-      if (!state.me || state.logPaused) return;
-      try {
-        const data = await api("/api/v1/logs?limit=50");
-        const body = document.getElementById("log-body");
-        if (body && data?.items) {
-          body.textContent = data.items
-            .map((e) => `[${new Date(e.ts * 1000).toLocaleTimeString()}] ${e.level} ${e.message}`)
-            .join("\n");
-          body.scrollTop = body.scrollHeight;
-        }
-      } catch {
-        /* ignore */
-      }
-    }, 4000);
+function render() {
+  if (!state.me) {
+    renderLogin();
     return;
   }
-  es = new EventSource(url);
-  es.onmessage = (ev) => {
+  renderApp();
+}
+
+async function refreshWorkloads() {
+  if (perms().dashboard) {
+    state.workloads = await api("/api/v1/workloads");
+  }
+}
+
+async function refreshSchedule() {
+  if (perms().schedule) {
+    state.schedule = await api("/api/v1/schedule");
+  }
+}
+
+async function refreshRestore() {
+  if (!perms().restore) return;
+  state.archives = await api("/api/v1/restore/archives");
+  state.jobs = await api("/api/v1/restore/jobs");
+  const first = state.jobs.active?.[0];
+  if (first?.name) {
     try {
-      appendLog(JSON.parse(ev.data));
+      const detail = await api(`/api/v1/restore/jobs/${first.name}`);
+      state.selectedJobLogs = detail.logs || "";
+      if (state.jobs.active[0]) state.jobs.active[0].logs = detail.logs;
     } catch {
       /* ignore */
     }
-  };
+  }
+}
+
+async function refreshLogBody() {
+  if (!perms().logs || state.logPaused) return;
+  try {
+    const data = await api("/api/v1/logs?limit=200");
+    const body = document.getElementById("log-body");
+    if (body && data?.items) {
+      body.textContent = data.items
+        .map((e) => `[${new Date(e.ts * 1000).toLocaleTimeString()}] ${e.level} ${e.message}`)
+        .join("\n");
+      body.scrollTop = body.scrollHeight;
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+function tickClock() {
+  const node = document.getElementById("headlineClock");
+  if (node) node.textContent = clockText();
 }
 
 async function refreshData() {
   state.me = await api("/api/v1/me");
-  state.schedule = await api("/api/v1/schedule");
-  state.workloads = await api("/api/v1/workloads");
+  await Promise.all([refreshWorkloads(), refreshSchedule(), refreshRestore()]);
 }
 
 async function boot() {
@@ -638,39 +844,19 @@ async function boot() {
   try {
     await refreshData();
     state.error = "";
-    // #region agent log
-    fetch("http://127.0.0.1:7458/ingest/617307a5-b9d4-4557-ad01-d7ba8d199fa8", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "e03b97" },
-      body: JSON.stringify({
-        sessionId: "e03b97",
-        runId: "auth-sso",
-        hypothesisId: "H3",
-        location: "app.js:boot",
-        message: "boot ok",
-        data: { route: state.route, user: state.me?.username || null, authMode: state.me?.auth_mode || null },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-    renderApp();
-    connectLogs();
+    if (!routeAllowed(state.route)) {
+      state.toast = t(state.locale, "forbiddenToast");
+      navigate(firstAllowedRoute(), { replace: true });
+    } else {
+      render();
+    }
+    if (clockTimer) clearInterval(clockTimer);
+    clockTimer = setInterval(tickClock, 30_000);
+    if (logTimer) clearInterval(logTimer);
+    logTimer = setInterval(() => {
+      if (activePageId() === "logs") refreshLogBody();
+    }, 4000);
   } catch (err) {
-    // #region agent log
-    fetch("http://127.0.0.1:7458/ingest/617307a5-b9d4-4557-ad01-d7ba8d199fa8", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "e03b97" },
-      body: JSON.stringify({
-        sessionId: "e03b97",
-        runId: "auth-sso",
-        hypothesisId: "H1",
-        location: "app.js:boot",
-        message: "boot failed",
-        data: { route: state.route, status: err.status || null, err: String(err.message || err).slice(0, 160) },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
     if (err.status === 401) {
       renderLogin();
       return;
@@ -680,5 +866,8 @@ async function boot() {
   }
 }
 
-window.addEventListener("popstate", () => boot());
+window.addEventListener("popstate", () => {
+  state.route = location.pathname;
+  render();
+});
 boot();

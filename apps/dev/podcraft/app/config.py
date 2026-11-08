@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     schedule_start: str = Field(default="06:30")
     schedule_end: str = Field(default="23:45")
     schedule_timezone: str = Field(default="Europe/Berlin")
+    # Restore (env also accepts BACKUP_DIR / VW_* without prefix via Field alias below)
+    backup_dir: str = Field(default="/backup")
+    vw_restore_namespace: str = Field(default="vaultwarden")
+    vw_replicas: str = Field(default="1")
 
 
 @dataclass
@@ -107,7 +111,27 @@ def resolve_app_version() -> str:
     return "dev"
 
 
+def _apply_restore_env_aliases(settings: Settings) -> None:
+    """Allow BACKUP_DIR / VW_RESTORE_NAMESPACE / VW_REPLICAS like restore-ui."""
+    if os.environ.get("BACKUP_DIR"):
+        settings.backup_dir = os.environ["BACKUP_DIR"]
+    if os.environ.get("VW_RESTORE_NAMESPACE"):
+        settings.vw_restore_namespace = os.environ["VW_RESTORE_NAMESPACE"]
+    elif os.environ.get("NAMESPACE") and not os.environ.get("PODCRAFT_VW_RESTORE_NAMESPACE"):
+        # Do not steal generic NAMESPACE from other apps; only if unset prefix.
+        pass
+    if os.environ.get("VW_REPLICAS"):
+        settings.vw_replicas = os.environ["VW_REPLICAS"]
+    if os.environ.get("PODCRAFT_BACKUP_DIR"):
+        settings.backup_dir = os.environ["PODCRAFT_BACKUP_DIR"]
+    if os.environ.get("PODCRAFT_VW_RESTORE_NAMESPACE"):
+        settings.vw_restore_namespace = os.environ["PODCRAFT_VW_RESTORE_NAMESPACE"]
+    if os.environ.get("PODCRAFT_VW_REPLICAS"):
+        settings.vw_replicas = os.environ["PODCRAFT_VW_REPLICAS"]
+
+
 state = AppState()
+_apply_restore_env_aliases(state.settings)
 state.reload_workloads()
 state.sync_schedule_from_env()
 APP_VERSION = resolve_app_version()

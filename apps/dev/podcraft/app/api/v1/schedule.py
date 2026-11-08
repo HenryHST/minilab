@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from app.auth import Principal, require_user
+from app.auth import Principal, require_podcraft_admin
 from app.config import ScheduleConfig, state
 from app.schedule import schedule_active
 
@@ -37,13 +37,13 @@ def _out() -> ScheduleOut:
 
 
 @router.get("/schedule", response_model=ScheduleOut)
-def get_schedule(_: Principal = Depends(require_user)) -> ScheduleOut:
+def get_schedule(_: Principal = Depends(require_podcraft_admin)) -> ScheduleOut:
     return _out()
 
 
 @router.put("/schedule", response_model=ScheduleOut)
 def put_schedule(
-    body: ScheduleUpdate, _: Principal = Depends(require_user)
+    body: ScheduleUpdate, _: Principal = Depends(require_podcraft_admin)
 ) -> ScheduleOut:
     cfg = state.schedule
     state.schedule = ScheduleConfig(

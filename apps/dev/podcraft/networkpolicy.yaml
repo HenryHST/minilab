@@ -51,3 +51,12 @@ spec:
               protocol: TCP
     - toEntities:
         - kube-apiserver
+    # UniFi NFS for Vaultwarden backup archives (RO mount /backup)
+    - toCIDRSet:
+        - cidr: 192.168.0.25/32
+      toPorts:
+        - ports:
+            - port: "2049"
+              protocol: TCP
+            - port: "2049"
+              protocol: UDP

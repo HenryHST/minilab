@@ -1,5 +1,6 @@
 # Migrated from Traefik IngressRoute.
-# Rule order: Basic-auth machine API → public shell/assets → Authentik ExternalAuth.
+# Rule order: Basic-auth machine API (workloads only) → public shell/assets → Authentik ExternalAuth.
+# Restore API /api/v1/restore must NEVER match the Basic bypass — only workloads PathPrefix + Basic header.
 # Traefik ipAllowList (LAN) is not expressible on HTTPRoute; rely on VIP + NetworkPolicy.
 # Long OCR-style timeouts not needed here.
 apiVersion: gateway.networking.k8s.io/v1beta1

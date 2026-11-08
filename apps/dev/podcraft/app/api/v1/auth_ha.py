@@ -5,7 +5,7 @@ import secrets
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app.auth import Principal, require_user
+from app.auth import Principal, require_podcraft_admin
 from app.config import state
 from app import k8s
 from app.logs import ring
@@ -21,7 +21,7 @@ class HaBasicRotateOut(BaseModel):
 
 
 @router.post("/auth/ha-basic/rotate", response_model=HaBasicRotateOut)
-def rotate_ha_basic(user: Principal = Depends(require_user)) -> HaBasicRotateOut:
+def rotate_ha_basic(user: Principal = Depends(require_podcraft_admin)) -> HaBasicRotateOut:
     """Generate HA Basic credentials. OIDC admins only; plaintext returned once."""
     if user.auth_mode != "oidc":
         raise HTTPException(

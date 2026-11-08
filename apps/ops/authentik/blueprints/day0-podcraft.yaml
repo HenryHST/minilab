@@ -32,7 +32,7 @@ entries:
       provider: !KeyOf podcraft-provider
       meta_launch_url: https://podcraft.stadthagen.dev
       meta_icon: https://podcraft.stadthagen.dev/static/brand/logo-dark.svg
-      meta_description: minilab k3s workload control plane (admins only).
+      meta_description: minilab k3s workload control plane + Vaultwarden restore (podcraft_admins / vaultwarden_admins).
       open_in_new_tab: true
 
   - model: authentik_policies.policybinding
@@ -45,6 +45,18 @@ entries:
       order: 0
       target: !KeyOf podcraft-app
       group: !Find [authentik_core.group, [name, podcraft_admins]]
+
+  # vaultwarden_admins: Restore + Settings only (enforced in podcraft API/SPA groups).
+  - model: authentik_policies.policybinding
+    id: podcraft-bind-vw-admins
+    state: present
+    identifiers:
+      order: 1
+      target: !KeyOf podcraft-app
+    attrs:
+      order: 1
+      target: !KeyOf podcraft-app
+      group: !Find [authentik_core.group, [name, vaultwarden_admins]]
 
   - model: authentik_outposts.outpost
     id: podcraft-outpost

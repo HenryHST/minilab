@@ -1,0 +1,39 @@
+# Second NFS PV on the same export — vaultwarden-backups is already bound to
+# vaultwarden-backups-nfs, so podcraft needs its own PV+PVC (RO mount).
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: podcraft-vaultwarden-backups-nfs
+  labels:
+    app.kubernetes.io/part-of: podcraft
+    app.kubernetes.io/component: vaultwarden-backups-ro
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=3
+    - nolock
+  nfs:
+    server: 192.168.0.25
+    path: /var/nfs/shared/infra01/vaultwarden-backups
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vaultwarden-backups-ro
+  namespace: podcraft
+  labels:
+    app: podcraft
+    app.kubernetes.io/component: vaultwarden-backups-ro
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: podcraft-vaultwarden-backups-nfs
+  resources:
+    requests:
+      storage: 10Gi

@@ -31,8 +31,8 @@ spec:
       containers:
         - name: podcraft
           # Pin digest after CI + crane mirror — see README.md
-          # semver: 0.3.1
-          image: git.stadthagen.dev/dev/podcraft:0.3.1@sha256:98323b54afcaba3590a13a609c77f0db8dcd5192d3d6488e9b991240f813db53
+          # semver: 0.3.2
+          image: git.stadthagen.dev/dev/podcraft:0.3.2@sha256:71f24011cbdfc624650e2b48d4d509c3c1155204f5321d3e82a28538195cd8a8
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -41,7 +41,7 @@ spec:
             - name: HOME
               value: /tmp
             - name: APP_VERSION
-              value: "0.3.1"
+              value: "0.3.2"
             - name: PODCRAFT_AUTH_MODE
               value: "both"
             - name: PODCRAFT_OIDC_CLIENT_ID

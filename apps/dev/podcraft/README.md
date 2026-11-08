@@ -4,7 +4,7 @@ k3s workload control plane for minilab (Classic sidebar SPA) + Vaultwarden resto
 
 - Lab image (SoT): `git.stadthagen.dev/dev/podcraft:<semver>`
 - Forgejo repo: https://git.stadthagen.dev/dev/podcraft (`.forgejo/workflows/image.yml`)
-- SemVer: file [`VERSION`](VERSION) (current **0.3.0**)
+- SemVer: file [`VERSION`](VERSION) (current **0.3.2**)
 - Runtime host: `https://podcraft.stadthagen.dev`
 - OpenAPI: `/openapi.json`, Swagger `/docs`
 - Auth: native Authentik OIDC (Termix-style) — **not** Gateway ExternalAuth; see `EXTERNALAUTH.md`

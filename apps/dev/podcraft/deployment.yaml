@@ -31,8 +31,8 @@ spec:
       containers:
         - name: podcraft
           # Pin digest after CI + crane mirror — see README.md
-          # semver: 0.3.0
-          image: git.stadthagen.dev/dev/podcraft:0.3.0@sha256:6be4f3a4c66b82035c3efceb4dd895e74f1882063d3ea1c38765f84443d5c472
+          # semver: 0.3.1
+          image: git.stadthagen.dev/dev/podcraft:0.3.1@sha256:98323b54afcaba3590a13a609c77f0db8dcd5192d3d6488e9b991240f813db53
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -41,7 +41,7 @@ spec:
             - name: HOME
               value: /tmp
             - name: APP_VERSION
-              value: "0.3.0"
+              value: "0.3.1"
             - name: PODCRAFT_AUTH_MODE
               value: "both"
             - name: PODCRAFT_OIDC_CLIENT_ID
@@ -55,10 +55,11 @@ spec:
               value: "https://idp.stadthagen.dev/application/o/podcraft/"
             - name: PODCRAFT_OIDC_AUTHORIZATION_URL
               value: "https://idp.stadthagen.dev/application/o/authorize/"
+            # Server-side token/userinfo via in-cluster Service (CNP blocks VIP/world; Envoy hairpin = 403)
             - name: PODCRAFT_OIDC_TOKEN_URL
-              value: "https://idp.stadthagen.dev/application/o/token/"
+              value: "http://authentik-server.authentik.svc.cluster.local/application/o/token/"
             - name: PODCRAFT_OIDC_USERINFO_URL
-              value: "https://idp.stadthagen.dev/application/o/userinfo/"
+              value: "http://authentik-server.authentik.svc.cluster.local/application/o/userinfo/"
             - name: PODCRAFT_OIDC_END_SESSION_URL
               value: "https://idp.stadthagen.dev/application/o/podcraft/end-session/"
             - name: PODCRAFT_OIDC_REDIRECT_URI

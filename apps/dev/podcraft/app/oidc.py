@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import json
 import secrets
+import time
 from typing import Any
 from urllib.parse import urlencode
 
@@ -19,6 +21,24 @@ SESSION_COOKIE = "podcraft_session"
 PENDING_COOKIE = "podcraft_oidc_pending"
 SESSION_MAX_AGE = 60 * 60 * 12  # 12h
 PENDING_MAX_AGE = 60 * 10  # 10m
+
+
+# #region agent log
+def _agent_log(hypothesis_id: str, location: str, message: str, data: dict[str, Any]) -> None:
+    """Debug-mode NDJSON to stdout (cluster) — no secrets."""
+    payload = {
+        "sessionId": "2e141f",
+        "runId": "oidc-token",
+        "hypothesisId": hypothesis_id,
+        "location": location,
+        "message": message,
+        "data": data,
+        "timestamp": int(time.time() * 1000),
+    }
+    print("AGENT_DEBUG " + json.dumps(payload, default=str), flush=True)
+
+
+# #endregion
 
 
 def _serializer(purpose: str) -> URLSafeTimedSerializer:
@@ -189,12 +209,41 @@ async def auth_callback(
         "client_secret": app_state.settings.oidc_client_secret,
         "code_verifier": code_verifier,
     }
+    # #region agent log
+    _agent_log(
+        "H1-H3",
+        "oidc.py:auth_callback:pre_token",
+        "token exchange request meta",
+        {
+            "token_url": app_state.settings.oidc_token_url,
+            "client_id": app_state.settings.oidc_client_id,
+            "redirect_uri": app_state.settings.oidc_redirect_uri,
+            "has_pending_cookie": bool(pending_raw),
+            "has_code_verifier": bool(code_verifier),
+            "code_len": len(code or ""),
+            "secret_len": len(app_state.settings.oidc_client_secret or ""),
+        },
+    )
+    # #endregion
     async with httpx.AsyncClient(timeout=20.0) as client:
         token_resp = await client.post(
             app_state.settings.oidc_token_url,
             data=data,
             headers={"Accept": "application/json"},
         )
+        # #region agent log
+        _agent_log(
+            "H1-H5",
+            "oidc.py:auth_callback:token_resp",
+            "token exchange response",
+            {
+                "status": token_resp.status_code,
+                "server": token_resp.headers.get("server"),
+                "content_type": token_resp.headers.get("content-type"),
+                "body_prefix": (token_resp.text or "")[:180],
+            },
+        )
+        # #endregion
         if token_resp.status_code >= 400:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

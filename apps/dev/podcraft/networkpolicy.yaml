@@ -51,6 +51,16 @@ spec:
               protocol: TCP
     - toEntities:
         - kube-apiserver
+    # Authentik OIDC token/userinfo (cluster-internal — VIP hairpin returns Envoy 403)
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: authentik
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
     # UniFi NFS for Vaultwarden backup archives (RO mount /backup)
     - toCIDRSet:
         - cidr: 192.168.0.25/32

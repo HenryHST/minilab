@@ -92,8 +92,13 @@ button { cursor: pointer; }
   font-weight: 600; font-size: 0.85rem;
 }
 .sidebar .avatar img { width: 100%; height: 100%; object-fit: cover; }
-.avatar-btn, .nav button, .logout-btn, .collapse-btn, .icon-btn, .ghost-btn, .btn {
+.avatar-btn, .nav button, .icon-btn, .ghost-btn, .btn {
   min-height: var(--touch); min-width: var(--touch);
+  border: 1px solid var(--border); background: var(--panel);
+  border-radius: 10px; color: var(--text);
+}
+.logout-btn, .collapse-btn {
+  min-height: 36px; min-width: 36px;
   border: 1px solid var(--border); background: var(--panel);
   border-radius: 10px; color: var(--text);
 }
@@ -114,8 +119,11 @@ button { cursor: pointer; }
 .app:not(.sidebar-expanded) .collapse-btn { justify-content: center; padding: 0; }
 .sidebar-foot { display: flex; flex-direction: column; gap: 0.35rem; }
 .logout-btn, .collapse-btn {
-  display: flex; align-items: center; gap: 0.65rem; width: 100%;
-  padding: 0 0.7rem; justify-content: flex-start;
+  display: flex; align-items: center; gap: 0.45rem; width: 100%;
+  padding: 0.3rem 0.55rem; justify-content: flex-start; font-size: 0.9rem;
+}
+.logout-btn svg, .collapse-btn svg {
+  width: 18px; height: 18px; flex-shrink: 0;
 }
 .user-card {
   display: none; background: var(--panel); border: 1px solid var(--border);

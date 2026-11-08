@@ -263,7 +263,9 @@ function shellStart(activePage) {
     )
     .join("");
 
+  const GROUP_CHIP_ALLOW = new Set(["podcraft_admins", "vaultwarden_admins"]);
   const groups = (state.me?.groups || [])
+    .filter((g) => GROUP_CHIP_ALLOW.has(g))
     .map((g) => `<span class="chip">${escapeHtml(g)}</span>`)
     .join("") || `<span class="hint">—</span>`;
 

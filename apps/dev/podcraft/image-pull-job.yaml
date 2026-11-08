@@ -37,8 +37,8 @@ spec:
       containers:
         - name: pull
           # Keep in sync with deployment.yaml
-          # semver: 0.2.1
-          image: git.stadthagen.dev/dev/podcraft:0.2.1@sha256:b09308f76e54f4b835094fecd7fe547707f07a8694c3cad7ffba3b2194e01703
+          # semver: 0.2.2
+          image: git.stadthagen.dev/dev/podcraft:0.2.2@sha256:2db88bb3b373119ec1187ecf6bf09247a83e90881a1108c6738ec0502a2c8684
           imagePullPolicy: Always
           command: ["true"]
           resources:

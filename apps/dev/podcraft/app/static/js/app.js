@@ -1,4 +1,12 @@
 import { normalizeLocale, t } from "./i18n.js";
+import {
+  archiveDateKey,
+  archivesForDate,
+  backupDateSet,
+  buildCalendarMarkup,
+  parseSizeMb,
+} from "./calendar.js";
+import { paintScheduleClock, parseHm, scheduleClockShellHtml } from "./schedule-clock.js";
 
 const PREF = {
   locale: "podcraft.locale",
@@ -6,21 +14,60 @@ const PREF = {
   sidebar: "podcraft.sidebarExpanded",
   clock: "podcraft.showClock",
   avatar: "podcraft.avatarUrl",
+  avatarPos: "podcraft.avatarPos",
+  weeks: "podcraft.showWeekNumbers",
+  selTheme: "podcraft.selTheme",
+  logoAnim: "podcraft.logoAnim",
   basic: "podcraft.basic",
 };
+
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+const AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const AVATAR_MAX_DIM = 512;
+const LOGO_MODES = ["setsail", "float", "parallax"];
+const GROUP_CHIP_ALLOW = new Set(["podcraft_admins", "vaultwarden_admins"]);
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const desktopMq = window.matchMedia("(min-width: 821px)");
+
+function loadAvatarPos() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PREF.avatarPos) || "{}");
+    const x = Number(raw.x);
+    const y = Number(raw.y);
+    return {
+      x: Number.isFinite(x) ? Math.min(100, Math.max(0, x)) : 50,
+      y: Number.isFinite(y) ? Math.min(100, Math.max(0, y)) : 50,
+    };
+  } catch {
+    return { x: 50, y: 50 };
+  }
+}
 
 const state = {
   locale: normalizeLocale(localStorage.getItem(PREF.locale) || navigator.language?.slice(0, 2)),
   theme: localStorage.getItem(PREF.theme) || "dark",
   sidebarExpanded: localStorage.getItem(PREF.sidebar) === "1",
   showClock: localStorage.getItem(PREF.clock) !== "0",
+  showWeekNumbers: localStorage.getItem(PREF.weeks) !== "0",
+  selTheme: localStorage.getItem(PREF.selTheme) === "b" ? "b" : "a",
+  logoAnim: LOGO_MODES.includes(localStorage.getItem(PREF.logoAnim) || "")
+    ? localStorage.getItem(PREF.logoAnim)
+    : "setsail",
   avatarUrl: localStorage.getItem(PREF.avatar) || "",
+  avatarPos: loadAvatarPos(),
   me: null,
   schedule: null,
   workloads: [],
   archives: [],
   jobs: { active: [], recent: [] },
   selectedArchive: "latest",
+  selectedBackupDate: "",
+  dayFilter: "",
+  calCursor: null,
+  restoreForce: false,
+  restoreConfirm: "",
+  selectedJobName: "",
+  selectedJobLogs: "",
   basicAuth: localStorage.getItem(PREF.basic) || "",
   route: location.pathname,
   error: "",
@@ -29,16 +76,31 @@ const state = {
   haBasicOnce: null,
   haPassVisible: false,
   userCardOpen: false,
+  expandForUser: false,
   menuOpen: false,
   logoutOpen: false,
+  avatarEdit: null,
+  kpiAnimate: true,
+  logoPlay: false,
+  pendingFocus: "",
 };
 
 let tipEl;
 let clockTimer;
 let logTimer;
+let restoreTimer;
+let restorePolling = false;
+let scheduleClockTimer;
+let toastTimer;
+
+/* ───────────────────────── helpers ───────────────────────── */
 
 function perms() {
   return state.me?.permissions || {};
+}
+
+function loc() {
+  return state.locale === "de" ? "de-DE" : "en-GB";
 }
 
 function firstAllowedRoute() {
@@ -61,7 +123,14 @@ function routeAllowed(path) {
 
 function applyChrome() {
   document.documentElement.dataset.theme = state.theme;
+  document.documentElement.dataset.selTheme = state.selTheme;
   document.documentElement.lang = state.locale;
+  const teal = state.selTheme === "a";
+  document.documentElement.style.setProperty("--accent", teal ? "#0f766e" : "#1d4ed8");
+  document.documentElement.style.setProperty(
+    "--accent-soft",
+    teal ? "rgba(15, 118, 110, 0.18)" : "rgba(29, 78, 216, 0.16)",
+  );
   const icon = document.querySelector('link[rel="icon"][data-theme-icon]');
   if (icon) icon.href = brandLogoSrc();
 }
@@ -138,6 +207,8 @@ function navIcon(name) {
   return icons[name] || "";
 }
 
+/* ───────────────────────── tooltips ───────────────────────── */
+
 function ensureTooltip() {
   if (!tipEl) {
     tipEl = document.createElement("div");
@@ -158,11 +229,7 @@ function showTooltip(anchor) {
   ensureTooltip();
   const text = anchor.getAttribute("data-tooltip");
   if (!text) return;
-  if (!state.sidebarExpanded && !state.menuOpen && !anchor.hasAttribute("data-tooltip-always")) {
-    /* mini sidebar: show */
-  } else if (state.sidebarExpanded && anchor.getAttribute("data-tooltip-when") === "mini") {
-    return;
-  }
+  if (isExpanded() && anchor.getAttribute("data-tooltip-when") === "mini") return;
   tipEl.textContent = text;
   tipEl.hidden = false;
   const r = anchor.getBoundingClientRect();
@@ -173,6 +240,8 @@ function showTooltip(anchor) {
 
 function bindTooltips(root) {
   root.querySelectorAll("[data-tooltip]").forEach((node) => {
+    if (node._tipBound) return;
+    node._tipBound = true;
     node.addEventListener("mouseenter", () => showTooltip(node));
     node.addEventListener("mouseleave", hideTooltip);
     node.addEventListener("focus", () => showTooltip(node));
@@ -180,11 +249,14 @@ function bindTooltips(root) {
   });
 }
 
+/* ───────────────────────── navigation ───────────────────────── */
+
 function navigate(path, { replace = false } = {}) {
   if (replace) history.replaceState({}, "", path);
   else history.pushState({}, "", path);
   state.route = path;
   state.menuOpen = false;
+  state.kpiAnimate = true;
   render();
 }
 
@@ -220,18 +292,217 @@ function bindWorkloadIcons(root) {
   });
 }
 
+/* ───────────────────────── avatar ───────────────────────── */
+
+function isAvatarSrcOk(url) {
+  if (!url) return false;
+  if (/^data:image\/(jpeg|png|webp|gif);base64,/i.test(url)) return true;
+  return /^https:\/\//i.test(url) && !/\.svg(\?|$)/i.test(url);
+}
+
+function avatarImgHtml(src, pos) {
+  return `<img src="${escapeHtml(src)}" alt="" draggable="false" style="object-position:${pos.x}% ${pos.y}%" />`;
+}
+
 function avatarHtml(size = 40) {
   const url = state.avatarUrl;
   const letter = escapeHtml((state.me?.username || "?").slice(0, 1).toUpperCase());
-  if (url && /^https:\/\//i.test(url) && !/\.svg(\?|$)/i.test(url)) {
-    return `<span class="avatar" style="width:${size}px;height:${size}px"><img src="${escapeHtml(url)}" alt="" /></span>`;
+  if (isAvatarSrcOk(url)) {
+    return `<span class="avatar" style="width:${size}px;height:${size}px">${avatarImgHtml(url, state.avatarPos)}</span>`;
   }
   return `<span class="avatar" style="width:${size}px;height:${size}px">${letter}</span>`;
 }
 
+function userCardAvatarHtml() {
+  const letter = escapeHtml((state.me?.username || "?").slice(0, 1).toUpperCase());
+  if (isAvatarSrcOk(state.avatarUrl)) {
+    return `<span class="user-card-avatar">${avatarImgHtml(state.avatarUrl, state.avatarPos)}</span>`;
+  }
+  return `<span class="user-card-avatar" aria-hidden="true">${letter}</span>`;
+}
+
+function ensureAvatarEdit() {
+  if (!state.avatarEdit) {
+    state.avatarEdit = { src: state.avatarUrl, pos: { ...state.avatarPos }, error: "" };
+  }
+  return state.avatarEdit;
+}
+
+function clampPct(n) {
+  return Math.min(100, Math.max(0, Math.round(n)));
+}
+
+/** Read an image file and downscale it so it fits comfortably into localStorage. */
+function readAvatarFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("read"));
+    reader.onload = () => {
+      const original = String(reader.result || "");
+      const img = new Image();
+      img.onerror = () => reject(new Error("read"));
+      img.onload = () => {
+        const maxSide = Math.max(img.naturalWidth, img.naturalHeight);
+        if (maxSide <= AVATAR_MAX_DIM && file.size <= 400 * 1024) {
+          resolve(original);
+          return;
+        }
+        const scale = Math.min(1, AVATAR_MAX_DIM / maxSide);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(original);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/webp", 0.9));
+      };
+      img.src = original;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ───────────────────────── brand logo ───────────────────────── */
+
+function brandLogoHtml() {
+  const tips = {
+    setsail: "logoTipSetsail",
+    float: "logoTipFloat",
+    parallax: "logoTipParallax",
+  };
+  return `
+  <button type="button" class="brand-logo" id="brandLogo" data-parallax="${state.logoAnim === "parallax" ? "1" : "0"}"
+    data-tooltip="${escapeHtml(t(state.locale, tips[state.logoAnim]))}" data-tooltip-always aria-label="podcraft">
+    <div class="brand-logo-scene" id="brandLogoScene" data-logo-anim="${state.logoAnim}">
+      <svg class="logo-svg" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="logoTileGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/>
+          </linearGradient>
+          <linearGradient id="logoCyanGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#67e8f9"/><stop offset="55%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#0891b2"/>
+          </linearGradient>
+          <filter id="logoSoftShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="1.5" stdDeviation="1.2" flood-color="#020617" flood-opacity="0.55"/>
+          </filter>
+        </defs>
+        <g class="logo-layer logo-layer-tile"><rect width="64" height="64" rx="14" fill="url(#logoTileGrad)"/></g>
+        <g class="logo-layer logo-layer-water" filter="url(#logoSoftShadow)">
+          <path fill="none" stroke="url(#logoCyanGrad)" stroke-width="2.25" stroke-linecap="round" d="M16 50h32"/>
+        </g>
+        <g class="logo-layer logo-layer-hull" filter="url(#logoSoftShadow)"><path fill="url(#logoCyanGrad)" d="M18 38h28l-3 8H21l-3-8z"/></g>
+        <g class="logo-layer logo-layer-sail" filter="url(#logoSoftShadow)"><path fill="url(#logoCyanGrad)" d="M22 36 30 18l4 10 6-8 3 16H22z"/></g>
+      </svg>
+    </div>
+  </button>`;
+}
+
+function logoParts() {
+  const scene = document.getElementById("brandLogoScene");
+  if (!scene) return null;
+  return {
+    scene,
+    logo: document.getElementById("brandLogo"),
+    layers: {
+      tile: scene.querySelector(".logo-layer-tile"),
+      water: scene.querySelector(".logo-layer-water"),
+      hull: scene.querySelector(".logo-layer-hull"),
+      sail: scene.querySelector(".logo-layer-sail"),
+    },
+  };
+}
+
+function clearLogoInline(parts) {
+  parts.scene.style.transform = "";
+  parts.scene.style.boxShadow = "";
+  Object.values(parts.layers).forEach((n) => {
+    if (n) n.style.transform = "";
+  });
+}
+
+function resetLogoParallax() {
+  const parts = logoParts();
+  if (!parts || state.logoAnim !== "parallax" || reduceMotion) return;
+  parts.scene.style.transform = "rotateY(-18deg) rotateX(12deg) scale3d(1,1,1)";
+  parts.scene.style.boxShadow =
+    "0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent), 6px 10px 18px rgba(2, 6, 23, 0.5)";
+  parts.layers.tile.style.transform = "translate3d(0,0,0)";
+  parts.layers.water.style.transform = "translate3d(0,0,12px)";
+  parts.layers.hull.style.transform = "translate3d(0,0,22px)";
+  parts.layers.sail.style.transform = "translate3d(0,0,34px)";
+}
+
+function applyLogoParallax(clientX, clientY) {
+  if (state.logoAnim !== "parallax" || reduceMotion) return;
+  const parts = logoParts();
+  if (!parts || parts.scene.classList.contains("logo-setsail-play")) return;
+  const bar = document.querySelector(".topbar")?.getBoundingClientRect() || parts.logo.getBoundingClientRect();
+  const logo = parts.logo.getBoundingClientRect();
+  const cx = logo.left + logo.width / 2;
+  const cy = logo.top + logo.height / 2;
+  const nx = Math.max(-1, Math.min(1, (clientX - cx) / Math.max(bar.width * 0.42, 120)));
+  const ny = Math.max(-1, Math.min(1, (clientY - cy) / Math.max(bar.height * 0.7, 28)));
+  const lift = 1 + Math.abs(nx) * 0.06 + Math.abs(ny) * 0.04;
+  parts.scene.style.transform = `rotateY(${-18 + nx * 38}deg) rotateX(${12 - ny * 28}deg) scale3d(${lift}, ${lift}, 1)`;
+  parts.scene.style.boxShadow = `${6 + nx * 8}px ${10 - ny * 6}px 22px rgba(2, 6, 23, 0.55)`;
+  parts.layers.tile.style.transform = `translate3d(${nx}px, ${ny * 0.8}px, 0)`;
+  parts.layers.water.style.transform = `translate3d(${nx * 5}px, ${ny * 3.5}px, ${12 + Math.abs(nx) * 4}px)`;
+  parts.layers.hull.style.transform = `translate3d(${nx * 9}px, ${ny * 6}px, ${22 + Math.abs(nx) * 6}px)`;
+  parts.layers.sail.style.transform = `translate3d(${nx * 14}px, ${ny * 9}px, ${34 + Math.abs(nx) * 10}px) rotateZ(${nx * -8}deg)`;
+}
+
+/** One-shot "set sail" overlay; works in every animation mode. */
+function playLogoSetSail() {
+  if (reduceMotion) return;
+  const parts = logoParts();
+  if (!parts) return;
+  const { scene } = parts;
+  scene.classList.remove("logo-setsail-play");
+  void scene.offsetWidth;
+  clearLogoInline(parts);
+  scene.classList.add("logo-setsail-play");
+  const onEnd = (e) => {
+    if (e.target !== scene) return;
+    scene.classList.remove("logo-setsail-play");
+    scene.removeEventListener("animationend", onEnd);
+    resetLogoParallax();
+  };
+  scene.addEventListener("animationend", onEnd);
+}
+
+function bindBrandLogo(root) {
+  root.querySelector("#brandLogo")?.addEventListener("click", () => playLogoSetSail());
+  if (state.logoAnim === "parallax") resetLogoParallax();
+}
+
+let parallaxActive = false;
+document.addEventListener("pointermove", (e) => {
+  if (state.logoAnim !== "parallax" || !state.me) return;
+  const topbar = document.querySelector(".topbar");
+  if (!topbar) return;
+  const r = topbar.getBoundingClientRect();
+  const inside = e.clientY >= r.top && e.clientY <= r.bottom;
+  if (inside) {
+    parallaxActive = true;
+    applyLogoParallax(e.clientX, e.clientY);
+  } else if (parallaxActive) {
+    parallaxActive = false;
+    resetLogoParallax();
+  }
+});
+
+/* ───────────────────────── shell ───────────────────────── */
+
+function isExpanded() {
+  return state.sidebarExpanded || state.expandForUser;
+}
+
 function clockText() {
   const now = new Date();
-  return now.toLocaleString(state.locale === "de" ? "de-DE" : "en-GB", {
+  return now.toLocaleString(loc(), {
     weekday: "short",
     day: "2-digit",
     month: "short",
@@ -239,6 +510,10 @@ function clockText() {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function allowedGroups() {
+  return (state.me?.groups || []).filter((g) => GROUP_CHIP_ALLOW.has(g));
 }
 
 function shellStart(activePage) {
@@ -256,6 +531,7 @@ function shellStart(activePage) {
       (item) => `
       <button type="button" class="${activePage === item.id ? "active" : ""}" data-nav="${item.path}"
         data-tooltip="${escapeHtml(t(state.locale, item.label))}" data-tooltip-when="mini"
+        ${activePage === item.id ? 'aria-current="page"' : ""}
         aria-label="${escapeHtml(t(state.locale, item.label))}">
         ${navIcon(item.icon)}
         <span class="label">${escapeHtml(t(state.locale, item.label))}</span>
@@ -263,25 +539,36 @@ function shellStart(activePage) {
     )
     .join("");
 
-  const GROUP_CHIP_ALLOW = new Set(["podcraft_admins", "vaultwarden_admins"]);
-  const groups = (state.me?.groups || [])
-    .filter((g) => GROUP_CHIP_ALLOW.has(g))
-    .map((g) => `<span class="chip">${escapeHtml(g)}</span>`)
-    .join("") || `<span class="hint">—</span>`;
+  const groups =
+    allowedGroups()
+      .map((g) => `<span class="chip">${escapeHtml(g)}</span>`)
+      .join("") || `<span class="hint">—</span>`;
 
+  const expanded = isExpanded();
   return `
   <a class="skip-link" href="#main">${escapeHtml(t(state.locale, "skipToContent"))}</a>
-  <div class="app ${state.sidebarExpanded ? "sidebar-expanded" : ""} ${state.menuOpen ? "menu-open" : ""}">
+  <div class="app ${expanded ? "sidebar-expanded" : ""} ${state.menuOpen ? "menu-open" : ""}">
+    ${
+      state.menuOpen
+        ? `<button type="button" class="drawer-backdrop" id="drawerBackdrop" tabindex="-1" aria-label="${escapeHtml(t(state.locale, "drawerBackdrop"))}"></button>`
+        : ""
+    }
     <aside class="sidebar" id="sidebar" aria-label="Navigation">
+      <button type="button" class="icon-btn drawer-close" id="drawerClose" aria-label="${escapeHtml(t(state.locale, "menuClose"))}">✕</button>
       <button type="button" class="avatar-btn" id="avatarBtn" data-tooltip="${escapeHtml(t(state.locale, "tipUser"))}" data-tooltip-always
         aria-expanded="${state.userCardOpen}" aria-controls="userCard" aria-label="${escapeHtml(t(state.locale, "tipUser"))}">
         ${avatarHtml(40)}
       </button>
-      <div class="user-card ${state.userCardOpen ? "open" : ""}" id="userCard">
+      <div class="user-card ${state.userCardOpen ? "open" : ""}" id="userCard" role="region" aria-label="${escapeHtml(t(state.locale, "user"))}">
+        ${userCardAvatarHtml()}
         <strong>${escapeHtml(state.me?.display_name || state.me?.username || "")}</strong>
         <div class="hint">${escapeHtml(state.me?.email || state.me?.username || "")}</div>
         <div class="hint">${escapeHtml(t(state.locale, "groups"))}</div>
         <div class="groups">${groups}</div>
+        <div class="user-card-actions">
+          ${p.settings ? `<button type="button" class="btn primary" id="ucSettings">${escapeHtml(t(state.locale, "settings"))}</button>` : ""}
+          <button type="button" class="btn" id="ucClose">${escapeHtml(t(state.locale, "userCardClose"))}</button>
+        </div>
       </div>
       <nav class="nav">${nav}</nav>
       <div class="sidebar-foot">
@@ -290,19 +577,19 @@ function shellStart(activePage) {
           <span class="label">${escapeHtml(t(state.locale, "logout"))}</span>
         </button>
         <button type="button" class="collapse-btn" id="collapseBtn"
-          aria-expanded="${state.sidebarExpanded}"
-          data-tooltip="${escapeHtml(t(state.locale, state.sidebarExpanded ? "navCollapse" : "navExpand"))}">
-          <span aria-hidden="true">${state.sidebarExpanded ? "«" : "»"}</span>
-          <span class="label">${escapeHtml(t(state.locale, state.sidebarExpanded ? "navCollapse" : "navExpand"))}</span>
+          aria-expanded="${expanded}"
+          data-tooltip="${escapeHtml(t(state.locale, expanded ? "navCollapse" : "navExpand"))}">
+          <span aria-hidden="true">${expanded ? "«" : "»"}</span>
+          <span class="label">${escapeHtml(t(state.locale, expanded ? "navCollapse" : "navExpand"))}</span>
         </button>
       </div>
     </aside>
     <div class="main-wrap">
       <header class="topbar">
         <div class="topbar-left">
-          <button type="button" class="icon-btn menu-btn" id="menuBtn" aria-label="${escapeHtml(t(state.locale, "menuOpen"))}">☰</button>
-          <img class="brand-mark" src="${brandLogoSrc()}" alt="podcraft" width="40" height="40" />
-          ${state.showClock ? `<div class="headline-clock" id="headlineClock" aria-live="polite">${escapeHtml(clockText())}</div>` : `<strong>podcraft</strong>`}
+          <button type="button" class="icon-btn menu-btn" id="menuBtn" aria-expanded="${state.menuOpen}" aria-controls="sidebar" aria-label="${escapeHtml(t(state.locale, "menuOpen"))}">☰</button>
+          ${brandLogoHtml()}
+          ${state.showClock ? `<div class="headline-clock" id="headlineClock" aria-live="off">${escapeHtml(clockText())}</div>` : `<strong>podcraft</strong>`}
         </div>
         <div class="top-actions">
           <button type="button" class="ghost-btn" id="langBtn" data-tooltip="${escapeHtml(t(state.locale, "tipLang"))}" data-tooltip-always>${state.locale.toUpperCase()}</button>
@@ -336,69 +623,154 @@ function shellEnd() {
   }`;
 }
 
+function openUserCard() {
+  state.userCardOpen = true;
+  if (!state.sidebarExpanded && desktopMq.matches) state.expandForUser = true;
+  state.pendingFocus = "#ucClose";
+  render();
+}
+
+function closeUserCard({ focus = true } = {}) {
+  if (!state.userCardOpen && !state.expandForUser) return;
+  state.userCardOpen = false;
+  state.expandForUser = false;
+  if (focus) state.pendingFocus = "#avatarBtn";
+  render();
+}
+
+function openMenu() {
+  state.menuOpen = true;
+  state.pendingFocus = "#drawerClose";
+  render();
+}
+
+function closeMenu({ focus = true } = {}) {
+  if (!state.menuOpen) return;
+  state.menuOpen = false;
+  if (focus) state.pendingFocus = "#menuBtn";
+  render();
+}
+
+function focusableIn(container) {
+  return [
+    ...container.querySelectorAll(
+      'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  ].filter((n) => n.offsetParent !== null || n === document.activeElement);
+}
+
+function trapTab(e, container) {
+  const list = focusableIn(container);
+  if (!list.length) return;
+  const first = list[0];
+  const last = list[list.length - 1];
+  const active = document.activeElement;
+  if (!container.contains(active)) {
+    e.preventDefault();
+    first.focus();
+  } else if (e.shiftKey && active === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && active === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
+
+document.addEventListener("keydown", (e) => {
+  if (!state.me) return;
+  if (e.key === "Escape") {
+    if (state.logoutOpen) {
+      state.logoutOpen = false;
+      state.pendingFocus = "#logoutBtn";
+      render();
+      return;
+    }
+    if (state.menuOpen) {
+      closeMenu();
+      return;
+    }
+    if (state.userCardOpen) closeUserCard();
+    return;
+  }
+  if (e.key === "Tab") {
+    const modal = document.getElementById("logoutModal");
+    if (modal) {
+      trapTab(e, modal);
+      return;
+    }
+    if (state.menuOpen) {
+      const sidebar = document.getElementById("sidebar");
+      if (sidebar) trapTab(e, sidebar);
+    }
+  }
+});
+
 function bindShell(root) {
   root.querySelectorAll("[data-nav]").forEach((btn) => {
     btn.addEventListener("click", () => navigate(btn.dataset.nav));
   });
-  root.querySelector("#menuBtn")?.addEventListener("click", () => {
-    state.menuOpen = !state.menuOpen;
-    render();
-  });
+  root.querySelector("#menuBtn")?.addEventListener("click", () => (state.menuOpen ? closeMenu() : openMenu()));
+  root.querySelector("#drawerBackdrop")?.addEventListener("click", () => closeMenu());
+  root.querySelector("#drawerClose")?.addEventListener("click", () => closeMenu());
   root.querySelector("#collapseBtn")?.addEventListener("click", () => {
-    state.sidebarExpanded = !state.sidebarExpanded;
-    localStorage.setItem(PREF.sidebar, state.sidebarExpanded ? "1" : "0");
+    if (state.expandForUser) {
+      state.userCardOpen = false;
+      state.expandForUser = false;
+    } else {
+      state.sidebarExpanded = !state.sidebarExpanded;
+      localStorage.setItem(PREF.sidebar, state.sidebarExpanded ? "1" : "0");
+    }
+    state.pendingFocus = "#collapseBtn";
     render();
   });
   root.querySelector("#avatarBtn")?.addEventListener("click", () => {
-    state.userCardOpen = !state.userCardOpen;
-    render();
+    if (state.userCardOpen) closeUserCard();
+    else openUserCard();
+  });
+  root.querySelector("#ucClose")?.addEventListener("click", () => closeUserCard());
+  root.querySelector("#ucSettings")?.addEventListener("click", () => {
+    state.userCardOpen = false;
+    state.expandForUser = false;
+    navigate("/settings");
   });
   root.querySelector("#logoutBtn")?.addEventListener("click", () => {
     state.logoutOpen = true;
+    state.pendingFocus = "#logoutCancel";
     render();
-    queueMicrotask(() => root.querySelector("#logoutCancel")?.focus());
   });
   root.querySelector("#logoutCancel")?.addEventListener("click", () => {
     state.logoutOpen = false;
+    state.pendingFocus = "#logoutBtn";
     render();
   });
   root.querySelector("#logoutConfirm")?.addEventListener("click", () => doLogout());
+  root.querySelector("#logoutModal")?.addEventListener("click", (e) => {
+    if (e.target.id === "logoutModal") {
+      state.logoutOpen = false;
+      state.pendingFocus = "#logoutBtn";
+      render();
+    }
+  });
   root.querySelector("#langBtn")?.addEventListener("click", () => {
     state.locale = state.locale === "de" ? "en" : "de";
     localStorage.setItem(PREF.locale, state.locale);
     applyChrome();
+    state.pendingFocus = "#langBtn";
     render();
   });
   root.querySelector("#themeBtn")?.addEventListener("click", () => {
     state.theme = state.theme === "dark" ? "light" : "dark";
     localStorage.setItem(PREF.theme, state.theme);
     applyChrome();
+    state.pendingFocus = "#themeBtn";
     render();
   });
-  const modal = root.querySelector("#logoutModal");
-  if (modal) {
-    modal.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        state.logoutOpen = false;
-        render();
-      }
-      if (e.key === "Tab") {
-        const focusable = [...modal.querySelectorAll("button")];
-        if (!focusable.length) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    });
-  }
+  bindBrandLogo(root);
   bindTooltips(root);
 }
+
+/* ───────────────────────── login ───────────────────────── */
 
 function renderLogin() {
   const root = document.getElementById("app");
@@ -459,9 +831,67 @@ function renderLogin() {
   });
 }
 
+/* ───────────────────────── dashboard ───────────────────────── */
+
+function windowPercent(start, end) {
+  const s = parseHm(start);
+  const e = parseHm(end);
+  const dur = s === e ? 1440 : s < e ? e - s : 1440 - s + e;
+  return Math.round((dur / 1440) * 100);
+}
+
+function dashboardKpis() {
+  const total = state.workloads.length;
+  const live = state.workloads.filter((w) => (w.desired || 0) > 0);
+  const sch = state.schedule;
+  const archives = state.archives.length;
+  const schedulePct = sch?.enabled ? windowPercent(sch.start, sch.end) : 0;
+  const tz = String(sch?.timezone || "").split("/").pop();
+  return [
+    {
+      label: t(state.locale, "kpiLive"),
+      count: live.length,
+      hint: live.length
+        ? live.map((w) => w.id).join(" · ")
+        : t(state.locale, "kpiOfTotal", { total }),
+      ring: total ? Math.round((live.length / total) * 100) : 0,
+    },
+    {
+      label: t(state.locale, "kpiScheduleWindow"),
+      text: sch ? t(state.locale, sch.enabled ? "kpiOn" : "kpiOff") : "—",
+      hint: sch ? `${sch.start}–${sch.end} ${tz}` : t(state.locale, "kpiNoSchedule"),
+      ring: schedulePct,
+    },
+    {
+      label: t(state.locale, "kpiRestoreReady"),
+      count: archives,
+      hint: t(state.locale, "kpiNfsArchives"),
+      ring: Math.min(100, Math.round((archives / 40) * 100)),
+    },
+  ];
+}
+
 function pageDashboard() {
-  const running = state.workloads.filter((w) => (w.desired || 0) > 0).length;
-  const stopped = state.workloads.length - running;
+  const animate = state.kpiAnimate && !reduceMotion;
+  const kpis = dashboardKpis()
+    .map((k) => {
+      const ring = animate ? 0 : k.ring;
+      const value =
+        k.count !== undefined
+          ? `<div class="val" data-count="${k.count}">${animate ? 0 : k.count}</div>`
+          : `<div class="val">${escapeHtml(k.text)}</div>`;
+      return `
+      <article class="kpi">
+        <div>
+          <div class="lbl">${escapeHtml(k.label)}</div>
+          ${value}
+          <div class="hint">${escapeHtml(k.hint)}</div>
+        </div>
+        <div class="ring" role="img" aria-label="${k.ring}%" style="--p:${ring}%" data-p="${ring}%" data-ring="${k.ring}"></div>
+      </article>`;
+    })
+    .join("");
+
   const rows = state.workloads
     .map((w) => {
       const on = w.desired > 0;
@@ -487,41 +917,96 @@ function pageDashboard() {
 
   return `
     <section aria-label="${escapeHtml(t(state.locale, "navDashboard"))}">
-      <div class="kpi-row">
-        <div class="kpi"><div class="val">${state.workloads.length}</div><div class="lbl">${escapeHtml(t(state.locale, "kpiWorkloads"))}</div></div>
-        <div class="kpi"><div class="val">${running}</div><div class="lbl">${escapeHtml(t(state.locale, "kpiRunning"))}</div></div>
-        <div class="kpi"><div class="val">${stopped}</div><div class="lbl">${escapeHtml(t(state.locale, "kpiStopped"))}</div></div>
-      </div>
-      <article class="card">
+      <div class="kpi-row">${kpis}</div>
+      <article class="card" style="margin-top:1rem">
         <h2>${escapeHtml(t(state.locale, "workloads"))}</h2>
         <div class="workload-list">${rows || `<p class="hint">${escapeHtml(t(state.locale, "loading"))}</p>`}</div>
       </article>
     </section>`;
 }
 
+function setRing(ring, pct) {
+  ring.style.setProperty("--p", `${pct}%`);
+  ring.dataset.p = `${pct}%`;
+}
+
+function animateKpis(root) {
+  const vals = [...root.querySelectorAll(".kpi .val[data-count]")];
+  const rings = [...root.querySelectorAll(".ring[data-ring]")];
+  const duration = 800;
+  const t0 = performance.now();
+  const step = (now) => {
+    const k = Math.min(1, (now - t0) / duration);
+    const eased = 1 - Math.pow(1 - k, 3);
+    vals.forEach((v) => {
+      v.textContent = String(Math.round(Number(v.dataset.count) * eased));
+    });
+    rings.forEach((r) => setRing(r, Math.round(Number(r.dataset.ring) * eased)));
+    const alive = (rings[0] || vals[0])?.isConnected;
+    if (k < 1 && alive) {
+      requestAnimationFrame(step);
+    } else if (alive) {
+      rings.forEach((r) => {
+        r.classList.add("ring-pop");
+        setTimeout(() => r.classList.remove("ring-pop"), 280);
+      });
+    }
+  };
+  requestAnimationFrame(step);
+}
+
+/* ───────────────────────── schedule ───────────────────────── */
+
+function scheduleClockArgs() {
+  const form = document.getElementById("schedule-form");
+  if (form) {
+    const fd = new FormData(form);
+    return {
+      start: String(fd.get("start") || "06:30"),
+      end: String(fd.get("end") || "23:45"),
+      enabled: fd.get("enabled") === "true",
+      timezone: String(fd.get("timezone") || "Europe/Berlin"),
+    };
+  }
+  return {
+    start: state.schedule?.start,
+    end: state.schedule?.end,
+    enabled: !!state.schedule?.enabled,
+    timezone: state.schedule?.timezone,
+  };
+}
+
+function paintClock() {
+  const root = document.getElementById("scheduleClockCard");
+  if (!root) return;
+  paintScheduleClock(root, scheduleClockArgs());
+}
+
 function pageSchedule() {
   const active = !!state.schedule?.active_now;
   const status = active ? t(state.locale, "scheduleLive") : t(state.locale, "scheduleIdle");
+  const start = state.schedule?.start || "—";
+  const end = state.schedule?.end || "—";
   return `
     <section aria-label="${escapeHtml(t(state.locale, "navSchedule"))}">
-      <article class="card">
-        <p class="sr-only" id="scheduleSr">${escapeHtml(
-          t(state.locale, "scheduleStatusSr", {
-            status,
-            start: state.schedule?.start || "—",
-            end: state.schedule?.end || "—",
-          }),
-        )}</p>
-        <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem">
-          <span class="badge ${active ? "live" : "idle"}">${escapeHtml(status)}</span>
-          <span class="hint">${escapeHtml(
-            t(state.locale, "scheduleWindow", {
-              start: state.schedule?.start || "—",
-              end: state.schedule?.end || "—",
-              tz: state.schedule?.timezone || "—",
-            }),
-          )}</span>
+      <article class="card schedule-clock-card" id="scheduleClockCard" data-tooltip="${escapeHtml(t(state.locale, "scheduleClockTip"))}">
+        <div class="schedule-clock-layout">
+          ${scheduleClockShellHtml()}
+          <div class="schedule-clock-meta">
+            <p class="sr-only" id="scheduleSr" aria-live="polite">${escapeHtml(
+              t(state.locale, "scheduleStatusSr", { status, start, end }),
+            )}</p>
+            <strong>${escapeHtml(t(state.locale, active ? "scheduleWindowActive" : "scheduleWindowPaused"))}</strong>
+            <span class="meta-line">${escapeHtml(
+              t(state.locale, "scheduleWindow", { start, end, tz: state.schedule?.timezone || "—" }),
+            )}</span>
+            <span class="clock-digital" id="scheduleClockDigital">--:--</span>
+            <span class="badge ${active ? "live" : "idle"}" data-tooltip="${escapeHtml(t(state.locale, "scheduleLiveTip"))}">${escapeHtml(status)}</span>
+            <span class="clock-hint">${escapeHtml(t(state.locale, "scheduleClockHint"))}</span>
+          </div>
         </div>
+      </article>
+      <article class="card">
         <h2>${escapeHtml(t(state.locale, "dayNight"))}</h2>
         <form id="schedule-form" class="form-grid">
           <div class="form-row">
@@ -541,88 +1026,754 @@ function pageSchedule() {
     </section>`;
 }
 
-function pageRestore() {
-  const archives = [
-    `<button type="button" class="archive-item ${state.selectedArchive === "latest" ? "selected" : ""}" data-archive="latest">
-      <span>${escapeHtml(t(state.locale, "restoreLatest"))}</span><span class="hint">auto</span>
-    </button>`,
-    ...state.archives.map(
-      (a) => `<button type="button" class="archive-item ${state.selectedArchive === a.name ? "selected" : ""}" data-archive="${escapeHtml(a.name)}">
-        <span>${escapeHtml(a.name)}</span><span class="hint">${escapeHtml(a.size_h)}</span>
+/* ───────────────────────── restore ───────────────────────── */
+
+function archiveSize(a) {
+  return a?.size ? a.size / 1048576 : parseSizeMb(a?.size_h);
+}
+
+function fmtArchiveTime(a) {
+  const d = new Date(a.mtime);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString(loc(), {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function fmtDay(iso) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(loc(), {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function ensureCalCursor() {
+  if (state.calCursor) return state.calCursor;
+  const base = state.archives[0] ? new Date(state.archives[0].mtime) : new Date();
+  const d = Number.isNaN(base.getTime()) ? new Date() : base;
+  state.calCursor = new Date(d.getFullYear(), d.getMonth(), 1);
+  return state.calCursor;
+}
+
+function selectArchive(name) {
+  state.selectedArchive = name;
+  const a = name === "latest" ? null : state.archives.find((x) => x.name === name);
+  state.selectedBackupDate = a ? archiveDateKey(a) : "";
+  if (state.selectedBackupDate) {
+    const [y, m] = state.selectedBackupDate.split("-").map(Number);
+    state.calCursor = new Date(y, m - 1, 1);
+  }
+}
+
+function selectedArchiveInfo() {
+  if (state.selectedArchive === "latest") {
+    return state.archives[0] ? { archive: state.archives[0], latest: true } : null;
+  }
+  const a = state.archives.find((x) => x.name === state.selectedArchive);
+  return a ? { archive: a, latest: false } : null;
+}
+
+function restoreArchivesHtml() {
+  const list = state.dayFilter ? archivesForDate(state.archives, state.dayFilter) : state.archives;
+  const latestRow = `<button type="button" class="archive-item ${state.selectedArchive === "latest" ? "selected" : ""}"
+      data-archive="latest" aria-pressed="${state.selectedArchive === "latest"}">
+      <span><strong>${escapeHtml(t(state.locale, "restoreLatest"))}</strong><br /><span class="hint">${escapeHtml(t(state.locale, "restoreLatestHint"))}</span></span>
+      <span class="hint">auto</span>
+    </button>`;
+  const rows = list
+    .map(
+      (a) => `<button type="button" class="archive-item ${state.selectedArchive === a.name ? "selected" : ""}"
+        data-archive="${escapeHtml(a.name)}" aria-pressed="${state.selectedArchive === a.name}">
+        <span>${escapeHtml(a.name)}</span>
+        <span class="meta"><span class="hint">${escapeHtml(a.size_h)}</span><span class="hint">${escapeHtml(fmtArchiveTime(a))}</span></span>
       </button>`,
-    ),
-  ].join("");
+    )
+    .join("");
+  const empty = !state.archives.length ? `<p class="hint">${escapeHtml(t(state.locale, "restoreEmpty"))}</p>` : "";
+  const filterBar = state.dayFilter
+    ? `<div class="day-filter">
+        <span class="hint">${escapeHtml(t(state.locale, "restoreFilterDay", { date: fmtDay(state.dayFilter) }))}</span>
+        <button type="button" class="ghost-btn" data-clear-filter>${escapeHtml(t(state.locale, "restoreShowAll"))}</button>
+      </div>`
+    : "";
+  return `${filterBar}<div class="archive-list">${latestRow}${rows}${empty}</div>`;
+}
 
-  const jobRow = (j) =>
-    `<div class="job-item"><span>${escapeHtml(j.name)}</span><span class="hint">${escapeHtml(j.status)} · ${escapeHtml(j.archive)}</span></div>`;
+function jobRow(j) {
+  const selected = logJobName() === j.name;
+  return `<button type="button" class="job-item ${selected ? "selected" : ""}" data-job="${escapeHtml(j.name)}"
+    aria-pressed="${selected}" aria-label="${escapeHtml(t(state.locale, "restoreJobLogsBtn"))}: ${escapeHtml(j.name)}">
+    <span class="job-name">${escapeHtml(j.name)}</span>
+    <span class="hint">${escapeHtml(j.status)} · ${escapeHtml(j.archive)}</span>
+  </button>`;
+}
 
+function restoreJobsHtml() {
+  const active = (state.jobs.active || []).map(jobRow).join("");
+  const recent = (state.jobs.recent || []).map(jobRow).join("");
   return `
-    <section aria-label="${escapeHtml(t(state.locale, "restoreTitle"))}">
+    <div class="hint">${escapeHtml(t(state.locale, "restoreActive"))}</div>
+    <div class="job-list">${
+      active ||
+      `<div class="job-item" style="cursor:default"><span>${escapeHtml(t(state.locale, "restoreNoActive"))}</span><span class="hint">${escapeHtml(t(state.locale, "restoreNoActiveHint"))}</span></div>`
+    }</div>
+    <div class="hint" style="margin-top:0.75rem">${escapeHtml(t(state.locale, "restoreRecent"))}</div>
+    <div class="job-list">${recent || "—"}</div>`;
+}
+
+function logJobName() {
+  return state.selectedJobName || state.jobs.active?.[0]?.name || "";
+}
+
+function restoreLogHtml() {
+  const name = logJobName();
+  const text = name ? state.selectedJobLogs : "";
+  return `<div class="hint" style="margin-bottom:0.5rem">${escapeHtml(name || t(state.locale, "restoreJobLogsEmpty"))}</div>
+    <div class="log-box" id="restoreLogBody" role="log" tabindex="0">${escapeHtml(text)}</div>`;
+}
+
+function backupDetailHtml() {
+  const info = selectedArchiveInfo();
+  if (!info) {
+    return `
+      <div class="backup-detail-head">
+        <h3>${escapeHtml(t(state.locale, "bdNone"))}</h3>
+        <p class="bd-sub">${escapeHtml(t(state.locale, "bdNoneSub"))}</p>
+      </div>
+      <div class="backup-ring" style="--p:0%"><span>—</span></div>
+      <p class="bd-body">${escapeHtml(t(state.locale, "bdNoneBody"))}</p>
+      <button type="button" class="backup-detail-btn" id="bdAction" disabled>${escapeHtml(t(state.locale, "bdApply"))}</button>`;
+  }
+  const { archive: a, latest } = info;
+  const iso = archiveDateKey(a);
+  const sizeMb = archiveSize(a);
+  const max = Math.max(1, ...state.archives.map(archiveSize));
+  const pct = sizeMb ? Math.max(8, Math.round((sizeMb / max) * 100)) : 0;
+  const sizeLabel = sizeMb ? `${Number.isInteger(sizeMb) ? sizeMb : sizeMb.toFixed(1)} MB` : "n/a";
+  const dayCount = iso ? archivesForDate(state.archives, iso).length : 0;
+  const dayNote = latest
+    ? t(state.locale, "bdAlias")
+    : t(state.locale, dayCount === 1 ? "bdDayCountOne" : "bdDayCountMany", { n: dayCount });
+  const title = latest ? `${t(state.locale, "restoreLatest")} · ${fmtDay(iso)}` : fmtDay(iso);
+  return `
+    <div class="backup-detail-head">
+      <h3>${escapeHtml(title)}</h3>
+      <p class="bd-sub">${escapeHtml(a.name)}</p>
+    </div>
+    <div class="backup-ring" style="--p:${pct}%"><span>${escapeHtml(sizeLabel)}</span></div>
+    <p class="bd-body">${escapeHtml(`${fmtArchiveTime(a)} · ${dayNote}`)}</p>
+    <button type="button" class="backup-detail-btn" id="bdAction">${escapeHtml(t(state.locale, "bdApply"))}</button>`;
+}
+
+function pageRestore() {
+  ensureCalCursor();
+  const info = selectedArchiveInfo();
+  return `
+    <section aria-label="${escapeHtml(t(state.locale, "restoreTitle"))}" id="page-restore">
       <div class="restore-layout">
-        <div>
+        <div class="restore-main">
           <article class="card">
-            <h2>${escapeHtml(t(state.locale, "restoreArchives"))}</h2>
-            <div class="archive-list" id="archiveList">${archives || `<p class="hint">${escapeHtml(t(state.locale, "restoreEmpty"))}</p>`}</div>
-            <form id="restore-form" class="form-grid" style="margin-top:1rem">
-              <label><input type="checkbox" name="force" /> ${escapeHtml(t(state.locale, "restoreForce"))}</label>
-              <label>${escapeHtml(t(state.locale, "restoreConfirm"))}<input name="confirm" autocomplete="off" placeholder="RESTORE" /></label>
-              <button class="btn primary" type="submit">${escapeHtml(t(state.locale, "restoreStart"))}</button>
+            <div class="card-head">
+              <h2>${escapeHtml(t(state.locale, "restoreArchives"))}</h2>
+              <span class="badge idle">${escapeHtml(t(state.locale, "restoreNs"))}</span>
+            </div>
+            <div id="archiveList">${restoreArchivesHtml()}</div>
+            <form id="restore-form" class="form-grid danger-panel">
+              <label class="check"><input type="checkbox" name="force" ${state.restoreForce ? "checked" : ""} /> ${escapeHtml(t(state.locale, "restoreForce"))}</label>
+              <label>${escapeHtml(t(state.locale, "restoreConfirm"))}<input id="restoreConfirm" name="confirm" autocomplete="off" placeholder="RESTORE" value="${escapeHtml(state.restoreConfirm)}" /></label>
+              <button class="btn danger" type="submit">${escapeHtml(t(state.locale, "restoreStart"))}</button>
             </form>
           </article>
           <article class="card">
-            <h2>${escapeHtml(t(state.locale, "restoreJobs"))}</h2>
-            <div class="hint">${escapeHtml(t(state.locale, "restoreActive"))}</div>
-            <div class="job-list">${(state.jobs.active || []).map(jobRow).join("") || "—"}</div>
-            <div class="hint" style="margin-top:0.75rem">${escapeHtml(t(state.locale, "restoreRecent"))}</div>
-            <div class="job-list">${(state.jobs.recent || []).map(jobRow).join("") || "—"}</div>
+            <div class="card-head"><h2>${escapeHtml(t(state.locale, "restoreJobs"))}</h2></div>
+            <div id="jobPanel">${restoreJobsHtml()}</div>
+          </article>
+          <article class="card">
+            <div class="card-head"><h2>${escapeHtml(t(state.locale, "restoreJobLogs"))}</h2></div>
+            <div id="restoreLog">${restoreLogHtml()}</div>
           </article>
         </div>
-        <article class="card">
-          <h2>Job logs</h2>
-          <div class="log-box" id="restoreLog">${escapeHtml(state.jobs.active?.[0]?.logs || state.selectedJobLogs || "")}</div>
-        </article>
+        <aside class="restore-cal">
+          <article class="card cal-card ${state.showWeekNumbers ? "show-weeks" : ""}" id="calCard" data-sel-theme="${state.selTheme}" aria-label="${escapeHtml(t(state.locale, "calendarTitle"))}">
+            <div class="cal-head">
+              <button type="button" class="cal-nav" id="calPrev" aria-label="${escapeHtml(t(state.locale, "calPrev"))}" data-tooltip="${escapeHtml(t(state.locale, "calPrev"))}">‹</button>
+              <h2 id="calMonthLabel"></h2>
+              <button type="button" class="cal-nav" id="calNext" aria-label="${escapeHtml(t(state.locale, "calNext"))}" data-tooltip="${escapeHtml(t(state.locale, "calNext"))}">›</button>
+            </div>
+            <div class="cal-weekdays" id="calWeekdays"></div>
+            <div class="cal-grid" id="calGrid" aria-labelledby="calMonthLabel"></div>
+            <div class="cal-legend">
+              <span><i class="cal-dot" aria-hidden="true"></i> ${escapeHtml(t(state.locale, "calLegendBackup"))}</span>
+              <span><i class="cal-dot sel" aria-hidden="true"></i> ${escapeHtml(t(state.locale, "calLegendSelected"))}</span>
+            </div>
+          </article>
+          <article class="card backup-detail ${info ? "" : "is-empty"}" id="backupDetail" data-sel-theme="${state.selTheme}" aria-live="polite" aria-label="${escapeHtml(t(state.locale, "bdAria"))}">
+            ${backupDetailHtml()}
+          </article>
+        </aside>
       </div>
     </section>`;
 }
 
+function paintCalendar({ anim = "", pulse = "" } = {}) {
+  const card = document.getElementById("calCard");
+  if (!card) return;
+  const counts = new Map();
+  for (const a of state.archives) {
+    const k = archiveDateKey(a);
+    if (k) counts.set(k, (counts.get(k) || 0) + 1);
+  }
+  const { weekdaysHtml, gridHtml, monthLabel } = buildCalendarMarkup({
+    cursor: ensureCalCursor(),
+    locale: state.locale,
+    showWeekNumbers: state.showWeekNumbers,
+    selectedDate: state.selectedBackupDate,
+    backupDates: backupDateSet(state.archives),
+    archiveCounts: counts,
+    escapeHtml,
+  });
+  card.classList.toggle("show-weeks", state.showWeekNumbers);
+  card.dataset.selTheme = state.selTheme;
+  card.querySelector("#calMonthLabel").textContent = monthLabel;
+  card.querySelector("#calWeekdays").innerHTML = weekdaysHtml;
+  const grid = card.querySelector("#calGrid");
+  grid.innerHTML = gridHtml;
+  grid.classList.remove("cal-anim-prev", "cal-anim-next");
+  if (anim && !reduceMotion) {
+    void grid.offsetWidth;
+    grid.classList.add(anim === "prev" ? "cal-anim-prev" : "cal-anim-next");
+  }
+  if (pulse) grid.querySelector(`.cal-day[data-date="${pulse}"]`)?.classList.add("just-selected");
+  hideTooltip();
+  bindTooltips(card);
+}
+
+function paintRestoreArchives() {
+  const node = document.getElementById("archiveList");
+  if (node) node.innerHTML = restoreArchivesHtml();
+}
+
+function paintBackupDetail() {
+  const card = document.getElementById("backupDetail");
+  if (!card) return;
+  card.classList.toggle("is-empty", !selectedArchiveInfo());
+  card.dataset.selTheme = state.selTheme;
+  card.innerHTML = backupDetailHtml();
+}
+
+function paintRestoreJobs() {
+  const node = document.getElementById("jobPanel");
+  if (node) node.innerHTML = restoreJobsHtml();
+}
+
+function paintRestoreLog() {
+  const wrap = document.getElementById("restoreLog");
+  if (!wrap) return;
+  const box = wrap.querySelector("#restoreLogBody");
+  const name = logJobName();
+  const text = name ? state.selectedJobLogs : "";
+  if (box && wrap.firstElementChild?.textContent === (name || t(state.locale, "restoreJobLogsEmpty"))) {
+    if (box.textContent !== text) {
+      const stick = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+      box.textContent = text;
+      if (stick) box.scrollTop = box.scrollHeight;
+    }
+    return;
+  }
+  wrap.innerHTML = restoreLogHtml();
+  const fresh = wrap.querySelector("#restoreLogBody");
+  if (fresh) fresh.scrollTop = fresh.scrollHeight;
+}
+
+async function loadJobLogs(name) {
+  state.selectedJobName = name;
+  try {
+    const detail = await api(`/api/v1/restore/jobs/${encodeURIComponent(name)}`);
+    state.selectedJobLogs = detail?.logs || "";
+  } catch (err) {
+    if (err.status === 401) throw err;
+    state.selectedJobLogs = String(err.message || err);
+  }
+}
+
+function archiveSignature() {
+  return state.archives.map((a) => `${a.name}:${a.size}:${a.mtime}`).join("|");
+}
+
+function bindRestore(root) {
+  const page = root.querySelector("#page-restore");
+  if (!page) return;
+  paintCalendar();
+  bindTooltips(page);
+
+  const repaintSelection = (pulse = "") => {
+    paintRestoreArchives();
+    paintCalendar({ pulse });
+    paintBackupDetail();
+  };
+
+  page.querySelector("#archiveList")?.addEventListener("click", (e) => {
+    if (e.target.closest("[data-clear-filter]")) {
+      state.dayFilter = "";
+      paintRestoreArchives();
+      return;
+    }
+    const btn = e.target.closest("[data-archive]");
+    if (!btn) return;
+    selectArchive(btn.dataset.archive);
+    repaintSelection(state.selectedBackupDate);
+  });
+
+  page.querySelector("#calPrev")?.addEventListener("click", () => {
+    const c = ensureCalCursor();
+    state.calCursor = new Date(c.getFullYear(), c.getMonth() - 1, 1);
+    paintCalendar({ anim: "prev" });
+  });
+  page.querySelector("#calNext")?.addEventListener("click", () => {
+    const c = ensureCalCursor();
+    state.calCursor = new Date(c.getFullYear(), c.getMonth() + 1, 1);
+    paintCalendar({ anim: "next" });
+  });
+  page.querySelector("#calGrid")?.addEventListener("click", (e) => {
+    const day = e.target.closest(".cal-day.has-backup");
+    if (!day) return;
+    const iso = day.dataset.date;
+    const first = archivesForDate(state.archives, iso)[0];
+    if (!first) return;
+    state.dayFilter = state.dayFilter === iso ? "" : iso;
+    selectArchive(first.name);
+    repaintSelection(iso);
+  });
+  page.querySelector("#backupDetail")?.addEventListener("click", (e) => {
+    if (!e.target.closest("#bdAction")) return;
+    page.querySelector("#restore-form")?.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" });
+    page.querySelector("#restoreConfirm")?.focus();
+  });
+  page.querySelector("#jobPanel")?.addEventListener("click", async (e) => {
+    const btn = e.target.closest("[data-job]");
+    if (!btn) return;
+    try {
+      await loadJobLogs(btn.dataset.job);
+    } catch {
+      state.me = null;
+      render();
+      return;
+    }
+    paintRestoreJobs();
+    paintRestoreLog();
+  });
+
+  const form = page.querySelector("#restore-form");
+  form?.querySelector('input[name="force"]')?.addEventListener("change", (e) => {
+    state.restoreForce = e.target.checked;
+  });
+  form?.querySelector("#restoreConfirm")?.addEventListener("input", (e) => {
+    state.restoreConfirm = e.target.value;
+  });
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    state.error = "";
+    try {
+      const out = await api("/api/v1/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers() },
+        body: JSON.stringify({
+          archive: state.selectedArchive || "latest",
+          confirm: state.restoreConfirm,
+          force: state.restoreForce,
+        }),
+      });
+      state.restoreConfirm = "";
+      state.restoreForce = false;
+      await refreshRestore();
+      if (out?.job) await loadJobLogs(out.job);
+      render();
+    } catch (err) {
+      state.error = String(err.message || err);
+      render();
+    }
+  });
+}
+
+async function pollRestore() {
+  if (restorePolling || !state.me || activePageId() !== "restore" || document.hidden) return;
+  restorePolling = true;
+  try {
+    const before = archiveSignature();
+    await refreshRestore();
+    if (activePageId() !== "restore") return;
+    if (before !== archiveSignature()) {
+      paintRestoreArchives();
+      paintCalendar();
+      paintBackupDetail();
+    }
+    paintRestoreJobs();
+    paintRestoreLog();
+  } catch (err) {
+    if (err.status === 401) {
+      state.me = null;
+      render();
+    }
+  } finally {
+    restorePolling = false;
+  }
+}
+
+/* ───────────────────────── settings ───────────────────────── */
+
+function avatarPreviewInner(edit) {
+  const letter = escapeHtml((state.me?.username || "?").slice(0, 1).toUpperCase());
+  if (isAvatarSrcOk(edit.src)) return avatarImgHtml(edit.src, edit.pos).replace("<img ", '<img id="settingsAvatarImg" ');
+  return `<span id="settingsAvatarFallback">${letter}</span>`;
+}
+
 function pageSettings() {
+  const edit = ensureAvatarEdit();
+  const has = isAvatarSrcOk(edit.src);
   const once = state.haBasicOnce;
   const passShown = state.haPassVisible && once?.password;
+  const radio = (name, value, checked, label, extra = "") => `
+    <label>
+      <input type="radio" name="${name}" value="${value}" ${checked ? "checked" : ""} />
+      ${extra}${escapeHtml(label)}
+    </label>`;
   return `
     <section aria-label="${escapeHtml(t(state.locale, "settings"))}">
       <article class="card">
-        <h2>${escapeHtml(t(state.locale, "settings"))}</h2>
-        <form id="settings-form" class="form-grid">
-          <label><input type="checkbox" name="showClock" ${state.showClock ? "checked" : ""} /> ${escapeHtml(t(state.locale, "showClock"))}</label>
-          <label>${escapeHtml(t(state.locale, "avatarUrl"))}<input name="avatarUrl" type="url" value="${escapeHtml(state.avatarUrl)}" placeholder="https://…" /></label>
-          <p class="hint">${escapeHtml(t(state.locale, "avatarHelp"))}</p>
-          <p class="hint">${escapeHtml(t(state.locale, "authHint"))}: ${escapeHtml(state.me?.configured_auth_mode || "—")} · ${escapeHtml(t(state.locale, "version"))}: ${escapeHtml(state.me?.version || "—")}</p>
-          <button class="btn primary" type="submit">${escapeHtml(t(state.locale, "save"))}</button>
-        </form>
+        <div class="card-head"><h2>${escapeHtml(t(state.locale, "profileTitle"))}</h2></div>
+        <div class="avatar-editor">
+          <div class="avatar-preview-wrap">
+            <div class="avatar avatar-lg ${has ? "draggable" : ""}" id="settingsAvatar" data-tooltip="${escapeHtml(t(state.locale, "avatarDragTip"))}">${avatarPreviewInner(edit)}</div>
+            <span class="hint">${escapeHtml(t(state.locale, "avatarDragHint"))}</span>
+          </div>
+          <div class="avatar-form">
+            <p class="hint" style="margin:0">${escapeHtml(t(state.locale, "avatarIntro"))}</p>
+            <p class="avatar-help">
+              <strong>${escapeHtml(t(state.locale, "avatarFormats"))}:</strong> JPEG, PNG, WebP, GIF<br />
+              <strong>${escapeHtml(t(state.locale, "avatarMaxSize"))}:</strong> 2&nbsp;MB<br />
+              <strong>${escapeHtml(t(state.locale, "avatarRecommended"))}:</strong> ${escapeHtml(t(state.locale, "avatarRecommendedValue"))}
+            </p>
+            <label>${escapeHtml(t(state.locale, "avatarUrlOverride"))}
+              <input id="avatarUrl" type="url" value="${escapeHtml(edit.src.startsWith("data:") ? "" : edit.src)}" placeholder="https://…" />
+            </label>
+            <div class="avatar-pos" id="avatarPosControls" ${has ? "" : "hidden"}>
+              <label>${escapeHtml(t(state.locale, "avatarHoriz"))} <span id="avatarPosXVal">${edit.pos.x}%</span>
+                <input id="avatarPosX" type="range" min="0" max="100" value="${edit.pos.x}" /></label>
+              <label>${escapeHtml(t(state.locale, "avatarVert"))} <span id="avatarPosYVal">${edit.pos.y}%</span>
+                <input id="avatarPosY" type="range" min="0" max="100" value="${edit.pos.y}" /></label>
+              <button class="btn" type="button" id="avatarPosReset">${escapeHtml(t(state.locale, "avatarCenter"))}</button>
+            </div>
+            <p class="avatar-error" id="avatarError" role="alert">${escapeHtml(edit.error || "")}</p>
+            <div class="btn-row">
+              <button class="btn primary" type="button" id="avatarApply">${escapeHtml(t(state.locale, "avatarApply"))}</button>
+              <button class="btn" type="button" id="avatarClear">${escapeHtml(t(state.locale, "avatarClear"))}</button>
+              <label class="btn file-btn">${escapeHtml(t(state.locale, "avatarFile"))}
+                <input id="avatarFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif" hidden />
+              </label>
+            </div>
+          </div>
+        </div>
       </article>
       ${
         perms().ha
           ? `<article class="card">
-              <h2>${escapeHtml(t(state.locale, "haApiTitle"))}</h2>
+              <div class="card-head"><h2>${escapeHtml(t(state.locale, "haApiCardTitle"))}</h2></div>
               <p class="hint">${escapeHtml(t(state.locale, "haApiHelp"))}</p>
-              <button class="btn" type="button" id="ha-rotate">${escapeHtml(t(state.locale, "haApiRotate"))}</button>
+              <button class="btn primary" type="button" id="ha-rotate">${escapeHtml(t(state.locale, "haApiRotate"))}</button>
               ${
                 once
-                  ? `<div class="form-grid" style="margin-top:0.75rem">
+                  ? `<div class="form-grid" style="margin-top:0.75rem" aria-live="polite">
                       <p class="hint">${escapeHtml(t(state.locale, "haApiOnceHint"))}</p>
-                      <label>${escapeHtml(t(state.locale, "username"))}<input readonly id="ha-user" value="${escapeHtml(once.username)}" /></label>
-                      <label>${escapeHtml(t(state.locale, "password"))}<input readonly id="ha-pass" type="${passShown ? "text" : "password"}" value="${escapeHtml(once.password)}" class="mono" /></label>
-                      <div class="top-actions">
-                        <button type="button" class="ghost-btn" id="ha-toggle">${escapeHtml(t(state.locale, passShown ? "haApiHidePass" : "haApiShowPass"))}</button>
-                      </div>
+                      <label>${escapeHtml(t(state.locale, "username"))}
+                        <span class="ha-once-row">
+                          <input readonly id="ha-user" value="${escapeHtml(once.username)}" />
+                          <button type="button" class="btn" id="ha-copy-user">${escapeHtml(t(state.locale, "haApiCopyUser"))}</button>
+                        </span>
+                      </label>
+                      <label>${escapeHtml(t(state.locale, "password"))}
+                        <span class="ha-once-row">
+                          <input readonly id="ha-pass" type="${passShown ? "text" : "password"}" value="${escapeHtml(once.password)}" class="mono" />
+                          <button type="button" class="btn" id="ha-toggle">${escapeHtml(t(state.locale, passShown ? "haApiHidePass" : "haApiShowPass"))}</button>
+                          <button type="button" class="btn" id="ha-copy-pass">${escapeHtml(t(state.locale, "haApiCopyPass"))}</button>
+                        </span>
+                      </label>
                     </div>`
                   : ""
               }
             </article>`
           : ""
       }
+      <article class="card">
+        <div class="card-head"><h2>${escapeHtml(t(state.locale, "permTitle"))}</h2></div>
+        <p class="perm-note">
+          ${escapeHtml(t(state.locale, "permIntro"))}<br />
+          ${escapeHtml(t(state.locale, "permDash"))}<br />
+          ${escapeHtml(t(state.locale, "permRestore"))}<br />
+          ${escapeHtml(t(state.locale, "permSettings"))}
+        </p>
+      </article>
+      <article class="card">
+        <div class="card-head"><h2>${escapeHtml(t(state.locale, "displayTitle"))}</h2></div>
+        <div class="form-grid">
+          <label class="check"><input type="checkbox" id="showClock" ${state.showClock ? "checked" : ""} /> ${escapeHtml(t(state.locale, "showClock"))}</label>
+          <label class="check"><input type="checkbox" id="showWeekNumbers" ${state.showWeekNumbers ? "checked" : ""} /> ${escapeHtml(t(state.locale, "showWeekNumbers"))}</label>
+        </div>
+        <p class="settings-sub">${escapeHtml(t(state.locale, "selThemeTitle"))}</p>
+        <div class="sel-theme-picker" role="radiogroup" aria-label="${escapeHtml(t(state.locale, "selThemeTitle"))}">
+          ${radio("selTheme", "a", state.selTheme === "a", t(state.locale, "selThemeTeal"), '<i class="sel-swatch a" aria-hidden="true"></i>')}
+          ${radio("selTheme", "b", state.selTheme === "b", t(state.locale, "selThemeBlue"), '<i class="sel-swatch b" aria-hidden="true"></i>')}
+        </div>
+        <p class="settings-note">${escapeHtml(t(state.locale, "selThemeHelp"))}</p>
+        <p class="settings-sub">${escapeHtml(t(state.locale, "logoAnimTitle"))}</p>
+        <div class="sel-theme-picker" role="radiogroup" aria-label="${escapeHtml(t(state.locale, "logoAnimTitle"))}">
+          ${radio("logoAnim", "setsail", state.logoAnim === "setsail", t(state.locale, "logoSetsail"))}
+          ${radio("logoAnim", "float", state.logoAnim === "float", t(state.locale, "logoFloat"))}
+          ${radio("logoAnim", "parallax", state.logoAnim === "parallax", t(state.locale, "logoParallax"))}
+        </div>
+        <p class="settings-note">${escapeHtml(t(state.locale, "logoAnimHelp"))}</p>
+      </article>
+      <article class="card">
+        <div class="card-head"><h2>${escapeHtml(t(state.locale, "sessionTitle"))}</h2></div>
+        <p class="hint" style="margin:0">${escapeHtml(t(state.locale, "authHint"))}: ${escapeHtml(state.me?.configured_auth_mode || "—")} · ${escapeHtml(t(state.locale, "version"))}: ${escapeHtml(state.me?.version || "—")}</p>
+      </article>
     </section>`;
 }
+
+async function copyText(text, btn) {
+  const label = btn.textContent;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove();
+      if (!ok) throw new Error("copy");
+    }
+    btn.textContent = t(state.locale, "haApiCopied");
+  } catch {
+    btn.textContent = t(state.locale, "haCopyFailed");
+  }
+  setTimeout(() => {
+    if (btn.isConnected) btn.textContent = label;
+  }, 1500);
+}
+
+function bindSettings(root) {
+  const edit = ensureAvatarEdit();
+  const avatar = root.querySelector("#settingsAvatar");
+  if (!avatar) return;
+  const errorEl = root.querySelector("#avatarError");
+  const controls = root.querySelector("#avatarPosControls");
+  const posX = root.querySelector("#avatarPosX");
+  const posY = root.querySelector("#avatarPosY");
+  const urlInput = root.querySelector("#avatarUrl");
+
+  const setError = (msg) => {
+    edit.error = msg;
+    if (errorEl) errorEl.textContent = msg;
+  };
+
+  const paintPos = () => {
+    const img = avatar.querySelector("img");
+    if (img) img.style.objectPosition = `${edit.pos.x}% ${edit.pos.y}%`;
+    posX.value = String(edit.pos.x);
+    posY.value = String(edit.pos.y);
+    root.querySelector("#avatarPosXVal").textContent = `${edit.pos.x}%`;
+    root.querySelector("#avatarPosYVal").textContent = `${edit.pos.y}%`;
+  };
+
+  const paintPreview = () => {
+    const has = isAvatarSrcOk(edit.src);
+    avatar.innerHTML = avatarPreviewInner(edit);
+    avatar.classList.toggle("draggable", has);
+    controls.hidden = !has;
+    urlInput.value = edit.src.startsWith("data:") ? "" : edit.src;
+    paintPos();
+  };
+
+  const persist = () => {
+    const prev = { url: state.avatarUrl, pos: state.avatarPos };
+    try {
+      if (edit.src) localStorage.setItem(PREF.avatar, edit.src);
+      else localStorage.removeItem(PREF.avatar);
+      localStorage.setItem(PREF.avatarPos, JSON.stringify(edit.pos));
+    } catch {
+      try {
+        if (prev.url) localStorage.setItem(PREF.avatar, prev.url);
+        else localStorage.removeItem(PREF.avatar);
+      } catch {
+        /* ignore */
+      }
+      setError(t(state.locale, "avatarErrStore"));
+      return false;
+    }
+    state.avatarUrl = edit.src;
+    state.avatarPos = { ...edit.pos };
+    return true;
+  };
+
+  urlInput.addEventListener("change", () => {
+    const v = urlInput.value.trim();
+    if (!v) return;
+    if (!isAvatarSrcOk(v)) {
+      setError(t(state.locale, "avatarErrUrl"));
+      return;
+    }
+    setError("");
+    edit.src = v;
+    paintPreview();
+  });
+
+  root.querySelector("#avatarFile").addEventListener("change", async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!AVATAR_TYPES.has(file.type)) {
+      setError(t(state.locale, "avatarErrType"));
+      return;
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      setError(t(state.locale, "avatarErrSize", { mb: (file.size / 1024 / 1024).toFixed(1) }));
+      return;
+    }
+    try {
+      edit.src = await readAvatarFile(file);
+      edit.pos = { x: 50, y: 50 };
+      setError("");
+      paintPreview();
+    } catch {
+      setError(t(state.locale, "avatarErrRead"));
+    }
+  });
+
+  posX.addEventListener("input", () => {
+    edit.pos.x = clampPct(Number(posX.value));
+    paintPos();
+  });
+  posY.addEventListener("input", () => {
+    edit.pos.y = clampPct(Number(posY.value));
+    paintPos();
+  });
+  root.querySelector("#avatarPosReset").addEventListener("click", () => {
+    edit.pos = { x: 50, y: 50 };
+    paintPos();
+  });
+
+  let drag = null;
+  avatar.addEventListener("pointerdown", (e) => {
+    if (!avatar.classList.contains("draggable") || (e.button != null && e.button !== 0)) return;
+    drag = { x0: e.clientX, y0: e.clientY, px: edit.pos.x, py: edit.pos.y };
+    avatar.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  avatar.addEventListener("pointermove", (e) => {
+    if (!drag) return;
+    edit.pos.x = clampPct(drag.px - (e.clientX - drag.x0) * 0.35);
+    edit.pos.y = clampPct(drag.py - (e.clientY - drag.y0) * 0.35);
+    paintPos();
+  });
+  const endDrag = () => {
+    drag = null;
+  };
+  avatar.addEventListener("pointerup", endDrag);
+  avatar.addEventListener("pointercancel", endDrag);
+
+  root.querySelector("#avatarApply").addEventListener("click", () => {
+    const typed = urlInput.value.trim();
+    if (typed && typed !== edit.src) {
+      if (!isAvatarSrcOk(typed)) {
+        setError(t(state.locale, "avatarErrUrl"));
+        return;
+      }
+      edit.src = typed;
+    }
+    setError("");
+    if (!persist()) return;
+    state.toast = t(state.locale, "avatarSaved");
+    render();
+  });
+  root.querySelector("#avatarClear").addEventListener("click", () => {
+    edit.src = "";
+    edit.pos = { x: 50, y: 50 };
+    setError("");
+    if (!persist()) return;
+    state.avatarEdit = null;
+    render();
+  });
+
+  /* Display prefs apply immediately */
+  root.querySelector("#showClock")?.addEventListener("change", (e) => {
+    state.showClock = e.target.checked;
+    localStorage.setItem(PREF.clock, state.showClock ? "1" : "0");
+    state.pendingFocus = "#showClock";
+    render();
+  });
+  root.querySelector("#showWeekNumbers")?.addEventListener("change", (e) => {
+    state.showWeekNumbers = e.target.checked;
+    localStorage.setItem(PREF.weeks, state.showWeekNumbers ? "1" : "0");
+    state.pendingFocus = "#showWeekNumbers";
+    render();
+  });
+  root.querySelectorAll('input[name="selTheme"]').forEach((inp) => {
+    inp.addEventListener("change", () => {
+      if (!inp.checked) return;
+      state.selTheme = inp.value === "b" ? "b" : "a";
+      localStorage.setItem(PREF.selTheme, state.selTheme);
+      applyChrome();
+      state.pendingFocus = `input[name="selTheme"][value="${state.selTheme}"]`;
+      render();
+    });
+  });
+  root.querySelectorAll('input[name="logoAnim"]').forEach((inp) => {
+    inp.addEventListener("change", () => {
+      if (!inp.checked || !LOGO_MODES.includes(inp.value)) return;
+      state.logoAnim = inp.value;
+      localStorage.setItem(PREF.logoAnim, state.logoAnim);
+      state.logoPlay = state.logoAnim === "setsail";
+      state.pendingFocus = `input[name="logoAnim"][value="${state.logoAnim}"]`;
+      render();
+    });
+  });
+
+  /* Home Assistant */
+  root.querySelector("#ha-rotate")?.addEventListener("click", async () => {
+    try {
+      const data = await api("/api/v1/auth/ha-basic/rotate", { method: "POST" });
+      state.haBasicOnce = { username: data.username, password: data.password };
+      state.haPassVisible = false;
+      render();
+    } catch (err) {
+      state.error = String(err.message || err);
+      render();
+    }
+  });
+  root.querySelector("#ha-toggle")?.addEventListener("click", () => {
+    state.haPassVisible = !state.haPassVisible;
+    state.pendingFocus = "#ha-toggle";
+    render();
+  });
+  root.querySelector("#ha-copy-user")?.addEventListener("click", (e) => {
+    copyText(state.haBasicOnce?.username || "", e.currentTarget);
+  });
+  root.querySelector("#ha-copy-pass")?.addEventListener("click", (e) => {
+    copyText(state.haBasicOnce?.password || "", e.currentTarget);
+  });
+}
+
+/* ───────────────────────── logs ───────────────────────── */
 
 function pageLogs() {
   return `
@@ -640,6 +1791,8 @@ function pageLogs() {
     </section>`;
 }
 
+/* ───────────────────────── render ───────────────────────── */
+
 function activePageId() {
   const path = state.route;
   if (path.startsWith("/schedule")) return "schedule";
@@ -647,6 +1800,21 @@ function activePageId() {
   if (path.startsWith("/settings")) return "settings";
   if (path.startsWith("/logs")) return "logs";
   return "dashboard";
+}
+
+function syncPollers(page) {
+  if (page === "restore") {
+    if (!restoreTimer) restoreTimer = setInterval(pollRestore, 3000);
+  } else if (restoreTimer) {
+    clearInterval(restoreTimer);
+    restoreTimer = undefined;
+  }
+  if (page === "schedule") {
+    if (!scheduleClockTimer) scheduleClockTimer = setInterval(paintClock, 10_000);
+  } else if (scheduleClockTimer) {
+    clearInterval(scheduleClockTimer);
+    scheduleClockTimer = undefined;
+  }
 }
 
 function renderApp() {
@@ -657,6 +1825,7 @@ function renderApp() {
   }
 
   const page = activePageId();
+  if (page !== "settings") state.avatarEdit = null;
   let body = "";
   if (page === "dashboard") body = pageDashboard();
   else if (page === "schedule") body = pageSchedule();
@@ -664,10 +1833,12 @@ function renderApp() {
   else if (page === "settings") body = pageSettings();
   else if (page === "logs") body = pageLogs();
 
+  hideTooltip();
   const root = document.getElementById("app");
   root.innerHTML = shellStart(page) + body + shellEnd();
   bindShell(root);
   bindWorkloadIcons(root);
+  bindTooltips(root);
 
   root.querySelectorAll("[data-action=start],[data-action=stop]").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -682,87 +1853,32 @@ function renderApp() {
     });
   });
 
-  root.querySelector("#schedule-form")?.addEventListener("submit", async (e) => {
+  const scheduleForm = root.querySelector("#schedule-form");
+  scheduleForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    state.schedule = await api("/api/v1/schedule", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", ...headers() },
-      body: JSON.stringify({
-        enabled: fd.get("enabled") === "true",
-        start: fd.get("start"),
-        end: fd.get("end"),
-        timezone: fd.get("timezone"),
-      }),
-    });
-    render();
-  });
-
-  root.querySelectorAll("[data-archive]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      state.selectedArchive = btn.dataset.archive;
-      render();
-    });
-  });
-
-  root.querySelector("#restore-form")?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    state.error = "";
     try {
-      const out = await api("/api/v1/restore", {
-        method: "POST",
+      state.schedule = await api("/api/v1/schedule", {
+        method: "PUT",
         headers: { "Content-Type": "application/json", ...headers() },
         body: JSON.stringify({
-          archive: state.selectedArchive || "latest",
-          confirm: String(fd.get("confirm") || ""),
-          force: fd.get("force") === "on",
+          enabled: fd.get("enabled") === "true",
+          start: fd.get("start"),
+          end: fd.get("end"),
+          timezone: fd.get("timezone"),
         }),
       });
-      await refreshRestore();
-      if (out?.job) {
-        const job = await api(`/api/v1/restore/jobs/${out.job}`);
-        state.selectedJobLogs = job?.logs || "";
-      }
-      render();
+      state.error = "";
     } catch (err) {
       state.error = String(err.message || err);
-      render();
     }
-  });
-
-  root.querySelector("#settings-form")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    state.showClock = fd.get("showClock") === "on";
-    localStorage.setItem(PREF.clock, state.showClock ? "1" : "0");
-    const url = String(fd.get("avatarUrl") || "").trim();
-    if (url && (!/^https:\/\//i.test(url) || /\.svg(\?|$)/i.test(url))) {
-      state.error = "Avatar URL must be https and not SVG";
-      render();
-      return;
-    }
-    state.avatarUrl = url;
-    localStorage.setItem(PREF.avatar, url);
-    state.error = "";
     render();
   });
+  scheduleForm?.addEventListener("input", paintClock);
+  scheduleForm?.addEventListener("change", paintClock);
 
-  root.querySelector("#ha-rotate")?.addEventListener("click", async () => {
-    try {
-      const data = await api("/api/v1/auth/ha-basic/rotate", { method: "POST" });
-      state.haBasicOnce = { username: data.username, password: data.password };
-      state.haPassVisible = false;
-      render();
-    } catch (err) {
-      state.error = String(err.message || err);
-      render();
-    }
-  });
-  root.querySelector("#ha-toggle")?.addEventListener("click", () => {
-    state.haPassVisible = !state.haPassVisible;
-    render();
-  });
+  if (page === "restore") bindRestore(root);
+  if (page === "settings") bindSettings(root);
 
   root.querySelector("#log-pause")?.addEventListener("click", () => {
     state.logPaused = !state.logPaused;
@@ -775,16 +1891,42 @@ function renderApp() {
   });
 
   if (page === "logs") refreshLogBody();
+  if (page === "schedule") paintClock();
+  if (page === "dashboard" && state.kpiAnimate) {
+    state.kpiAnimate = false;
+    if (!reduceMotion) animateKpis(root);
+  }
+  if (state.logoPlay) {
+    state.logoPlay = false;
+    playLogoSetSail();
+  }
+  if (state.toast) {
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      state.toast = "";
+      document.querySelector(".toast")?.remove();
+    }, 4000);
+  }
+  syncPollers(page);
   tickClock();
+
+  if (state.pendingFocus) {
+    const sel = state.pendingFocus;
+    state.pendingFocus = "";
+    root.querySelector(sel)?.focus();
+  }
 }
 
 function render() {
   if (!state.me) {
+    syncPollers("");
     renderLogin();
     return;
   }
   renderApp();
 }
+
+/* ───────────────────────── data ───────────────────────── */
 
 async function refreshWorkloads() {
   if (perms().dashboard) {
@@ -800,17 +1942,27 @@ async function refreshSchedule() {
 
 async function refreshRestore() {
   if (!perms().restore) return;
-  state.archives = await api("/api/v1/restore/archives");
-  state.jobs = await api("/api/v1/restore/jobs");
-  const first = state.jobs.active?.[0];
-  if (first?.name) {
+  const [archives, jobs] = await Promise.all([
+    api("/api/v1/restore/archives"),
+    api("/api/v1/restore/jobs"),
+  ]);
+  state.archives = archives;
+  state.jobs = jobs;
+  const known = new Set([...(jobs.active || []), ...(jobs.recent || [])].map((j) => j.name));
+  if (state.selectedJobName && !known.has(state.selectedJobName)) {
+    state.selectedJobName = "";
+    state.selectedJobLogs = "";
+  }
+  const target = logJobName();
+  if (target) {
     try {
-      const detail = await api(`/api/v1/restore/jobs/${first.name}`);
+      const detail = await api(`/api/v1/restore/jobs/${encodeURIComponent(target)}`);
       state.selectedJobLogs = detail.logs || "";
-      if (state.jobs.active[0]) state.jobs.active[0].logs = detail.logs;
-    } catch {
-      /* ignore */
+    } catch (err) {
+      if (err.status === 401) throw err;
     }
+  } else {
+    state.selectedJobLogs = "";
   }
 }
 
@@ -843,6 +1995,8 @@ async function refreshData() {
 async function boot() {
   applyChrome();
   state.route = location.pathname;
+  state.kpiAnimate = true;
+  state.logoPlay = state.logoAnim === "setsail";
   try {
     await refreshData();
     state.error = "";
@@ -870,6 +2024,7 @@ async function boot() {
 
 window.addEventListener("popstate", () => {
   state.route = location.pathname;
+  state.kpiAnimate = true;
   render();
 });
 boot();

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.auth import Principal, identity_extras, require_user
@@ -21,8 +21,8 @@ class MeOut(BaseModel):
 
 
 @router.get("/me", response_model=MeOut)
-def me(request: Request, user: Principal = Depends(require_user)) -> MeOut:
-    extras = identity_extras(request) if user.auth_mode == "oidc" else {}
+def me(user: Principal = Depends(require_user)) -> MeOut:
+    extras = identity_extras(user) if user.auth_mode == "oidc" else {}
     return MeOut(
         username=user.username,
         auth_mode=user.auth_mode,

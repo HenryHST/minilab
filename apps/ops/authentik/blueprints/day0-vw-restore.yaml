@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
 # DEPRECATED 2026-11-07: vw-restore merged into podcraft (podcraft.stadthagen.dev/restore/vaultwarden).
 # This blueprint removes the standalone Proxy Provider / App / Outpost.
-# Access: day0-podcraft binds podcraft_admins + vaultwarden_admins.
+# Access: Terraform podcraft_oauth binds podcraft_admins + vaultwarden_admins.
 version: 1
 metadata:
   name: day0-vw-restore

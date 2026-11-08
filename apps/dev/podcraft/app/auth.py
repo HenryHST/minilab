@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from app.config import state
+from app.oidc import SESSION_COOKIE, load_session
 
 _basic = HTTPBasic(auto_error=False)
 
@@ -19,6 +20,8 @@ class Principal:
     username: str
     auth_mode: str
     groups: list[str] = field(default_factory=list)
+    email: str | None = None
+    display_name: str | None = None
 
     def has_group(self, name: str) -> bool:
         return name in self.groups
@@ -30,42 +33,25 @@ class Principal:
         return self.is_podcraft_admin() or self.has_group(GROUP_VAULTWARDEN_ADMINS)
 
 
-def _oidc_user(request: Request) -> str | None:
-    raw = request.headers.get("x-authentik-username")
-    if raw is None:
+def _session_principal(request: Request) -> Principal | None:
+    raw = request.cookies.get(SESSION_COOKIE)
+    data = load_session(raw)
+    if not data:
         return None
-    name = raw.strip()
-    return name or None
-
-
-def _oidc_groups(request: Request) -> list[str]:
-    """Parse Authentik groups header (pipe/comma/space separated)."""
-    raw = request.headers.get("x-authentik-groups") or ""
-    if not raw.strip():
-        return []
-    parts: list[str] = []
-    for chunk in raw.replace("|", ",").replace(";", ",").split(","):
-        for token in chunk.split():
-            name = token.strip()
-            if name and name not in parts:
-                parts.append(name)
-    return parts
-
-
-def _oidc_email(request: Request) -> str | None:
-    raw = request.headers.get("x-authentik-email")
-    if raw is None:
+    username = str(data.get("username") or "").strip()
+    if not username:
         return None
-    email = raw.strip()
-    return email or None
-
-
-def _oidc_name(request: Request) -> str | None:
-    raw = request.headers.get("x-authentik-name")
-    if raw is None:
-        return None
-    name = raw.strip()
-    return name or None
+    groups_raw = data.get("groups") or []
+    groups = [str(g).strip() for g in groups_raw if str(g).strip()]
+    email = data.get("email")
+    display_name = data.get("display_name")
+    return Principal(
+        username=username,
+        auth_mode="oidc",
+        groups=groups,
+        email=str(email).strip() if email else None,
+        display_name=str(display_name).strip() if display_name else None,
+    )
 
 
 async def require_user(
@@ -81,14 +67,10 @@ async def require_user(
             groups=[GROUP_PODCRAFT_ADMINS, GROUP_VAULTWARDEN_ADMINS],
         )
 
-    oidc = _oidc_user(request)
+    oidc = _session_principal(request) if mode in ("oidc", "both") else None
     has_basic_attempt = credentials is not None
-    if mode in ("oidc", "both") and oidc:
-        return Principal(
-            username=oidc,
-            auth_mode="oidc",
-            groups=_oidc_groups(request),
-        )
+    if oidc is not None:
+        return oidc
 
     if mode in ("basic", "both"):
         expected_user = state.settings.basic_user
@@ -103,7 +85,7 @@ async def require_user(
                     auth_mode="basic",
                     groups=[],
                 )
-        if mode == "basic" or (mode == "both" and not oidc):
+        if mode == "basic" or (mode == "both" and oidc is None):
             if not expected_pass and mode == "basic":
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -119,7 +101,7 @@ async def require_user(
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Missing Authentik identity headers",
+        detail="Not authenticated",
     )
 
 
@@ -127,7 +109,6 @@ async def require_podcraft_admin(
     user: Principal = Depends(require_user),
 ) -> Principal:
     if user.auth_mode == "basic":
-        # Workloads still use require_user / require_workload_actor separately.
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Requires Authentik group podcraft_admins",
@@ -187,8 +168,8 @@ async def require_workload_access(
     return user
 
 
-def identity_extras(request: Request) -> dict[str, str | None]:
+def identity_extras(user: Principal) -> dict[str, str | None]:
     return {
-        "email": _oidc_email(request),
-        "display_name": _oidc_name(request),
+        "email": user.email,
+        "display_name": user.display_name,
     }

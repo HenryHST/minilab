@@ -4,10 +4,11 @@ k3s workload control plane for minilab (Classic sidebar SPA) + Vaultwarden resto
 
 - Lab image (SoT): `git.stadthagen.dev/dev/podcraft:<semver>`
 - Forgejo repo: https://git.stadthagen.dev/dev/podcraft (`.forgejo/workflows/image.yml`)
-- SemVer: file [`VERSION`](VERSION) (current **0.2.2**)
+- SemVer: file [`VERSION`](VERSION) (current **0.3.0**)
 - Runtime host: `https://podcraft.stadthagen.dev`
-- OpenAPI: `/openapi.json`, Swagger `/docs` (behind ForwardAuth)
-- Bookstack (Infra_LAB): `docs/bookstack/books/k3s/25-podcraft-*.md` + `12-podcraft-image-pull.md`
+- OpenAPI: `/openapi.json`, Swagger `/docs`
+- Auth: native Authentik OIDC (Termix-style) — **not** Gateway ExternalAuth; see `EXTERNALAUTH.md`
+- Bookstack (Infra_LAB): Authentik Kap. 15, K3s 25–29; Integrations `docs/integrations/authentik/podcraft.md`
 - UI mockups: Infra_LAB `docs/mockups/podcraft/`
 
 App sources + Dockerfile: Forgejo `dev/podcraft` (sync from this tree). K8s manifests stay here.
@@ -17,7 +18,7 @@ App sources + Dockerfile: Forgejo `dev/podcraft` (sync from this tree). K8s mani
 - Scale registered Deployments via OpenAPI / Dashboard
 - Day/Night scheduler (default 06:30–23:45 `Europe/Berlin`)
 - Sidebar SPA: Dashboard, Schedule, Vaultwarden Restore, Settings, Logs (group-filtered)
-- Auth: Authentik ForwardAuth (OIDC) for UI; HTTP Basic for HA workloads only (`PODCRAFT_AUTH_MODE=both`)
+- Auth: native OIDC (`/auth/start` → callback → session cookie); HTTP Basic for HA workloads only (`PODCRAFT_AUTH_MODE=both`)
 - Groups: `podcraft_admins` (full); `vaultwarden_admins` (restore + settings)
 - Restore: `GET/POST /api/v1/restore/*` — Jobs remain in NS `vaultwarden`
 - HA credentials: Settings → rotate (Secret `podcraft-ha-basic`)
@@ -26,16 +27,25 @@ App sources + Dockerfile: Forgejo `dev/podcraft` (sync from this tree). K8s mani
 
 ## Env
 
-| Variable | Default | Meaning |
-|----------|---------|---------|
-| `PODCRAFT_AUTH_MODE` | `oidc` | `oidc` \| `basic` \| `both` \| `none` (**never** `none` in cluster) |
-| `PODCRAFT_BASIC_*` / `PODCRAFT_HA_BASIC_SECRET` | see Deployment | HA Basic |
-| `PODCRAFT_WORKLOADS_FILE` | `/config/workloads.json` | Workload registry |
-| `PODCRAFT_SCHEDULE_*` | see Deployment | Schedule window |
-| `PODCRAFT_DRY_RUN` | `false` | In-memory scale / fake restore jobs (local) |
-| `BACKUP_DIR` | `/backup` | NFS RO mount of Vaultwarden archives |
-| `VW_RESTORE_NAMESPACE` | `vaultwarden` | Job namespace |
-| `VW_REPLICAS` | `1` | Replicas after restore |
+| Variable | Pflicht | Beispiel / Hinweis |
+|----------|---------|-------------------|
+| `PODCRAFT_OIDC_CLIENT_ID` | ja | `podcraft` |
+| `PODCRAFT_OIDC_CLIENT_SECRET` | ja | Secret `podcraft-oauth` / SecretSpec `PODCRAFT_OAUTH_CLIENT_SECRET` |
+| `PODCRAFT_OIDC_ISSUER_URL` | ja | `https://idp.stadthagen.dev/application/o/podcraft/` |
+| `PODCRAFT_OIDC_AUTHORIZATION_URL` | ja | `https://idp.stadthagen.dev/application/o/authorize/` |
+| `PODCRAFT_OIDC_TOKEN_URL` | ja | `https://idp.stadthagen.dev/application/o/token/` |
+| `PODCRAFT_OIDC_USERINFO_URL` | nein | `…/application/o/userinfo/` |
+| `PODCRAFT_OIDC_END_SESSION_URL` | nein | IdP logout |
+| `PODCRAFT_OIDC_REDIRECT_URI` | ja | `https://podcraft.stadthagen.dev/auth/oidc/callback` |
+| `PODCRAFT_OIDC_SCOPES` | nein | Default `openid email profile` |
+| `PODCRAFT_OIDC_GROUP_CLAIM` | nein | Default `groups` |
+| `PODCRAFT_SESSION_SECRET` | ja | Secret `podcraft-session` / SecretSpec `PODCRAFT_SESSION_SECRET` |
+| `PODCRAFT_AUTH_MODE` | nein | Lab: `both` (`oidc` \| `basic` \| `both` \| `none` — **never** `none` in cluster) |
+| `PODCRAFT_BASIC_*` / `PODCRAFT_HA_BASIC_SECRET` | für HA | Secret `podcraft-ha-basic` |
+| `PODCRAFT_WORKLOADS_FILE` | nein | `/config/workloads.json` |
+| `PODCRAFT_SCHEDULE_*` | nein | Schedule window |
+| `PODCRAFT_DRY_RUN` | nein | Local fake scale/restore |
+| `BACKUP_DIR` / `VW_*` | Restore | NFS RO + Job namespace |
 
 ## Local dry-run
 

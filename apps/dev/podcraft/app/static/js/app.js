@@ -180,7 +180,7 @@ function escapeHtml(s) {
 }
 
 function logoutHref() {
-  return "/outpost.goauthentik.io/sign_out";
+  return "/auth/logout";
 }
 
 function doLogout() {

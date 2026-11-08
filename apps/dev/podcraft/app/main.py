@@ -5,12 +5,13 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.v1 import api_router
 from app.config import APP_VERSION, state
 from app.logs import ring
+from app.oidc import router as oidc_router
 from app.schedule import scheduler_loop
 
 _STATIC = Path(__file__).resolve().parent / "static"
@@ -39,17 +40,12 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(api_router)
+app.include_router(oidc_router)
 
 
 @app.get("/healthz")
 def healthz() -> dict:
     return {"status": "ok", "version": APP_VERSION}
-
-
-@app.get("/auth/start")
-def auth_start() -> RedirectResponse:
-    """Ingress puts ForwardAuth on this path; after Authentik, land on the SPA."""
-    return RedirectResponse(url="/", status_code=302)
 
 
 if _STATIC.is_dir():

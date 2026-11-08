@@ -1,8 +1,7 @@
-# Migrated from Traefik IngressRoute.
-# Rule order: Basic workloads → public shell → outpost paths → Authentik ExternalAuth catch-all.
+# Migrated from Traefik IngressRoute / Authentik ExternalAuth.
+# Native OIDC in-app: no ExternalAuth, no outpost paths.
+# Rule order: Basic workloads → public shell/auth → catch-all API/SPA.
 # Restore API /api/v1/restore must NEVER match the Basic bypass — only workloads PathPrefix + Basic header.
-# Traefik ipAllowList (LAN) is not expressible on HTTPRoute; rely on VIP + NetworkPolicy.
-# Long OCR-style timeouts not needed here.
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: ReferenceGrant
 metadata:
@@ -34,7 +33,7 @@ spec:
   hostnames:
     - podcraft.stadthagen.dev
   rules:
-    # HA machine clients: Basic Authorization (no ExternalAuth).
+    # HA machine clients: Basic Authorization (no OIDC session).
     - matches:
         - path:
             type: PathPrefix
@@ -46,7 +45,7 @@ spec:
       backendRefs:
         - name: podcraft
           port: 8080
-    # Public shell + assets (Pulse login).
+    # Public shell, assets, health, OIDC endpoints.
     - matches:
         - path:
             type: Exact
@@ -55,47 +54,34 @@ spec:
             type: Exact
             value: /login
         - path:
+            type: Exact
+            value: /settings
+        - path:
+            type: Exact
+            value: /schedule
+        - path:
+            type: Exact
+            value: /logs
+        - path:
+            type: PathPrefix
+            value: /restore
+        - path:
             type: PathPrefix
             value: /static
         - path:
             type: Exact
             value: /healthz
+        - path:
+            type: PathPrefix
+            value: /auth
       backendRefs:
         - name: podcraft
           port: 8080
-    # Authentik outpost (sign_out / callback / start) — must NOT hit FastAPI.
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /outpost.goauthentik.io
-      backendRefs:
-        - name: ak-outpost-podcraft
-          namespace: authentik
-          port: 9000
-    # Browser OIDC: Authentik ExternalAuth (Envoy path).
+    # API + SPA catch-all (session cookie enforced in FastAPI).
     - matches:
         - path:
             type: PathPrefix
             value: /
-      filters:
-        - type: ExternalAuth
-          externalAuth:
-            protocol: HTTP
-            backendRef:
-              name: ak-outpost-podcraft
-              namespace: authentik
-              port: 9000
-            http:
-              path: /outpost.goauthentik.io/auth/envoy
-              allowedHeaders:
-                - Cookie
-                - Authorization
-              allowedResponseHeaders:
-                - X-authentik-username
-                - X-authentik-groups
-                - X-authentik-email
-                - X-authentik-name
-                - X-authentik-uid
       backendRefs:
         - name: podcraft
           port: 8080

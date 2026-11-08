@@ -51,12 +51,17 @@ spec:
               protocol: TCP
     - toEntities:
         - kube-apiserver
-    # Authentik OIDC token/userinfo (cluster-internal — VIP hairpin returns Envoy 403)
+    # Authentik OIDC token/userinfo (cluster-internal — VIP hairpin returns Envoy 403).
+    # Policy matches POD ports after DNAT (authentik-server Service 80/443 → 9000/9443).
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: authentik
       toPorts:
         - ports:
+            - port: "9000"
+              protocol: TCP
+            - port: "9443"
+              protocol: TCP
             - port: "80"
               protocol: TCP
             - port: "443"

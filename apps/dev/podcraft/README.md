@@ -4,7 +4,7 @@ k3s workload control plane for minilab (Classic sidebar SPA) + Vaultwarden resto
 
 - Lab image (SoT): `git.stadthagen.dev/dev/podcraft:<semver>`
 - Forgejo repo: https://git.stadthagen.dev/dev/podcraft (`.forgejo/workflows/image.yml`)
-- SemVer: file [`VERSION`](VERSION) (current **0.3.3**)
+- SemVer: file [`VERSION`](VERSION) (current **0.4.0**)
 - Runtime host: `https://podcraft.stadthagen.dev`
 - OpenAPI: `/openapi.json`, Swagger `/docs`
 - Auth: native Authentik OIDC (Termix-style) — **not** Gateway ExternalAuth; see `EXTERNALAUTH.md`
@@ -17,13 +17,27 @@ App sources + Dockerfile: Forgejo `dev/podcraft` (sync from this tree). K8s mani
 
 - Scale registered Deployments via OpenAPI / Dashboard
 - Day/Night scheduler (default 06:30–23:45 `Europe/Berlin`)
-- Sidebar SPA: Dashboard, Schedule, Vaultwarden Restore, Settings, Logs (group-filtered)
+- Sidebar SPA: Dashboard, Schedule, Vaultwarden Restore, Settings, Logs, **Podinfo** (group-filtered)
+- Podinfo lab page (`/podinfo`, `podcraft_admins`): runtime `/version`, readiness drain `/readyz`, Prometheus `/metrics`, fault injection / delay / status
 - Auth: native OIDC (`/auth/start` → callback → session cookie); HTTP Basic for HA workloads only (`PODCRAFT_AUTH_MODE=both`)
 - Groups: `podcraft_admins` (full); `vaultwarden_admins` (restore + settings)
 - Restore: `GET/POST /api/v1/restore/*` — Jobs remain in NS `vaultwarden`
 - HA credentials: Settings → rotate (Secret `podcraft-ha-basic`)
 - Self-hosted Inter fonts; no Google Fonts CDN
 - Runs as UID/GID `10001`
+
+### Observability / lab HTTP
+
+| Path | Auth | Notes |
+|------|------|-------|
+| `GET /healthz` | public | Liveness |
+| `GET /readyz` | public | Readiness (503 when drained) |
+| `POST /readyz/enable\|disable` | admin | Drain toggle (also `/api/v1/lab/readyz/*`) |
+| `GET /version` | public | SemVer + commit + build date |
+| `GET /metrics` | public | Prometheus text |
+| `POST /fault_injection/*` | admin | App routes → 500; probes/metrics/lab stay up |
+| `GET /delay/{seconds}` | admin | 0–30s |
+| `GET /status/{code}` | admin | Echo status code |
 
 ## Env
 

@@ -5,7 +5,9 @@ ARG VERSION=0.1.0
 ARG VCS_REF=unknown
 ARG BUILD_DATE=unknown
 
-ENV APP_VERSION=${VERSION}
+ENV APP_VERSION=${VERSION} \
+    VCS_REF=${VCS_REF} \
+    BUILD_DATE=${BUILD_DATE}
 
 LABEL org.opencontainers.image.title="podcraft" \
       org.opencontainers.image.description="minilab k3s workload control plane (Pulse UI)" \

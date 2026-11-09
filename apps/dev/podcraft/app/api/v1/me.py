@@ -35,6 +35,7 @@ def me(user: Principal = Depends(require_user)) -> MeOut:
             "dashboard": user.is_podcraft_admin(),
             "schedule": user.is_podcraft_admin(),
             "logs": user.is_podcraft_admin(),
+            "podinfo": user.is_podcraft_admin(),
             "ha": user.is_podcraft_admin() and user.auth_mode != "basic",
             "restore": user.can_restore() and user.auth_mode != "basic",
             "settings": (

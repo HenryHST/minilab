@@ -84,6 +84,10 @@ const state = {
   kpiAnimate: true,
   logoPlay: false,
   pendingFocus: "",
+  lab: null,
+  labMetricsSample: "",
+  labMetricsLoaded: false,
+  labChaosOut: "",
 };
 
 let tipEl;
@@ -119,6 +123,7 @@ function routeAllowed(path) {
   if (path.startsWith("/restore")) return !!p.restore;
   if (path.startsWith("/settings")) return !!p.settings;
   if (path.startsWith("/logs")) return !!p.logs;
+  if (path.startsWith("/podinfo")) return !!p.podinfo;
   return false;
 }
 
@@ -202,6 +207,8 @@ function navIcon(name) {
     settings:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9c.3.6.9 1 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
     logs: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M7 4h10v16H7z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>',
+    podinfo:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3 4 7v10l8 4 8-4V7l-8-4z"/><path d="M12 12 4 7m8 5 8-5M12 12v10"/></svg>',
     logout:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H4"/><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/></svg>',
   };
@@ -552,6 +559,7 @@ function shellStart(activePage) {
     p.restore && { id: "restore", path: "/restore/vaultwarden", label: "navRestore", icon: "restore" },
     p.settings && { id: "settings", path: "/settings", label: "navSettings", icon: "settings" },
     p.logs && { id: "logs", path: "/logs", label: "navLogs", icon: "logs" },
+    p.podinfo && { id: "podinfo", path: "/podinfo", label: "navPodinfo", icon: "podinfo" },
   ].filter(Boolean);
 
   const nav = items
@@ -1828,6 +1836,160 @@ function pageLogs() {
     </section>`;
 }
 
+/* ───────────────────────── podinfo (lab) ───────────────────────── */
+
+async function refreshLab({ metrics = false } = {}) {
+  state.lab = await api("/api/v1/lab/status");
+  if (metrics) {
+    try {
+      const res = await fetch("/metrics", { headers: headers(false) });
+      const text = await res.text();
+      state.labMetricsSample = text.split("\n").slice(0, 12).join("\n");
+    } catch {
+      state.labMetricsSample = "";
+    }
+  }
+}
+
+function pagePodinfo() {
+  const lab = state.lab || {};
+  const ready = lab.ready !== false;
+  const fault = !!lab.fault_injection;
+  const readyClass = ready ? "ok" : "warn";
+  const readyLabel = ready ? t(state.locale, "podinfoReady") : t(state.locale, "podinfoNotReady");
+  return `
+    <section aria-label="${escapeHtml(t(state.locale, "navPodinfo"))}">
+      <p class="hint" style="margin-top:0">${escapeHtml(t(state.locale, "podinfoIntro"))}</p>
+      <article class="card">
+        <div class="card-head"><h2>${escapeHtml(t(state.locale, "podinfoRuntime"))}</h2></div>
+        <div class="podinfo-grid">
+          <label class="field">${escapeHtml(t(state.locale, "version"))}
+            <input type="text" readonly class="mono" value="${escapeHtml(lab.version || state.me?.version || "—")}" />
+          </label>
+          <label class="field">${escapeHtml(t(state.locale, "podinfoCommit"))}
+            <input type="text" readonly class="mono" value="${escapeHtml(lab.commit || "—")}" />
+          </label>
+          <label class="field">${escapeHtml(t(state.locale, "podinfoBuild"))}
+            <input type="text" readonly class="mono" value="${escapeHtml(lab.build_date || "—")}" />
+          </label>
+        </div>
+        <p class="podinfo-status-line">
+          ${escapeHtml(t(state.locale, "podinfoHealth"))}
+          <strong class="ok">${escapeHtml(lab.health || "ok")}</strong>
+          · ${escapeHtml(t(state.locale, "podinfoReady"))}
+          <strong class="${readyClass}">${escapeHtml(readyLabel)}</strong>
+        </p>
+      </article>
+      <article class="card">
+        <div class="card-head"><h2>${escapeHtml(t(state.locale, "podinfoReadiness"))}</h2></div>
+        <p class="hint" style="margin:0 0 0.75rem">${escapeHtml(t(state.locale, "podinfoReadinessHelp"))}</p>
+        <button type="button" class="schedule-toggle" id="lab-ready-toggle"
+          aria-pressed="${ready ? "true" : "false"}"
+          aria-label="${escapeHtml(t(state.locale, "podinfoReadiness"))}">
+          <span class="toggle-copy">
+            <strong>${escapeHtml(t(state.locale, "podinfoReady"))}</strong>
+            <span>${escapeHtml(t(state.locale, ready ? "podinfoReadyOn" : "podinfoReadyOff"))}</span>
+          </span>
+          <span class="toggle-switch" aria-hidden="true"></span>
+        </button>
+      </article>
+      <article class="card">
+        <div class="card-head">
+          <h2>${escapeHtml(t(state.locale, "podinfoMetrics"))}</h2>
+          <a class="ghost-btn" href="/metrics" target="_blank" rel="noopener">${escapeHtml(t(state.locale, "podinfoMetricsOpen"))}</a>
+        </div>
+        <p class="hint" style="margin:0 0 0.65rem">${escapeHtml(t(state.locale, "podinfoMetricsHelp"))}</p>
+        <pre class="log-box podinfo-metrics-sample" aria-label="${escapeHtml(t(state.locale, "podinfoMetrics"))}">${escapeHtml(state.labMetricsSample || t(state.locale, "loading"))}</pre>
+      </article>
+      <article class="card">
+        <div class="card-head"><h2>${escapeHtml(t(state.locale, "podinfoChaos"))}</h2></div>
+        <p class="hint" style="margin:0 0 0.75rem">${escapeHtml(t(state.locale, "podinfoChaosHelp"))}</p>
+        <button type="button" class="schedule-toggle" id="lab-fault-toggle"
+          aria-pressed="${fault ? "true" : "false"}"
+          aria-label="${escapeHtml(t(state.locale, "podinfoFault"))}"
+          style="margin-bottom:0.85rem">
+          <span class="toggle-copy">
+            <strong>${escapeHtml(t(state.locale, "podinfoFault"))}</strong>
+            <span>${escapeHtml(t(state.locale, fault ? "podinfoFaultOn" : "podinfoFaultOff"))}</span>
+          </span>
+          <span class="toggle-switch" aria-hidden="true"></span>
+        </button>
+        <div class="podinfo-chaos-grid">
+          <label class="field">${escapeHtml(t(state.locale, "podinfoDelay"))}
+            <input id="lab-delay-sec" type="number" min="0" max="30" step="0.5" value="2" />
+          </label>
+          <label class="field">${escapeHtml(t(state.locale, "podinfoStatusCode"))}
+            <input id="lab-status-code" type="number" min="100" max="599" value="418" />
+          </label>
+          <div style="display:flex;gap:0.45rem;flex-wrap:wrap">
+            <button type="button" class="btn" id="lab-delay-btn">${escapeHtml(t(state.locale, "podinfoDelayTest"))}</button>
+            <button type="button" class="btn" id="lab-status-btn">${escapeHtml(t(state.locale, "podinfoStatusTest"))}</button>
+          </div>
+        </div>
+        <p class="hint" id="lab-chaos-out" style="margin:0.65rem 0 0" aria-live="polite">${escapeHtml(state.labChaosOut || "")}</p>
+      </article>
+    </section>`;
+}
+
+function bindPodinfo(root) {
+  root.querySelector("#lab-ready-toggle")?.addEventListener("click", async () => {
+    const enable = root.querySelector("#lab-ready-toggle")?.getAttribute("aria-pressed") !== "true";
+    try {
+      await api(`/api/v1/lab/readyz/${enable ? "enable" : "disable"}`, { method: "POST" });
+      if (state.lab) state.lab.ready = enable;
+      else state.lab = { ready: enable };
+      state.error = "";
+      render();
+    } catch (err) {
+      state.error = String(err.message || err);
+      render();
+    }
+  });
+  root.querySelector("#lab-fault-toggle")?.addEventListener("click", async () => {
+    const enable = root.querySelector("#lab-fault-toggle")?.getAttribute("aria-pressed") !== "true";
+    try {
+      await api(`/api/v1/lab/fault_injection/${enable ? "enable" : "disable"}`, { method: "POST" });
+      if (state.lab) state.lab.fault_injection = enable;
+      else state.lab = { fault_injection: enable };
+      state.labChaosOut = enable
+        ? t(state.locale, "podinfoFaultOn")
+        : t(state.locale, "podinfoFaultOff");
+      state.error = "";
+      render();
+    } catch (err) {
+      state.error = String(err.message || err);
+      render();
+    }
+  });
+  root.querySelector("#lab-delay-btn")?.addEventListener("click", async () => {
+    const sec = Number(root.querySelector("#lab-delay-sec")?.value || 0);
+    try {
+      const res = await fetch(`/delay/${sec}`, { headers: headers() });
+      state.labChaosOut = t(state.locale, res.ok ? "podinfoTestOk" : "podinfoTestFail", {
+        method: `GET /delay/${sec}`,
+        status: String(res.status),
+        error: res.ok ? "" : await res.text(),
+      });
+    } catch (err) {
+      state.labChaosOut = t(state.locale, "podinfoTestFail", { error: String(err.message || err) });
+    }
+    render();
+  });
+  root.querySelector("#lab-status-btn")?.addEventListener("click", async () => {
+    const code = Number(root.querySelector("#lab-status-code")?.value || 200);
+    try {
+      const res = await fetch(`/status/${code}`, { headers: headers() });
+      state.labChaosOut = t(state.locale, "podinfoTestOk", {
+        method: `GET /status/${code}`,
+        status: String(res.status),
+      });
+    } catch (err) {
+      state.labChaosOut = t(state.locale, "podinfoTestFail", { error: String(err.message || err) });
+    }
+    render();
+  });
+}
+
 /* ───────────────────────── render ───────────────────────── */
 
 function activePageId() {
@@ -1836,6 +1998,7 @@ function activePageId() {
   if (path.startsWith("/restore")) return "restore";
   if (path.startsWith("/settings")) return "settings";
   if (path.startsWith("/logs")) return "logs";
+  if (path.startsWith("/podinfo")) return "podinfo";
   return "dashboard";
 }
 
@@ -1869,6 +2032,7 @@ function renderApp() {
   else if (page === "restore") body = pageRestore();
   else if (page === "settings") body = pageSettings();
   else if (page === "logs") body = pageLogs();
+  else if (page === "podinfo") body = pagePodinfo();
 
   hideTooltip();
   const root = document.getElementById("app");
@@ -1916,6 +2080,21 @@ function renderApp() {
 
   if (page === "restore") bindRestore(root);
   if (page === "settings") bindSettings(root);
+  if (page === "podinfo") {
+    bindPodinfo(root);
+    if (!state.labMetricsLoaded) {
+      refreshLab({ metrics: true })
+        .then(() => {
+          state.labMetricsLoaded = true;
+          if (activePageId() === "podinfo") render();
+        })
+        .catch((err) => {
+          state.labMetricsLoaded = true;
+          state.error = String(err.message || err);
+          if (activePageId() === "podinfo") render();
+        });
+    }
+  }
 
   root.querySelector("#log-pause")?.addEventListener("click", () => {
     state.logPaused = !state.logPaused;
@@ -2026,7 +2205,15 @@ function tickClock() {
 
 async function refreshData() {
   state.me = await api("/api/v1/me");
-  await Promise.all([refreshWorkloads(), refreshSchedule(), refreshRestore()]);
+  await Promise.all([refreshWorkloads(), refreshSchedule(), refreshRestore(), refreshLabIfAllowed()]);
+}
+
+async function refreshLabIfAllowed({ metrics = false } = {}) {
+  if (!perms().podinfo) {
+    state.lab = null;
+    return;
+  }
+  await refreshLab({ metrics });
 }
 
 async function boot() {

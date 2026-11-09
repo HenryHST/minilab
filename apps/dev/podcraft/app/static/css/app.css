@@ -432,6 +432,58 @@ html[data-theme="light"] #tooltip { background: #0f172a; }
 .danger-panel { margin-top: 1rem; padding: 0.85rem; border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--border)); border-radius: 12px; background: color-mix(in srgb, var(--danger) 8%, var(--panel)); }
 .check { display: flex; align-items: center; gap: 0.5rem; }
 .check input { min-height: 0; width: 1.1rem; height: 1.1rem; accent-color: var(--accent); }
+
+/* Lab toggles (Podinfo readiness / fault) */
+.schedule-toggle {
+  width: 100%; min-height: var(--touch);
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  border-radius: 10px; border: 1px solid var(--border);
+  background: var(--bg); padding: 0 0.85rem; color: var(--text);
+  font: inherit; cursor: pointer;
+}
+.schedule-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.schedule-toggle .toggle-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; }
+.schedule-toggle .toggle-copy strong { font-size: 0.9rem; }
+.schedule-toggle .toggle-copy span { font-size: 0.72rem; color: var(--muted); }
+.toggle-switch {
+  width: 44px; height: 26px; border-radius: 999px; flex-shrink: 0;
+  background: color-mix(in srgb, var(--border) 80%, #64748b);
+  position: relative; transition: background 0.18s ease;
+}
+.toggle-switch::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+  transition: transform 0.18s ease;
+}
+.schedule-toggle[aria-pressed="true"] .toggle-switch {
+  background: color-mix(in srgb, var(--accent) 75%, #0f766e);
+}
+.schedule-toggle[aria-pressed="true"] .toggle-switch::after { transform: translateX(18px); }
+.podinfo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+.podinfo-chaos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.65rem;
+  align-items: end;
+}
+@media (max-width: 720px) {
+  .podinfo-chaos-grid { grid-template-columns: 1fr; }
+}
+.podinfo-status-line { margin: 0.85rem 0 0; color: var(--muted); font-size: 0.88rem; }
+.podinfo-status-line strong.ok { color: #34d399; }
+.podinfo-status-line strong.warn { color: #fbbf24; }
+.podinfo-metrics-sample {
+  max-height: 160px;
+  overflow: auto;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 .job-item { align-items: flex-start; }
 .job-item.selected { border-color: var(--accent); background: var(--accent-soft); }
 .job-item .job-name { overflow-wrap: anywhere; min-width: 0; }

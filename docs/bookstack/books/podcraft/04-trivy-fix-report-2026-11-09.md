@@ -36,9 +36,29 @@ Image-SoT: `git.stadthagen.dev/dev/podcraft` · Runtime-Check gegen Digest `sha2
 
 **Nicht nötig:** msgpack pinnen — Package ist nicht im Image und nicht in den App-Deps (`kubernetes==37.0.1`).
 
+## Image nicht gefunden? (Fall 2026-11-09)
+
+| Gesucht | Ist-Zustand | Warum |
+|---------|-------------|--------|
+| Tag `0.4.1` | **404**, bis Forgejo-SoT synced | Build läuft aus **Forgejo** `dev/podcraft`, nicht aus minilab. Forgejo hatte noch `VERSION=0.4.0`. |
+| Digest `e74968fb…` | weg | Rebuild hat Tag `0.4.0`/`latest` auf Index `sha256:abe29b4668ef…` verschoben. |
+| Tag `0.4.0` / `latest` | vorhanden | Genau dieses Image nach dem ungepinnten Rebuild. |
+
+Lookup:
+
+```bash
+# Index-Digest des Tags (nicht Platform-Manifest)
+curl -sI -H "Accept: application/vnd.oci.image.index.v1+json" \
+  -H "Authorization: Bearer $TOKEN" \
+  https://git.stadthagen.dev/v2/dev/podcraft/manifests/0.4.1 \
+  | tr -d '\r' | awk -F': ' 'tolower($1)=="docker-content-digest"{print $2}'
+```
+
+Forgejo-Sync (SoT): minilab `apps/dev/podcraft/{Dockerfile,VERSION,requirements.txt,app,.forgejo}` → `https://git.stadthagen.dev/dev/podcraft` push `main` (Commit `670092d`, VERSION **0.4.1**).
+
 ## Deploy-Pfad
 
-1. Änderungen nach Forgejo `dev/podcraft` syncen (Workflow `.forgejo/workflows/image.yml`).
+1. Änderungen nach Forgejo `dev/podcraft` syncen (Workflow `.forgejo/workflows/image.yml`) — erledigt: `670092d`.
 2. Image-Build (push/`workflow_dispatch`) → Tag `0.4.1` + Digest notieren.
 3. CI-Trivy-FS-Schritt (CRITICAL/HIGH) muss grün sein.
 4. In minilab `deployment.yaml` + `image-pull-job.yaml` Tag/Digest auf `0.4.1@sha256:…` setzen, Argo sync.

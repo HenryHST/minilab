@@ -88,6 +88,12 @@ const state = {
   labMetricsSample: "",
   labMetricsLoaded: false,
   labChaosOut: "",
+  labMetricsOpen: false,
+  settingsTab: "profil",
+  archiveQuery: "",
+  logQuery: "",
+  logLevelFilter: "ALL",
+  logItems: [],
 };
 
 let tipEl;
@@ -1077,6 +1083,31 @@ function archiveSize(a) {
   return a?.size ? a.size / 1048576 : parseSizeMb(a?.size_h);
 }
 
+function formatArchiveSizeLabel(a) {
+  const raw = String(a?.size_h || "").trim();
+  if (raw) {
+    const m = raw.match(/^([\d.]+)\s*(KB|MB|GB|B)\b/i);
+    if (m) {
+      const n = Number(m[1]);
+      const u = m[2].toUpperCase();
+      const label = Number.isInteger(n) || Math.abs(n - Math.round(n)) < 1e-9
+        ? String(Math.round(n))
+        : (Math.round(n * 10) / 10).toFixed(1);
+      return `${label} ${u}`;
+    }
+    return raw;
+  }
+  const bytes = Number(a?.size || 0);
+  if (!(bytes > 0)) return "n/a";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) {
+    const kb = bytes / 1024;
+    return `${kb >= 100 ? Math.round(kb) : (Math.round(kb * 10) / 10).toFixed(1)} KB`;
+  }
+  const mb = bytes / (1024 * 1024);
+  return `${mb >= 100 ? Math.round(mb) : (Math.round(mb * 10) / 10).toFixed(1)} MB`;
+}
+
 function fmtArchiveTime(a) {
   const d = new Date(a.mtime);
   if (Number.isNaN(d.getTime())) return "";
@@ -1126,29 +1157,53 @@ function selectedArchiveInfo() {
 }
 
 function restoreArchivesHtml() {
-  const list = state.dayFilter ? archivesForDate(state.archives, state.dayFilter) : state.archives;
-  const latestRow = `<button type="button" class="archive-item ${state.selectedArchive === "latest" ? "selected" : ""}"
+  const q = (state.archiveQuery || "").trim().toLowerCase();
+  let list = state.dayFilter ? archivesForDate(state.archives, state.dayFilter) : state.archives;
+  if (q) {
+    list = list.filter((a) => {
+      const hay = `${a.name} ${a.size_h || ""} ${fmtArchiveTime(a)}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }
+  const showLatest = !state.dayFilter && (!q || "latest".includes(q) || t(state.locale, "restoreLatest").toLowerCase().includes(q));
+  const latestRow = showLatest
+    ? `<button type="button" class="archive-item ${state.selectedArchive === "latest" ? "selected" : ""}"
       data-archive="latest" aria-pressed="${state.selectedArchive === "latest"}">
       <span><strong>${escapeHtml(t(state.locale, "restoreLatest"))}</strong><br /><span class="hint">${escapeHtml(t(state.locale, "restoreLatestHint"))}</span></span>
       <span class="hint">auto</span>
-    </button>`;
+    </button>`
+    : "";
   const rows = list
     .map(
       (a) => `<button type="button" class="archive-item ${state.selectedArchive === a.name ? "selected" : ""}"
         data-archive="${escapeHtml(a.name)}" aria-pressed="${state.selectedArchive === a.name}">
         <span>${escapeHtml(a.name)}</span>
-        <span class="meta"><span class="hint">${escapeHtml(a.size_h)}</span><span class="hint">${escapeHtml(fmtArchiveTime(a))}</span></span>
+        <span class="meta"><span class="hint">${escapeHtml(formatArchiveSizeLabel(a))}</span><span class="hint">${escapeHtml(fmtArchiveTime(a))}</span></span>
       </button>`,
     )
     .join("");
-  const empty = !state.archives.length ? `<p class="hint">${escapeHtml(t(state.locale, "restoreEmpty"))}</p>` : "";
-  const filterBar = state.dayFilter
+  const empty = !state.archives.length
+    ? `<p class="hint">${escapeHtml(t(state.locale, "restoreEmpty"))}</p>`
+    : (!rows && !latestRow ? `<p class="hint">${escapeHtml(t(state.locale, "restoreFilterEmpty"))}</p>` : "");
+  const dayBar = state.dayFilter
     ? `<div class="day-filter">
         <span class="hint">${escapeHtml(t(state.locale, "restoreFilterDay", { date: fmtDay(state.dayFilter) }))}</span>
         <button type="button" class="ghost-btn" data-clear-filter>${escapeHtml(t(state.locale, "restoreShowAll"))}</button>
       </div>`
     : "";
-  return `${filterBar}<div class="archive-list">${latestRow}${rows}${empty}</div>`;
+  const info = selectedArchiveInfo();
+  const review = info
+    ? `<div class="restore-review" id="restoreReview">
+        <span class="rr-label">${escapeHtml(t(state.locale, "restoreReviewLabel"))}</span>
+        <span class="rr-name">${escapeHtml(info.latest ? t(state.locale, "restoreLatest") : info.archive.name)}</span>
+        <span class="rr-meta">${escapeHtml(info.latest ? t(state.locale, "restoreLatestHint") : `${formatArchiveSizeLabel(info.archive)} · ${fmtArchiveTime(info.archive)}`)}</span>
+      </div>`
+    : `<div class="restore-review is-empty" id="restoreReview">
+        <span class="rr-label">${escapeHtml(t(state.locale, "restoreReviewLabel"))}</span>
+        <span class="rr-name">${escapeHtml(t(state.locale, "restoreReviewNone"))}</span>
+        <span class="rr-meta">${escapeHtml(t(state.locale, "restoreReviewNoneHint"))}</span>
+      </div>`;
+  return `${dayBar}<div class="archive-list">${latestRow}${rows}${empty}</div>${review}`;
 }
 
 function jobRow(j) {
@@ -1201,7 +1256,7 @@ function backupDetailHtml() {
   const sizeMb = archiveSize(a);
   const max = Math.max(1, ...state.archives.map(archiveSize));
   const pct = sizeMb ? Math.max(8, Math.round((sizeMb / max) * 100)) : 0;
-  const sizeLabel = sizeMb ? `${Number.isInteger(sizeMb) ? sizeMb : sizeMb.toFixed(1)} MB` : "n/a";
+  const sizeLabel = formatArchiveSizeLabel(a);
   const dayCount = iso ? archivesForDate(state.archives, iso).length : 0;
   const dayNote = latest
     ? t(state.locale, "bdAlias")
@@ -1228,6 +1283,10 @@ function pageRestore() {
             <div class="card-head">
               <h2>${escapeHtml(t(state.locale, "restoreArchives"))}</h2>
               <span class="badge idle">${escapeHtml(t(state.locale, "restoreNs"))}</span>
+            </div>
+            <div class="archive-toolbar">
+              <label for="archiveFilter">${escapeHtml(t(state.locale, "restoreSearchLabel"))}</label>
+              <input id="archiveFilter" type="search" placeholder="${escapeHtml(t(state.locale, "restoreSearchPh"))}" value="${escapeHtml(state.archiveQuery || "")}" autocomplete="off" />
             </div>
             <div id="archiveList">${restoreArchivesHtml()}</div>
             <form id="restore-form" class="form-grid danger-panel">
@@ -1303,6 +1362,8 @@ function paintCalendar({ anim = "", pulse = "" } = {}) {
 function paintRestoreArchives() {
   const node = document.getElementById("archiveList");
   if (node) node.innerHTML = restoreArchivesHtml();
+  const filter = document.getElementById("archiveFilter");
+  if (filter && filter.value !== (state.archiveQuery || "")) filter.value = state.archiveQuery || "";
 }
 
 function paintBackupDetail() {
@@ -1364,6 +1425,11 @@ function bindRestore(root) {
     paintBackupDetail();
   };
 
+  page.querySelector("#archiveFilter")?.addEventListener("input", (e) => {
+    state.archiveQuery = e.target.value || "";
+    paintRestoreArchives();
+    paintBackupDetail();
+  });
   page.querySelector("#archiveList")?.addEventListener("click", (e) => {
     if (e.target.closest("[data-clear-filter]")) {
       state.dayFilter = "";
@@ -1484,110 +1550,134 @@ function pageSettings() {
   const has = isAvatarSrcOk(edit.src);
   const once = state.haBasicOnce;
   const passShown = state.haPassVisible && once?.password;
+  const tab = state.settingsTab || "profil";
+  const showHa = !!perms().ha;
+  const effectiveTab = tab === "ha" && !showHa ? "profil" : tab;
+  if (effectiveTab !== tab) state.settingsTab = effectiveTab;
   const radio = (name, value, checked, label, extra = "") => `
     <label>
       <input type="radio" name="${name}" value="${value}" ${checked ? "checked" : ""} />
       ${extra}${escapeHtml(label)}
     </label>`;
+  const tabBtn = (id, label, extra = "") => `
+    <button type="button" role="tab" data-settings-tab="${id}" aria-selected="${effectiveTab === id ? "true" : "false"}" ${extra}>${escapeHtml(label)}</button>`;
   return `
-    <section aria-label="${escapeHtml(t(state.locale, "settings"))}">
-      <article class="card">
-        <div class="card-head"><h2>${escapeHtml(t(state.locale, "profileTitle"))}</h2></div>
-        <div class="avatar-editor">
-          <div class="avatar-preview-wrap">
-            <div class="avatar avatar-lg ${has ? "draggable" : ""}" id="settingsAvatar" data-tooltip="${escapeHtml(t(state.locale, "avatarDragTip"))}">${avatarPreviewInner(edit)}</div>
-            <span class="hint">${escapeHtml(t(state.locale, "avatarDragHint"))}</span>
-          </div>
-          <div class="avatar-form">
-            <p class="hint" style="margin:0">${escapeHtml(t(state.locale, "avatarIntro"))}</p>
-            <p class="avatar-help">
-              <strong>${escapeHtml(t(state.locale, "avatarFormats"))}:</strong> JPEG, PNG, WebP, GIF<br />
-              <strong>${escapeHtml(t(state.locale, "avatarMaxSize"))}:</strong> 2&nbsp;MB<br />
-              <strong>${escapeHtml(t(state.locale, "avatarRecommended"))}:</strong> ${escapeHtml(t(state.locale, "avatarRecommendedValue"))}
-            </p>
-            <label>${escapeHtml(t(state.locale, "avatarUrlOverride"))}
-              <input id="avatarUrl" type="url" value="${escapeHtml(edit.src.startsWith("data:") ? "" : edit.src)}" placeholder="https://…" />
-            </label>
-            <div class="avatar-pos" id="avatarPosControls" ${has ? "" : "hidden"}>
-              <label>${escapeHtml(t(state.locale, "avatarHoriz"))} <span id="avatarPosXVal">${edit.pos.x}%</span>
-                <input id="avatarPosX" type="range" min="0" max="100" value="${edit.pos.x}" /></label>
-              <label>${escapeHtml(t(state.locale, "avatarVert"))} <span id="avatarPosYVal">${edit.pos.y}%</span>
-                <input id="avatarPosY" type="range" min="0" max="100" value="${edit.pos.y}" /></label>
-              <button class="btn" type="button" id="avatarPosReset">${escapeHtml(t(state.locale, "avatarCenter"))}</button>
+    <section aria-label="${escapeHtml(t(state.locale, "settings"))}" id="page-settings">
+      <div class="settings-tabs" role="tablist" aria-label="${escapeHtml(t(state.locale, "settingsTabsAria"))}">
+        ${tabBtn("profil", t(state.locale, "settingsTabProfil"))}
+        ${showHa ? tabBtn("ha", t(state.locale, "settingsTabHa")) : ""}
+        ${tabBtn("anzeige", t(state.locale, "settingsTabAnzeige"))}
+        ${tabBtn("session", t(state.locale, "settingsTabSession"))}
+      </div>
+
+      <div class="settings-panel" data-settings-panel="profil" ${effectiveTab === "profil" ? "" : "hidden"}>
+        <article class="card">
+          <div class="card-head"><h2>${escapeHtml(t(state.locale, "profileTitle"))}</h2></div>
+          <div class="avatar-editor">
+            <div class="avatar-preview-wrap">
+              <div class="avatar avatar-lg ${has ? "draggable" : ""}" id="settingsAvatar" data-tooltip="${escapeHtml(t(state.locale, "avatarDragTip"))}">${avatarPreviewInner(edit)}</div>
+              <span class="hint">${escapeHtml(t(state.locale, "avatarDragHint"))}</span>
             </div>
-            <p class="avatar-error" id="avatarError" role="alert">${escapeHtml(edit.error || "")}</p>
-            <div class="btn-row">
-              <button class="btn primary" type="button" id="avatarApply">${escapeHtml(t(state.locale, "avatarApply"))}</button>
-              <button class="btn" type="button" id="avatarClear">${escapeHtml(t(state.locale, "avatarClear"))}</button>
-              <label class="btn file-btn">${escapeHtml(t(state.locale, "avatarFile"))}
-                <input id="avatarFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif" hidden />
+            <div class="avatar-form">
+              <p class="hint" style="margin:0">${escapeHtml(t(state.locale, "avatarIntro"))}</p>
+              <p class="avatar-help">
+                <strong>${escapeHtml(t(state.locale, "avatarFormats"))}:</strong> JPEG, PNG, WebP, GIF<br />
+                <strong>${escapeHtml(t(state.locale, "avatarMaxSize"))}:</strong> 2&nbsp;MB<br />
+                <strong>${escapeHtml(t(state.locale, "avatarRecommended"))}:</strong> ${escapeHtml(t(state.locale, "avatarRecommendedValue"))}
+              </p>
+              <label>${escapeHtml(t(state.locale, "avatarUrlOverride"))}
+                <input id="avatarUrl" type="url" value="${escapeHtml(edit.src.startsWith("data:") ? "" : edit.src)}" placeholder="https://…" />
               </label>
+              <div class="avatar-pos" id="avatarPosControls" ${has ? "" : "hidden"}>
+                <label>${escapeHtml(t(state.locale, "avatarHoriz"))} <span id="avatarPosXVal">${edit.pos.x}%</span>
+                  <input id="avatarPosX" type="range" min="0" max="100" value="${edit.pos.x}" /></label>
+                <label>${escapeHtml(t(state.locale, "avatarVert"))} <span id="avatarPosYVal">${edit.pos.y}%</span>
+                  <input id="avatarPosY" type="range" min="0" max="100" value="${edit.pos.y}" /></label>
+                <button class="btn" type="button" id="avatarPosReset">${escapeHtml(t(state.locale, "avatarCenter"))}</button>
+              </div>
+              <p class="avatar-error" id="avatarError" role="alert">${escapeHtml(edit.error || "")}</p>
+              <div class="btn-row">
+                <button class="btn primary" type="button" id="avatarApply">${escapeHtml(t(state.locale, "avatarApply"))}</button>
+                <button class="btn" type="button" id="avatarClear">${escapeHtml(t(state.locale, "avatarClear"))}</button>
+                <label class="btn file-btn">${escapeHtml(t(state.locale, "avatarFile"))}
+                  <input id="avatarFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif" hidden />
+                </label>
+              </div>
             </div>
           </div>
-        </div>
-      </article>
+        </article>
+        <article class="card">
+          <div class="card-head"><h2>${escapeHtml(t(state.locale, "permTitle"))}</h2></div>
+          <p class="perm-note">
+            ${escapeHtml(t(state.locale, "permIntro"))}<br />
+            ${escapeHtml(t(state.locale, "permDash"))}<br />
+            ${escapeHtml(t(state.locale, "permRestore"))}<br />
+            ${escapeHtml(t(state.locale, "permSettings"))}
+          </p>
+        </article>
+      </div>
+
       ${
-        perms().ha
-          ? `<article class="card">
-              <div class="card-head"><h2>${escapeHtml(t(state.locale, "haApiCardTitle"))}</h2></div>
-              <p class="hint">${escapeHtml(t(state.locale, "haApiHelp"))}</p>
-              <button class="btn primary" type="button" id="ha-rotate">${escapeHtml(t(state.locale, "haApiRotate"))}</button>
-              ${
-                once
-                  ? `<div class="form-grid" style="margin-top:0.75rem" aria-live="polite">
-                      <p class="hint">${escapeHtml(t(state.locale, "haApiOnceHint"))}</p>
-                      <label>${escapeHtml(t(state.locale, "username"))}
-                        <span class="ha-once-row">
-                          <input readonly id="ha-user" value="${escapeHtml(once.username)}" />
-                          <button type="button" class="btn" id="ha-copy-user">${escapeHtml(t(state.locale, "haApiCopyUser"))}</button>
-                        </span>
-                      </label>
-                      <label>${escapeHtml(t(state.locale, "password"))}
-                        <span class="ha-once-row">
-                          <input readonly id="ha-pass" type="${passShown ? "text" : "password"}" value="${escapeHtml(once.password)}" class="mono" />
-                          <button type="button" class="btn" id="ha-toggle">${escapeHtml(t(state.locale, passShown ? "haApiHidePass" : "haApiShowPass"))}</button>
-                          <button type="button" class="btn" id="ha-copy-pass">${escapeHtml(t(state.locale, "haApiCopyPass"))}</button>
-                        </span>
-                      </label>
-                    </div>`
-                  : ""
-              }
-            </article>`
+        showHa
+          ? `<div class="settings-panel" data-settings-panel="ha" ${effectiveTab === "ha" ? "" : "hidden"}>
+              <article class="card">
+                <div class="card-head"><h2>${escapeHtml(t(state.locale, "haApiCardTitle"))}</h2></div>
+                <p class="hint">${escapeHtml(t(state.locale, "haApiHelp"))}</p>
+                <button class="btn primary" type="button" id="ha-rotate">${escapeHtml(t(state.locale, "haApiRotate"))}</button>
+                ${
+                  once
+                    ? `<div class="form-grid" style="margin-top:0.75rem" aria-live="polite">
+                        <p class="hint">${escapeHtml(t(state.locale, "haApiOnceHint"))}</p>
+                        <label>${escapeHtml(t(state.locale, "username"))}
+                          <span class="ha-once-row">
+                            <input readonly id="ha-user" value="${escapeHtml(once.username)}" />
+                            <button type="button" class="btn" id="ha-copy-user">${escapeHtml(t(state.locale, "haApiCopyUser"))}</button>
+                          </span>
+                        </label>
+                        <label>${escapeHtml(t(state.locale, "password"))}
+                          <span class="ha-once-row">
+                            <input readonly id="ha-pass" type="${passShown ? "text" : "password"}" value="${escapeHtml(once.password)}" class="mono" />
+                            <button type="button" class="btn" id="ha-toggle">${escapeHtml(t(state.locale, passShown ? "haApiHidePass" : "haApiShowPass"))}</button>
+                            <button type="button" class="btn" id="ha-copy-pass">${escapeHtml(t(state.locale, "haApiCopyPass"))}</button>
+                          </span>
+                        </label>
+                      </div>`
+                    : ""
+                }
+              </article>
+            </div>`
           : ""
       }
-      <article class="card">
-        <div class="card-head"><h2>${escapeHtml(t(state.locale, "permTitle"))}</h2></div>
-        <p class="perm-note">
-          ${escapeHtml(t(state.locale, "permIntro"))}<br />
-          ${escapeHtml(t(state.locale, "permDash"))}<br />
-          ${escapeHtml(t(state.locale, "permRestore"))}<br />
-          ${escapeHtml(t(state.locale, "permSettings"))}
-        </p>
-      </article>
-      <article class="card">
-        <div class="card-head"><h2>${escapeHtml(t(state.locale, "displayTitle"))}</h2></div>
-        <div class="form-grid">
-          <label class="check"><input type="checkbox" id="showClock" ${state.showClock ? "checked" : ""} /> ${escapeHtml(t(state.locale, "showClock"))}</label>
-          <label class="check"><input type="checkbox" id="showWeekNumbers" ${state.showWeekNumbers ? "checked" : ""} /> ${escapeHtml(t(state.locale, "showWeekNumbers"))}</label>
-        </div>
-        <p class="settings-sub">${escapeHtml(t(state.locale, "selThemeTitle"))}</p>
-        <div class="sel-theme-picker" role="radiogroup" aria-label="${escapeHtml(t(state.locale, "selThemeTitle"))}">
-          ${radio("selTheme", "a", state.selTheme === "a", t(state.locale, "selThemeTeal"), '<i class="sel-swatch a" aria-hidden="true"></i>')}
-          ${radio("selTheme", "b", state.selTheme === "b", t(state.locale, "selThemeBlue"), '<i class="sel-swatch b" aria-hidden="true"></i>')}
-        </div>
-        <p class="settings-note">${escapeHtml(t(state.locale, "selThemeHelp"))}</p>
-        <p class="settings-sub">${escapeHtml(t(state.locale, "logoAnimTitle"))}</p>
-        <div class="sel-theme-picker" role="radiogroup" aria-label="${escapeHtml(t(state.locale, "logoAnimTitle"))}">
-          ${radio("logoAnim", "setsail", state.logoAnim === "setsail", t(state.locale, "logoSetsail"))}
-          ${radio("logoAnim", "float", state.logoAnim === "float", t(state.locale, "logoFloat"))}
-          ${radio("logoAnim", "parallax", state.logoAnim === "parallax", t(state.locale, "logoParallax"))}
-        </div>
-        <p class="settings-note">${escapeHtml(t(state.locale, "logoAnimHelp"))}</p>
-      </article>
-      <article class="card">
-        <div class="card-head"><h2>${escapeHtml(t(state.locale, "sessionTitle"))}</h2></div>
-        <p class="hint" style="margin:0">${escapeHtml(t(state.locale, "authHint"))}: ${escapeHtml(state.me?.configured_auth_mode || "—")} · ${escapeHtml(t(state.locale, "version"))}: ${escapeHtml(state.me?.version || "—")}</p>
-      </article>
+
+      <div class="settings-panel" data-settings-panel="anzeige" ${effectiveTab === "anzeige" ? "" : "hidden"}>
+        <article class="card">
+          <div class="card-head"><h2>${escapeHtml(t(state.locale, "displayTitle"))}</h2></div>
+          <div class="form-grid">
+            <label class="check"><input type="checkbox" id="showClock" ${state.showClock ? "checked" : ""} /> ${escapeHtml(t(state.locale, "showClock"))}</label>
+            <label class="check"><input type="checkbox" id="showWeekNumbers" ${state.showWeekNumbers ? "checked" : ""} /> ${escapeHtml(t(state.locale, "showWeekNumbers"))}</label>
+          </div>
+          <p class="settings-sub">${escapeHtml(t(state.locale, "selThemeTitle"))}</p>
+          <div class="sel-theme-picker" role="radiogroup" aria-label="${escapeHtml(t(state.locale, "selThemeTitle"))}">
+            ${radio("selTheme", "a", state.selTheme === "a", t(state.locale, "selThemeTeal"), '<i class="sel-swatch a" aria-hidden="true"></i>')}
+            ${radio("selTheme", "b", state.selTheme === "b", t(state.locale, "selThemeBlue"), '<i class="sel-swatch b" aria-hidden="true"></i>')}
+          </div>
+          <p class="settings-note">${escapeHtml(t(state.locale, "selThemeHelp"))}</p>
+          <p class="settings-sub">${escapeHtml(t(state.locale, "logoAnimTitle"))}</p>
+          <div class="sel-theme-picker" role="radiogroup" aria-label="${escapeHtml(t(state.locale, "logoAnimTitle"))}">
+            ${radio("logoAnim", "setsail", state.logoAnim === "setsail", t(state.locale, "logoSetsail"))}
+            ${radio("logoAnim", "float", state.logoAnim === "float", t(state.locale, "logoFloat"))}
+            ${radio("logoAnim", "parallax", state.logoAnim === "parallax", t(state.locale, "logoParallax"))}
+          </div>
+          <p class="settings-note">${escapeHtml(t(state.locale, "logoAnimHelp"))}</p>
+        </article>
+      </div>
+
+      <div class="settings-panel" data-settings-panel="session" ${effectiveTab === "session" ? "" : "hidden"}>
+        <article class="card">
+          <div class="card-head"><h2>${escapeHtml(t(state.locale, "sessionTitle"))}</h2></div>
+          <p class="hint" style="margin:0">${escapeHtml(t(state.locale, "authHint"))}: ${escapeHtml(state.me?.configured_auth_mode || "—")} · ${escapeHtml(t(state.locale, "version"))}: ${escapeHtml(state.me?.version || "—")}</p>
+        </article>
+      </div>
     </section>`;
 }
 
@@ -1617,10 +1707,28 @@ async function copyText(text, btn) {
 }
 
 function bindSettings(root) {
+  const page = root.querySelector("#page-settings");
+  page?.querySelector(".settings-tabs")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-settings-tab]");
+    if (!btn) return;
+    const next = btn.dataset.settingsTab;
+    if (!next || next === state.settingsTab) return;
+    state.settingsTab = next;
+    state.pendingFocus = `[data-settings-tab="${next}"]`;
+    render();
+  });
+  if (page && !reduceMotion) {
+    page.classList.remove("settings-enter");
+    void page.offsetWidth;
+    page.classList.add("settings-enter");
+  }
+
   const edit = ensureAvatarEdit();
   const avatar = root.querySelector("#settingsAvatar");
-  if (!avatar) return;
   const errorEl = root.querySelector("#avatarError");
+  if (!avatar) {
+    /* continue with display/HA bindings */
+  } else {
   const controls = root.querySelector("#avatarPosControls");
   const posX = root.querySelector("#avatarPosX");
   const posY = root.querySelector("#avatarPosY");
@@ -1759,6 +1867,8 @@ function bindSettings(root) {
     render();
   });
 
+  } /* end avatar bindings */
+
   /* Display prefs apply immediately */
   root.querySelector("#showClock")?.addEventListener("change", (e) => {
     state.showClock = e.target.checked;
@@ -1821,8 +1931,16 @@ function bindSettings(root) {
 /* ───────────────────────── logs ───────────────────────── */
 
 function pageLogs() {
+  const levels = ["ALL", "INFO", "WARN", "DEBUG", "ERROR"];
+  const chips = levels
+    .map((lvl) => {
+      const label = lvl === "ALL" ? t(state.locale, "logFilterAll") : lvl;
+      const pressed = state.logLevelFilter === lvl ? "true" : "false";
+      return `<button type="button" data-level="${lvl}" aria-pressed="${pressed}">${escapeHtml(label)}</button>`;
+    })
+    .join("");
   return `
-    <section aria-label="${escapeHtml(t(state.locale, "logs"))}">
+    <section aria-label="${escapeHtml(t(state.locale, "logs"))}" id="page-logs">
       <article class="card">
         <div class="top-actions" style="justify-content:space-between;margin-bottom:0.75rem">
           <h2 style="margin:0">${escapeHtml(t(state.locale, "logs"))}</h2>
@@ -1831,7 +1949,19 @@ function pageLogs() {
             <button type="button" class="ghost-btn" id="log-clear">${escapeHtml(t(state.locale, "clear"))}</button>
           </div>
         </div>
-        <div class="log-box" id="log-body" role="log" tabindex="0"></div>
+        <div class="log-toolbar">
+          <div class="log-toolbar-row">
+            <label class="sr-only" for="logSearch">${escapeHtml(t(state.locale, "logSearchLabel"))}</label>
+            <input id="logSearch" class="log-search" type="search" placeholder="${escapeHtml(t(state.locale, "logSearchPh"))}" value="${escapeHtml(state.logQuery || "")}" autocomplete="off" />
+            <div class="log-level-filters" role="group" aria-label="${escapeHtml(t(state.locale, "logFilterAria"))}">${chips}</div>
+          </div>
+          <div class="log-meta" aria-live="polite">
+            <span id="logCountLabel"></span>
+            <span id="logStreamLabel">${escapeHtml(t(state.locale, state.logPaused ? "logPaused" : "logLive"))}</span>
+          </div>
+        </div>
+        <div class="log-box ${state.logPaused ? "is-paused" : ""}" id="log-body" role="log" tabindex="0"></div>
+        <div class="log-empty" id="logEmpty" role="status">${escapeHtml(t(state.locale, "logEmptyFilter"))}</div>
       </article>
     </section>`;
 }
@@ -1844,90 +1974,206 @@ async function refreshLab({ metrics = false } = {}) {
     try {
       const res = await fetch("/metrics", { headers: headers(false) });
       const text = await res.text();
-      state.labMetricsSample = text.split("\n").slice(0, 12).join("\n");
+      state.labMetricsSample = text.split("\n").slice(0, 40).join("\n");
     } catch {
       state.labMetricsSample = "";
     }
   }
 }
 
+function parseMetricsCards(sample) {
+  const lines = String(sample || "").split("\n");
+  const help = {};
+  const types = {};
+  const series = [];
+  for (const line of lines) {
+    if (line.startsWith("# HELP ")) {
+      const rest = line.slice(7);
+      const sp = rest.indexOf(" ");
+      if (sp > 0) help[rest.slice(0, sp)] = rest.slice(sp + 1);
+    } else if (line.startsWith("# TYPE ")) {
+      const parts = line.slice(7).trim().split(/\s+/);
+      if (parts.length >= 2) types[parts[0]] = parts[1];
+    } else if (line && !line.startsWith("#")) {
+      const m = line.match(/^([a-zA-Z_:][a-zA-Z0-9_:]*)(\{[^}]*\})?\s+(\S+)/);
+      if (!m) continue;
+      const labels = [];
+      if (m[2]) {
+        for (const part of m[2].slice(1, -1).split(",")) {
+          const kv = part.split("=");
+          if (kv.length >= 2) labels.push([kv[0].trim(), kv.slice(1).join("=").replace(/^"|"$/g, "")]);
+        }
+      }
+      series.push({
+        name: m[1],
+        labels,
+        raw: m[3],
+        value: Number(m[3]),
+        type: types[m[1]] || "untyped",
+        help: help[m[1]] || "",
+      });
+    }
+  }
+  const nums = series.map((s) => (Number.isFinite(s.value) ? Math.abs(s.value) : 0));
+  const max = Math.max(1, ...nums);
+  return series.slice(0, 4).map((s) => {
+    let display = s.raw;
+    let unit = "";
+    if (s.name.includes("bytes") && Number.isFinite(s.value)) {
+      display = (s.value / (1024 * 1024)).toFixed(1);
+      unit = "MiB";
+    } else if (Number.isFinite(s.value)) {
+      display = Number.isInteger(s.value) ? String(s.value) : String(Math.round(s.value * 100) / 100);
+    }
+    const bar = Math.max(6, Math.round(((Number.isFinite(s.value) ? Math.abs(s.value) : 0) / max) * 100));
+    return { ...s, display, unit, bar };
+  });
+}
+
 function pagePodinfo() {
   const lab = state.lab || {};
   const ready = lab.ready !== false;
   const fault = !!lab.fault_injection;
-  const readyClass = ready ? "ok" : "warn";
-  const readyLabel = ready ? t(state.locale, "podinfoReady") : t(state.locale, "podinfoNotReady");
+  const version = lab.version || state.me?.version || "—";
+  const commit = lab.commit || "—";
+  const build = lab.build_date || "—";
+  const cards = parseMetricsCards(state.labMetricsSample);
+  const metricsCards = cards.length
+    ? cards
+        .map((c) => {
+          const labels = c.labels
+            .map(([k, v]) => `<span class="metric-label">${escapeHtml(k)}=<strong>${escapeHtml(v)}</strong></span>`)
+            .join("");
+          const typ = (c.type || "untyped").toLowerCase();
+          return `<article class="metric-card ${typ === "gauge" ? "gauge" : ""}" style="--bar:${c.bar}%">
+            <div class="metric-card-top">
+              <div class="metric-name">${escapeHtml(c.name)}</div>
+              <span class="metric-type ${escapeHtml(typ)}">${escapeHtml(typ)}</span>
+            </div>
+            ${c.help ? `<p class="metric-help">${escapeHtml(c.help)}</p>` : ""}
+            <div class="metric-value-row">
+              <span class="metric-value">${escapeHtml(c.display)}</span>
+              <span class="metric-unit">${escapeHtml(c.unit || "")}</span>
+            </div>
+            ${labels ? `<div class="metric-labels">${labels}</div>` : ""}
+            <div class="metric-bar" aria-hidden="true"><span></span></div>
+          </article>`;
+        })
+        .join("")
+    : `<p class="hint">${escapeHtml(t(state.locale, state.labMetricsLoaded ? "podinfoMetricsEmpty" : "loading"))}</p>`;
   return `
-    <section aria-label="${escapeHtml(t(state.locale, "navPodinfo"))}">
-      <p class="hint" style="margin-top:0">${escapeHtml(t(state.locale, "podinfoIntro"))}</p>
-      <article class="card">
-        <div class="card-head"><h2>${escapeHtml(t(state.locale, "podinfoRuntime"))}</h2></div>
-        <div class="podinfo-grid">
-          <label class="field">${escapeHtml(t(state.locale, "version"))}
-            <input type="text" readonly class="mono" value="${escapeHtml(lab.version || state.me?.version || "—")}" />
-          </label>
-          <label class="field">${escapeHtml(t(state.locale, "podinfoCommit"))}
-            <input type="text" readonly class="mono" value="${escapeHtml(lab.commit || "—")}" />
-          </label>
-          <label class="field">${escapeHtml(t(state.locale, "podinfoBuild"))}
-            <input type="text" readonly class="mono" value="${escapeHtml(lab.build_date || "—")}" />
-          </label>
-        </div>
-        <p class="podinfo-status-line">
-          ${escapeHtml(t(state.locale, "podinfoHealth"))}
-          <strong class="ok">${escapeHtml(lab.health || "ok")}</strong>
-          · ${escapeHtml(t(state.locale, "podinfoReady"))}
-          <strong class="${readyClass}">${escapeHtml(readyLabel)}</strong>
-        </p>
-      </article>
-      <article class="card">
-        <div class="card-head"><h2>${escapeHtml(t(state.locale, "podinfoReadiness"))}</h2></div>
-        <p class="hint" style="margin:0 0 0.75rem">${escapeHtml(t(state.locale, "podinfoReadinessHelp"))}</p>
-        <button type="button" class="schedule-toggle" id="lab-ready-toggle"
-          aria-pressed="${ready ? "true" : "false"}"
-          aria-label="${escapeHtml(t(state.locale, "podinfoReadiness"))}">
-          <span class="toggle-copy">
-            <strong>${escapeHtml(t(state.locale, "podinfoReady"))}</strong>
-            <span>${escapeHtml(t(state.locale, ready ? "podinfoReadyOn" : "podinfoReadyOff"))}</span>
-          </span>
-          <span class="toggle-switch" aria-hidden="true"></span>
-        </button>
-      </article>
-      <article class="card">
-        <div class="card-head">
-          <h2>${escapeHtml(t(state.locale, "podinfoMetrics"))}</h2>
-          <a class="ghost-btn" href="/metrics" target="_blank" rel="noopener">${escapeHtml(t(state.locale, "podinfoMetricsOpen"))}</a>
-        </div>
-        <p class="hint" style="margin:0 0 0.65rem">${escapeHtml(t(state.locale, "podinfoMetricsHelp"))}</p>
-        <pre class="log-box podinfo-metrics-sample" aria-label="${escapeHtml(t(state.locale, "podinfoMetrics"))}">${escapeHtml(state.labMetricsSample || t(state.locale, "loading"))}</pre>
-      </article>
-      <article class="card">
-        <div class="card-head"><h2>${escapeHtml(t(state.locale, "podinfoChaos"))}</h2></div>
-        <p class="hint" style="margin:0 0 0.75rem">${escapeHtml(t(state.locale, "podinfoChaosHelp"))}</p>
-        <button type="button" class="schedule-toggle" id="lab-fault-toggle"
-          aria-pressed="${fault ? "true" : "false"}"
-          aria-label="${escapeHtml(t(state.locale, "podinfoFault"))}"
-          style="margin-bottom:0.85rem">
-          <span class="toggle-copy">
-            <strong>${escapeHtml(t(state.locale, "podinfoFault"))}</strong>
-            <span>${escapeHtml(t(state.locale, fault ? "podinfoFaultOn" : "podinfoFaultOff"))}</span>
-          </span>
-          <span class="toggle-switch" aria-hidden="true"></span>
-        </button>
-        <div class="podinfo-chaos-grid">
-          <label class="field">${escapeHtml(t(state.locale, "podinfoDelay"))}
-            <input id="lab-delay-sec" type="number" min="0" max="30" step="0.5" value="2" />
-          </label>
-          <label class="field">${escapeHtml(t(state.locale, "podinfoStatusCode"))}
-            <input id="lab-status-code" type="number" min="100" max="599" value="418" />
-          </label>
-          <div style="display:flex;gap:0.45rem;flex-wrap:wrap">
-            <button type="button" class="btn" id="lab-delay-btn">${escapeHtml(t(state.locale, "podinfoDelayTest"))}</button>
-            <button type="button" class="btn" id="lab-status-btn">${escapeHtml(t(state.locale, "podinfoStatusTest"))}</button>
+    <section aria-label="${escapeHtml(t(state.locale, "navPodinfo"))}" id="page-podinfo">
+      <p class="hint" style="margin:0">${escapeHtml(t(state.locale, "podinfoIntro"))}</p>
+      <div class="podinfo-layout">
+        <div class="podinfo-hero" aria-label="${escapeHtml(t(state.locale, "podinfoStatusAria"))}">
+          <div class="podinfo-tile ok">
+            <span class="tile-label">${escapeHtml(t(state.locale, "podinfoHealth"))}</span>
+            <span class="tile-value"><i class="pulse-dot" aria-hidden="true"></i><span>${escapeHtml(lab.health || "ok")}</span></span>
+            <span class="tile-hint">Liveness <code>/healthz</code></span>
+          </div>
+          <div class="podinfo-tile ${ready ? "ok" : "warn"}">
+            <span class="tile-label">${escapeHtml(t(state.locale, "podinfoReady"))}</span>
+            <span class="tile-value"><i class="pulse-dot" aria-hidden="true"></i><span>${escapeHtml(ready ? t(state.locale, "podinfoReady") : t(state.locale, "podinfoNotReady"))}</span></span>
+            <span class="tile-hint">${escapeHtml(t(state.locale, ready ? "podinfoReadyOn" : "podinfoReadyOff"))}</span>
+          </div>
+          <div class="podinfo-tile ${fault ? "bad" : "idle"}">
+            <span class="tile-label">${escapeHtml(t(state.locale, "podinfoFault"))}</span>
+            <span class="tile-value"><i class="pulse-dot" aria-hidden="true"></i><span>${escapeHtml(fault ? t(state.locale, "podinfoFaultOnShort") : t(state.locale, "podinfoFaultOffShort"))}</span></span>
+            <span class="tile-hint">${escapeHtml(t(state.locale, fault ? "podinfoFaultOn" : "podinfoFaultOff"))}</span>
           </div>
         </div>
-        <p class="hint" id="lab-chaos-out" style="margin:0.65rem 0 0" aria-live="polite">${escapeHtml(state.labChaosOut || "")}</p>
-      </article>
+        <article class="card podinfo-runtime">
+          <div class="card-head"><h2>${escapeHtml(t(state.locale, "podinfoRuntime"))}</h2></div>
+          <div class="card-body">
+            <div class="podinfo-section">
+              <p class="podinfo-section-label">${escapeHtml(t(state.locale, "podinfoIdentity"))}</p>
+              <div class="runtime-grid">
+                <button type="button" class="podinfo-stat" data-copy-value="${escapeHtml(version)}" title="${escapeHtml(t(state.locale, "copy"))}">
+                  <span class="ps-label">${escapeHtml(t(state.locale, "version"))}</span>
+                  <span class="ps-value">${escapeHtml(version)}</span>
+                </button>
+                <button type="button" class="podinfo-stat" data-copy-value="${escapeHtml(commit)}" title="${escapeHtml(t(state.locale, "copy"))}">
+                  <span class="ps-label">${escapeHtml(t(state.locale, "podinfoCommit"))}</span>
+                  <span class="ps-value">${escapeHtml(commit)}</span>
+                </button>
+                <button type="button" class="podinfo-stat build" data-copy-value="${escapeHtml(build)}" title="${escapeHtml(t(state.locale, "copy"))}">
+                  <span class="ps-label">${escapeHtml(t(state.locale, "podinfoBuild"))}</span>
+                  <span class="ps-value">${escapeHtml(build)}</span>
+                </button>
+              </div>
+            </div>
+            <div class="podinfo-section">
+              <p class="podinfo-section-label">${escapeHtml(t(state.locale, "podinfoEndpoints"))}</p>
+              <div class="endpoint-row" role="group" aria-label="${escapeHtml(t(state.locale, "podinfoEndpoints"))}">
+                <button type="button" class="endpoint-chip" data-endpoint="/healthz">/healthz</button>
+                <button type="button" class="endpoint-chip" data-endpoint="/readyz">/readyz</button>
+                <button type="button" class="endpoint-chip" data-endpoint="/metrics">/metrics</button>
+                <button type="button" class="endpoint-chip" data-endpoint="/version">/version</button>
+              </div>
+              <p class="copy-toast" id="endpointToast" aria-live="polite"></p>
+            </div>
+          </div>
+        </article>
+        <article class="card podinfo-controls">
+          <div class="card-head"><h2>${escapeHtml(t(state.locale, "podinfoControls"))}</h2></div>
+          <div class="card-body">
+            <div class="podinfo-section">
+              <p class="podinfo-section-label">${escapeHtml(t(state.locale, "podinfoTrafficFault"))}</p>
+              <button type="button" class="schedule-toggle" id="lab-ready-toggle"
+                aria-pressed="${ready ? "true" : "false"}"
+                aria-label="${escapeHtml(t(state.locale, "podinfoReadiness"))}">
+                <span class="toggle-copy">
+                  <strong>${escapeHtml(t(state.locale, "podinfoReady"))}</strong>
+                  <span>${escapeHtml(t(state.locale, ready ? "podinfoReadyOn" : "podinfoReadyOff"))}</span>
+                </span>
+                <span class="toggle-switch" aria-hidden="true"></span>
+              </button>
+              <button type="button" class="schedule-toggle" id="lab-fault-toggle"
+                aria-pressed="${fault ? "true" : "false"}"
+                aria-label="${escapeHtml(t(state.locale, "podinfoFault"))}">
+                <span class="toggle-copy">
+                  <strong>${escapeHtml(t(state.locale, "podinfoFault"))}</strong>
+                  <span>${escapeHtml(t(state.locale, fault ? "podinfoFaultOn" : "podinfoFaultOff"))}</span>
+                </span>
+                <span class="toggle-switch" aria-hidden="true"></span>
+              </button>
+            </div>
+            <div class="podinfo-section">
+              <p class="podinfo-section-label">${escapeHtml(t(state.locale, "podinfoProbeTools"))}</p>
+              <div class="podinfo-chaos-grid">
+                <label class="field">${escapeHtml(t(state.locale, "podinfoDelay"))}
+                  <input id="lab-delay-sec" type="number" min="0" max="30" step="0.5" value="2" />
+                </label>
+                <label class="field">${escapeHtml(t(state.locale, "podinfoStatusCode"))}
+                  <input id="lab-status-code" type="number" min="100" max="599" value="418" />
+                </label>
+                <div style="display:flex;gap:0.45rem;flex-wrap:wrap">
+                  <button type="button" class="btn" id="lab-delay-btn">${escapeHtml(t(state.locale, "podinfoDelayTest"))}</button>
+                  <button type="button" class="btn" id="lab-status-btn">${escapeHtml(t(state.locale, "podinfoStatusTest"))}</button>
+                </div>
+              </div>
+              <p class="hint" id="lab-chaos-out" style="margin:0.65rem 0 0" aria-live="polite">${escapeHtml(state.labChaosOut || "")}</p>
+            </div>
+          </div>
+        </article>
+        <details class="metrics-panel" id="metricsPanel" ${state.labMetricsOpen ? "open" : ""}>
+          <summary>
+            <span>${escapeHtml(t(state.locale, "podinfoMetrics"))}</span>
+            <span class="mp-meta">GET /metrics · ${cards.length || 0}</span>
+            <svg class="mp-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+          </summary>
+          <div class="metrics-body">
+            <div class="metrics-cards" aria-label="${escapeHtml(t(state.locale, "podinfoMetrics"))}">${metricsCards}</div>
+            <details class="metrics-raw">
+              <summary>
+                <span>${escapeHtml(t(state.locale, "podinfoMetricsRaw"))}</span>
+                <a class="ghost-btn" href="/metrics" target="_blank" rel="noopener" onclick="event.stopPropagation()">${escapeHtml(t(state.locale, "podinfoMetricsOpen"))}</a>
+              </summary>
+              <pre class="log-box podinfo-metrics-sample" aria-label="${escapeHtml(t(state.locale, "podinfoMetrics"))}">${escapeHtml(state.labMetricsSample || t(state.locale, "loading"))}</pre>
+            </details>
+          </div>
+        </details>
+      </div>
     </section>`;
 }
 
@@ -1988,6 +2234,33 @@ function bindPodinfo(root) {
     }
     render();
   });
+  root.querySelector("#metricsPanel")?.addEventListener("toggle", (e) => {
+    state.labMetricsOpen = e.currentTarget.open;
+  });
+  const toast = root.querySelector("#endpointToast");
+  const copyVal = async (value, el) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      if (toast) toast.textContent = t(state.locale, "copied", { value });
+      el?.classList.add("copied");
+      setTimeout(() => el?.classList.remove("copied"), 900);
+    } catch {
+      if (toast) toast.textContent = t(state.locale, "haCopyFailed");
+    }
+    if (toast) setTimeout(() => { if (toast.isConnected) toast.textContent = ""; }, 1800);
+  };
+  root.querySelectorAll("[data-copy-value]").forEach((el) => {
+    el.addEventListener("click", () => copyVal(el.getAttribute("data-copy-value") || "", el));
+  });
+  root.querySelectorAll(".endpoint-chip").forEach((btn) => {
+    btn.addEventListener("click", () => copyVal(btn.dataset.endpoint || btn.textContent.trim(), btn));
+  });
+  const pod = root.querySelector("#page-podinfo");
+  if (pod && !reduceMotion) {
+    pod.classList.remove("podinfo-enter");
+    void pod.offsetWidth;
+    pod.classList.add("podinfo-enter");
+  }
 }
 
 /* ───────────────────────── render ───────────────────────── */
@@ -2098,12 +2371,29 @@ function renderApp() {
 
   root.querySelector("#log-pause")?.addEventListener("click", () => {
     state.logPaused = !state.logPaused;
-    render();
+    paintLogLines();
+    const pauseBtn = root.querySelector("#log-pause");
+    if (pauseBtn) pauseBtn.textContent = t(state.locale, state.logPaused ? "resume" : "pause");
+    const stream = root.querySelector("#logStreamLabel");
+    if (stream) stream.textContent = t(state.locale, state.logPaused ? "logPaused" : "logLive");
   });
   root.querySelector("#log-clear")?.addEventListener("click", async () => {
     await api("/api/v1/logs", { method: "DELETE" });
-    const body = document.getElementById("log-body");
-    if (body) body.textContent = "";
+    state.logItems = [];
+    paintLogLines();
+  });
+  root.querySelector("#logSearch")?.addEventListener("input", (e) => {
+    state.logQuery = e.target.value || "";
+    paintLogLines();
+  });
+  root.querySelector(".log-level-filters")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-level]");
+    if (!btn) return;
+    state.logLevelFilter = btn.dataset.level || "ALL";
+    root.querySelectorAll(".log-level-filters button").forEach((b) => {
+      b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+    });
+    paintLogLines();
   });
 
   if (page === "logs") refreshLogBody();
@@ -2182,17 +2472,66 @@ async function refreshRestore() {
   }
 }
 
+function highlightLogMsg(msg, query) {
+  const safe = escapeHtml(msg);
+  const q = String(query || "").trim();
+  if (!q) return safe;
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return safe.replace(new RegExp(escaped, "gi"), (m) => `<mark>${m}</mark>`);
+}
+
+function paintLogLines() {
+  const body = document.getElementById("log-body");
+  const empty = document.getElementById("logEmpty");
+  const count = document.getElementById("logCountLabel");
+  if (!body) return;
+  const q = (state.logQuery || "").trim().toLowerCase();
+  const items = state.logItems || [];
+  let visible = 0;
+  body.innerHTML = items
+    .map((e) => {
+      const level = String(e.level || "INFO").toUpperCase();
+      const time = new Date((e.ts || 0) * 1000).toLocaleTimeString(loc(), {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+      const msg = String(e.message || "");
+      const hay = `${time} ${level} ${msg}`.toLowerCase();
+      const show =
+        (state.logLevelFilter === "ALL" || level === state.logLevelFilter) &&
+        (!q || hay.includes(q));
+      if (show) visible += 1;
+      return `<div class="log-line level-${escapeHtml(level)}" data-level="${escapeHtml(level)}" ${show ? "" : "hidden"}>
+        <span class="log-time">${escapeHtml(time)}</span>
+        <span class="log-level">${escapeHtml(level)}</span>
+        <span class="log-msg">${highlightLogMsg(msg, q)}</span>
+      </div>`;
+    })
+    .join("");
+  body.classList.toggle("is-paused", state.logPaused);
+  if (count) {
+    count.innerHTML =
+      q || state.logLevelFilter !== "ALL"
+        ? `<strong>${visible}</strong> ${escapeHtml(t(state.locale, "logCountOf", { total: items.length }))}`
+        : `<strong>${items.length}</strong> ${escapeHtml(t(state.locale, "logCount"))}`;
+  }
+  empty?.classList.toggle("show", visible === 0);
+  if (!state.logPaused && !q && state.logLevelFilter === "ALL") {
+    body.scrollTop = body.scrollHeight;
+  }
+}
+
 async function refreshLogBody() {
-  if (!perms().logs || state.logPaused) return;
+  if (!perms().logs) return;
+  if (state.logPaused && state.logItems.length) {
+    paintLogLines();
+    return;
+  }
   try {
     const data = await api("/api/v1/logs?limit=200");
-    const body = document.getElementById("log-body");
-    if (body && data?.items) {
-      body.textContent = data.items
-        .map((e) => `[${new Date(e.ts * 1000).toLocaleTimeString()}] ${e.level} ${e.message}`)
-        .join("\n");
-      body.scrollTop = body.scrollHeight;
-    }
+    if (data?.items) state.logItems = data.items;
+    paintLogLines();
   } catch {
     /* ignore */
   }

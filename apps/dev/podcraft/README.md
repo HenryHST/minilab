@@ -4,7 +4,7 @@ k3s workload control plane for minilab (Classic sidebar SPA) + Vaultwarden resto
 
 - Lab image (SoT): `git.stadthagen.dev/dev/podcraft:<semver>`
 - Forgejo repo: https://git.stadthagen.dev/dev/podcraft (`.forgejo/workflows/image.yml`)
-- SemVer: file [`VERSION`](VERSION) (current **0.4.0**)
+- SemVer: file [`VERSION`](VERSION) (current **0.4.3**)
 - Runtime host: `https://podcraft.stadthagen.dev`
 - OpenAPI: `/openapi.json`, Swagger `/docs`
 - Auth: native Authentik OIDC (Termix-style) — **not** Gateway ExternalAuth; see `EXTERNALAUTH.md`
@@ -18,7 +18,10 @@ App sources + Dockerfile: Forgejo `dev/podcraft` (sync from this tree). K8s mani
 - Scale registered Deployments via OpenAPI / Dashboard
 - Day/Night scheduler (default 06:30–23:45 `Europe/Berlin`)
 - Sidebar SPA: Dashboard, Schedule, Vaultwarden Restore, Settings, Logs, **Podinfo** (group-filtered)
-- Podinfo lab page (`/podinfo`, `podcraft_admins`): runtime `/version`, readiness drain `/readyz`, Prometheus `/metrics`, fault injection / delay / status
+- Podinfo lab page (`/podinfo`, `podcraft_admins`): status tiles, runtime/endpoints, readiness drain, parsed Metrics sample, fault/delay/status
+- Logs: search + level filter (INFO/WARN/DEBUG/ERROR), pause/clear
+- Settings: Profil / HA / Anzeige / Session tabs
+- Restore: archive text filter, review strip, backup size as KB/MB
 - Auth: native OIDC (`/auth/start` → callback → session cookie); HTTP Basic for HA workloads only (`PODCRAFT_AUTH_MODE=both`)
 - Groups: `podcraft_admins` (full); `vaultwarden_admins` (restore + settings)
 - Restore: `GET/POST /api/v1/restore/*` — Jobs remain in NS `vaultwarden`

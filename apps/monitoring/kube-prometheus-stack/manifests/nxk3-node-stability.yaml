@@ -211,3 +211,50 @@ spec:
               Broker uses emptyDir (no Longhorn PVC). If Terminating PVC / Completed pod
               still blocks: cleanup-zombie-pods.yaml -e apply_cleanup=true.
               Runbook: Infra_LAB node-stability.md; BookStack Paperless Redis→Valkey appendix.
+    - name: nxk3.kube-vip
+      rules:
+        - alert: NXk3KubeVipDaemonSetNotReady
+          expr: |
+            (
+              kube_daemonset_status_desired_number_scheduled{
+                namespace="kube-system",
+                daemonset="kube-vip"
+              }
+              -
+              kube_daemonset_status_number_ready{
+                namespace="kube-system",
+                daemonset="kube-vip"
+              }
+            ) > 0
+          for: 2m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: "kube-vip DaemonSet not fully Ready"
+            description: >-
+              kube-system/kube-vip Desired≠Ready for >2m. API VIP 192.168.0.40 may lose ARP
+              holder (lease plndr-cp-lock). Correlate with NXk3ControlPlaneQuorumRisk (etcd).
+              Bypass: kubectl --server=https://<cp-ip>:6443 --insecure-skip-tls-verify=true
+              get --raw=/readyz. Runbook: node-stability.md · BookStack Kap. 31/32.
+        - alert: NXk3ControlPlaneQuorumRisk
+          expr: |
+            count(
+              (kube_node_status_condition{condition="Ready",status="true"} == 1)
+                * on(node) group_left()
+              (kube_node_role{role="control-plane"} == 1)
+            ) < 2
+          for: 5m
+          labels:
+            severity: critical
+            source: prometheus
+          annotations:
+            summary: "Fewer than 2 Ready control-plane nodes"
+            description: >-
+              Only {{ $value }} control-plane node(s) Ready. etcd HA needs majority.
+              Symptom often includes API-VIP 192.168.0.40 timeouts (kube-vip cannot renew
+              lease plndr-cp-lock while apiserver is not ready). Bypass:
+              kubectl --server=https://<cp-ip>:6443 --insecure-skip-tls-verify=true get --raw=/readyz
+              Check: kubectl get nodes -l node-role.kubernetes.io/control-plane;
+              ansible docs/node-stability.md / etcd-disaster-recovery;
+              BookStack k3s Kap. 31/32.

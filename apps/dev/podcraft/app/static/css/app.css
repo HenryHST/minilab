@@ -43,7 +43,8 @@
   --touch: 44px;
   --radius: 12px;
   --sidebar: 72px;
-  --sidebar-expanded: 220px;
+  /* 220px clipped "Vaultwarden Restore" (16px Inter); mockup uses 248 — 256 leaves margin */
+  --sidebar-expanded: 256px;
   --font: "Inter", system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, monospace;
 }
@@ -111,7 +112,7 @@ button { cursor: pointer; }
 }
 .nav button svg { width: 22px; height: 22px; flex: 0 0 auto; }
 .nav button.active { border-color: var(--accent); background: var(--accent-soft); }
-.nav button .label { white-space: nowrap; }
+.nav button .label { white-space: nowrap; flex-shrink: 0; }
 .app:not(.sidebar-expanded) .nav button .label,
 .app:not(.sidebar-expanded) .logout-btn .label,
 .app:not(.sidebar-expanded) .collapse-btn .label { display: none; }

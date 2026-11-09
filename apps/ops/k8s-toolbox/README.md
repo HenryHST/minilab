@@ -36,7 +36,7 @@ Sources: Forgejo repo is the publish SoT; this tree under `apps/ops/k8s-toolbox/
 |-----|-----------|
 | **full** | Authentik/BookStack/Paperless/… backup+restore, docs-import, audiobookshelf oidc/email, forgejo-backup, gatus restore, gotenberg-tika-smoke |
 | **slim** | registry GC, bookstack theme-sync + copy-shelf-permissions, paperless inbox/mail kubectl wrappers, kubeconfig-user |
-| **exception** | Longhorn IM-CPU / Pi-nosched enforcers stay on public `rancher/kubectl` (no Forgejo pull during storage incidents) |
+| **exception** | Longhorn IM-CPU / Pi-nosched enforcers stay on public `rancher/shell` (sh+kubectl; `rancher/kubectl` is distroless / no `/bin/sh`; no Forgejo pull during storage incidents) |
 
 Pull Secret: `registry-pull` for `git.stadthagen.dev` / `registry.stadthagen.dev`.
 

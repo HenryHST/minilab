@@ -97,9 +97,9 @@ spec:
             worker: "true"
           containers:
             - name: enforce
-              # Exception: public rancher/kubectl — no Forgejo pull during storage incidents
-              # (k8s-toolbox slim would also work when registry is healthy; keep public here).
-              image: rancher/kubectl:v1.32.3
+              # Exception: public Rancher image — no Forgejo pull during storage incidents.
+              # rancher/kubectl is distroless (no /bin/sh); rancher/shell has sh+kubectl.
+              image: rancher/shell:v0.2.2
               imagePullPolicy: IfNotPresent
               command: ["/bin/sh", "/scripts/enforce.sh"]
               env:
@@ -151,8 +151,8 @@ spec:
         worker: "true"
       containers:
         - name: enforce
-          # Exception: public rancher/kubectl (same as CronJob above).
-          image: rancher/kubectl:v1.32.3
+          # Exception: public rancher/shell (same as CronJob above).
+          image: rancher/shell:v0.2.2
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "/scripts/enforce.sh"]
           env:

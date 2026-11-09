@@ -34,7 +34,15 @@ RUN groupadd --gid 10001 app \
   && chown -R app:app /app /tmp /config
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# zlib1g: CVE-2026-27171 / CVE-2026-76844 / CVE-2026-85091 (Debian trixie → +deb13u1)
+# setuptools: pin+purge so base-image leftovers (CVE-2025-47273 / CVE-2026-59890 / GHSA-xmj3) cannot linger
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends --only-upgrade zlib1g \
+  && rm -rf /var/lib/apt/lists/* \
+  && pip install --no-cache-dir -U "pip" "setuptools>=84.1.0" \
+  && pip install --no-cache-dir -r requirements.txt \
+  && pip uninstall -y setuptools \
+  && python3 -c 'import importlib.metadata as m; v=tuple(int(x) for x in m.version("urllib3").split(".")[:3]); assert v>=(2,8,0), v'
 
 COPY --chown=app:app VERSION .
 COPY --chown=app:app app/ app/

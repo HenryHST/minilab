@@ -6,3 +6,5 @@ python-multipart==0.0.33
 httpx==0.28.1
 itsdangerous==2.2.0
 prometheus-client==0.23.1
+# Security pin (Trivy 2026-11-09): kubernetes pulls urllib3; floor closes CVE-2026-97687/97688/97689
+urllib3>=2.8.0

@@ -21,4 +21,6 @@ Gesteuerte Apps (MVP): `drawio`, `it-tools` — Day/Night 06:30–23:45 Europe/B
 
 **Incident 2026-10-26** (Argo Missing / Traefik DEFAULT CERT / Registry 401 / amd64): → [Incident Missing / HA SSL](03-incident-2026-10-26-missing-ha-ssl.md).
 
+**Trivy 2026-11-09** (msgpack/setuptools/urllib3/zlib1g): → [Fix-Report](04-trivy-fix-report-2026-11-09.md) · Image-Ziel `0.4.1`.
+
 Code: minilab `apps/dev/podcraft/`. Pull-Secret: Infra_LAB `registry-pull` in NS `podcraft`.

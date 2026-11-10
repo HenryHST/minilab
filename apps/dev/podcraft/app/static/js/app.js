@@ -19,6 +19,7 @@ const PREF = {
   weeks: "podcraft.showWeekNumbers",
   selTheme: "podcraft.selTheme",
   logoAnim: "podcraft.logoAnim",
+  docs: "podcraft.showDocs",
   basic: "podcraft.basic",
 };
 
@@ -54,6 +55,7 @@ const state = {
   logoAnim: LOGO_MODES.includes(localStorage.getItem(PREF.logoAnim) || "")
     ? localStorage.getItem(PREF.logoAnim)
     : "setsail",
+  showDocs: localStorage.getItem(PREF.docs) !== "0",
   avatarUrl: localStorage.getItem(PREF.avatar) || "",
   avatarPos: loadAvatarPos(),
   me: null,
@@ -130,6 +132,7 @@ function routeAllowed(path) {
   if (path.startsWith("/settings")) return !!p.settings;
   if (path.startsWith("/logs")) return !!p.logs;
   if (path.startsWith("/podinfo")) return !!p.podinfo;
+  if (path.startsWith("/docs")) return !!p.docs && state.showDocs;
   return false;
 }
 
@@ -215,6 +218,7 @@ function navIcon(name) {
     logs: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M7 4h10v16H7z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>',
     podinfo:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3 4 7v10l8 4 8-4V7l-8-4z"/><path d="M12 12 4 7m8 5 8-5M12 12v10"/></svg>',
+    docs: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M6 4h9l3 3v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M14 4v4h4M8 12h8M8 16h8M8 8h3"/></svg>',
     logout:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H4"/><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/></svg>',
   };
@@ -566,6 +570,8 @@ function shellStart(activePage) {
     p.settings && { id: "settings", path: "/settings", label: "navSettings", icon: "settings" },
     p.logs && { id: "logs", path: "/logs", label: "navLogs", icon: "logs" },
     p.podinfo && { id: "podinfo", path: "/podinfo", label: "navPodinfo", icon: "podinfo" },
+    p.docs &&
+      state.showDocs && { id: "docs", path: "/docs", label: "navDocs", icon: "docs" },
   ].filter(Boolean);
 
   const nav = items
@@ -1612,6 +1618,7 @@ function pageSettings() {
             ${escapeHtml(t(state.locale, "permIntro"))}<br />
             ${escapeHtml(t(state.locale, "permDash"))}<br />
             ${escapeHtml(t(state.locale, "permRestore"))}<br />
+            ${escapeHtml(t(state.locale, "permDocs"))}<br />
             ${escapeHtml(t(state.locale, "permSettings"))}
           </p>
         </article>
@@ -1655,6 +1662,12 @@ function pageSettings() {
           <div class="form-grid">
             <label class="check"><input type="checkbox" id="showClock" ${state.showClock ? "checked" : ""} /> ${escapeHtml(t(state.locale, "showClock"))}</label>
             <label class="check"><input type="checkbox" id="showWeekNumbers" ${state.showWeekNumbers ? "checked" : ""} /> ${escapeHtml(t(state.locale, "showWeekNumbers"))}</label>
+            ${
+              perms().docs
+                ? `<label class="check"><input type="checkbox" id="showDocs" ${state.showDocs ? "checked" : ""} /> ${escapeHtml(t(state.locale, "showDocs"))}</label>
+            <p class="settings-note" style="grid-column:1/-1;margin:0">${escapeHtml(t(state.locale, "showDocsHelp"))}</p>`
+                : ""
+            }
           </div>
           <p class="settings-sub">${escapeHtml(t(state.locale, "selThemeTitle"))}</p>
           <div class="sel-theme-picker" role="radiogroup" aria-label="${escapeHtml(t(state.locale, "selThemeTitle"))}">
@@ -1882,6 +1895,16 @@ function bindSettings(root) {
     state.pendingFocus = "#showWeekNumbers";
     render();
   });
+  root.querySelector("#showDocs")?.addEventListener("change", (e) => {
+    state.showDocs = e.target.checked;
+    localStorage.setItem(PREF.docs, state.showDocs ? "1" : "0");
+    state.pendingFocus = "#showDocs";
+    if (!state.showDocs && activePageId() === "docs") {
+      navigate(firstAllowedRoute());
+      return;
+    }
+    render();
+  });
   root.querySelectorAll('input[name="selTheme"]').forEach((inp) => {
     inp.addEventListener("change", () => {
       if (!inp.checked) return;
@@ -1962,6 +1985,59 @@ function pageLogs() {
         </div>
         <div class="log-box ${state.logPaused ? "is-paused" : ""}" id="log-body" role="log" tabindex="0"></div>
         <div class="log-empty" id="logEmpty" role="status">${escapeHtml(t(state.locale, "logEmptyFilter"))}</div>
+      </article>
+    </section>`;
+}
+
+/* ───────────────────────── docs (in-app help) ───────────────────────── */
+
+function docsList(keys) {
+  return `<ul class="docs-list">${keys.map((k) => `<li>${t(state.locale, k)}</li>`).join("")}</ul>`;
+}
+
+function pageDocs() {
+  return `
+    <section class="page" id="page-docs" aria-label="${escapeHtml(t(state.locale, "navDocs"))}">
+      <p class="page-note">${escapeHtml(t(state.locale, "docsNote"))}</p>
+      <nav class="docs-toc" aria-label="${escapeHtml(t(state.locale, "docsTocAria"))}">
+        <a href="#docs-dashboard">${escapeHtml(t(state.locale, "docsTocDashboard"))}</a>
+        <a href="#docs-restore">${escapeHtml(t(state.locale, "docsTocRestore"))}</a>
+        <a href="#docs-podinfo">${escapeHtml(t(state.locale, "docsTocPodinfo"))}</a>
+      </nav>
+      <article class="card docs-card" id="docs-dashboard">
+        <div class="card-head"><h2>${escapeHtml(t(state.locale, "docsDashTitle"))}</h2></div>
+        <p class="docs-lead">${escapeHtml(t(state.locale, "docsDashLead"))}</p>
+        <h3 class="docs-sub">${escapeHtml(t(state.locale, "docsDashSee"))}</h3>
+        ${docsList(["docsDashSee1", "docsDashSee2", "docsDashSee3"])}
+        <h3 class="docs-sub">${escapeHtml(t(state.locale, "docsDashActions"))}</h3>
+        ${docsList(["docsDashAct1", "docsDashAct2", "docsDashAct3"])}
+        <h3 class="docs-sub">${escapeHtml(t(state.locale, "docsPerm"))}</h3>
+        ${docsList(["docsDashPerm1"])}
+        <p class="docs-callout">${t(state.locale, "docsDashTip")}</p>
+      </article>
+      <article class="card docs-card" id="docs-restore">
+        <div class="card-head"><h2>${escapeHtml(t(state.locale, "docsRestoreTitle"))}</h2></div>
+        <p class="docs-lead">${escapeHtml(t(state.locale, "docsRestoreLead"))}</p>
+        <h3 class="docs-sub">${escapeHtml(t(state.locale, "docsRestorePick"))}</h3>
+        ${docsList(["docsRestorePick1", "docsRestorePick2", "docsRestorePick3", "docsRestorePick4"])}
+        <h3 class="docs-sub">${escapeHtml(t(state.locale, "docsRestoreRun"))}</h3>
+        ${docsList(["docsRestoreRun1", "docsRestoreRun2", "docsRestoreRun3", "docsRestoreRun4"])}
+        <h3 class="docs-sub">${t(state.locale, "docsRestoreTarget")}</h3>
+        ${docsList(["docsRestoreTarget1", "docsRestoreTarget2"])}
+        <p class="docs-callout warn">${t(state.locale, "docsRestoreWarn")}</p>
+      </article>
+      <article class="card docs-card" id="docs-podinfo">
+        <div class="card-head"><h2>${escapeHtml(t(state.locale, "docsPodinfoTitle"))}</h2></div>
+        <p class="docs-lead">${escapeHtml(t(state.locale, "docsPodinfoLead"))}</p>
+        <h3 class="docs-sub">${t(state.locale, "docsPodinfoRuntime")}</h3>
+        ${docsList(["docsPodinfoRuntime1", "docsPodinfoRuntime2", "docsPodinfoRuntime3"])}
+        <h3 class="docs-sub">${escapeHtml(t(state.locale, "docsPodinfoReady"))}</h3>
+        ${docsList(["docsPodinfoReady1", "docsPodinfoReady2", "docsPodinfoReady3"])}
+        <h3 class="docs-sub">${t(state.locale, "docsPodinfoChaos")}</h3>
+        ${docsList(["docsPodinfoChaos1", "docsPodinfoChaos2", "docsPodinfoChaos3"])}
+        <h3 class="docs-sub">${escapeHtml(t(state.locale, "docsPerm"))}</h3>
+        ${docsList(["docsPodinfoPerm1"])}
+        <p class="docs-callout">${t(state.locale, "docsPodinfoTip")}</p>
       </article>
     </section>`;
 }
@@ -2272,6 +2348,7 @@ function activePageId() {
   if (path.startsWith("/settings")) return "settings";
   if (path.startsWith("/logs")) return "logs";
   if (path.startsWith("/podinfo")) return "podinfo";
+  if (path.startsWith("/docs")) return "docs";
   return "dashboard";
 }
 
@@ -2306,6 +2383,7 @@ function renderApp() {
   else if (page === "settings") body = pageSettings();
   else if (page === "logs") body = pageLogs();
   else if (page === "podinfo") body = pagePodinfo();
+  else if (page === "docs") body = pageDocs();
 
   hideTooltip();
   const root = document.getElementById("app");

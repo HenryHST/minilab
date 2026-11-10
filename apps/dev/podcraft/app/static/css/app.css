@@ -40,6 +40,7 @@
   --ok: #34d399;
   --warn: #fbbf24;
   --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.12);
   --touch: 44px;
   --radius: 12px;
   --sidebar: 72px;
@@ -58,6 +59,7 @@ html[data-theme="light"] {
   --text: #0f172a;
   --muted: #64748b;
   --accent-soft: rgba(37, 99, 235, 0.12);
+  --danger-soft: rgba(220, 38, 38, 0.1);
 }
 
 * { box-sizing: border-box; }
@@ -629,7 +631,47 @@ html[data-theme="light"] #tooltip { background: #0f172a; }
   .brand-logo-scene { box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent); }
 }
 
-/* —— Mockup parity 0.4.3: Podinfo / Logs / Settings —— */
+/* —— Mockup parity 0.4.4: Podinfo / Logs / Settings / Docs —— */
+.page-note {
+  margin: 0 0 0.75rem; color: var(--muted); font-size: 0.88rem; line-height: 1.45;
+}
+.page-note code { font-size: 0.82rem; }
+#page-docs {
+  max-width: 42rem; width: 100%; display: flex; flex-direction: column; gap: 0.85rem;
+}
+.docs-card .docs-lead {
+  margin: 0 0 0.85rem; color: var(--muted); font-size: 0.9rem; line-height: 1.5;
+}
+.docs-card .docs-sub {
+  margin: 1rem 0 0.4rem; font-size: 0.82rem; font-weight: 600;
+  letter-spacing: 0.02em; text-transform: uppercase; color: var(--muted);
+}
+.docs-card .docs-sub:first-of-type { margin-top: 0.15rem; }
+.docs-card .docs-list {
+  margin: 0; padding-left: 1.15rem; color: var(--text);
+  font-size: 0.9rem; line-height: 1.55;
+}
+.docs-card .docs-list li + li { margin-top: 0.4rem; }
+.docs-card .docs-list code { font-size: 0.82rem; }
+.docs-card .docs-callout {
+  margin: 0.85rem 0 0; padding: 0.7rem 0.85rem; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--panel-2, var(--panel));
+  font-size: 0.85rem; color: var(--muted); line-height: 1.45;
+}
+.docs-card .docs-callout strong { color: var(--text); }
+.docs-card .docs-callout.warn {
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+  background: var(--danger-soft); color: color-mix(in srgb, var(--danger) 70%, var(--text));
+}
+.docs-card .docs-callout.warn strong { color: var(--danger); }
+.docs-toc { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.25rem; }
+.docs-toc a {
+  font-size: 0.78rem; padding: 0.35rem 0.65rem; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--panel); color: var(--muted);
+  text-decoration: none;
+}
+.docs-toc a:hover { color: var(--text); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+
 #page-podinfo { max-width: 980px; width: 100%; display: flex; flex-direction: column; gap: 0.75rem; }
 .podinfo-layout {
   display: grid;

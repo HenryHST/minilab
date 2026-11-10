@@ -38,6 +38,11 @@ def me(user: Principal = Depends(require_user)) -> MeOut:
             "podinfo": user.is_podcraft_admin(),
             "ha": user.is_podcraft_admin() and user.auth_mode != "basic",
             "restore": user.can_restore() and user.auth_mode != "basic",
+            # In-app help: podcraft_admins or vaultwarden_admins (matches mockup)
+            "docs": (
+                (user.is_podcraft_admin() or user.has_group("vaultwarden_admins"))
+                and user.auth_mode != "basic"
+            ),
             "settings": (
                 (user.is_podcraft_admin() or user.has_group("vaultwarden_admins"))
                 and user.auth_mode != "basic"

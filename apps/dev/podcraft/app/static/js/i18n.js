@@ -7,6 +7,7 @@ const STRINGS = {
     navSettings: "Settings",
     navLogs: "Logs",
     navPodinfo: "Podinfo",
+    navDocs: "Dokumentation",
     navExpand: "Sidebar erweitern",
     navCollapse: "Sidebar einklappen",
     menuOpen: "Menü öffnen",
@@ -171,7 +172,90 @@ const STRINGS = {
     permIntro: "Menü und Bereiche werden aus Authentik-Gruppen gesteuert (X-authentik-groups).",
     permDash: "Dashboard / Schedule / Logs / Podinfo / HA → podcraft_admins",
     permRestore: "Vaultwarden Restore → podcraft_admins oder vaultwarden_admins",
+    permDocs: "Dokumentation → podcraft_admins oder vaultwarden_admins (Sidebar-Toggle unter Anzeige)",
     permSettings: "Settings (Profil/Anzeige) → beide; HA-Block nur podcraft_admins",
+    showDocs: "Dokumentation in der Sidebar anzeigen",
+    showDocsHelp: "Schaltet den Menüpunkt „Dokumentation“ frei — Hilfen zu Dashboard, Restore und Podinfo.",
+    docsNote:
+      "Bedienhilfe für die wichtigsten Bereiche. Den Menüpunkt schaltest du unter Settings → Anzeige → Dokumentation in der Sidebar anzeigen ein oder aus.",
+    docsTocAria: "Themen",
+    docsTocDashboard: "Dashboard",
+    docsTocRestore: "Vaultwarden Restore",
+    docsTocPodinfo: "Podinfo",
+    docsDashTitle: "Dashboard",
+    docsDashLead:
+      "Zentrale Steuerung für registrierte k3s-Workloads. Hier siehst du auf einen Blick, ob das Day/Night-Fenster offen ist, wie viele Deployments laufen und ob ein Restore ansteht.",
+    docsDashSee: "Was du siehst",
+    docsDashSee1:
+      "<strong>KPI-Karten</strong> — Schedule-Fenster (Anteil des Tages), Workload-Ready-Quote und Restore-Hinweis.",
+    docsDashSee2:
+      "<strong>Workloads</strong> — Liste der konfigurierten Apps (z.&nbsp;B. drawio, it-tools) mit aktuellem Replica-Stand.",
+    docsDashSee3:
+      "Die Ringfarbe folgt der <strong>Auswahlfarbe</strong> aus Settings → Anzeige (Teal oder Blau).",
+    docsDashActions: "Typische Aktionen",
+    docsDashAct1:
+      "Workload <strong>starten / stoppen</strong> bzw. Replicas setzen — die Änderung geht als Scale an das Cluster.",
+    docsDashAct2:
+      "Prüfen, ob das <strong>Schedule</strong> (Day/Night) gerade erzwingen würde, dass Dienste nachts auf 0 stehen.",
+    docsDashAct3: "Bei Unklarheiten zuerst Schedule und Logs prüfen, bevor du manuell skalierst.",
+    docsPerm: "Berechtigung",
+    docsDashPerm1: "Nur Gruppe <code>podcraft_admins</code>. Andere Rollen sehen den Menüpunkt nicht.",
+    docsDashTip:
+      "<strong>Tipp:</strong> Headline-Uhr und Theme stellst du unter Settings → Anzeige ein — das betrifft auch die KPI-Optik.",
+    docsRestoreTitle: "Vaultwarden Restore",
+    docsRestoreLead:
+      "Stellt ein NFS-Backup der Vaultwarden-Datenbank wieder her. Der Flow ist bewusst zweistufig (Auswahl → Review → Bestätigung), damit versehentliche Restores seltener passieren.",
+    docsRestorePick: "Archiv wählen",
+    docsRestorePick1:
+      "In der <strong>Archivliste</strong> ein Radio wählen oder nach Name/Datum <strong>filtern</strong>.",
+    docsRestorePick2:
+      "Im <strong>Backup-Kalender</strong> markieren orange Punkte Tage mit Backup; Klick wählt das Archiv des Tages.",
+    docsRestorePick3: "Kalenderwochen und Auswahlfarbe steuerst du unter Settings → Anzeige.",
+    docsRestorePick4:
+      "Die Detailkarte unter dem Kalender zeigt Größe und Zeitstempel; <strong>Übernehmen</strong> scrollt zur Bestätigung.",
+    docsRestoreRun: "Prüfen und starten",
+    docsRestoreRun1:
+      "Die <strong>Review-Leiste</strong> muss das gewünschte Archiv zeigen (Name + Meta).",
+    docsRestoreRun2:
+      "Optional <strong>Force overwrite</strong> — löscht die vorhandene DB vor dem Einspielen (destruktiv).",
+    docsRestoreRun3:
+      "Zur Bestätigung exakt <code>RESTORE</code> tippen; erst dann wird <strong>Restore starten</strong> aktiv.",
+    docsRestoreRun4:
+      "Unter <strong>Recent jobs</strong> siehst du Erfolg/Lauf; parallele Restores bleiben blockiert, solange einer aktiv ist.",
+    docsRestoreTarget: "Berechtigung &amp; Ziel",
+    docsRestoreTarget1: "Gruppen: <code>podcraft_admins</code> oder <code>vaultwarden_admins</code>.",
+    docsRestoreTarget2:
+      "Jobs laufen im Namespace <code>vaultwarden</code>; Archive kommen vom gemounteten NFS-Backup-Pfad.",
+    docsRestoreWarn:
+      "<strong>Achtung:</strong> Ein Restore überschreibt Produktivdaten der Vaultwarden-Instanz. Force overwrite ist irreversibel für die aktuelle DB — vorher Zielarchiv und Zeitpunkt doppelt prüfen.",
+    docsPodinfoTitle: "Podinfo",
+    docsPodinfoLead:
+      "Lab-/Observability-Seite der Podcraft-Instanz selbst: Version, Readiness-Drain, Metrics-Hinweis und kontrollierte Chaos-Tests. Nicht für Vaultwarden-Inhalte — nur für die Control-Plane-App.",
+    docsPodinfoRuntime: "Runtime &amp; Status",
+    docsPodinfoRuntime1:
+      "Der <strong>Status-Strip</strong> oben zeigt Health, Ready und Fault auf einen Blick.",
+    docsPodinfoRuntime2:
+      "<strong>Version / Commit / Build</strong> — Klick auf Version oder Commit kopiert den Wert.",
+    docsPodinfoRuntime3:
+      "<strong>Endpoint-Chips</strong> (<code>/healthz</code>, <code>/readyz</code>, <code>/metrics</code>, <code>/version</code>) kopieren den Pfad für curl oder Monitoring.",
+    docsPodinfoReady: "Readiness (Drain)",
+    docsPodinfoReady1:
+      "Toggle <strong>Ready</strong>: Instanz nimmt Traffic an bzw. wird gedrain’t (LB soll keinen Traffic mehr senden).",
+    docsPodinfoReady2:
+      "<code>/readyz</code> und <code>/healthz</code> sind getrennt — Liveness kann ok bleiben, während Ready „not ready“ ist.",
+    docsPodinfoReady3:
+      "Sinnvoll vor Rolling-Updates oder gezielten Lab-Tests, ohne den Prozess hart zu killen.",
+    docsPodinfoChaos: "Metrics &amp; Chaos",
+    docsPodinfoChaos1:
+      "<strong>Metrics</strong> — Prometheus-Exposition unter <code>GET /metrics</code> (Scrape typischerweise aus dem Monitoring-Namespace).",
+    docsPodinfoChaos2:
+      "<strong>Fault injection</strong> — App-Routen antworten mit HTTP 500; Probes, Metrics und Lab-Controls bleiben bewusst gesund.",
+    docsPodinfoChaos3:
+      "<strong>Delay testen</strong> / <strong>Status testen</strong> — simulieren <code>/delay/{s}</code> und <code>/status/{code}</code>.",
+    docsPodinfoPerm1:
+      "Nur <code>podcraft_admins</code>. Vaultwarden-Admins ohne diese Gruppe sehen Podinfo nicht.",
+    docsPodinfoTip:
+      "<strong>Tipp:</strong> Fault und Drain nach dem Test wieder ausschalten, sonst wirken Folge-Checks (Health, Sync) verwirrend.",
     podinfoIntro:
       "Lab-Tools: Runtime, Readiness-Drain, Metrics und Chaos — nur podcraft_admins.",
     podinfoRuntime: "Runtime",
@@ -257,6 +341,7 @@ const STRINGS = {
     navSettings: "Settings",
     navLogs: "Logs",
     navPodinfo: "Podinfo",
+    navDocs: "Documentation",
     navExpand: "Expand sidebar",
     navCollapse: "Collapse sidebar",
     menuOpen: "Open menu",
@@ -420,7 +505,90 @@ const STRINGS = {
     permIntro: "Menu and sections are driven by Authentik groups (X-authentik-groups).",
     permDash: "Dashboard / Schedule / Logs / Podinfo / HA → podcraft_admins",
     permRestore: "Vaultwarden Restore → podcraft_admins or vaultwarden_admins",
+    permDocs: "Documentation → podcraft_admins or vaultwarden_admins (sidebar toggle under Display)",
     permSettings: "Settings (profile/display) → both; HA block podcraft_admins only",
+    showDocs: "Show Documentation in the sidebar",
+    showDocsHelp: "Enables the Documentation menu — help for Dashboard, Restore and Podinfo.",
+    docsNote:
+      "Help for the main areas. Toggle the menu under Settings → Display → Show Documentation in the sidebar.",
+    docsTocAria: "Topics",
+    docsTocDashboard: "Dashboard",
+    docsTocRestore: "Vaultwarden Restore",
+    docsTocPodinfo: "Podinfo",
+    docsDashTitle: "Dashboard",
+    docsDashLead:
+      "Central control for registered k3s workloads. See at a glance whether the day/night window is open, how many deployments are running, and if a restore is pending.",
+    docsDashSee: "What you see",
+    docsDashSee1:
+      "<strong>KPI cards</strong> — schedule window (share of day), workload ready ratio and restore hint.",
+    docsDashSee2:
+      "<strong>Workloads</strong> — configured apps (e.g. drawio, it-tools) with current replica counts.",
+    docsDashSee3:
+      "Ring colour follows the <strong>selection colour</strong> from Settings → Display (teal or blue).",
+    docsDashActions: "Typical actions",
+    docsDashAct1:
+      "<strong>Start / stop</strong> a workload or set replicas — changes scale the cluster.",
+    docsDashAct2:
+      "Check whether the <strong>schedule</strong> (day/night) would force services to 0 overnight.",
+    docsDashAct3: "When unsure, check Schedule and Logs before scaling manually.",
+    docsPerm: "Permission",
+    docsDashPerm1: "Group <code>podcraft_admins</code> only. Other roles do not see the menu item.",
+    docsDashTip:
+      "<strong>Tip:</strong> Headline clock and theme live under Settings → Display — that also affects KPI styling.",
+    docsRestoreTitle: "Vaultwarden Restore",
+    docsRestoreLead:
+      "Restores an NFS backup of the Vaultwarden database. The flow is two-step on purpose (pick → review → confirm) to reduce accidental restores.",
+    docsRestorePick: "Pick an archive",
+    docsRestorePick1:
+      "Choose a radio in the <strong>archive list</strong> or <strong>filter</strong> by name/date.",
+    docsRestorePick2:
+      "In the <strong>backup calendar</strong>, orange dots mark days with a backup; click selects that day’s archive.",
+    docsRestorePick3: "Calendar weeks and selection colour are under Settings → Display.",
+    docsRestorePick4:
+      "The detail card under the calendar shows size and timestamp; <strong>Apply</strong> scrolls to confirmation.",
+    docsRestoreRun: "Review and start",
+    docsRestoreRun1:
+      "The <strong>review bar</strong> must show the intended archive (name + meta).",
+    docsRestoreRun2:
+      "Optional <strong>Force overwrite</strong> — deletes the existing DB before restore (destructive).",
+    docsRestoreRun3:
+      "Type exactly <code>RESTORE</code> to confirm; only then is <strong>Start restore</strong> enabled.",
+    docsRestoreRun4:
+      "<strong>Recent jobs</strong> show success/running; parallel restores stay blocked while one is active.",
+    docsRestoreTarget: "Permission &amp; target",
+    docsRestoreTarget1: "Groups: <code>podcraft_admins</code> or <code>vaultwarden_admins</code>.",
+    docsRestoreTarget2:
+      "Jobs run in namespace <code>vaultwarden</code>; archives come from the mounted NFS backup path.",
+    docsRestoreWarn:
+      "<strong>Warning:</strong> A restore overwrites live Vaultwarden data. Force overwrite is irreversible for the current DB — double-check archive and timestamp.",
+    docsPodinfoTitle: "Podinfo",
+    docsPodinfoLead:
+      "Lab/observability page for the Podcraft instance itself: version, readiness drain, metrics hint and controlled chaos tests. Not for Vaultwarden content — control-plane app only.",
+    docsPodinfoRuntime: "Runtime &amp; status",
+    docsPodinfoRuntime1:
+      "The <strong>status strip</strong> shows Health, Ready and Fault at a glance.",
+    docsPodinfoRuntime2:
+      "<strong>Version / Commit / Build</strong> — click version or commit to copy.",
+    docsPodinfoRuntime3:
+      "<strong>Endpoint chips</strong> (<code>/healthz</code>, <code>/readyz</code>, <code>/metrics</code>, <code>/version</code>) copy the path for curl or monitoring.",
+    docsPodinfoReady: "Readiness (drain)",
+    docsPodinfoReady1:
+      "<strong>Ready</strong> toggle: instance accepts traffic or is drained (LB should stop sending traffic).",
+    docsPodinfoReady2:
+      "<code>/readyz</code> and <code>/healthz</code> are separate — liveness can stay ok while Ready is “not ready”.",
+    docsPodinfoReady3:
+      "Useful before rolling updates or targeted lab tests without hard-killing the process.",
+    docsPodinfoChaos: "Metrics &amp; chaos",
+    docsPodinfoChaos1:
+      "<strong>Metrics</strong> — Prometheus exposition at <code>GET /metrics</code> (typically scraped from the monitoring namespace).",
+    docsPodinfoChaos2:
+      "<strong>Fault injection</strong> — app routes return HTTP 500; probes, metrics and lab controls stay healthy on purpose.",
+    docsPodinfoChaos3:
+      "<strong>Test delay</strong> / <strong>Test status</strong> — exercise <code>/delay/{s}</code> and <code>/status/{code}</code>.",
+    docsPodinfoPerm1:
+      "<code>podcraft_admins</code> only. Vaultwarden admins without that group do not see Podinfo.",
+    docsPodinfoTip:
+      "<strong>Tip:</strong> Turn fault and drain off after testing, or follow-up checks (health, sync) look confusing.",
     podinfoIntro:
       "Lab tools: runtime, readiness drain, metrics and chaos — podcraft_admins only.",
     podinfoRuntime: "Runtime",

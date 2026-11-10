@@ -167,5 +167,6 @@ def login_page() -> FileResponse:
 @app.get("/restore/vaultwarden")
 @app.get("/logs")
 @app.get("/podinfo")
+@app.get("/docs")
 def spa_routes() -> FileResponse:
     return FileResponse(_STATIC / "index.html")

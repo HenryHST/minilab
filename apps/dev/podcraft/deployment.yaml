@@ -32,7 +32,7 @@ spec:
         - name: podcraft
           # Pin digest after CI + crane mirror — see README.md
           # semver: 0.4.3
-          image: git.stadthagen.dev/dev/podcraft:0.4.3@sha256:71f24011cbdfc624650e2b48d4d509c3c1155204f5321d3e82a28538195cd8a8
+          image: git.stadthagen.dev/dev/podcraft:0.4.3@sha256:96c53c15fdff1ddaf2af6ad1655b5605b7b8c3970a3725478304fca72990d8a8
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

@@ -15,12 +15,117 @@ prometheus:
     labels:
       release: kube-prometheus-stack
 
-# DNS01 self-check: use Hetzner recursive nameservers (controller flags, not ClusterIssuer fields).
-dns01RecursiveNameservers: "helium.ns.hetzner.de:53,oxygen.ns.hetzner.com:53"
+# DNS01 self-check via in-cluster DoT forwarder (extraObjects acme-dns below).
+# UniFi forced-DNS intercepts UDP:53 to public/Hetzner NS and can NXDOMAIN-cache ACME TXT.
+dns01RecursiveNameservers: "10.43.250.53:53"
 dns01RecursiveNameserversOnly: true
 
 # Chart extras-objects.yaml runs `tpl` on each item — must be a YAML string (block scalar), not a map.
 extraObjects:
+  - |
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: acme-dns
+      namespace: certmanager
+    data:
+      Corefile: |
+        .:53 {
+            errors
+            health
+            ready
+            forward . tls://1.1.1.1 tls://8.8.8.8 {
+              tls_servername cloudflare-dns.com
+              max_concurrent 1000
+            }
+            cache 10
+        }
+  - |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: acme-dns
+      namespace: certmanager
+      labels:
+        app: acme-dns
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: acme-dns
+      template:
+        metadata:
+          labels:
+            app: acme-dns
+        spec:
+          nodeSelector:
+            kubernetes.io/arch: amd64
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: coredns
+              image: registry.k8s.io/coredns/coredns:v1.11.3
+              args: ["-conf", "/etc/coredns/Corefile"]
+              ports:
+                - name: dns
+                  containerPort: 53
+                  protocol: UDP
+                - name: dns-tcp
+                  containerPort: 53
+                  protocol: TCP
+              readinessProbe:
+                httpGet:
+                  path: /ready
+                  port: 8181
+              livenessProbe:
+                httpGet:
+                  path: /health
+                  port: 8080
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+                  add: ["NET_BIND_SERVICE"]
+              volumeMounts:
+                - name: config
+                  mountPath: /etc/coredns
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 64Mi
+          volumes:
+            - name: config
+              configMap:
+                name: acme-dns
+  - |
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: acme-dns
+      namespace: certmanager
+    spec:
+      clusterIP: 10.43.250.53
+      selector:
+        app: acme-dns
+      ports:
+        - name: dns
+          port: 53
+          targetPort: 53
+          protocol: UDP
+        - name: dns-tcp
+          port: 53
+          targetPort: 53
+          protocol: TCP
   - |
     apiVersion: cert-manager.io/v1
     kind: ClusterIssuer

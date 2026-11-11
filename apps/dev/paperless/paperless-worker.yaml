@@ -19,8 +19,7 @@ spec:
       enableServiceLinks: false
       securityContext:
         fsGroup: 1000
-      nodeSelector:
-        kubernetes.io/hostname: nxk3-w01
+      # Must share node with web: Longhorn RWO data/media/export cannot multi-attach.
       affinity:
         podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

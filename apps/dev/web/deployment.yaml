@@ -30,7 +30,10 @@ spec:
               mountPath: /config
       containers:
         - name: web
-          image: ghcr.io/gethomepage/homepage:v2.7.0
+          # Pin linux/amd64: Talos/containerd multi-arch tag resolution caused
+          # CrashLoopBackOff with "exec format error" (same class as Hetzner webhook).
+          image: ghcr.io/gethomepage/homepage:v2.7.0@sha256:f1c9e802a0b9de6f64ef8d3e3d3aac4283f250e0a8ff5ebd170d791811431c99
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
           env:

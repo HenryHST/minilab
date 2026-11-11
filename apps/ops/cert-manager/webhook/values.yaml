@@ -26,9 +26,11 @@ image:
   repository: docker.io/hetzner/cert-manager-webhook-hetzner
   # -- Tag of the webhook image.
   # @default -- Current version
-  tag: v0.9.1 # x-releaser-pleaser-version
+  # Pin linux/amd64 digest: multi-arch tag resolution on Talos/containerd
+  # previously pulled a non-amd64 layer → CrashLoop "exec format error".
+  tag: v0.9.1@sha256:2588ea965cc487cb26e1880fb99fc976c1383f407f7ce494837226008ace7288 # x-releaser-pleaser-version
   # -- Pull policy of the webhook image.
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 # -- Override the name of the chart.
 nameOverride: ""

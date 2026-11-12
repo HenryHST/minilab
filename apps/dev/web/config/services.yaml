@@ -6,7 +6,7 @@
         description: GitOps
         widget:
           type: argocd
-          url: http://argo-cd-argocd-server.argocd.svc.cluster.local
+          url: http://argocd-server.argocd.svc.cluster.local
           key: "{{HOMEPAGE_VAR_ARGOCD_KEY}}"
           fields: ["apps", "synced", "outOfSync", "healthy"]
     - Proxmox:

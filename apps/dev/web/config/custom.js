@@ -39,6 +39,7 @@
       label: "OIDC",
       title: "Anmeldung über Authentik (OIDC)",
       kind: "oidc",
+    },
     wud: {
       label: "OIDC",
       title: "Anmeldung über Authentik (OIDC)",
@@ -49,7 +50,7 @@
       title: "Single Sign-On über Authentik",
       kind: "sso",
     },
-  },
+  };
 
   const ROBOT_POLL_MS = 10000;
   const ROBOT_ROOT_ID = "nxk3-robot-root";

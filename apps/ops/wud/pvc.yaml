@@ -1,4 +1,5 @@
 # /store — WUD LokiJS DB (containers, users, trigger state)
+# 1 replica: Talos worker root disks are tight for 3× even small volumes.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -6,6 +7,8 @@ metadata:
   namespace: wud
   labels:
     app.kubernetes.io/name: wud
+  annotations:
+    longhorn.io/number-of-replicas: "1"
 spec:
   accessModes:
     - ReadWriteOnce

@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: searxng
-          image: docker.io/searxng/searxng:2026.11.8-74418092d
+          image: docker.io/searxng/searxng:2026.11.12-de722ab1b
           ports:
             - containerPort: 8080
           env:

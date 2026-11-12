@@ -10,7 +10,7 @@ metadata:
     helm.sh/chart: unpoller-2.4.0
     app.kubernetes.io/name: unpoller
     app.kubernetes.io/instance: unpoller
-    app.kubernetes.io/version: "v5.9.3"
+    app.kubernetes.io/version: "v5.9.5"
     app.kubernetes.io/managed-by: Helm
 automountServiceAccountToken: true
 ---
@@ -23,7 +23,7 @@ metadata:
     helm.sh/chart: unpoller-2.4.0
     app.kubernetes.io/name: unpoller
     app.kubernetes.io/instance: unpoller
-    app.kubernetes.io/version: "v5.9.3"
+    app.kubernetes.io/version: "v5.9.5"
     app.kubernetes.io/managed-by: Helm
 stringData:
   up.conf: |
@@ -53,7 +53,7 @@ metadata:
     helm.sh/chart: unpoller-2.4.0
     app.kubernetes.io/name: unpoller
     app.kubernetes.io/instance: unpoller
-    app.kubernetes.io/version: "v5.9.3"
+    app.kubernetes.io/version: "v5.9.5"
     app.kubernetes.io/managed-by: Helm
 spec:
   type: ClusterIP
@@ -75,7 +75,7 @@ metadata:
     helm.sh/chart: unpoller-2.4.0
     app.kubernetes.io/name: unpoller
     app.kubernetes.io/instance: unpoller
-    app.kubernetes.io/version: "v5.9.3"
+    app.kubernetes.io/version: "v5.9.5 "
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 1
@@ -89,7 +89,7 @@ spec:
         helm.sh/chart: unpoller-2.4.0
         app.kubernetes.io/name: unpoller
         app.kubernetes.io/instance: unpoller
-        app.kubernetes.io/version: "v5.9.3"
+        app.kubernetes.io/version: "v5.9.5"
         app.kubernetes.io/managed-by: Helm
     spec:
       serviceAccountName: unpoller
@@ -99,7 +99,7 @@ spec:
         - name: unpoller
           securityContext:
             {}
-          image: "ghcr.io/unpoller/unpoller:v5.9.3"
+          image: "ghcr.io/unpoller/unpoller:v5.9.5"
           imagePullPolicy: IfNotPresent
           env:
             - name: UP_UNIFI_DEFAULT_URL

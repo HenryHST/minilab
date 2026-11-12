@@ -25,7 +25,7 @@ operator:
 trivy:
   ignoreUnfixed: true
   image:
-    tag: "0.76.0"
+    tag: "0.76.2"
 
 trivyOperator:
   # Skip API-server RBAC defaults (system:controller:*, aggregate-to-*, cluster-admin/edit/admin, …).

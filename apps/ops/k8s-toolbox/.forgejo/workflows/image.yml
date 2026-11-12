@@ -3,7 +3,8 @@
 # Runner label `docker` = DinD on w06. Actions URL: self (data.forgejo.org).
 #
 # Secrets: REGISTRY_USER / REGISTRY_TOKEN (Forgejo OCI write:package),
-#          DIST_REGISTRY_USER / DIST_REGISTRY_PASSWORD (registry.stadthagen.dev).
+#          DIST_REGISTRY_USER / DIST_REGISTRY_PASSWORD (registry.stadthagen.dev),
+#          CACHE_S3_ACCESS_KEY / CACHE_S3_SECRET_KEY (RustFS forgejo-buildcache).
 name: image
 
 on:
@@ -69,6 +70,8 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: https://data.forgejo.org/docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
 
       - name: Log in to Forgejo OCI
         uses: https://data.forgejo.org/docker/login-action@v3
@@ -87,12 +90,17 @@ jobs:
       - name: Build and push
         id: build
         uses: https://data.forgejo.org/docker/build-push-action@v6
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CACHE_S3_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CACHE_S3_SECRET_KEY }}
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
           provenance: true
           sbom: true
+          cache-from: type=s3,endpoint_url=http://192.168.0.107:9000,bucket=forgejo-buildcache,region=us-east-1,use_path_style=true,name=k8s-toolbox-${{ matrix.variant }}
+          cache-to: type=s3,endpoint_url=http://192.168.0.107:9000,bucket=forgejo-buildcache,region=us-east-1,use_path_style=true,name=k8s-toolbox-${{ matrix.variant }},mode=max
           build-args: |
             VARIANT=${{ steps.version.outputs.variant }}
             VERSION=${{ steps.version.outputs.tag }}

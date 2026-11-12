@@ -1,9 +1,11 @@
 ---
 title: Betrieb
-book_version: "1.0.0"
+book_version: "1.0.1"
 ---
 
 # Betrieb
+
+> **Buch** v1.0.1 · **Kapitel** Betrieb · Stand: 2026-11-12
 
 ## Kubernetes-Watcher
 
@@ -51,7 +53,9 @@ WUD ordnet ein Image über den Registry-Host zu. Workloads ziehen interne Images
 
 ## Speicher
 
-PVC `wud-store` (1Gi, Longhorn) unter `/store`: Container-Stand, OIDC-Benutzer, Trigger-Historie. Strategie `Recreate`, weil das Volume RWO ist. Geht das PVC verloren, baut WUD den Stand beim nächsten Scan neu auf. Bekannte Updates werden dann erneut gemeldet.
+PVC `wud-store` (1Gi, Longhorn, **1 Replica**) unter `/store`: Container-Stand, OIDC-Benutzer, Trigger-Historie. Strategie `Recreate`, weil das Volume RWO ist. Geht das PVC verloren, baut WUD den Stand beim nächsten Scan neu auf. Bekannte Updates werden dann erneut gemeldet.
+
+Bei HTTP **503** auf `wupd.stadthagen.dev` zuerst Pod Ready / PVC-Mount prüfen — oft Longhorn `faulted` unter DiskPressure, nicht fehlende Secrets. Fehleranalyse: Infra_LAB Buch, Incident 2026-11-12 (wupd Longhorn faulted).
 
 ## Update von WUD selbst
 

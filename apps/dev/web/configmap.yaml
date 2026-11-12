@@ -68,6 +68,12 @@ data:
             href: https://git.stadthagen.dev
             icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/forgejo.svg
             description: Git + OCI Registry
+        - WUD:
+            id: wud
+            href: https://wud.stadthagen.dev
+            icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/wud.svg
+            description: Updates
+
     - Tools:
         - Omni Tools:
             href: https://omni-tools.stadthagen.dev

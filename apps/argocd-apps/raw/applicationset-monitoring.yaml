@@ -33,7 +33,7 @@ spec:
             syncWave: "1"
             helmRepo: https://prometheus-community.github.io/helm-charts
             helmChart: kube-prometheus-stack
-            helmVersion: "92.17.1"
+            helmVersion: "92.22.0"
             helmReleaseName: kube-prometheus-stack
             helmValuesFile: apps/monitoring/kube-prometheus-stack/values.yaml
             extras: true

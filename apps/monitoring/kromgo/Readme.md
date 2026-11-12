@@ -27,7 +27,8 @@ Prometheus metric badges on `https://kromgo.stadthagen.dev` (Argo app `kromgo`, 
 | `root_free_min` | Min root filesystem free % (alert threshold 20 %) |
 | `longhorn_ready` | Longhorn Ready count on Proxmox disk nodes only (`worker=true`) |
 | `cilium_unavailable` | Cilium DaemonSet unavailable pods (`kube-system/cilium`) |
-| `pi1cl_ready` / `pi2cl_ready` / `pi4cl_ready` / `pi7cl_ready` | Per-Pi kube Ready (1=Ready / 0=Down) |
+| `pi1cl_ready` / `pi2cl_ready` / `pi4cl_ready` | Per-Pi kube Ready (1=Ready / 0=Down); 0 until Pis join Talos |
+| `pi7cl_ready` | Host node_exporter `up{job="pi7cl-node"}` (non-Talos RustFS host `.107:9100`) |
 
 Embedded on Gatus anonymous overview (`https://status.stadthagen.dev/uebersicht` → sections **nXk3 cluster** + **nXk3 pis**). Kromgo is LAN-only (ADR-0019). Pis are not Gatus HTTP/ICMP endpoints (ADR-0034).
 

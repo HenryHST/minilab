@@ -91,9 +91,10 @@ data:
         valueExpr: string(int(result))
         colorExpr: 'colorScale(result, [1.0], ["red", "green"])'
         icon: mdi:raspberry-pi
+      # pi7cl is not a Talos kubelet (Debian RustFS host) — use host node_exporter scrape.
       - id: pi7cl_ready
         title: pi7cl
-        query: 'max(kube_node_status_condition{node="pi7cl",condition="Ready",status="true"}) or vector(0)'
+        query: 'max(up{job="pi7cl-node",instance="192.168.0.107:9100"}) or vector(0)'
         valueExpr: string(int(result))
         colorExpr: 'colorScale(result, [1.0], ["red", "green"])'
         icon: mdi:harddisk

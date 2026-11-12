@@ -69,6 +69,15 @@ prometheus:
         static_configs:
           - targets:
               - ha02.stadthagen.dev:9100
+      # pi7cl stays non-Talos (RustFS host). No kube node-exporter DS — scrape host :9100.
+      - job_name: pi7cl-node
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - 192.168.0.107:9100
+            labels:
+              node: pi7cl
+              role: rustfs-host
       # Home Assistant entity metrics (package prometheus.yaml on ha02)
       - job_name: homeassistant
         scrape_interval: 30s

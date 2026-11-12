@@ -71,7 +71,7 @@ data:
         - WUD:
             id: wud
             href: https://wud.stadthagen.dev
-            icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/wud.svg
+            icon: https://cdn.jsdelivr.net/gh/selfhst/icons/svg/wud.svg
             description: Updates
 
     - Tools:

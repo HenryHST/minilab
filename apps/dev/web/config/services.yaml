@@ -65,10 +65,11 @@
         href: https://vw-ext.stadthagen.dev
         icon: si-bitwarden-#175DDC
         description: Password Manager
-    - Vaultwarden Restore:
-        href: https://vw-restore.stadthagen.dev
+    - Podcraft:
+        id: podcraft
+        href: https://podcraft.stadthagen.dev
         icon: si-bitwarden-#175DDC
-        description: NFS backup restore (admins)
+        description: backup restore (admins)
     - BookStack:
         href: https://book.stadthagen.dev
         icon: bookstack.png

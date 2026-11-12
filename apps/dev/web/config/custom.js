@@ -20,6 +20,11 @@
       title: "Anmeldung über Authentik (OIDC)",
       kind: "oidc",
     },
+    podcraft: {
+      label: "OIDC",
+      title: "Anmeldung über Authentik (OIDC)",
+      kind: "oidc",
+    },
     vaultwarden: {
       label: "SSO",
       title: "Single Sign-On über Authentik",

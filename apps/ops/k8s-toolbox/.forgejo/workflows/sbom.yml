@@ -88,7 +88,8 @@ jobs:
           test -s "${OUT}/k8s-toolbox-${TAG}.spdx.json"
 
       - name: Upload SBOM artifacts
-        uses: https://data.forgejo.org/actions/upload-artifact@v4
+        # v4+ needs GitHub artifact backend; Forgejo/act supports v3.
+        uses: https://data.forgejo.org/actions/upload-artifact@v3
         with:
           name: sbom-k8s-toolbox-${{ steps.version.outputs.tag }}
           path: sbom/

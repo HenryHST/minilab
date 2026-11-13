@@ -1,6 +1,6 @@
 # Grafana Loki (minilab)
 
-Monolithic Loki with filesystem storage (PVC `loki-data` on `nxk3-w01`).
+Monolithic Loki with filesystem storage (PVC `loki-data`, `nodeSelector: worker=true` — no hostname pin).
 
 ## Alerting (Ruler)
 

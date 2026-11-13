@@ -40,7 +40,7 @@ loki:
 singleBinary:
   replicas: 1
   nodeSelector:
-    kubernetes.io/hostname: nxk3-w01
+    worker: "true"
   persistence:
     enabled: false
     dataVolumeParameters:
@@ -63,7 +63,7 @@ ruler:
 gateway:
   enabled: true
   nodeSelector:
-    kubernetes.io/hostname: nxk3-w01
+    worker: "true"
 
 lokiCanary:
   enabled: false

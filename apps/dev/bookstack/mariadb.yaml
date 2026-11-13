@@ -32,9 +32,9 @@ spec:
       labels:
         app: bookstack-mariadb
     spec:
-      # Pin to one worker — hostPath data lives on this node (Talos rename: nxk3-w01 → talos-w01)
+      # hostPath data — pin via sticky label (set on the data node; see Infra_LAB worker-labels)
       nodeSelector:
-        kubernetes.io/hostname: talos-w01
+        minilab.hst/bookstack-mariadb: "true"
       # Public Docker Hub until gosu rebuild is published to Forgejo (dev/mariadb).
       # Old registry.stadthagen.dev ref broke after Distribution cutover (pull secret = git only).
       securityContext:

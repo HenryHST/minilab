@@ -15,7 +15,7 @@ Wiki / Wissensdatenbank:
 |------------|---------|
 | Chart | [gabe565/bookstack](https://charts.gabe565.com/charts/bookstack/) (vendored) → committed `helm-manifest.yaml` |
 | Image | `lscr.io/linuxserver/bookstack:version-v26.05.5` |
-| DB | MariaDB 11.8 (`mariadb.yaml`, hostPath `/var/lib/bookstack-mariadb` @ `talos-w01`) |
+| DB | MariaDB 11.8 (`mariadb.yaml`, hostPath `/var/lib/bookstack-mariadb`; sticky `minilab.hst/bookstack-mariadb=true`) |
 | Auth | Authentik OIDC (`AUTH_METHOD=oidc`, `AUTH_AUTO_INITIATE=false`) |
 | Theme | `APP_THEME=custom` — Modules/Fonts via Argo PostSync Job |
 | PDF | `EXPORT_PAGE_SIZE=a4`, dompdf + Noto Sans; FPM `memory_limit=512M` + `max_execution_time=300` via `www2.conf`; font dir `abc`-writable |

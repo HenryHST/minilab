@@ -19,8 +19,9 @@ strategy:
 podLabels:
   app: vaultwarden
 
+# RWO Longhorn PVC — CSI attach pins the node; avoid hostname (breaks on rename).
 nodeSelector:
-  kubernetes.io/hostname: nxk3-w02
+  worker: "true"
 
 resources:
   requests:

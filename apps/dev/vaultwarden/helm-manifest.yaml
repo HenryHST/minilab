@@ -211,4 +211,4 @@ spec:
         persistentVolumeClaim:
           claimName: "vaultwarden-data"
       nodeSelector:
-        kubernetes.io/hostname: nxk3-w02
+        worker: "true"

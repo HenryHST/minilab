@@ -1,4 +1,4 @@
-# Forgejo Actions runner on nxk3-w06 — DinD sidecar (k3s has containerd, no host docker.sock).
+# Forgejo Actions runner — DinD sidecar (sticky label on capacity worker; no hostname pin).
 # Pattern: https://code.forgejo.org/forgejo/runner (examples/kubernetes/dind-docker.yaml)
 # Token: Secret forgejo-runner, or auto-mint via Forgejo admin API using forgejo-admin.
 apiVersion: v1
@@ -27,7 +27,7 @@ spec:
       serviceAccountName: forgejo-actions-runner
       automountServiceAccountToken: false
       nodeSelector:
-        kubernetes.io/hostname: nxk3-w06
+        minilab.hst/forgejo-runner: "true"
       initContainers:
         - name: ensure-token
           image: curlimages/curl:8.12.1

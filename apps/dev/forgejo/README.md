@@ -7,7 +7,7 @@ Self-hosted Git + **Lab container registry** (replaces Distribution `registry.st
 | App | Forgejo **16.0.6** (Helm chart **17.3.1**) |
 | Namespace | `forgejo` |
 | Sync wave | `3` (AppSet `dev`) |
-| Nodes | App: `nxk3-w05` + `nxk3-w06`; Actions runner: **only** `nxk3-w06` (DinD sidecar — no host `docker.sock`) |
+| Nodes | App: `worker=true`; Actions runner: sticky `minilab.hst/forgejo-runner=true` (DinD — no host `docker.sock`) |
 | DB | SQLite on Longhorn (CNPG prep in values — not cut over) |
 | HTTPS | `https://git.stadthagen.dev` (Traefik) |
 | SSH | `git@git-ssh.stadthagen.dev:org/repo.git` — LB `192.168.0.218:22` → container `2222` (shared VIP with Mosquitto) |

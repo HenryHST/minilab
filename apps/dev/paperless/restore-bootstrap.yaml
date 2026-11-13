@@ -68,9 +68,10 @@ spec:
       serviceAccountName: paperless-restore
       imagePullSecrets:
         - name: registry-pull
-      # Local PVs for data/media/export are bound to nxk3-w01; toolbox is amd64.
+      # Longhorn RWO media/data PVCs — no hostname pin; toolbox image is amd64.
       nodeSelector:
-        kubernetes.io/hostname: nxk3-w01
+        worker: "true"
+        kubernetes.io/arch: amd64
       restartPolicy: Never
       containers:
         - name: restore

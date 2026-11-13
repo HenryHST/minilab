@@ -1,0 +1,80 @@
+# Downloadable CycloneDX/SPDX SBOM for dev/podcraft (BuildKit OCI attest stays on image.yml).
+# Sync into https://git.stadthagen.dev/dev/podcraft (.forgejo/workflows/sbom.yml).
+#
+# Secrets: REGISTRY_USER / REGISTRY_TOKEN (Forgejo OCI pull/read:package)
+name: sbom
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: SemVer override (empty = VERSION file)
+        required: false
+        default: ""
+
+env:
+  FORGEJO_IMAGE: git.stadthagen.dev/dev/podcraft
+
+jobs:
+  sbom:
+    runs-on: docker
+    steps:
+      - name: Checkout
+        uses: https://data.forgejo.org/actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        run: |
+          set -euo pipefail
+          FILE_VER="$(tr -d '[:space:]' < VERSION)"
+          VER="${{ github.event.inputs.tag }}"
+          if [ -z "${VER}" ]; then
+            if [[ "${GITHUB_REF_NAME:-}" == v* ]]; then
+              VER="${GITHUB_REF_NAME#v}"
+            else
+              VER="${FILE_VER}"
+            fi
+          fi
+          if ! [[ "${VER}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-].*)?$ ]]; then
+            echo "::error::Invalid SemVer '${VER}'"
+            exit 1
+          fi
+          echo "version=${VER}" >> "$GITHUB_OUTPUT"
+          echo "tag=${VER}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to Forgejo OCI
+        uses: https://data.forgejo.org/docker/login-action@v3
+        with:
+          registry: git.stadthagen.dev
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_TOKEN }}
+
+      - name: Pull image
+        run: |
+          set -euo pipefail
+          docker pull "${FORGEJO_IMAGE}:${{ steps.version.outputs.tag }}"
+
+      - name: Generate SBOM (Syft CycloneDX + SPDX)
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.version.outputs.tag }}"
+          OUT="${PWD}/sbom"
+          mkdir -p "${OUT}"
+          REF="${FORGEJO_IMAGE}:${TAG}"
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "${OUT}:/out" \
+            anchore/syft:latest \
+            "${REF}" \
+            -o "cyclonedx-json=/out/podcraft-${TAG}.cdx.json" \
+            -o "spdx-json=/out/podcraft-${TAG}.spdx.json"
+          ls -la "${OUT}"
+
+      - name: Upload SBOM artifacts
+        uses: https://data.forgejo.org/actions/upload-artifact@v4
+        with:
+          name: sbom-podcraft-${{ steps.version.outputs.tag }}
+          path: sbom/*
+          if-no-files-found: error

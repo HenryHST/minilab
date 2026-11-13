@@ -3,6 +3,7 @@
 # Runner label `docker` = DinD on w06. Actions URL: self (data.forgejo.org).
 #
 # Secrets: REGISTRY_USER / REGISTRY_TOKEN (Forgejo OCI write:package),
+#          DIST_REGISTRY_USER / DIST_REGISTRY_PASSWORD (registry.stadthagen.dev),
 #          CACHE_S3_ACCESS_KEY / CACHE_S3_SECRET_KEY (RustFS forgejo-buildcache).
 name: image
 
@@ -19,6 +20,7 @@ on:
 
 env:
   FORGEJO_IMAGE: git.stadthagen.dev/dev/podcraft
+  DIST_IMAGE: registry.stadthagen.dev/dev/podcraft
 
 jobs:
   build:
@@ -63,6 +65,13 @@ jobs:
           username: ${{ secrets.REGISTRY_USER }}
           password: ${{ secrets.REGISTRY_TOKEN }}
 
+      - name: Log in to Distribution registry
+        uses: https://data.forgejo.org/docker/login-action@v3
+        with:
+          registry: registry.stadthagen.dev
+          username: ${{ secrets.DIST_REGISTRY_USER }}
+          password: ${{ secrets.DIST_REGISTRY_PASSWORD }}
+
       - name: Build and push
         id: build
         uses: https://data.forgejo.org/docker/build-push-action@v6
@@ -84,6 +93,8 @@ jobs:
           tags: |
             ${{ env.FORGEJO_IMAGE }}:${{ steps.version.outputs.version }}
             ${{ env.FORGEJO_IMAGE }}:latest
+            ${{ env.DIST_IMAGE }}:${{ steps.version.outputs.version }}
+            ${{ env.DIST_IMAGE }}:latest
           labels: |
             org.opencontainers.image.version=${{ steps.version.outputs.version }}
             org.opencontainers.image.revision=${{ github.sha }}

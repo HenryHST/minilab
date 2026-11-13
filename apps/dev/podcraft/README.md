@@ -2,9 +2,10 @@
 
 k3s workload control plane for minilab (Classic sidebar SPA) + Vaultwarden restore API/UI.
 
-- Lab image (SoT): `git.stadthagen.dev/dev/podcraft:<semver>`
-- Forgejo repo: https://git.stadthagen.dev/dev/podcraft (`.forgejo/workflows/image.yml`)
+- Lab image (SoT): `git.stadthagen.dev/dev/podcraft:<semver>` (+ Dist mirror `registry.stadthagen.dev/dev/podcraft`)
+- Forgejo repo: https://git.stadthagen.dev/dev/podcraft (`.forgejo/workflows/image.yml`, `sbom.yml`)
 - SemVer: file [`VERSION`](VERSION) (current **0.4.4**)
+- SBOM: BuildKit OCI attest on push; downloadable CycloneDX/SPDX via Actions workflow **`sbom`** (`workflow_dispatch` / tags `v*`)
 - Runtime host: `https://podcraft.stadthagen.dev`
 - OpenAPI: `/openapi.json`, Swagger `/docs`
 - Auth: native Authentik OIDC (Termix-style) — **not** Gateway ExternalAuth; see `EXTERNALAUTH.md`

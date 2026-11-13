@@ -42,11 +42,12 @@ Pull Secret: `registry-pull` for `git.stadthagen.dev` / `registry.stadthagen.dev
 
 ## SBOM / verify
 
-Forgejo + GHA builds attach BuildKit **SBOM** + **provenance**. Trivy scans the exported rootfs (FS), not `trivy image` (OCI SBOM false positives).
+Forgejo builds attach BuildKit **SBOM** + **provenance** on the image index. Workflow **`sbom`** (`.forgejo/workflows/sbom.yml`) additionally runs Syft and uploads **CycloneDX** + **SPDX** JSON as Actions artifacts (`workflow_dispatch` or tags `v*`). Trivy scans the exported rootfs (FS), not `trivy image` (OCI SBOM false positives).
 
 ```bash
 crane manifest git.stadthagen.dev/ops/k8s-toolbox:1.0.2
 crane manifest git.stadthagen.dev/ops/k8s-toolbox:1.0.2-slim
+crane manifest registry.stadthagen.dev/ops/k8s-toolbox:1.0.2
 # Attestations (when registry supports):
 #   docker buildx imagetools inspect git.stadthagen.dev/ops/k8s-toolbox:1.0.2 --format '{{json .}}'
 ```

@@ -86,7 +86,7 @@ spec:
             syncWave: "2"
             helmRepo: oci://ghcr.io/natrontech/charts/argoplane
             helmOci: true
-            helmVersion: "1.7.0"
+            helmVersion: "1.8.0"
             helmReleaseName: argoplane
             helmValuesFile: apps/ops/argoplane/values.yaml
   template:

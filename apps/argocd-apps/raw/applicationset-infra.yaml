@@ -72,7 +72,7 @@ spec:
             syncWave: "2"
             helmRepo: https://cloudnative-pg.github.io/charts
             helmChart: plugin-barman-cloud
-            helmVersion: "0.8.1"
+            helmVersion: "0.9.0"
             helmReleaseName: plugin-barman-cloud
             helmValuesFile: apps/infra/plugin-barman-cloud/values.yaml
           - app: gateway

@@ -76,18 +76,26 @@ spec:
                 secretKeyRef:
                   name: excalidash-app
                   key: CSRF_SECRET
+          # Prisma migrate on PVC can take >60s; without startupProbe the
+          # liveness probe kills the container (exit 137) mid-migration.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 36
           readinessProbe:
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 20
             periodSeconds: 20
+            failureThreshold: 3
           resources:
             requests:
               cpu: 50m

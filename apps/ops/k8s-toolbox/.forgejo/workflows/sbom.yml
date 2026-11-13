@@ -70,22 +70,26 @@ jobs:
       - name: Generate SBOM (Syft CycloneDX + SPDX)
         run: |
           set -euo pipefail
+          # DinD: do not bind-mount job workspace (daemon FS ≠ act container). Write via stdout.
           TAG="${{ steps.version.outputs.tag }}"
           OUT="${PWD}/sbom"
           mkdir -p "${OUT}"
           REF="${FORGEJO_IMAGE}:${TAG}"
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            -v "${OUT}:/out" \
             anchore/syft:latest \
-            "${REF}" \
-            -o "cyclonedx-json=/out/k8s-toolbox-${TAG}.cdx.json" \
-            -o "spdx-json=/out/k8s-toolbox-${TAG}.spdx.json"
+            "${REF}" -o cyclonedx-json > "${OUT}/k8s-toolbox-${TAG}.cdx.json"
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            anchore/syft:latest \
+            "${REF}" -o spdx-json > "${OUT}/k8s-toolbox-${TAG}.spdx.json"
           ls -la "${OUT}"
+          test -s "${OUT}/k8s-toolbox-${TAG}.cdx.json"
+          test -s "${OUT}/k8s-toolbox-${TAG}.spdx.json"
 
       - name: Upload SBOM artifacts
         uses: https://data.forgejo.org/actions/upload-artifact@v4
         with:
           name: sbom-k8s-toolbox-${{ steps.version.outputs.tag }}
-          path: sbom/*
+          path: sbom/
           if-no-files-found: error

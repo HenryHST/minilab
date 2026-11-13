@@ -59,22 +59,26 @@ jobs:
       - name: Generate SBOM (Syft CycloneDX + SPDX)
         run: |
           set -euo pipefail
+          # DinD: do not bind-mount job workspace (daemon FS ≠ act container). Write via stdout.
           TAG="${{ steps.version.outputs.tag }}"
           OUT="${PWD}/sbom"
           mkdir -p "${OUT}"
           REF="${FORGEJO_IMAGE}:${TAG}"
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            -v "${OUT}:/out" \
             anchore/syft:latest \
-            "${REF}" \
-            -o "cyclonedx-json=/out/podcraft-${TAG}.cdx.json" \
-            -o "spdx-json=/out/podcraft-${TAG}.spdx.json"
+            "${REF}" -o cyclonedx-json > "${OUT}/podcraft-${TAG}.cdx.json"
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            anchore/syft:latest \
+            "${REF}" -o spdx-json > "${OUT}/podcraft-${TAG}.spdx.json"
           ls -la "${OUT}"
+          test -s "${OUT}/podcraft-${TAG}.cdx.json"
+          test -s "${OUT}/podcraft-${TAG}.spdx.json"
 
       - name: Upload SBOM artifacts
         uses: https://data.forgejo.org/actions/upload-artifact@v4
         with:
           name: sbom-podcraft-${{ steps.version.outputs.tag }}
-          path: sbom/*
+          path: sbom/
           if-no-files-found: error

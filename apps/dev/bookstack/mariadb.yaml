@@ -32,9 +32,9 @@ spec:
       labels:
         app: bookstack-mariadb
     spec:
-      # Pin to one worker — Longhorn currently has insufficient disk for new volumes (same as termix-postgres)
+      # Pin to one worker — hostPath data lives on this node (Talos rename: nxk3-w01 → talos-w01)
       nodeSelector:
-        kubernetes.io/hostname: nxk3-w01
+        kubernetes.io/hostname: talos-w01
       # Public Docker Hub until gosu rebuild is published to Forgejo (dev/mariadb).
       # Old registry.stadthagen.dev ref broke after Distribution cutover (pull secret = git only).
       securityContext:

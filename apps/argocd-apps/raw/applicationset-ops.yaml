@@ -45,7 +45,7 @@ spec:
             syncWave: "0"
             helmRepo: https://charts.fossorial.io
             helmChart: newt
-            helmVersion: "1.5.0"
+            helmVersion: "1.6.0"
             helmReleaseName: newt
             helmValuesFile: apps/ops/newt/values.yaml
           - app: system-upgrade-controller
@@ -86,7 +86,7 @@ spec:
             syncWave: "2"
             helmRepo: oci://ghcr.io/natrontech/charts/argoplane
             helmOci: true
-            helmVersion: "1.7.0"
+            helmVersion: "1.8.0"
             helmReleaseName: argoplane
             helmValuesFile: apps/ops/argoplane/values.yaml
   template:

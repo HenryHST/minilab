@@ -6,7 +6,7 @@ global:
   image:
     registry: docker.io
     repository: fosrl/newt
-    tag: "1.20.0"
+    tag: "1.20.1"
   podAnnotations:
     # DEPRECATED alpha annotation — chart values.schema forbids nested objects
     # under podSecurityContext (no seccompProfile there). Prefer only

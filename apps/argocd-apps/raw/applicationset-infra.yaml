@@ -132,6 +132,25 @@ spec:
   templatePatch: |
     {{- if dig "helmChart" "" . }}
     spec:
+      {{- if eq .app "longhorn" }}
+      # Chart hardcodes /var/lib/longhorn; datapath-enforcer adds userVolume mount + disk.
+      ignoreDifferences:
+        - group: apps
+          kind: DaemonSet
+          name: longhorn-manager
+          jqPathExpressions:
+            - .spec.template.spec.volumes
+            - .spec.template.spec.containers[].volumeMounts
+        - group: longhorn.io
+          kind: Setting
+          name: default-data-path
+          jqPathExpressions:
+            - .value
+        - group: longhorn.io
+          kind: Node
+          jqPathExpressions:
+            - .spec.disks
+      {{- end }}
       sources:
         - repoURL: {{ .helmRepo }}
           chart: {{ .helmChart }}

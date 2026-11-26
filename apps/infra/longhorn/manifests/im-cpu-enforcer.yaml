@@ -50,7 +50,7 @@ data:
   enforce.sh: |
     #!/bin/sh
     set -eu
-    NODES="${PROXMOX_LONGHORN_NODES:-nxk3-w01 nxk3-w02 nxk3-w03 nxk3-w04 nxk3-w05 nxk3-w06}"
+    NODES="${PROXMOX_LONGHORN_NODES:-talos-w01 talos-w02 talos-w03 talos-w04 talos-w05 talos-w06}"
     WANT="${IM_CPU_REQUEST_MILLICORES:-50}"
     for n in $NODES; do
       if ! kubectl get nodes.longhorn.io "$n" >/dev/null 2>&1; then
@@ -104,7 +104,7 @@ spec:
               command: ["/bin/sh", "/scripts/enforce.sh"]
               env:
                 - name: PROXMOX_LONGHORN_NODES
-                  value: "nxk3-w01 nxk3-w02 nxk3-w03 nxk3-w04 nxk3-w05 nxk3-w06"
+                  value: "talos-w01 talos-w02 talos-w03 talos-w04 talos-w05 talos-w06"
                 - name: IM_CPU_REQUEST_MILLICORES
                   value: "50"
               volumeMounts:
@@ -157,7 +157,7 @@ spec:
           command: ["/bin/sh", "/scripts/enforce.sh"]
           env:
             - name: PROXMOX_LONGHORN_NODES
-              value: "nxk3-w01 nxk3-w02 nxk3-w03 nxk3-w04 nxk3-w05 nxk3-w06"
+              value: "talos-w01 talos-w02 talos-w03 talos-w04 talos-w05 talos-w06"
             - name: IM_CPU_REQUEST_MILLICORES
               value: "50"
           volumeMounts:

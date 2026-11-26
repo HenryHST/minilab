@@ -22,10 +22,11 @@ persistence:
 
 defaultSettings:
   createDefaultDiskLabeledNodes: true
-  defaultDataPath: /var/lib/longhorn
+  # Talos workers: Longhorn data on userVolume /var/mnt/longhorn (sdb), not system disk.
+  # hostPath must match this path — kubelet extraMounts do not rewrite pod hostPath.
+  defaultDataPath: /var/mnt/longhorn
   defaultReplicaCount: 3
-  # 80G×6 Proxmox disk nodes: 200% over-provision filled root before Longhorn refused
-  # schedules (DiskPressure 2026-10-28). 150% keeps headroom while allowing mild thin provision.
+  # 86G×6 Talos userVolumes: mild thin provision with headroom for rebuilds.
   storageOverProvisioningPercentage: "150"
   # On node death, force-delete Deployment/STS pods so RWO VolumeAttachments release
   # (trade-off: abrupt pod kill; prefer Proxmox-only scheduling for stateful workloads).

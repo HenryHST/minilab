@@ -1,0 +1,72 @@
+# Ingress: Gateway. Egress open for U5G SSH + Authentik OIDC (same-ns) + DNS.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: unifi-sms-ingress
+  namespace: authentik
+  labels:
+    app.kubernetes.io/name: unifi-sms
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: unifi-sms
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: unifi-sms-egress
+  namespace: authentik
+  labels:
+    app.kubernetes.io/name: unifi-sms
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: unifi-sms
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: node-local-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    # Authentik OIDC (same namespace — token/userinfo)
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: authentik
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+            - port: "9443"
+              protocol: TCP
+            - port: "80"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
+    # U5G modem SSH on LAN (adjust CIDR if modem IP known; open /24 for lab)
+    - toCIDRSet:
+        - cidr: 192.168.0.0/16
+      toPorts:
+        - ports:
+            - port: "22"
+              protocol: TCP

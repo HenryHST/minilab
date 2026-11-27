@@ -1,0 +1,9 @@
+.git
+.forgejo
+__pycache__
+*.pyc
+.venv
+.env
+README.md
+*.yaml
+!VERSION

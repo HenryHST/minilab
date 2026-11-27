@@ -1,0 +1,67 @@
+# Public UI/auth only — Authentik webhooks stay on ClusterIP (/v1/otp|/v1/notify).
+# Token /api/v1/send is not intended via this route (session APIs ok).
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: gateway-tls-sms-tls
+  namespace: authentik
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: gateway-system
+  to:
+    - group: ""
+      kind: Secret
+      name: sms-tls
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: unifi-sms
+  namespace: authentik
+  labels:
+    app.kubernetes.io/name: unifi-sms
+    app.kubernetes.io/part-of: unifi-sms
+spec:
+  parentRefs:
+    - name: nxk3
+      namespace: gateway-system
+      sectionName: https-sms
+  hostnames:
+    - sms.stadthagen.dev
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /
+        - path:
+            type: Exact
+            value: /login
+        - path:
+            type: Exact
+            value: /logs
+        - path:
+            type: PathPrefix
+            value: /static
+        - path:
+            type: Exact
+            value: /healthz
+        - path:
+            type: PathPrefix
+            value: /auth
+        - path:
+            type: Exact
+            value: /api/v1/me
+        - path:
+            type: PathPrefix
+            value: /api/v1/logs
+        - path:
+            type: Exact
+            value: /api/v1/status
+        - path:
+            type: Exact
+            value: /api/v1/ui/send
+      backendRefs:
+        - name: unifi-sms
+          port: 8080

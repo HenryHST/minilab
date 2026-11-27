@@ -1,0 +1,16 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: sms-stadthagen-dev
+  namespace: authentik
+  labels:
+    app.kubernetes.io/name: unifi-sms
+spec:
+  secretName: sms-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - sms.stadthagen.dev
+  privateKey:
+    rotationPolicy: Always

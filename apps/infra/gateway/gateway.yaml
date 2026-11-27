@@ -447,6 +447,19 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+    - name: https-sms
+      protocol: HTTPS
+      port: 443
+      hostname: "sms.stadthagen.dev"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: sms-tls
+            namespace: authentik
+      allowedRoutes:
+        namespaces:
+          from: All
     - name: https-wupd
       protocol: HTTPS
       port: 443

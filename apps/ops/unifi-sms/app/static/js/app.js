@@ -1,0 +1,199 @@
+const state = { me: null, expanded: localStorage.getItem("unifi_sms.sidebar") !== "0", logLevel: "ALL", logPaused: false, logTimer: null };
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
+    ...opts,
+  });
+  if (res.status === 401) throw Object status: 401 };
+  if (!res.ok) {
+    let detail = res.statusText;
+    try { const j = await res.json(); detail = j.detail || detail; } catch {}
+    throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+function toast(msg, isErr = false) {
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.style.borderColor = isErr ? "var(--danger)" : "var(--border)";
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function fmtTs(ts) {
+  try { return new Date(ts * 1000).toLocaleString(); } catch { return String(ts); }
+}
+
+function renderLogin() {
+  document.getElementById("app").innerHTML = `
+    <div class="login">
+      <div class="login-card">
+        <img src="/static/brand/logo.svg" alt="" />
+        <h1>unifi-sms</h1>
+        <p class="muted">UniFi U5G SMS Bridge</p>
+        <a class="btn primary" href="/auth/start">Login with Authentik</a>
+      </div>
+    </div>`;
+}
+
+function shell(active, bodyHtml) {
+  const me = state.me;
+  document.getElementById("app").innerHTML = `
+    <div class="app ${state.expanded ? "expanded" : ""}">
+      <aside class="sidebar">
+        <div class="brand">
+          <img src="/static/brand/logo.svg" alt="" />
+          <span class="brand-text">unifi-sms</span>
+        </div>
+        <nav class="nav">
+          <a href="/" class="${active === "dashboard" ? "active" : ""}"><span>⌂</span><span class="label">Dashboard</span></a>
+          ${me?.permissions?.logs ? `<a href="/logs" class="${active === "logs" ? "active" : ""}"><span>☰</span><span class="label">Logs</span></a>` : ""}
+        </nav>
+        <button class="btn" id="toggleSide" type="button">${state.expanded ? "«" : "»"}</button>
+      </aside>
+      <div class="main">
+        <header class="topbar">
+          <div>
+            <strong>${active === "logs" ? "Logs" : "Dashboard"}</strong>
+            <div class="muted" style="font-size:0.85rem">${me?.display_name || me?.username || ""}</div>
+          </div>
+          <div class="row">
+            <button class="btn" id="themeBtn" type="button">Theme</button>
+            <a class="btn" href="/auth/logout">Logout</a>
+          </div>
+        </header>
+        <main class="content">${bodyHtml}</main>
+      </div>
+    </div>`;
+  document.getElementById("toggleSide")?.addEventListener("click", () => {
+    state.expanded = !state.expanded;
+    localStorage.setItem("unifi_sms.sidebar", state.expanded ? "1" : "0");
+    route();
+  });
+  document.getElementById("themeBtn")?.addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", cur === "light" ? "light" : "");
+    localStorage.setItem("unifi_sms.theme", cur);
+  });
+}
+
+async function pageDashboard() {
+  const st = await api("/api/v1/status");
+  const canSend = !!state.me?.permissions?.send;
+  const dot = st.connected ? "ok" : st.dry_run ? "warn" : "err";
+  shell("dashboard", `
+    <section class="card">
+      <h2>Modem</h2>
+      <div class="grid-2">
+        <div class="stat"><div class="k">Status</div><div class="v"><span class="dot ${dot}"></span> ${st.connected ? "connected" : st.dry_run ? "dry-run" : "down"}</div></div>
+        <div class="stat"><div class="k">Host</div><div class="v" style="font-size:1rem">${st.host || "—"}</div></div>
+        <div class="stat"><div class="k">Sent today</div><div class="v">${st.sent_today} / ${st.daily_cap}</div></div>
+        <div class="stat"><div class="k">Rate</div><div class="v">${st.rate_per_minute}/min</div></div>
+      </div>
+      ${st.last_error ? `<p class="muted" style="margin-top:0.75rem;color:var(--danger)">Last error: ${escapeHtml(st.last_error)}</p>` : ""}
+      <p class="muted" style="margin-top:0.75rem">Allow prefixes: ${escapeHtml(st.allow_prefixes)} · max 64 UTF-8 bytes per SMS part</p>
+    </section>
+    ${canSend ? `
+    <section class="card">
+      <h2>Send test SMS</h2>
+      <form id="sendForm" class="row" style="align-items:flex-start">
+        <div class="field"><label for="to">To (E.164)</label><input id="to" name="to" placeholder="+49170…" required /></div>
+        <div class="field" style="flex:2"><label for="msg">Message</label><textarea id="msg" name="message" maxlength="480" required></textarea></div>
+        <button class="btn primary" type="submit" style="margin-top:1.4rem">Send</button>
+      </form>
+    </section>` : `<section class="card"><p class="muted">Read-only — need unifi_sms_admins to send.</p></section>`}
+  `);
+  document.getElementById("sendForm")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const to = document.getElementById("to").value.trim();
+    const message = document.getElementById("msg").value;
+    try {
+      const out = await api("/api/v1/ui/send", { method: "POST", body: JSON.stringify({ to, message }) });
+      toast(`Sent (${out.parts} part${out.parts === 1 ? "" : "s"})`);
+    } catch (err) {
+      toast(err.message || String(err), true);
+    }
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+async function pageLogs() {
+  shell("logs", `
+    <section class="card">
+      <div class="log-toolbar">
+        <input class="btn" id="logSearch" placeholder="Search…" style="flex:1;text-align:left" />
+        ${["ALL","INFO","WARN","ERROR"].map((l) => `<button type="button" class="chip ${state.logLevel===l?"active":""}" data-level="${l}">${l}</button>`).join("")}
+        <button type="button" class="btn" id="logPause">${state.logPaused ? "Resume" : "Pause"}</button>
+        <button type="button" class="btn" id="logClear">Clear</button>
+      </div>
+      <div class="log-box" id="logBox"></div>
+    </section>
+  `);
+  const box = document.getElementById("logBox");
+  const paint = async () => {
+    if (state.logPaused) return;
+    const data = await api("/api/v1/logs?limit=200");
+    const q = (document.getElementById("logSearch")?.value || "").toLowerCase();
+    const items = data.items.filter((i) => {
+      if (state.logLevel !== "ALL" && i.level !== state.logLevel) return false;
+      if (q && !(`${i.level} ${i.message}`).toLowerCase().includes(q)) return false;
+      return true;
+    });
+    box.innerHTML = items.map((i) => {
+      const cls = i.level === "ERROR" ? "error" : i.level === "WARN" ? "warn" : "";
+      return `<div class="log-line ${cls}">[${fmtTs(i.ts)}] ${i.level} ${escapeHtml(i.message)}</div>`;
+    }).join("") || `<div class="muted">No log entries</div>`;
+    box.scrollTop = box.scrollHeight;
+  };
+  document.querySelectorAll("[data-level]").forEach((btn) => btn.addEventListener("click", () => {
+    state.logLevel = btn.getAttribute("data-level");
+    route();
+  }));
+  document.getElementById("logPause")?.addEventListener("click", () => {
+    state.logPaused = !state.logPaused;
+    route();
+  });
+  document.getElementById("logClear")?.addEventListener("click", async () => {
+    await api("/api/v1/logs", { method: "DELETE" });
+    await paint();
+  });
+  document.getElementById("logSearch")?.addEventListener("input", () => paint());
+  await paint();
+  clearInterval(state.logTimer);
+  state.logTimer = setInterval(paint, 4000);
+}
+
+async function route() {
+  clearInterval(state.logTimer);
+  const theme = localStorage.getItem("unifi_sms.theme");
+  if (theme === "light") document.documentElement.setAttribute("data-theme", "light");
+  try {
+    state.me = await api("/api/v1/me");
+  } catch (err) {
+    if (err?.status === 401) { renderLogin(); return; }
+    toast(err.message || String(err), true);
+    renderLogin();
+    return;
+  }
+  const path = location.pathname;
+  if (path.startsWith("/logs")) await pageLogs();
+  else await pageDashboard();
+}
+
+window.addEventListener("popstate", route);
+document.addEventListener("click", (e) => {
+  const a = e.target.closest("a[href^='/']");
+  if (!a || a.getAttribute("href").startsWith("/auth")) return;
+  e.preventDefault();
+  history.pushState({}, "", a.getAttribute("href"));
+  route();
+});
+route();

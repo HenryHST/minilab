@@ -72,6 +72,10 @@ spec:
             path: apps/ops/authentik
             namespace: authentik
             syncWave: "2"
+          - app: unifi-sms
+            path: apps/ops/unifi-sms
+            namespace: authentik
+            syncWave: "3"
           - app: headlamp
             path: apps/ops/headlamp
             namespace: kube-system

@@ -20,10 +20,8 @@ env:
   TZ: Europe/Berlin
   PUID: "911"
   PGID: "911"
-  # LAN primary while Newt/Pangolin book-ext is down (Newt token 429; publish reconcile 401).
-  # book-ext remains a valid OIDC redirect; flip back to https://book-ext.stadthagen.dev
-  # once Pangolin publish + Newt tunnel are healthy again.
-  APP_URL: https://book.stadthagen.dev
+  # Public OIDC/callback host via Pangolin Newt (LAN book.stadthagen.dev shares SESSION_DOMAIN).
+  APP_URL: https://book-ext.stadthagen.dev
   # Share session/CSRF cookie across book + book-ext (avoids 419 when hosts differ).
   SESSION_DOMAIN: ".stadthagen.dev"
   APP_LANG: de

@@ -35,8 +35,8 @@ affinity:
             - key: kubernetes.io/hostname
               operator: In
               values:
-                - nxk3-w05
-                - nxk3-w06
+                - talos-w05
+                - talos-w06
 
 # Rootless image UID 1000 — explicit for PSA / defense in depth (SSH in same pod).
 podSecurityContext:
@@ -184,4 +184,4 @@ gitea:
     serviceMonitor:
       enabled: false
 
-# Actions runner is a separate Deployment in this folder (nodeSelector nxk3-w06).
+# Actions runner is a separate Deployment in this folder (nodeSelector minilab.hst/forgejo-runner on talos-w06).

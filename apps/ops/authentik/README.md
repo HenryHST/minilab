@@ -131,7 +131,7 @@ Manifests: [`../dev/bookstack/oidc-relink.yaml`](../dev/bookstack/oidc-relink.ya
 ## Helm (vendored + rendered)
 
 ```bash
-helm pull authentik --repo https://charts.goauthentik.io --version 2026.8.5 --untar --untardir charts
+helm pull authentik --repo https://charts.goauthentik.io --version 2026.8.7 --untar --untardir charts
 helm dependency update charts/authentik
 helm template authentik ./charts/authentik \
   -f values.yaml --namespace authentik --include-crds \

@@ -14,6 +14,23 @@ spec:
   selector:
     app: bookstack-mariadb
 ---
+# Longhorn PVC — Talos PSA enforce=baseline blocks hostPath; sticky hostPath
+# /var/lib/bookstack-mariadb was for the old k3s node layout only.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bookstack-mariadb-data
+  namespace: bookstack
+  labels:
+    app: bookstack-mariadb
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Gi
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -32,11 +49,10 @@ spec:
       labels:
         app: bookstack-mariadb
     spec:
-      # hostPath data — pin via sticky label (set on the data node; see Infra_LAB worker-labels)
+      # Optional pin (PVC is portable; label still set via Infra_LAB worker-labels).
       nodeSelector:
         minilab.hst/bookstack-mariadb: "true"
       # Public Docker Hub until gosu rebuild is published to Forgejo (dev/mariadb).
-      # Old registry.stadthagen.dev ref broke after Distribution cutover (pull secret = git only).
       securityContext:
         fsGroup: 999
       containers:
@@ -84,6 +100,5 @@ spec:
               mountPath: /var/lib/mysql
       volumes:
         - name: data
-          hostPath:
-            path: /var/lib/bookstack-mariadb
-            type: DirectoryOrCreate
+          persistentVolumeClaim:
+            claimName: bookstack-mariadb-data

@@ -1,9 +1,9 @@
 dependencies:
 - name: postgresql
   repository: oci://registry-1.docker.io/bitnamicharts
-  version: 18.8.17
+  version: 18.12.28
 - name: authentik-remote-cluster
   repository: https://charts.goauthentik.io
   version: 2.1.0
-digest: sha256:fedc76840b64c26b0c0f48da1740b18ba93e557c635c19ca19716ebb7357de86
-generated: "2026-11-25T18:58:45.758370763Z"
+digest: sha256:f3ba6c1595c5d511a88837d8a143b21cbec355d9c236701b0dd25a8ffc76e2a2
+generated: "2026-11-27T20:38:42.344376221Z"

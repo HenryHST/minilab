@@ -31,7 +31,7 @@
         description: Git + OCI Registry
     - WUD:
         id: wud
-        href: https://wudp.stadthagen.dev
+        href: https://wupd.stadthagen.dev
         icon: wud.png
         description: Updates Downloader
 - Tools:

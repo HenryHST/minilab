@@ -70,7 +70,7 @@ data:
             description: Git + OCI Registry
         - WUD:
             id: wud
-            href: https://wud.stadthagen.dev
+            href: https://wudp.stadthagen.dev
             icon: https://cdn.jsdelivr.net/gh/selfhst/icons/svg/wud.svg
             description: ContainerUpdates
 

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.28
-FROM python:3.14-slim
+FROM python:3.15-slim
 
 ARG VERSION=0.1.0
 ARG VCS_REF=unknown

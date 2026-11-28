@@ -5,6 +5,9 @@ metadata:
   namespace: searxng
 spec:
   replicas: 1
+  # RWO PVC (searxng-cache) cannot attach to two nodes during RollingUpdate.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: searxng
@@ -31,6 +34,10 @@ spec:
               mountPath: /etc/searxng/settings.yml
               subPath: settings.yml
               readOnly: true
+            - name: favicons
+              mountPath: /etc/searxng/favicons.toml
+              subPath: favicons.toml
+              readOnly: true
             - name: cache
               mountPath: /var/cache/searxng
           readinessProbe:
@@ -55,5 +62,9 @@ spec:
         - name: settings
           configMap:
             name: searxng-settings
+        - name: favicons
+          configMap:
+            name: searxng-favicons
         - name: cache
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: searxng-cache

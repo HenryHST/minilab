@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: searxng-favicons
+  namespace: searxng
+data:
+  favicons.toml: |
+    [favicons]
+    cfg_schema = 1
+
+    [favicons.cache]
+    db_url = "/var/cache/searxng/faviconcache.db"
+    LIMIT_TOTAL_BYTES = 268435456

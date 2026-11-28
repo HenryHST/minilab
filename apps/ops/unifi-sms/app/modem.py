@@ -8,7 +8,7 @@ import asyncssh
 
 from app.config import state
 from app.logs import ring
-from app.util import split_sms_parts
+from app.util import normalize_pem_key, split_sms_parts
 
 
 @dataclass
@@ -50,7 +50,9 @@ class ModemClient:
             "host": s.u5g_host,
             "port": s.u5g_port,
             "username": s.u5g_user,
-            "client_keys": [asyncssh.import_private_key(s.u5g_ssh_private_key)],
+            "client_keys": [
+                asyncssh.import_private_key(normalize_pem_key(s.u5g_ssh_private_key))
+            ],
             "known_hosts": None,
         }
         if s.u5g_host_key.strip():

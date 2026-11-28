@@ -108,9 +108,30 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            # Temporary overlays until the next image digest includes these fixes:
+            # - app.js: SyntaxError throw { status: 401 }
+            # - util/modem: normalize single-line PEM private keys from Secret env
+            - name: app-js-fix
+              mountPath: /app/app/static/js/app.js
+              subPath: app.js
+              readOnly: true
+            - name: code-fix
+              mountPath: /app/app/util.py
+              subPath: util.py
+              readOnly: true
+            - name: code-fix
+              mountPath: /app/app/modem.py
+              subPath: modem.py
+              readOnly: true
       volumes:
         - name: tmp
           emptyDir: {}
+        - name: app-js-fix
+          configMap:
+            name: unifi-sms-app-js
+        - name: code-fix
+          configMap:
+            name: unifi-sms-code-fix
 ---
 apiVersion: v1
 kind: Service

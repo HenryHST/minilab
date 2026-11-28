@@ -32,6 +32,20 @@ Also: `registry-pull` in `authentik`. Pin TF `sms_webhook_token` / `unifi_sms_oa
 
 Manual: enable UniFi Device SSH, add the public key, set modem IP + pinned host key.
 
+### SSH / Secret pitfalls
+
+| Symptom | Cause | Fix |
+|---------|--------|-----|
+| Blank UI (`#app` empty) | `app.js` SyntaxError (`throw Object status: 401 }`) | Fixed in tree; ConfigMap `unifi-sms-app-js` overlays until next image digest |
+| `Missing PEM footer` | `U5G_SSH_PRIVATE_KEY` flattened to one line in the Secret/env | App calls `normalize_pem_key()`; prefer storing real newlines in SecretSpec |
+| `Host key is not trusted` | `U5G_HOST_KEY` pin ≠ key the modem presents (e.g. ed25519 pin vs live `ssh-rsa`) | Re-pin with the live key: `ssh-keyscan -t rsa <U5G_HOST>` (or whatever algo the modem offers) → SecretSpec `UNIFI_SMS_HOST_KEY` |
+| Authentik `Client ID Error` | OIDC app `unifi-sms` missing in IdP | Apply Terraform `module.unifi_sms_oauth` (`Infra_LAB/terraform/authentik`) |
+
+Temporary ConfigMap overlays (remove after rebuilding/pinning a new image digest):
+
+- `app-js-configmap.yaml` → mount `/app/app/static/js/app.js`
+- `code-fix-configmap.yaml` → mount `/app/app/util.py` + `modem.py`
+
 ## Local dry-run
 
 ```bash
@@ -63,3 +77,5 @@ Gateway listener `https-sms` + Certificate `sms-tls`.
 ## Image CI
 
 Sync `.forgejo/workflows/image.yml` into Forgejo repo `ops/unifi-sms`, then pin digest in `deployment.yaml`.
+
+After a digest that includes the `app.js` / PEM fixes, remove the ConfigMap overlays from `deployment.yaml` and delete ConfigMaps `unifi-sms-app-js` / `unifi-sms-code-fix`.

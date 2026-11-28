@@ -4,6 +4,23 @@ import re
 
 
 _E164 = re.compile(r"^\+[1-9]\d{6,14}$")
+_PEM = re.compile(
+    r"^(-----BEGIN [^-]+-----)\s*(.+?)\s*(-----END [^-]+-----)\s*$",
+    re.DOTALL,
+)
+
+
+def normalize_pem_key(key: str) -> str:
+    """Repair PEM/OpenSSH keys flattened to a single line (common in env/Secret injection)."""
+    raw = (key or "").strip()
+    if not raw or "\n" in raw:
+        return raw
+    m = _PEM.match(raw)
+    if not m:
+        return raw
+    header, body, footer = m.group(1), re.sub(r"\s+", "", m.group(2)), m.group(3)
+    lines = [header, *[body[i : i + 70] for i in range(0, len(body), 70)], footer]
+    return "\n".join(lines) + "\n"
 
 
 def mask_phone(number: str) -> str:

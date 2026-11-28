@@ -6,7 +6,7 @@ async function api(path, opts = {}) {
     headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
     ...opts,
   });
-  if (res.status === 401) throw Object status: 401 };
+  if (res.status === 401) throw { status: 401 };
   if (!res.ok) {
     let detail = res.statusText;
     try { const j = await res.json(); detail = j.detail || detail; } catch {}
